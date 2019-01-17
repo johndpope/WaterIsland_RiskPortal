@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+
+{% block loaders_css %}
+    {{ block.super }}
+{% endblock %}
+
+{% block css_styles %}
+    {{ block.super }}
+{% endblock %}
+
+{% block datatables_bootstrap_css %}
+    {{ block.super }}
+{% endblock %}
+
+{% block amcharts_scripts %}
+    {{ block.super }}
+{% endblock %}
+
+{% block content %}
+    <input type="hidden" id="bond_equity_compare_csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" id="bond_equity_compare_proposed_date" value="{{ proposed_date }}">
+    {# Show a Button to Add a new Deal#}
+    <div class="app-content content">
+        <div class="content-wrapper">
+            <div class="content-header">
+            </div>
+            <div id="ess_idea_content_wrapper" class="content-body">
+
+
+                <div class="card">
+                    <div class="card-head">
+                        <div class="card-header">
+                            <h4 class="card-title center">Equity v/s Bond</h4>
+                            <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
+                        </div>
+                    </div>
+                    <div class="card-content">
+
+                        <form id="get_comparison_form" method="POST">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-lg-4 offset-lg-1">
+                                    <input id="target_ticker" class="form-control"
+                                           placeholder="e.g., IBM US EQUITY" value="{{ target_ticker }}">
+                                </div>
+                                <div class="col-lg-4">
+                                    <input id="bond_ticker" type='text' class="form-control"
+                                           placeholder="Bond Ticker e.g., AM293825@BMRK Corp"></div>
+                                <div class="col-lg-2">
+                                    <input id='submit_comparison_tickers' type="submit"
+                                           class="btn btn-outline-primary" value="Calculate Risk/Reward"></div>
+                            </div>
+                        </form>
+                        <div class="card-footer"></div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="row">
+
+                <div class="col-lg-12 col-md-12 col-12">
+                    <div class="card">
+                        <div class="card-header no-border-bottom">
+                            <h4 class="card-title center">Price Trends from the Proposed Date</h4>
+                            <div class="row">
+                                <div class="loader height-10-per">
+                                    <div class="loader-inner pacman">
+                                    </div>
+                                </div>
+                            </div>
+                            <a class="heading-elements-toggle"><i class="ft-more-horizontal font-medium-3"></i></a>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-body">
+                                <div class="row my-1">
+                                    <div class="col-lg-6 col-12 p-1 border-right-blue-grey border-right-lighten-5">
+                                        <div id="target_price_chart" style="height: 430px">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-6 col-12 p-1 border-right-blue-grey border-right-lighten-5">
+                                        <div id="bond_price_chart" style="height: 430px">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+
+    {% block sweetalert_js %}
+        {{ block.super }}
+    {% endblock %}
+    <script src="{% static 'app-assets/js/core/compare_equity_bonds.js' %}" type="text/javascript"></script>
+    <script src="{% static 'app-assets/vendors/js/loaders/loaders.css.js' %}"></script>
+
+{% endblock %}

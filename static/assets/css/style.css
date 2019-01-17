@@ -1,0 +1,149 @@
+/*================================================================================
+	Item Name: Robust - Responsive Admin Template
+	Version: 2.0
+	Author: Kgorde
+	Author URL: http://www.kshitijgorde.com
+================================================================================
+
+NOTE:
+------
+PLACE HERE YOUR OWN SCSS CODES AND IF NEEDED, OVERRIDE THE STYLES FROM THE OTHER STYLESHEETS.
+WE WILL RELEASE FUTURE UPDATES SO IN ORDER TO NOT OVERWRITE YOUR STYLES IT'S BETTER LIKE THIS.  */
+
+.center { text-align:center; }
+
+.carousel-news-image img {
+  width: 1000px;
+  height: 500px;
+  text-align: center;
+  margin-bottom: 2%;
+
+
+}
+.carousel-caption {
+    position: relative;
+    left: auto;
+    right: auto;
+       overflow:visible;
+}
+.carousel-inner .carousel-item {
+  transition: -webkit-transform .6s ease;
+  transition: transform .6s ease;
+  transition: transform .6s ease, -webkit-transform 8s ease;
+}
+.carousel-control-prev-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23330000' viewBox='0 0 8 8'%3E%3Cpath d='M5.25 0l-4 4 4 4 1.5-1.5-2.5-2.5 2.5-2.5-1.5-1.5z'/%3E%3C/svg%3E");
+}
+
+.carousel-control-next-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23330000' viewBox='0 0 8 8'%3E%3Cpath d='M2.75 0l-1.5 1.5 2.5 2.5-2.5 2.5 1.5 1.5 4-4-4-4z'/%3E%3C/svg%3E");
+}
+/* Below Customization used for news carousel description */
+p{
+    color:#0a160a;
+
+}
+.modal-backdrop.in { background: rgba(0, 0, 0, 0.5); } .modal-backdrop { background-color:transparent; transition: all .3s}
+
+#mna_idea_table {
+    word-wrap: break-word;
+    table-layout:auto;
+    max-width: 100%;
+}
+
+th{
+    word-break: break-all;
+}
+.vertical-divider {
+border-right: 1px solid black;
+}
+
+.modal{
+    overflow-y:scroll;
+}
+.my-confirm-class {
+            padding: 3px 6px;
+            font-size: 12px;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+            border-radius: 4px;
+            background-color: #337ab7;
+            text-decoration: none;
+}
+
+.my-cancel-class {
+            padding: 3px 6px;
+            font-size: 12px;
+            color: white;
+            text-align: center;
+            vertical-align: middle;
+            border-radius: 4px;
+            background-color: #a94442;
+            text-decoration: none;
+}
+
+.my-input-class {
+        padding: 3px 6px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+.error {
+            border: solid 1px;
+            border-color: #a94442;
+        }
+
+.loader {
+position: absolute;
+top :25%;
+left: 50%;
+right: 0;
+bottom: 0;
+margin: 0;
+}
+.line-scale-pulse-out > div {
+  background-color: #991f00;
+}
+body{
+  -webkit-print-color-adjust:exact;
+}
+
+.data-table-container {
+  padding: 10px;
+}
+
+.dt-buttons .btn {
+  margin-right: 3px;
+}
+#mna_idea_ev_ebitda_chart .amChartsCompareList div {
+  box-sizing: content-box;
+}
+#mna_idea_pe_ratio_chart .amChartsCompareList div {
+  box-sizing: content-box;
+}
+#mna_idea_fcf_yield_chart .amChartsCompareList div {
+  box-sizing: content-box;
+}
+#mna_idea_lawyer_reports_table {
+	table-layout:fixed;
+}
+
+#mna_idea_lawyer_reports_table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+}
+select > option
+{
+    width: 100px;
+}
+#ess_idea_table{
+  margin: 0 auto;
+  width: 100%;
+  clear: both;
+  border-collapse: collapse;
+  table-layout: fixed;
+  word-wrap:inherit;
+}

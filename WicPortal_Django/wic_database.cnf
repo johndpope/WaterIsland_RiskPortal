@@ -1,0 +1,6 @@
+`database = test_wic_db
+user = kshitijgorde
+password = wicfunds
+host= 10.16.1.19
+port= 3306
+default-character-set = utf8
