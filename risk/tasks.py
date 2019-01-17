@@ -13,7 +13,9 @@ import numpy as np
 from .models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records
 import bbgclient
 import json
-import django.db
+import environ
+env = environ.Env()
+environ.Env.read_env()
 import ast
 from django_slack import slack_message
 
@@ -1002,14 +1004,14 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
     except Exception as e:
         print(e)
         slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
-                      token='xoxp-26072400167-329972528725-483302849778-28c0eea8658891f1ed60eca72f3c50d1',
+                      token=env('SLACK_TOKEN'),
                       name='ESS_IDEA_DB_ERROR_INSPECTOR')
         raise Exception
 
     slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                   {'errors':'No Errors Detected...Your IDEA Was successfully added (alpha ticker)'+str(ticker)},
                   channel='ess_idea_db_errors',
-                  token='xoxp-26072400167-329972528725-483302849778-28c0eea8658891f1ed60eca72f3c50d1',
+                  token=env('SLACK_TOKEN'),
                   name='ESS_IDEA_DB_ERROR_INSPECTOR')
     return 'Task Done'
 
@@ -1480,7 +1482,7 @@ def ess_idea_daily_update():
             print('Peers Updated....')
 
     except Exception as e:
-        #slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors', token='xoxp-26072400167-329972528725-483302849778-28c0eea8658891f1ed60eca72f3c50d1')
+        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors', token=env('SLACK_TOKEN'))
         print('Exception in Celery Task' + str(e))
         print(e)
 
