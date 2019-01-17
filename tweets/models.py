@@ -1,15 +1,15 @@
 from django.db import models
-
+from django.conf import settings
 # Create your models here.
 import tweepy
 from tweepy.auth import OAuthHandler
 class Twitter():
     def __init__(self):
         print('Twitter Initialized')
-        self.consumer_key = '9PS881x4gPZ0TAjlG0w8AWfBv'
-        self.consumer_secret = 'm71RndpI1JD6PKxrmtRFpOUhOTsHAatpz9wtMMi6wEknfDza4u'
-        self.access_token = '94296477-EuNwnHKG0wGPLYKleErUOrKWegTLj4dBBPYy9nRDs'
-        self.access_token_secret = 'Y8qGGUktQE3JCVIGHtmN6M7b9f90zM1y1SrHXeNbAeWcC'
+        self.consumer_key = settings.TWEEPY_CONSUMER_KEY
+        self.consumer_secret = settings.TWEEPY_CONSUMER_KEY
+        self.access_token = settings.TWEEPY_ACCESS_TOKEN
+        self.access_token_secret = settings.TWEEPY_ACCESS_TOKEN_SECRET
         self.auth = OAuthHandler(self.consumer_key,self.consumer_secret)
         self.auth.set_access_token(self.access_token,self.access_token_secret)
         self.api = tweepy.API(self.auth)

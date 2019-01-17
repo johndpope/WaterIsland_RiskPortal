@@ -3,9 +3,6 @@ from .models import tweepy_object, Twitter_Actors
 # Create your views here.
 
 
-
-
-
 def get_latest_tweets(request):
     #Send a JSON Response from Latest Tweets
 

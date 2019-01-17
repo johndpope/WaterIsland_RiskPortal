@@ -13,9 +13,7 @@ import numpy as np
 from .models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records
 import bbgclient
 import json
-import environ
-env = environ.Env()
-environ.Env.read_env()
+from django.conf import settings
 import ast
 from django_slack import slack_message
 
@@ -1004,14 +1002,14 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
     except Exception as e:
         print(e)
         slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
-                      token=env('SLACK_TOKEN'),
+                      token=settings.SLACK_TOKEN,
                       name='ESS_IDEA_DB_ERROR_INSPECTOR')
         raise Exception
 
     slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                   {'errors':'No Errors Detected...Your IDEA Was successfully added (alpha ticker)'+str(ticker)},
                   channel='ess_idea_db_errors',
-                  token=env('SLACK_TOKEN'),
+                  token=settings.SLACK_TOKEN,
                   name='ESS_IDEA_DB_ERROR_INSPECTOR')
     return 'Task Done'
 
@@ -1317,7 +1315,7 @@ def ess_idea_daily_update():
             print(str(id) + ' - Deal Updates. Total newly inserted dates: ' + str(len(new_prices)))
 
             print('Updating Peer Valuation Metrics....')
-            # -------------- UPDATE THE PEERS WITH NEW CHARTS/VALUATION METRICS ----------------------------------------------------------------------------------------
+            # -------------- UPDATE THE PEERS WITH NEW CHARTS/VALUATION METRICS ------------------------------------
             for every_peer in related_peers_list:
                 print('Processing Peer: ' + every_peer.ticker)
                 ev_ebitda_1bf = bbgclient.bbgclient.get_timeseries(every_peer.ticker, 'BEST_CUR_EV_TO_EBITDA', (
@@ -1478,11 +1476,12 @@ def ess_idea_daily_update():
                 print(str(every_peer.id) + " Peer ID Updated!")
                 # peer.save()
 
-            # ----------------------------------------------------------------------------------------------------------------------------------------------------------
+            # --------------------------------------------------------------------------------------------------------
             print('Peers Updated....')
 
     except Exception as e:
-        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors', token=env('SLACK_TOKEN'))
+        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
+                      token=settings.SLACK_TOKEN)
         print('Exception in Celery Task' + str(e))
         print(e)
 
