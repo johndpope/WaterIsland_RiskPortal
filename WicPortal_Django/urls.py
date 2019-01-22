@@ -38,7 +38,8 @@ urlpatterns = [
     url('notes/',include('notes.urls')),
     url('equity_fixedincome_risk_reward/', include('equity_fixedincome_risk_reward.urls')),
     url('risk_reporting/',include('risk_reporting.urls')),
-    url('portfolio_analytics/',include('portfolio_analytics.urls'))
+    url('portfolio_analytics/',include('portfolio_analytics.urls')),
+    url('realtime_pnl_impacts/',include('realtime_pnl_impacts.urls'))
 ]
 
 

@@ -14,9 +14,17 @@ from datetime import timedelta
 import os
 from celery.schedules import crontab
 import environ
+from sqlalchemy import create_engine
 
 env = environ.Env()
 environ.Env.read_env()  # Read the .env File
+
+engine = create_engine("mysql://"+env('WICFUNDS_DATABASE_USER')+":"+env('WICFUNDS_DATABASE_PASSWORD')
+                       + "@" + env('WICFUNDS_DATABASE_HOST')+"/"+env('WICFUNDS_DATABASE_NAME'))
+con = engine.connect()
+
+SQLALCHEMY_CONNECTION = con
+WICFUNDS_TEST_DATABASE_NAME = env('WICFUNDS_TEST_DATABASE_NAME')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -77,6 +85,7 @@ INSTALLED_APPS = [
     'risk_reporting',
     'portfolio_analytics',
     'django_slack',
+    'realtime_pnl_impacts',
 ]
 
 MIDDLEWARE = [
@@ -128,6 +137,16 @@ DATABASES = {
         'NAME': env('WICFUNDS_DATABASE_NAME'),
         'CONN_MAX_AGE': 36000000,
     },
+    'waterislandproduction': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': env('WICFUNDS_PRODUCTION_DATABASE_HOST'),
+        'PORT': env('WICFUNDS_PRODUCTION_DATABASE_PORT'),
+        'USER': env('WICFUNDS_PRODUCTION_DATABASE_USER'),
+        'PASSWORD': env('WICFUNDS_PRODUCTION_DATABASE_PASSWORD'),
+        'NAME': env('WICFUNDS_PRODUCTION_DATABASE_NAME'),
+        'CONN_MAX_AGE': 36000000,
+    },
+
     'NorthPoint-PnLAppDb':{
         'ENGINE': 'sql_server.pyodbc',
         'HOST': env('NORTHPOINT_PNLAPPDB_DATABASE_HOST'),

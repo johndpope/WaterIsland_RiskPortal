@@ -7,7 +7,7 @@ class Twitter():
     def __init__(self):
         print('Twitter Initialized')
         self.consumer_key = settings.TWEEPY_CONSUMER_KEY
-        self.consumer_secret = settings.TWEEPY_CONSUMER_KEY
+        self.consumer_secret = settings.TWEEPY_CONSUMER_SECRET
         self.access_token = settings.TWEEPY_ACCESS_TOKEN
         self.access_token_secret = settings.TWEEPY_ACCESS_TOKEN_SECRET
         self.auth = OAuthHandler(self.consumer_key,self.consumer_secret)

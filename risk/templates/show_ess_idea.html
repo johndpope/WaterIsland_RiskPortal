@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% load staticfiles %}
 
-    {% block amcharts_scripts %}
-        {{ block.super }}
-    {% endblock %}
+{% block amcharts_scripts %}
+    {{ block.super }}
+{% endblock %}
 
-    {% block summernote_css %}
-        {{ block.super }}
-    {% endblock %}
+{% block summernote_css %}
+    {{ block.super }}
+{% endblock %}
 
 {% block content %}
     <input type="hidden" value="{{ upside_downside_records_df }}" id="upside_downside_records_df">
@@ -25,210 +25,250 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <h3 class="modal-title">Balance Sheet (Live) Bloomberg</h3><br>
-                    <div class="row">
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">Date</small>
-                            <input type="date" class="form-control" id="balance_sheet_date"/>
+
+
+                    <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="base-tab50" data-toggle="tab"
+                               aria-controls="tab50"
+                               href="#tab50" aria-expanded="true">Current Adjustments</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" id="base-tab51" data-toggle="tab" aria-controls="tab51"
+                               href="#tab51"
+                               aria-expanded="false">Adjustments on Price Target Date</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="tab50" aria-expanded="true"
+                             aria-labelledby="base-tab50">
+                            <div class="row">
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">Date</small>
+                                    <input type="date" class="form-control" id="balance_sheet_date"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">PX</small>
+                                    <input type="text" class="form-control" id="balance_sheet_px"/>
+                                </div>
+
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_EPS</small>
+                                    <input type="text" class="form-control" id="balance_sheet_best_eps"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                                    <input type="text" class="form-control" id="balance_sheet_best_net_income"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_OPP</small>
+                                    <input type="text" class="form-control" id="balance_sheet_best_opp"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_SALES</small>
+                                    <input type="text" class="form-control" id="balance_sheet_best_sales"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                                    <input type="text" class="form-control" id="balance_sheet_cur_ev_component"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">CUR_MKT_CAP</small>
+                                    <input type="text" class="form-control" id="balance_sheet_cur_mkt_cap"/>
+                                </div>
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">DIVIDEND_INDICATED_YIELD</small>
+                                    <input type="text" class="form-control" id="balance_sheet_dvd_indicated_yield"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                                    <input type="text" class="form-control" id="balance_sheet_best_capex"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                                    <input type="text" class="form-control" id="balance_sheet_best_ebitda"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                                    <input type="text" class="form-control" id="balance_sheet_eqy_sh_out"/>
+                                </div>
+                            </div>
+                            <br><br>
+                            <h3 class="modal-title">Balance Sheet Adjustments</h3><br>
+                            <div class="row">
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">Date</small>
+                                    <input type="date" class="form-control" id="adjustment_balance_sheet_date"
+                                           value="0"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">PX</small>
+                                    <input type="text" class="form-control" id="adjustment_balance_sheet_px" value="0"/>
+                                </div>
+
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_EPS</small>
+                                    <input type="text" class="form-control" id="adjustment_balance_sheet_best_eps"
+                                           value="0"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                                    <input type="text" class="form-control"
+                                           id="adjustment_balance_sheet_best_net_income" value="0"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_OPP</small>
+                                    <input type="text" class="form-control" id="adjustment_balance_sheet_best_opp"
+                                           value="0"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_SALES</small>
+                                    <input type="text" class="form-control" id="adjustment_balance_sheet_best_sales"
+                                           value="0"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                                    <input type="text" class="form-control"
+                                           id="adjustment_balance_sheet_cur_ev_component" value="0"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">CUR_MKT_CAP</small>
+                                    <input type="text" class="form-control" id="adjustment_balance_sheet_cur_mkt_cap"
+                                           value="0"/>
+                                </div>
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">DIVIDEND_INDICATED_YIELD</small>
+                                    <input type="text" class="form-control"
+                                           id="adjustment_balance_sheet_dvd_indicated_yield" value="0"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                                    <input type="text" class="form-control" id="adjustment_balance_sheet_best_capex"
+                                           value="0"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                                    <input type="text" class="form-control" id="adjustment_balance_sheet_best_ebitda"
+                                           value="0"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                                    <input type="text" class="form-control" id="adjustment_balance_sheet_eqy_sh_out"
+                                           value="0"/>
+                                </div>
+
+
+                            </div>
+                            <br>
+
+                            <h3 class="modal-title">Final Balance Sheet</h3><br>
+                            <div class="row">
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">Date</small>
+                                    <input type="date" class="form-control" id="final_balance_sheet_date"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">PX</small>
+                                    <input type="text" class="form-control" id="final_balance_sheet_px"/>
+                                </div>
+
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_EPS</small>
+                                    <input type="text" class="form-control" id="final_balance_sheet_best_eps"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                                    <input type="text" class="form-control" id="final_balance_sheet_best_net_income"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_OPP</small>
+                                    <input type="text" class="form-control" id="final_balance_sheet_best_opp"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_SALES</small>
+                                    <input type="text" class="form-control" id="final_balance_sheet_best_sales"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                                    <input type="text" class="form-control" id="final_balance_sheet_cur_ev_component"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">CUR_MKT_CAP</small>
+                                    <input type="text" class="form-control" id="final_balance_sheet_cur_mkt_cap"/>
+                                </div>
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">DIVIDEND_INDICATED_YIELD</small>
+                                    <input type="text" class="form-control"
+                                           id="final_balance_sheet_dvd_indicated_yield"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                                    <input type="text" class="form-control" id="final_balance_sheet_best_capex"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                                    <input type="text" class="form-control" id="final_balance_sheet_best_ebitda"/>
+                                </div>
+
+                                <div class="col-lg-1">
+                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                                    <input type="text" class="form-control" id="final_balance_sheet_eqy_sh_out"/>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">PX</small>
-                            <input type="text" class="form-control" id="balance_sheet_px"/>
-                        </div>
+                        <div class="tab-pane" id="tab51" aria-labelledby="base-tab51">
 
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_EPS</small>
-                            <input type="text" class="form-control" id="balance_sheet_best_eps"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                            <input type="text" class="form-control" id="balance_sheet_best_net_income"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_OPP</small>
-                            <input type="text" class="form-control" id="balance_sheet_best_opp"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_SALES</small>
-                            <input type="text" class="form-control" id="balance_sheet_best_sales"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                            <input type="text" class="form-control" id="balance_sheet_cur_ev_component"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">CUR_MKT_CAP</small>
-                            <input type="text" class="form-control" id="balance_sheet_cur_mkt_cap"/>
-                        </div>
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">DIVIDEND_INDICATED_YIELD</small>
-                            <input type="text" class="form-control" id="balance_sheet_dvd_indicated_yield"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                            <input type="text" class="form-control" id="balance_sheet_best_capex"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                            <input type="text" class="form-control" id="balance_sheet_best_ebitda"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                            <input type="text" class="form-control" id="balance_sheet_eqy_sh_out"/>
-                        </div>
-                    </div>
-                    <br><br>
-                    <h3 class="modal-title">Balance Sheet Adjustments</h3><br>
-                    <div class="row">
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">Date</small>
-                            <input type="date" class="form-control" id="adjustment_balance_sheet_date" value="0"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">PX</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_px" value="0"/>
-                        </div>
-
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_EPS</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_best_eps" value="0"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_best_net_income" value="0"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_OPP</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_best_opp" value="0"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_SALES</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_best_sales" value="0"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_cur_ev_component" value="0"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">CUR_MKT_CAP</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_cur_mkt_cap" value="0"/>
-                        </div>
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">DIVIDEND_INDICATED_YIELD</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_dvd_indicated_yield" value="0"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_best_capex" value="0"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_best_ebitda" value="0"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                            <input type="text" class="form-control" id="adjustment_balance_sheet_eqy_sh_out" value="0"/>
-                        </div>
-
-
-                    </div><br>
-
-                    <h3 class="modal-title">Final Balance Sheet</h3><br>
-                    <div class="row">
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">Date</small>
-                            <input type="date" class="form-control" id="final_balance_sheet_date"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">PX</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_px"/>
-                        </div>
-
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_EPS</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_best_eps"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_best_net_income"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_OPP</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_best_opp"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_SALES</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_best_sales"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_cur_ev_component"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">CUR_MKT_CAP</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_cur_mkt_cap"/>
-                        </div>
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">DIVIDEND_INDICATED_YIELD</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_dvd_indicated_yield"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_best_capex"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_best_ebitda"/>
-                        </div>
-
-                        <div class="col-lg-1">
-                            <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                            <input type="text" class="form-control" id="final_balance_sheet_eqy_sh_out"/>
                         </div>
                     </div>
                 </div>
 
-                <div class="modal-footer">
-                    <small class="badge badge-default badge-warning">Hitting Save Changes will save these adjustments
-                        into the Database and subsequent Premium analysis would be calculated based off this balance
-                        sheet!
-                    </small>
-                    <button type="button" id='calculate_balance_sheet' class="btn btn-warning">Update Balance Sheet
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" id='save_balance_sheet' class="btn btn-primary">Save changes</button>
-                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <small class="badge badge-default badge-warning">Hitting Save Changes will save these adjustments
+                    into the Database and subsequent Premium analysis would be calculated based off this balance
+                    sheet!
+                </small>
+                <button type="button" id='calculate_balance_sheet' class="btn btn-warning">Update Balance Sheet
+                </button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" id='save_balance_sheet' class="btn btn-primary">Save changes</button>
             </div>
         </div>
+    </div>
     </div>
 
     {# Balance Sheet Modal End #}

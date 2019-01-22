@@ -2,9 +2,106 @@
 from django.db import connection, connections
 import pandas as pd
 import datetime
+from django.conf import settings
 
 
 class Wic():
+    @staticmethod
+    def get_live_pnl_fx_rates_df():
+        query = " SELECT `Timestamp`, `FX_SYMBOL`,`RATE` FROM " + settings.DATABASES['waterislandproduction']['NAME']\
+                + ".live_pnl_fx_rates "
+        cols = ['Timestamp', 'FX_SYMBOL', 'FX_RATE']
+        try:
+            res = pd.read_sql_query(query, connection)
+        except:
+            return pd.DataFrame(columns=cols)
+
+        df = pd.DataFrame(res, columns=cols)
+        if len(df) > 0:
+            df['Timestamp'] = df['Timestamp'].apply(lambda x: pd.to_datetime(x).strftime('%Y-%m-%d %H:%M:%S'))
+
+        return df
+
+    @staticmethod
+    def get_live_pnl_px_factors_df():
+        query = "SELECT  `API_IDENTIFIER`, `CRNCY`,`TICKER`, `SECURITY_TYP`, `SETTLE_DT`, `FACTOR`, `FX_SYMBOL`," \
+                " `YDAY_API_IDENTIFIER`, `DATA_TIMESTAMP` FROM " + settings.DATABASES['waterislandproduction']['NAME'] \
+                + ".live_pnl_px_factors "
+
+        cols = ['API_IDENTIFIER', 'CRNCY', 'TICKER', 'SECURITY_TYP', 'SETTLE_DT', 'FACTOR', 'FX_SYMBOL',
+                 'YDAY_API_IDENTIFIER', 'DATA_TIMESTAMP']
+
+        float_cols = ['FACTOR']
+        try:
+            res = pd.read_sql_query(query, connection)
+            df = pd.DataFrame(res, columns=cols)
+            if len(df) > 0:
+                df['DATA_TIMESTAMP'] = df['DATA_TIMESTAMP'].apply(
+                    lambda x: pd.to_datetime(x).strftime('%Y-%m-%d %H:%M:%S'))
+            df[float_cols] = df[float_cols].astype(float)
+            return df
+        except:
+            return pd.DataFrame(columns=cols)
+
+    @staticmethod
+    def get_live_pnl_df():
+        query = " SELECT `Timestamp`, `API_IDENTIFIER`,`PX_LAST` FROM " +  \
+                settings.DATABASES['waterislandproduction']['NAME'] + ".live_pnl "
+        cols = ['Timestamp', 'API_IDENTIFIER', 'PX_LAST']
+        try:
+            res = pd.read_sql_query(query, connection)
+        except:
+            return pd.DataFrame(columns=cols)
+
+        df = pd.DataFrame(res, columns=cols)
+        if len(df) > 0:
+            df['Timestamp'] = df['Timestamp'].apply(lambda x: pd.to_datetime(x).strftime('%Y-%m-%d %H:%M:%S'))
+        return df
+
+    @staticmethod
+    def get_live_pnl_monitored_portfolio_ids(portfolio_names=[], portfolio_ids=[]):
+        query = "SELECT  " \
+                "`PortfolioID`, `TradeGroup`, `API_IDENTIFIER`, `Qty`, " \
+                "`Sleeve`, `Bucket`, `AlphaHedge`, `LongShort`, " \
+                "`CatalystName`, `Analyst`, `Northpont_SecType`, `Capital($)`, `Capital(%)`, " \
+                "`BaseCaseNavImpact`, `OutlierNavImpact`, " \
+                "`Desc`, `Group` FROM " + settings.DATABASES['waterislandproduction']['NAME'] \
+                + ".live_pnl_monitored_portfolios "
+        where_clauses = []
+        if len(portfolio_names) > 0: where_clauses.append(
+            " `Desc` IN (" + ",".join(["'" + x + "'" for x in portfolio_names]) + ") ")
+        if len(portfolio_ids) > 0: where_clauses.append(
+            " `PortfolioID` IN (" + ",".join(["'" + x + "'" for x in portfolio_ids]) + ") ")
+        if len(where_clauses) > 0:
+            query += " WHERE "
+            query += " AND ".join(where_clauses)
+
+        cols = ['PortfolioID', 'TradeGroup', 'API_IDENTIFIER', 'Qty', 'Sleeve', 'Bucket', 'AlphaHedge', 'LongShort',
+                'CatalystName', 'Analyst', 'NP_SecType', 'Capital($)', 'Capital(%)', 'BaseCaseNavImpact',
+                'OutlierNavImpact', 'Desc', 'Group']
+        float_cols = ['Qty', 'Capital($)', 'Capital(%)', 'BaseCaseNavImpact', 'OutlierNavImpact']
+
+        try:
+            res = pd.read_sql_query(query, connection)
+            df = pd.DataFrame(res, columns=cols)
+            df[float_cols] = df[float_cols].astype(float)
+            return df
+        except:
+            return pd.DataFrame(columns=cols)
+
+    @staticmethod
+    def get_tradegroups_snapshot():
+        # region query
+        query = "SELECT Fund, Sleeve, TradeGroup, Analyst, LongShort, InceptionDate, EndDate, Status," \
+                "`Metrics in Bet JSON`,`Metrics in Bet notes JSON`,`Metrics in NAV JSON`,`Metrics in NAV notes JSON` " \
+                "FROM `" + settings.DATABASES['waterislandproduction']['NAME'] + "`.tradegroups_snapshot2 where fund like 'ARB'"
+        # endregion
+
+        res = pd.read_sql_query(query, connection)
+        cols = [ 'Fund', 'Sleeve', 'TradeGroup', 'Analyst', 'LongShort', 'InceptionDate', 'EndDate', 'Status',
+                 'Metrics in Bet JSON', 'Metrics in Bet notes JSON', 'Metrics in NAV JSON',
+                 'Metrics in NAV notes JSON' ]
+        return pd.DataFrame(res, columns=cols)
 
     @staticmethod
     def get_universe_from_funds():
@@ -28,9 +125,6 @@ class Wic():
         latest_positions_df = pd.read_sql_query(query, connection)
 
         return latest_positions_df
-
-
-
 
     @staticmethod
     def get_statpro_df():
