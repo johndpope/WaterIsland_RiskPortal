@@ -49,6 +49,6 @@ $(document).ready(function () {
 setInterval( function () {
     realtime_pnl_table.ajax.reload(null, true);
     console.log('Requesting Updated P&L..');
-}, 40000 );
+}, 3600000); // Every Hour
 
 });

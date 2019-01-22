@@ -12,11 +12,11 @@ class Wic():
                 + ".live_pnl_fx_rates "
         cols = ['Timestamp', 'FX_SYMBOL', 'FX_RATE']
         try:
-            res = pd.read_sql_query(query, connection)
+            df = pd.read_sql_query(query, connection)
         except:
             return pd.DataFrame(columns=cols)
 
-        df = pd.DataFrame(res, columns=cols)
+        df.columns = cols
         if len(df) > 0:
             df['Timestamp'] = df['Timestamp'].apply(lambda x: pd.to_datetime(x).strftime('%Y-%m-%d %H:%M:%S'))
 

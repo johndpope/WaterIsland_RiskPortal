@@ -33,8 +33,9 @@ def live_tradegroup_pnl(request):
     df = pd.merge(px_df, px_factor_df, how='inner', on='API_IDENTIFIER')
     df = pd.merge(df, fx_df, how='left', on=['FX_SYMBOL','Timestamp'])
     df = pd.merge(df, portfolio_df, how='inner',on='API_IDENTIFIER')
-    df['FX_RATE'] = df['FX_RATE'].fillna(1) # Non FX_RATE is USD, rate = 1
 
+
+    df['FX_RATE'] = df['FX_RATE'].fillna(1) # Non FX_RATE is USD, rate = 1
     df['ADJ_PX'] = [px_adjuster(sectype,np_sectype,px,crncy,fx_rate,factor) for
                     (sectype,np_sectype,px,crncy,fx_rate,factor) in
                         zip(df['SECURITY_TYP'],df['NP_SecType'],df['PX_LAST'],df['CRNCY'],df['FX_RATE'],df['FACTOR'])]
@@ -57,6 +58,7 @@ def live_tradegroup_pnl(request):
         columns={'ADJ_PX':'END_ADJ_PX','MktVal':'END_MKTVAL', 'FX_RATE':'END_FX_RATE'})
     table_df = pd.merge(start_df, end_df, how='inner',on=join_on_cols)
 
+
     table_df['MKTVAL_CHG_USD'] = [(end_mktval-start_mktval)*end_fx_rate if np_sectype == 'EQSWAP' else
                                   (end_mktval-start_mktval) for (end_mktval, start_mktval, end_fx_rate,np_sectype) in
                                   zip(table_df['END_MKTVAL'],table_df['START_MKTVAL'],table_df['END_FX_RATE'],
@@ -64,10 +66,12 @@ def live_tradegroup_pnl(request):
     table_df['PX_CHG_PCT'] = 100.0*((table_df['END_ADJ_PX'].astype(float)/table_df['START_ADJ_PX'].astype(float))-1.0)
     table_df = table_df[['TradeGroup','START_ADJ_PX','END_ADJ_PX','PX_CHG_PCT','Qty_x','Analyst',
                           'Capital($)_x','Capital(%)_x', 'START_MKTVAL','END_MKTVAL','MKTVAL_CHG_USD']]
+
     table_df = table_df.groupby('TradeGroup').sum().reset_index()
-
-
+    ytd_performance['TradeGroup'] = ytd_performance['TradeGroup'].apply(lambda x: x.strip())
+    ytd_performance.loc[ytd_performance['TradeGroup'] == 'BEL -  MC FP', ['TradeGroup']] = 'BEL - MC FP'
     final_live_df = pd.merge(table_df, ytd_performance, how='outer', on='TradeGroup')
+
     final_live_df.fillna(0, inplace=True)
     final_live_df['YTD($)'] = final_live_df['YTD($)'].apply(round)
     final_live_df['MKTVAL_CHG_USD'] = final_live_df['MKTVAL_CHG_USD'].apply(round)
