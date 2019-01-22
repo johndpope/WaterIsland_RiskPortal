@@ -27,19 +27,20 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('accounts/', include('django.contrib.auth.urls')),
-    url('^index$',views.index_view,name='index'),
-    url('weather/',include('weather.urls')),
-    url('news/',include('wic_news.urls')),
-    url('^$',views.index_view,name='index'),
-    url('tweets/',include('tweets.urls')),
-    url('breakfast/',include('breakfast.urls')),
-    url('risk/',include('risk.urls')),
-    url('statpro/',include('statpro.urls')),
-    url('notes/',include('notes.urls')),
+    url('^index$', views.index_view,name='index'),
+    url('weather/', include('weather.urls')),
+    url('news/', include('wic_news.urls')),
+    url('^$', views.index_view,name='index'),
+    url('tweets/', include('tweets.urls')),
+    url('breakfast/', include('breakfast.urls')),
+    url('risk/', include('risk.urls')),
+    url('statpro/', include('statpro.urls')),
+    url('notes/', include('notes.urls')),
     url('equity_fixedincome_risk_reward/', include('equity_fixedincome_risk_reward.urls')),
-    url('risk_reporting/',include('risk_reporting.urls')),
-    url('portfolio_analytics/',include('portfolio_analytics.urls')),
-    url('realtime_pnl_impacts/',include('realtime_pnl_impacts.urls'))
+    url('risk_reporting/', include('risk_reporting.urls')),
+    url('portfolio_analytics/', include('portfolio_analytics.urls')),
+    url('realtime_pnl_impacts/', include('realtime_pnl_impacts.urls')),
+    url('securities/', include('securities.urls'))
 ]
 
 

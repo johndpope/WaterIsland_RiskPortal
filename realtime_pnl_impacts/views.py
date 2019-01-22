@@ -69,8 +69,9 @@ def live_tradegroup_pnl(request):
 
     table_df = table_df.groupby('TradeGroup').sum().reset_index()
     ytd_performance['TradeGroup'] = ytd_performance['TradeGroup'].apply(lambda x: x.strip())
-    ytd_performance.loc[ytd_performance['TradeGroup'] == 'BEL -  MC FP', ['TradeGroup']] = 'BEL - MC FP'
+    ytd_performance.loc[ytd_performance['TradeGroup'] == 'BEL -  MC FP', ['TradeGroup']] = 'BEL - MC FP' # Todo: Update
     final_live_df = pd.merge(table_df, ytd_performance, how='outer', on='TradeGroup')
+
 
     final_live_df.fillna(0, inplace=True)
     final_live_df['YTD($)'] = final_live_df['YTD($)'].apply(round)
@@ -81,9 +82,10 @@ def live_tradegroup_pnl(request):
     final_live_df['InceptionDate'] = final_live_df['InceptionDate'].apply(str)
     final_live_df['EndDate'] = final_live_df['EndDate'].apply(str)
 
-    final_live_df['Threshold I'] = 'Not Set'
-    final_live_df['Threshold II'] = 'Not Set'
-    final_live_df['Threshold III'] = 'Not Set'
+    final_live_df['Threshold I'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -500000 else 'Not Breached')
+    final_live_df['Threshold II'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -750000 else 'Not Breached')
+    final_live_df['Threshold III'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -1000000 else 'Not Breached')
+
 
     if request.is_ajax():
         return_data = {'data':final_live_df.to_json(orient='records')}

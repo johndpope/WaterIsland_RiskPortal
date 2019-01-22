@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     'portfolio_analytics',
     'django_slack',
     'realtime_pnl_impacts',
+    'securities',
 ]
 
 MIDDLEWARE = [
