@@ -19,970 +19,966 @@
 
 {% block summernote_css %}
     {{ block.super }}
- {% endblock %}
+{% endblock %}
 
 {% block content %}
 
-{# Show a Button to Add a new Deal#}
-<div class="app-content content">
-    <div class="content-wrapper">
-        <div class="content-header">
+    {# Show a Button to Add a new Deal#}
+    <div class="app-content content">
+        <div class="content-wrapper">
+            <div class="content-header">
 
-        </div>
-        <div id="ess_idea_content_wrapper" class="content-body">
-            <div class="modal animated fadeInDown text-left" id="ess_idea_new_deal_modal" tabindex="-1"
-                 role="dialog"
-                 aria-labelledby="myModalLabel42" aria-hidden="true">
-                <div class="modal-xl modal-dialog" role="document">
-                    <form method="POST" id="ess_new_deal_form" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <input type="hidden" id="ess_idea_new_deal_update_id">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h4 class="modal-title" id="myModalLabel42">Create a New Deal</h4>
-                                <div class="growl-notification-example text-center" style="display:none;">
-                                    <i class="ft-check-circle"></i> Growl Notification Example
+            </div>
+            <div id="ess_idea_content_wrapper" class="content-body">
+                <div class="modal animated fadeInDown text-left" id="ess_idea_new_deal_modal" tabindex="-1"
+                     role="dialog"
+                     aria-labelledby="myModalLabel42" aria-hidden="true">
+                    <div class="modal-xl modal-dialog" role="document">
+                        <form method="POST" id="ess_new_deal_form" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" id="ess_idea_new_deal_update_id">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h4 class="modal-title" id="myModalLabel42">Create a New Deal</h4>
+                                    <div class="growl-notification-example text-center" style="display:none;">
+                                        <i class="ft-check-circle"></i> Growl Notification Example
+                                    </div>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
                                 </div>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
 
-                            <div class="modal-body">
+                                <div class="modal-body">
 
-                                <div class="row">
-                                    <div class="col-lg-7">
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Ticker</small>
+                                    <div class="row">
+                                        <div class="col-lg-7">
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Ticker</small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <input type="hidden" id="ess_idea_csrf_token"
+                                                           value="{{ csrf_token }}">
+                                                    <fieldset class="form-group">
+                                                        <input class="form-control" required
+                                                               id="ess_idea_new_deal_ticker"
+                                                               placeholder="e.g., IBM US">
+                                                    </fieldset>
+                                                </div>
                                             </div>
-                                            <div class="col-lg-6">
-                                                <input type="hidden" id="ess_idea_csrf_token"
-                                                       value="{{ csrf_token }}">
-                                                <fieldset class="form-group">
-                                                    <input class="form-control" required
-                                                           id="ess_idea_new_deal_ticker"
-                                                           placeholder="e.g., IBM US">
-                                                </fieldset>
-                                            </div>
-                                        </div>
 
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Situation Overview
-                                                </small>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <fieldset class="form-group">
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Situation Overview
+                                                    </small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <fieldset class="form-group">
                                                 <textarea class="form-control" required
                                                           id="ess_idea_new_deal_situation_overview"
                                                           placeholder="Situation Overview"></textarea>
-                                                </fieldset>
-                                            </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Company Overview
-                                                </small>
+                                                    </fieldset>
+                                                </div>
                                             </div>
 
-                                            <div class="col-lg-6">
-                                                <fieldset class="form-group">
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Company Overview
+                                                    </small>
+                                                </div>
+
+                                                <div class="col-lg-6">
+                                                    <fieldset class="form-group">
                                                 <textarea class="form-control" required
                                                           id="ess_idea_new_deal_company_overview"
                                                           placeholder="Company Overview"></textarea>
-                                                </fieldset>
+                                                    </fieldset>
+                                                </div>
+
                                             </div>
 
-                                        </div>
 
-
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">PT (Up)</small>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <fieldset>
-                                                    <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <div class="input-group-text">
-                                                                <div class="custom-control custom-checkbox">
-                                                                    <input type="checkbox"
-                                                                           class="custom-control-input"
-                                                                           id="pt_up_check">
-                                                                    <label class="custom-control-label"
-                                                                           for="pt_up_check"></label>
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">PT (Up)</small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <fieldset>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <div class="input-group-text">
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox"
+                                                                               class="custom-control-input"
+                                                                               id="pt_up_check">
+                                                                        <label class="custom-control-label"
+                                                                               for="pt_up_check"></label>
+                                                                    </div>
                                                                 </div>
                                                             </div>
+                                                            <input type="number" required step="any"
+                                                                   id='ess_idea_new_deal_pt_up' class="form-control"
+                                                                   placeholder="Tick CheckBox to adjust with peers "
+                                                                   aria-describedby="checkbox-addon1"/>
                                                         </div>
-                                                        <input type="number" required step="any"
-                                                               id='ess_idea_new_deal_pt_up' class="form-control"
-                                                               placeholder="Tick CheckBox to adjust with peers "
-                                                               aria-describedby="checkbox-addon1"/>
-                                                    </div>
-                                                </fieldset>
+                                                    </fieldset>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <br>
-
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">PT (Down)</small>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <fieldset>
-                                                    <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <div class="input-group-text">
-                                                                <div class="custom-control custom-checkbox">
-                                                                    <input type="checkbox"
-                                                                           class="custom-control-input"
-                                                                           id="pt_down_check">
-                                                                    <label class="custom-control-label"
-                                                                           for="pt_down_check"></label>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <input type="number" required step="any"
-                                                               id='ess_idea_new_deal_pt_down' class="form-control"
-                                                               placeholder="Tick CheckBox to adjust with peers "
-                                                               aria-describedby="checkbox-addon1"/>
-                                                    </div>
-                                                </fieldset>
-                                            </div>
-                                        </div>
-                                        <br>
-
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">PT (WIC)</small>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <fieldset>
-                                                    <div class="input-group">
-                                                        <div class="input-group-prepend">
-                                                            <div class="input-group-text">
-                                                                <div class="custom-control custom-checkbox">
-                                                                    <input type="checkbox"
-                                                                           class="custom-control-input"
-                                                                           id="pt_wic_check">
-                                                                    <label class="custom-control-label"
-                                                                           for="pt_wic_check"></label>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <input type="number" required step="any"
-                                                               id="ess_idea_new_deal_pt_wic" class="form-control"
-                                                               placeholder="Tick CheckBox to adjust with peers "
-                                                               aria-describedby="checkbox-addon1"/>
-                                                    </div>
-                                                </fieldset>
-                                            </div>
-                                        </div>
-                                        <br>
-
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Adjust based off?
-                                                </small>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <fieldset>
-                                                    <div class="input-group">
-                                                        <select id='select_based_off' class="custom-select form-control input-lg">
-                                                            <option selected value="cix">CIX</option>
-                                                            <option value="regression">Regression</option>
-                                                        </select>
-                                                    </div>
-                                                </fieldset>
-                                            </div>
-                                            <div class="col-lg-1 block-tag offset-1">
-                                                <small class="badge badge-default badge-success">Premium:
-                                                </small>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <fieldset>
-                                                    <div class="input-group">
-                                                        <select id='premium_format' class="custom-select form-control input-lg">
-                                                            <option selected value="dollar">Dollar($)</option>
-                                                            <option value="percentage">Percentage(%)</option>
-                                                        </select>
-                                                    </div>
-                                                </fieldset>
-                                            </div>
-
-                                        </div>
-                                        <br>
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Unaffected Date
-                                                </small>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <fieldset class="form-group">
-                                                    <input type="date" class="form-control" required
-                                                           id="ess_idea_new_deal_unaffected_date"
-                                                           placeholder="Enter Date">
-                                                </fieldset>
-                                            </div>
-
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Expected Close
-                                                </small>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <fieldset class="form-group">
-                                                    <input type="date" class="form-control" required
-                                                           id="ess_idea_new_deal_expected_close"
-                                                           placeholder="Enter Date">
-                                                </fieldset>
-                                            </div>
-
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">CIX Index</small>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <fieldset class="form-group">
-                                                    <input type="text" class="form-control" required
-                                                           id="ess_idea_new_deal_cix_index"
-                                                           placeholder="eg. .ESSXXX Index">
-                                                </fieldset>
-                                            </div>
-
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Price Target Date
-                                                </small>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <fieldset class="form-group">
-                                                    <input type="date" class="form-control" required
-                                                           id="ess_idea_new_deal_price_target_date"
-                                                           placeholder="When was the price target set?">
-                                                </fieldset>
-                                            </div>
-
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Category</small>
-                                            </div>
-                                            <div class="col-lg-6">
-                                                <fieldset class="form-group">
-                                                    <select id="ess_category_select" class="custom-select">
-                                                        <option selected value="N/A">Select a Value</option>
-                                                        <option value="Special Situations">Special Situations
-                                                        </option>
-                                                        <option value="Re-Rating">Re-Rating</option>
-                                                        <option value="Relative Value">Relative Value</option>
-                                                    </select>
-                                                </fieldset>
-                                            </div>
-
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Catalyst</small>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <fieldset class="form-group">
-                                                    <select id="ess_catalyst_select" class="custom-select">
-                                                        <option selected value="N/A">Select a Value</option>
-                                                        <option value="Hard">Hard</option>
-                                                        <option value="Soft">Soft</option>
-                                                    </select>
-                                                </fieldset>
-                                            </div>
-                                            <div class="col-lg-1 block-tag">
-                                                <small class="badge badge-default badge-success">Catalyst Tier
-                                                </small>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <fieldset class="form-group">
-                                                    <select id="ess_catalyst_tier_select" class="custom-select">
-                                                        <option selected value="N/A">Select a Value</option>
-                                                        <option value="1">1</option>
-                                                        <option value="2">2</option>
-                                                        <option value="3">3</option>
-                                                    </select>
-                                                </fieldset>
-                                            </div>
-
-                                            <div class="col-lg-1 block-tag">
-                                                <small class="badge badge-default badge-success">Hedges</small>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <fieldset class="form-group">
-                                                    <select id="ess_hedges_select" class="custom-select">
-                                                        <option selected value="N/A">Select a Value</option>
-                                                        <option value="Yes">Yes</option>
-                                                        <option value="No">No</option>
-                                                    </select>
-                                                </fieldset>
-                                            </div>
-
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Deal Type</small>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <fieldset class="form-group">
-                                                    <select id="ess_deal_type" class="custom-select">
-                                                        <option selected value="N/A">Select a Value</option>
-                                                        <option value="Spec M&A">Spec M&A</option>
-                                                        <option value="Merger Arbitrage">Merger Arbitrage</option>
-                                                        <option value="Spin-Off">Spin-Off</option>
-                                                        <option value="Transformational M&A">Transformational M&A
-                                                        </option>
-                                                        <option value="Dutch Tenders">Dutch Tenders
-                                                        </option>
-                                                        <option value="Post Re-org Equity">Post Re-org Equity
-                                                        </option>
-                                                        <option value="Turnaround">Turnaround</option>
-                                                        <option value="Stub Value">Stub Value</option>
-                                                    </select>
-                                                </fieldset>
-                                            </div>
-
-                                            <div class="col-lg-1 block-tag">
-                                                <small class="badge badge-default badge-success">GICS Sector</small>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <input id="ess_idea_gics_sector" class="form-control"
-                                                       placeholder="e.g., Information Technology">
-                                            </div>
-
-                                            <div class="col-lg-1 block-tag">
-                                                <small class="badge badge-default badge-success">Lead Analyst
-                                                </small>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <input id="ess_idea_lead_analyst" class="form-control"
-                                                       placeholder="eg, JSO">
-                                            </div>
-                                            <div class="col-lg-2"></div>
-
                                             <br>
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">Status</small>
+
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">PT (Down)</small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <fieldset>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <div class="input-group-text">
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox"
+                                                                               class="custom-control-input"
+                                                                               id="pt_down_check">
+                                                                        <label class="custom-control-label"
+                                                                               for="pt_down_check"></label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <input type="number" required step="any"
+                                                                   id='ess_idea_new_deal_pt_down' class="form-control"
+                                                                   placeholder="Tick CheckBox to adjust with peers "
+                                                                   aria-describedby="checkbox-addon1"/>
+                                                        </div>
+                                                    </fieldset>
+                                                </div>
                                             </div>
-                                            <div class="col-lg-2">
-                                                <fieldset class="form-group">
-                                                    <select id="ess_idea_status" class="custom-select">
-                                                        <option selected value="Unallocated">Unallocated</option>
-                                                        <option value="Backlogged">Backlogged
-                                                        </option>
-                                                        <option value="ReadyForReview">ReadyForReview
-                                                        </option>
-                                                        <option value="Reviewed">Reviewed
-                                                        </option>
-                                                        <option value="Completed">Completed</option>
-                                                    </select>
-                                                </fieldset>
+                                            <br>
+
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">PT (WIC)</small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <fieldset>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend">
+                                                                <div class="input-group-text">
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox"
+                                                                               class="custom-control-input"
+                                                                               id="pt_wic_check">
+                                                                        <label class="custom-control-label"
+                                                                               for="pt_wic_check"></label>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <input type="number" required step="any"
+                                                                   id="ess_idea_new_deal_pt_wic" class="form-control"
+                                                                   placeholder="Tick CheckBox to adjust with peers "
+                                                                   aria-describedby="checkbox-addon1"/>
+                                                        </div>
+                                                    </fieldset>
+                                                </div>
+                                            </div>
+                                            <br>
+
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Adjust based off?
+                                                    </small>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <fieldset>
+                                                        <div class="input-group">
+                                                            <select id='select_based_off'
+                                                                    class="custom-select form-control input-lg">
+                                                                <option selected value="cix">CIX</option>
+                                                                <option value="regression">Regression</option>
+                                                            </select>
+                                                        </div>
+                                                    </fieldset>
+                                                </div>
+                                                <div class="col-lg-1 block-tag offset-1">
+                                                    <small class="badge badge-default badge-success">Premium:
+                                                    </small>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <fieldset>
+                                                        <div class="input-group">
+                                                            <select id='premium_format'
+                                                                    class="custom-select form-control input-lg">
+                                                                <option selected value="dollar">Dollar($)</option>
+                                                                <option value="percentage">Percentage(%)</option>
+                                                            </select>
+                                                        </div>
+                                                    </fieldset>
+                                                </div>
+
+                                            </div>
+                                            <br>
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Unaffected Date
+                                                    </small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <fieldset class="form-group">
+                                                        <input type="date" class="form-control" required
+                                                               id="ess_idea_new_deal_unaffected_date"
+                                                               placeholder="Enter Date">
+                                                    </fieldset>
+                                                </div>
+
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Expected Close
+                                                    </small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <fieldset class="form-group">
+                                                        <input type="date" class="form-control" required
+                                                               id="ess_idea_new_deal_expected_close"
+                                                               placeholder="Enter Date">
+                                                    </fieldset>
+                                                </div>
+
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">CIX Index</small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <fieldset class="form-group">
+                                                        <input type="text" class="form-control" required
+                                                               id="ess_idea_new_deal_cix_index"
+                                                               placeholder="eg. .ESSXXX Index">
+                                                    </fieldset>
+                                                </div>
+
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Price Target Date
+                                                    </small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <fieldset class="form-group">
+                                                        <input type="date" class="form-control" required
+                                                               id="ess_idea_new_deal_price_target_date"
+                                                               placeholder="When was the price target set?">
+                                                    </fieldset>
+                                                </div>
+
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Category</small>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <fieldset class="form-group">
+                                                        <select id="ess_category_select" class="custom-select">
+                                                            <option selected value="N/A">Select a Value</option>
+                                                            <option value="Special Situations">Special Situations
+                                                            </option>
+                                                            <option value="Re-Rating">Re-Rating</option>
+                                                            <option value="Relative Value">Relative Value</option>
+                                                        </select>
+                                                    </fieldset>
+                                                </div>
+
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Catalyst</small>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <fieldset class="form-group">
+                                                        <select id="ess_catalyst_select" class="custom-select">
+                                                            <option selected value="N/A">Select a Value</option>
+                                                            <option value="Hard">Hard</option>
+                                                            <option value="Soft">Soft</option>
+                                                        </select>
+                                                    </fieldset>
+                                                </div>
+                                                <div class="col-lg-1 block-tag">
+                                                    <small class="badge badge-default badge-success">Catalyst Tier
+                                                    </small>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <fieldset class="form-group">
+                                                        <select id="ess_catalyst_tier_select" class="custom-select">
+                                                            <option selected value="N/A">Select a Value</option>
+                                                            <option value="1">1</option>
+                                                            <option value="2">2</option>
+                                                            <option value="3">3</option>
+                                                        </select>
+                                                    </fieldset>
+                                                </div>
+
+                                                <div class="col-lg-1 block-tag">
+                                                    <small class="badge badge-default badge-success">Hedges</small>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <fieldset class="form-group">
+                                                        <select id="ess_hedges_select" class="custom-select">
+                                                            <option selected value="N/A">Select a Value</option>
+                                                            <option value="Yes">Yes</option>
+                                                            <option value="No">No</option>
+                                                        </select>
+                                                    </fieldset>
+                                                </div>
+
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Deal Type</small>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <fieldset class="form-group">
+                                                        <select id="ess_deal_type" class="custom-select">
+                                                            <option selected value="N/A">Select a Value</option>
+                                                            <option value="Spec M&A">Spec M&A</option>
+                                                            <option value="Merger Arbitrage">Merger Arbitrage</option>
+                                                            <option value="Spin-Off">Spin-Off</option>
+                                                            <option value="Transformational M&A">Transformational M&A
+                                                            </option>
+                                                            <option value="Dutch Tenders">Dutch Tenders
+                                                            </option>
+                                                            <option value="Post Re-org Equity">Post Re-org Equity
+                                                            </option>
+                                                            <option value="Turnaround">Turnaround</option>
+                                                            <option value="Stub Value">Stub Value</option>
+                                                        </select>
+                                                    </fieldset>
+                                                </div>
+
+                                                <div class="col-lg-1 block-tag">
+                                                    <small class="badge badge-default badge-success">GICS Sector</small>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <input id="ess_idea_gics_sector" class="form-control"
+                                                           placeholder="e.g., Information Technology">
+                                                </div>
+
+                                                <div class="col-lg-1 block-tag">
+                                                    <small class="badge badge-default badge-success">Lead Analyst
+                                                    </small>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <input id="ess_idea_lead_analyst" class="form-control"
+                                                           placeholder="eg, JSO">
+                                                </div>
+                                                <div class="col-lg-2"></div>
+
+                                                <br>
+                                                <div class="col-lg-2 block-tag">
+                                                    <small class="badge badge-default badge-success">Status</small>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <fieldset class="form-group">
+                                                        <select id="ess_idea_status" class="custom-select">
+                                                            <option selected value="Unallocated">Unallocated</option>
+                                                            <option value="Backlogged">Backlogged
+                                                            </option>
+                                                            <option value="ReadyForReview">ReadyForReview
+                                                            </option>
+                                                            <option value="Reviewed">Reviewed
+                                                            </option>
+                                                            <option value="Completed">Completed</option>
+                                                        </select>
+                                                    </fieldset>
 
 
+                                                </div>
+
                                             </div>
+                                            <br>
+                                        </div>
+
+
+                                        <div class="col-lg-5">
+
+                                            <table class="table table-bordered" id="ess_hedge_ticker_table">
+                                                <thead>
+                                                <tr>
+                                                    <th scope="col">#</th>
+                                                    <th scope="col">Ticker</th>
+                                                    <th scope="col">Hedge Weight</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                <tr id="ticker_hedge_1">
+                                                    <th scope="row">1</th>
+                                                    <td>
+                                                        <input id="ticker_hedge_1_ticker" class="form-control"
+                                                               placeholder="e.g., IBM US">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ticker_hedge_1_hedge" type='number' step="0.01"
+                                                               class="form-control"
+                                                               placeholder="e.g., Input Hedge Weight">
+                                                    </td>
+                                                </tr>
+
+                                                <tr id="ticker_hedge_2">
+                                                    <th scope="row">2</th>
+                                                    <td>
+                                                        <input id="ticker_hedge_2_ticker" class="form-control"
+                                                               placeholder="e.g., IBM US">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ticker_hedge_2_hedge" type='number' step="0.01"
+                                                               class="form-control"
+                                                               placeholder="e.g., Input Hedge Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="ticker_hedge_3">
+                                                    <th scope="row">3</th>
+                                                    <td>
+                                                        <input id="ticker_hedge_3_ticker" class="form-control"
+                                                               placeholder="e.g., IBM US">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ticker_hedge_3_hedge" type='number' step="0.01"
+                                                               class="form-control"
+                                                               placeholder="e.g., Input Hedge Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="ticker_hedge_4">
+                                                    <th scope="row">4</th>
+                                                    <td>
+                                                        <input id="ticker_hedge_4_ticker" class="form-control"
+                                                               placeholder="e.g., IBM US">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ticker_hedge_4_hedge" type='number' step="0.01"
+                                                               class="form-control"
+                                                               placeholder="e.g., Input Hedge Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="ticker_hedge_5">
+                                                    <th scope="row">5</th>
+                                                    <td>
+                                                        <input id="ticker_hedge_5_ticker" class="form-control"
+                                                               placeholder="e.g., IBM US">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ticker_hedge_5_hedge" type='number' step="0.01"
+                                                               class="form-control"
+                                                               placeholder="e.g., Input Hedge Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="ticker_hedge_6">
+                                                    <th scope="row">6</th>
+                                                    <td>
+                                                        <input id="ticker_hedge_6_ticker" class="form-control"
+                                                               placeholder="e.g., IBM US">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ticker_hedge_6_hedge" type='number' step="0.01"
+                                                               class="form-control"
+                                                               placeholder="e.g., Input Hedge Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="ticker_hedge_7">
+                                                    <th scope="row">7</th>
+                                                    <td>
+                                                        <input id="ticker_hedge_7_ticker" class="form-control"
+                                                               placeholder="e.g., IBM US">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ticker_hedge_7_hedge" type='number' step="0.01"
+                                                               class="form-control"
+                                                               placeholder="e.g., Input Hedge Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="ticker_hedge_8">
+                                                    <th scope="row">8</th>
+                                                    <td>
+                                                        <input id="ticker_hedge_8_ticker" class="form-control"
+                                                               placeholder="e.g., IBM US">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ticker_hedge_8_hedge" type='number' step="0.01"
+                                                               class="form-control"
+                                                               placeholder="e.g., Input Hedge Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="ticker_hedge_9">
+                                                    <th scope="row">9</th>
+                                                    <td>
+                                                        <input id="ticker_hedge_9_ticker" class="form-control"
+                                                               placeholder="e.g., IBM US">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ticker_hedge_9_hedge" type='number' step="0.01"
+                                                               class="form-control"
+                                                               placeholder="e.g., Input Hedge Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="ticker_hedge_10">
+                                                    <th scope="row">10</th>
+                                                    <td>
+                                                        <input id="ticker_hedge_10_ticker" class="form-control"
+                                                               placeholder="e.g., IBM US">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ticker_hedge_10_hedge" type='number' step="0.01"
+                                                               class="form-control"
+                                                               placeholder="e.g., Input Hedge Weight">
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
 
                                         </div>
                                         <br>
+
+
                                     </div>
 
 
-                                    <div class="col-lg-5">
+                                    <div class="row">
+                                        <div class="col-lg-5 offset-3">
 
-                                        <table class="table table-bordered" id="ess_hedge_ticker_table">
-                                            <thead>
-                                            <tr>
-                                                <th scope="col">#</th>
-                                                <th scope="col">Ticker</th>
-                                                <th scope="col">Hedge Weight</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr id="ticker_hedge_1">
-                                                <th scope="row">1</th>
-                                                <td>
-                                                    <input id="ticker_hedge_1_ticker" class="form-control"
-                                                           placeholder="e.g., IBM US">
-                                                </td>
-                                                <td>
-                                                    <input id="ticker_hedge_1_hedge" type='number' step="0.01"
-                                                           class="form-control"
-                                                           placeholder="e.g., Input Hedge Weight">
-                                                </td>
-                                            </tr>
+                                            <table class="table table-bordered" id="ess_idea_multiples_table">
+                                                <thead>
+                                                <tr>
+                                                    <th scope="col">#</th>
+                                                    <th scope="col">Multiple</th>
+                                                    <th scope="col">Weight (should be between 0 & 1)</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                <tr id="multiple_1">
+                                                    <th scope="row">1</th>
+                                                    <td>
+                                                        <input id="ev_sales" class="form-control" value="EV/Sales"
+                                                               readonly placeholder="EV/SALES">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ev_sales_weight" type='number' class="form-control"
+                                                               value="0" step="0.01"
+                                                               placeholder="e.g., Weight">
+                                                    </td>
+                                                </tr>
 
-                                            <tr id="ticker_hedge_2">
-                                                <th scope="row">2</th>
-                                                <td>
-                                                    <input id="ticker_hedge_2_ticker" class="form-control"
-                                                           placeholder="e.g., IBM US">
-                                                </td>
-                                                <td>
-                                                    <input id="ticker_hedge_2_hedge" type='number' step="0.01"
-                                                           class="form-control"
-                                                           placeholder="e.g., Input Hedge Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="ticker_hedge_3">
-                                                <th scope="row">3</th>
-                                                <td>
-                                                    <input id="ticker_hedge_3_ticker" class="form-control"
-                                                           placeholder="e.g., IBM US">
-                                                </td>
-                                                <td>
-                                                    <input id="ticker_hedge_3_hedge" type='number' step="0.01"
-                                                           class="form-control"
-                                                           placeholder="e.g., Input Hedge Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="ticker_hedge_4">
-                                                <th scope="row">4</th>
-                                                <td>
-                                                    <input id="ticker_hedge_4_ticker" class="form-control"
-                                                           placeholder="e.g., IBM US">
-                                                </td>
-                                                <td>
-                                                    <input id="ticker_hedge_4_hedge" type='number' step="0.01"
-                                                           class="form-control"
-                                                           placeholder="e.g., Input Hedge Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="ticker_hedge_5">
-                                                <th scope="row">5</th>
-                                                <td>
-                                                    <input id="ticker_hedge_5_ticker" class="form-control"
-                                                           placeholder="e.g., IBM US">
-                                                </td>
-                                                <td>
-                                                    <input id="ticker_hedge_5_hedge" type='number' step="0.01"
-                                                           class="form-control"
-                                                           placeholder="e.g., Input Hedge Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="ticker_hedge_6">
-                                                <th scope="row">6</th>
-                                                <td>
-                                                    <input id="ticker_hedge_6_ticker" class="form-control"
-                                                           placeholder="e.g., IBM US">
-                                                </td>
-                                                <td>
-                                                    <input id="ticker_hedge_6_hedge" type='number' step="0.01"
-                                                           class="form-control"
-                                                           placeholder="e.g., Input Hedge Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="ticker_hedge_7">
-                                                <th scope="row">7</th>
-                                                <td>
-                                                    <input id="ticker_hedge_7_ticker" class="form-control"
-                                                           placeholder="e.g., IBM US">
-                                                </td>
-                                                <td>
-                                                    <input id="ticker_hedge_7_hedge" type='number' step="0.01"
-                                                           class="form-control"
-                                                           placeholder="e.g., Input Hedge Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="ticker_hedge_8">
-                                                <th scope="row">8</th>
-                                                <td>
-                                                    <input id="ticker_hedge_8_ticker" class="form-control"
-                                                           placeholder="e.g., IBM US">
-                                                </td>
-                                                <td>
-                                                    <input id="ticker_hedge_8_hedge" type='number' step="0.01"
-                                                           class="form-control"
-                                                           placeholder="e.g., Input Hedge Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="ticker_hedge_9">
-                                                <th scope="row">9</th>
-                                                <td>
-                                                    <input id="ticker_hedge_9_ticker" class="form-control"
-                                                           placeholder="e.g., IBM US">
-                                                </td>
-                                                <td>
-                                                    <input id="ticker_hedge_9_hedge" type='number' step="0.01"
-                                                           class="form-control"
-                                                           placeholder="e.g., Input Hedge Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="ticker_hedge_10">
-                                                <th scope="row">10</th>
-                                                <td>
-                                                    <input id="ticker_hedge_10_ticker" class="form-control"
-                                                           placeholder="e.g., IBM US">
-                                                </td>
-                                                <td>
-                                                    <input id="ticker_hedge_10_hedge" type='number' step="0.01"
-                                                           class="form-control"
-                                                           placeholder="e.g., Input Hedge Weight">
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-
-                                    </div>
-                                    <br>
-
-
-                                </div>
-
-
-                                <div class="row">
-                                    <div class="col-lg-5 offset-3">
-
-                                        <table class="table table-bordered" id="ess_idea_multiples_table">
-                                            <thead>
-                                            <tr>
-                                                <th scope="col">#</th>
-                                                <th scope="col">Multiple</th>
-                                                <th scope="col">Weight (should be between 0 & 1)</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr id="multiple_1">
-                                                <th scope="row">1</th>
-                                                <td>
-                                                    <input id="ev_sales" class="form-control" value="EV/Sales"
-                                                           readonly placeholder="EV/SALES">
-                                                </td>
-                                                <td>
-                                                    <input id="ev_sales_weight" type='number' class="form-control"
-                                                           value="0" step="0.01"
-                                                           placeholder="e.g., Weight">
-                                                </td>
-                                            </tr>
-
-                                            <tr id="multiple_2">
-                                                <th scope="row">2</th>
-                                                <td>
-                                                    <input id="ev_ebitda" class="form-control"
-                                                           readonly placeholder="EV/EBITDA" value="EV/EBITDA">
-                                                </td>
-                                                <td>
-                                                    <input id="ev_ebitda_weight" type='number' class="form-control"
-                                                           value="0" step="0.01"
-                                                           placeholder="e.g., Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="multiple_3">
-                                                <th scope="row">3</th>
-                                                <td>
-                                                    <input id="p_eps" class="form-control"
-                                                           readonly placeholder="P/EPS" value="P/EPS">
-                                                </td>
-                                                <td>
-                                                    <input id="p_eps_weight" type='number' class="form-control"
-                                                           value="0" step="0.01"
-                                                           placeholder="e.g., Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="multiple_4">
-                                                <th scope="row">4</th>
-                                                <td>
-                                                    <input id="dvd_yield" class="form-control"
-                                                           readonly placeholder="DVD Yield" value="DVD yield">
-                                                </td>
-                                                <td>
-                                                    <input id="dvd_yield_weight" type='number' class="form-control"
-                                                           value="0" step="0.01"
-                                                           placeholder="e.g., Weight">
-                                                </td>
-                                            </tr>
-                                            <tr id="multiple_5">
-                                                <th scope="row">5</th>
-                                                <td>
-                                                    <input id="fcf_yield" class="form-control"
-                                                           readonly placeholder="FCF Yield" value="FCF yield">
-                                                </td>
-                                                <td>
-                                                    <input id="fcf_yield_weight" type='number' class="form-control"
-                                                           value="0" step="0.01"
-                                                           placeholder="e.g., Weight">
-                                                </td>
-                                            </tr>
-                                            </tbody>
-                                        </table>
-
-                                    </div>
-                                </div>
-
-
-                                <div class="row">
-
-                                    <div class="col-lg-4">
-                                        <div class="container" id="ess_bull_thesis">
+                                                <tr id="multiple_2">
+                                                    <th scope="row">2</th>
+                                                    <td>
+                                                        <input id="ev_ebitda" class="form-control"
+                                                               readonly placeholder="EV/EBITDA" value="EV/EBITDA">
+                                                    </td>
+                                                    <td>
+                                                        <input id="ev_ebitda_weight" type='number' class="form-control"
+                                                               value="0" step="0.01"
+                                                               placeholder="e.g., Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="multiple_3">
+                                                    <th scope="row">3</th>
+                                                    <td>
+                                                        <input id="p_eps" class="form-control"
+                                                               readonly placeholder="P/EPS" value="P/EPS">
+                                                    </td>
+                                                    <td>
+                                                        <input id="p_eps_weight" type='number' class="form-control"
+                                                               value="0" step="0.01"
+                                                               placeholder="e.g., Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="multiple_4">
+                                                    <th scope="row">4</th>
+                                                    <td>
+                                                        <input id="dvd_yield" class="form-control"
+                                                               readonly placeholder="DVD Yield" value="DVD yield">
+                                                    </td>
+                                                    <td>
+                                                        <input id="dvd_yield_weight" type='number' class="form-control"
+                                                               value="0" step="0.01"
+                                                               placeholder="e.g., Weight">
+                                                    </td>
+                                                </tr>
+                                                <tr id="multiple_5">
+                                                    <th scope="row">5</th>
+                                                    <td>
+                                                        <input id="fcf_yield" class="form-control"
+                                                               readonly placeholder="FCF Yield" value="FCF yield">
+                                                    </td>
+                                                    <td>
+                                                        <input id="fcf_yield_weight" type='number' class="form-control"
+                                                               value="0" step="0.01"
+                                                               placeholder="e.g., Weight">
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
 
                                         </div>
-                                        <p class="block-tag text-center">
-                                            <small class="badge badge-default badge-success">Bull Thesis</small>
-                                        </p>
+                                    </div>
 
-                                        <div class="fileupload-buttonbar text-center">
+
+                                    <div class="row">
+
+                                        <div class="col-lg-4">
+                                            <div class="container" id="ess_bull_thesis">
+
+                                            </div>
+                                            <p class="block-tag text-center">
+                                                <small class="badge badge-default badge-success">Bull Thesis</small>
+                                            </p>
+
+                                            <div class="fileupload-buttonbar text-center">
                                         <span class="btn btn-success fileinput-button mr-1">
                                             <i class="icon-plus"></i>
                                             <span>Upload files...</span>
                                             <input type="file" id='bull_thesis_model' name="files_bull_thesis">
                                         </span>
-                                            <p id="target_bull_thesis"></p>
+                                                <p id="target_bull_thesis"></p>
+                                            </div>
+
+
                                         </div>
 
+                                        <div class="col-lg-4">
+                                            <div class="container" id="ess_our_thesis">
 
-                                    </div>
-
-                                    <div class="col-lg-4">
-                                        <div class="container" id="ess_our_thesis">
-
-                                        </div>
-                                        <p class="block-tag text-center">
-                                            <small class="badge badge-default badge-success">Our Thesis</small>
-                                        </p>
-                                        <div class="fileupload-buttonbar text-center">
+                                            </div>
+                                            <p class="block-tag text-center">
+                                                <small class="badge badge-default badge-success">Our Thesis</small>
+                                            </p>
+                                            <div class="fileupload-buttonbar text-center">
                                         <span class="btn btn-success fileinput-button mr-1">
                                             <i class="icon-plus"></i>
                                             <span>Upload files...</span>
                                             <input type="file" id='our_thesis_model' name="files_our_thesis">
                                         </span>
-                                            <p id="target_our_thesis"></p>
+                                                <p id="target_our_thesis"></p>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div class="col-lg-4">
-                                        <div class="container" id="ess_bear_thesis">
+                                        <div class="col-lg-4">
+                                            <div class="container" id="ess_bear_thesis">
 
-                                        </div>
-                                        <p class="block-tag text-center">
-                                            <small class="badge badge-default badge-success">Bear Thesis</small>
-                                        </p>
-                                        <div class="fileupload-buttonbar text-center">
+                                            </div>
+                                            <p class="block-tag text-center">
+                                                <small class="badge badge-default badge-success">Bear Thesis</small>
+                                            </p>
+                                            <div class="fileupload-buttonbar text-center">
                                         <span class="btn btn-success fileinput-button mr-1">
                                             <i class="icon-plus"></i>
                                             <span>Upload files...</span>
                                             <input type="file" id='bear_thesis_model' name="files_bear_thesis">
                                         </span>
-                                            <p id="target_bear_thesis"></p>
-                                        </div>
-                                    </div>
-
-
-                                </div>
-                                <br><br>
-                                <div class="row">
-                                    <div class="container">
-                                        <div class="col-lg-12">
-                                            <div class="container">
-                                                <div class="text-center">
-                                                    <button class="btn btn-lg btn-outline-secondary btn-block"
-                                                            type="button" data-toggle="collapse"
-                                                            data-target="#mosaic"> Click for MOSAIC Rating
-                                                    </button>
-                                                </div>
-                                                <br>
-                                                <div class="collapse collapse-class" role="form" id="mosaic">
-
-                                                    <div class="row">
-                                                        <div class="col-lg-12">
-                                                            <p class="block-tag text-center">
-                                                                <small class="badge badge-xl badge-default badge-success">
-                                                                    M
-                                                                </small>
-                                                            </p>
-                                                            <fieldset class="form-group">
-                                                                <select id="ess_M_select" class="custom-select">
-                                                                    <option selected value="0">Select a Value
-                                                                    </option>
-                                                                    <option value="1">1</option>
-                                                                    <option value="2">2</option>
-                                                                    <option value="3">3</option>
-                                                                    <option value="4">4</option>
-                                                                    <option value="5">5</option>
-                                                                </select>
-                                                                <textarea class="form-control"
-                                                                          id="ess_M_overview"
-                                                                          placeholder="Overview"></textarea>
-                                                            </fieldset>
-                                                        </div>
-
-
-                                                        <div class="col-lg-12">
-                                                            <p class="block-tag text-center">
-                                                                <small class="badge badge-xl badge-default badge-danger">
-                                                                    O
-                                                                </small>
-                                                            </p>
-                                                            <fieldset class="form-group">
-
-                                                                <select id="ess_O_select" class="custom-select">
-                                                                    <option selected value="0">Select a Value
-                                                                    </option>
-                                                                    <option value="1">1</option>
-                                                                    <option value="2">2</option>
-                                                                    <option value="3">3</option>
-                                                                    <option value="4">4</option>
-                                                                    <option value="5">5</option>
-                                                                </select>
-                                                                <textarea class="form-control"
-                                                                          id="ess_O_overview"
-                                                                          placeholder="Overview"></textarea>
-                                                            </fieldset>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-                                                        <div class="col-lg-12">
-                                                            <p class="block-tag text-center">
-                                                                <small class="badge badge-xl badge-default badge-secondary">
-                                                                    S
-                                                                </small>
-                                                            </p>
-                                                            <fieldset class="form-group">
-                                                                <select id="ess_S_select" class="custom-select">
-                                                                    <option selected value="0">Select a Value
-                                                                    </option>
-                                                                    <option value="1">1</option>
-                                                                    <option value="2">2</option>
-                                                                    <option value="3">3</option>
-                                                                    <option value="4">4</option>
-                                                                    <option value="5">5</option>
-                                                                </select>
-                                                                <textarea class="form-control"
-                                                                          id="ess_S_overview"
-                                                                          placeholder="Overview"></textarea>
-                                                            </fieldset>
-                                                        </div>
-                                                        <div class="col-lg-12">
-                                                            <p class="block-tag text-center">
-                                                                <small class="badge badge-xl badge-default badge-dark">
-                                                                    A
-                                                                </small>
-                                                            </p>
-                                                            <fieldset class="form-group">
-                                                                <select id="ess_A_select" class="custom-select">
-                                                                    <option selected value="0">Select a Value
-                                                                    </option>
-                                                                    <option value="1">1</option>
-                                                                    <option value="2">2</option>
-                                                                    <option value="3">3</option>
-                                                                    <option value="4">4</option>
-                                                                    <option value="5">5</option>
-                                                                </select>
-                                                                <textarea class="form-control"
-                                                                          id="ess_A_overview"
-                                                                          placeholder="Overview"></textarea>
-                                                            </fieldset>
-                                                        </div>
-                                                    </div>
-                                                    <div class="row">
-
-                                                        <div class="col-lg-12">
-                                                            <p class="block-tag text-center">
-                                                                <small class="badge badge-xl badge-default badge-info">
-                                                                    I
-                                                                </small>
-                                                            </p>
-                                                            <fieldset class="form-group">
-                                                                <select id="ess_I_select" class="custom-select">
-                                                                    <option selected value="0">Select a Value
-                                                                    </option>
-                                                                    <option value="1">1</option>
-                                                                    <option value="2">2</option>
-                                                                    <option value="3">3</option>
-                                                                    <option value="4">4</option>
-                                                                    <option value="5">5</option>
-                                                                </select>
-                                                                <textarea class="form-control"
-                                                                          id="ess_I_overview"
-                                                                          placeholder="Overview"></textarea>
-                                                            </fieldset>
-                                                        </div>
-                                                        <div class="col-lg-12">
-                                                            <fieldset class="form-group">
-                                                                <p class="block-tag text-center">
-                                                                    <small class="badge badge-xl badge-default badge-primary">
-                                                                        C
-                                                                    </small>
-                                                                </p>
-                                                                <select id="ess_C_select" class="custom-select">
-                                                                    <option selected value="0">Select a Value
-                                                                    </option>
-                                                                    <option value="1">1</option>
-                                                                    <option value="2">2</option>
-                                                                    <option value="3">3</option>
-                                                                    <option value="4">4</option>
-                                                                    <option value="5">5</option>
-                                                                </select>
-                                                                <textarea class="form-control"
-                                                                          id="ess_C_overview"
-                                                                          placeholder="Overview"></textarea>
-                                                            </fieldset>
-                                                        </div>
-                                                    </div>
-
-                                                </div>
+                                                <p id="target_bear_thesis"></p>
                                             </div>
                                         </div>
 
+
+                                    </div>
+                                    <br><br>
+                                    <div class="row">
+                                        <div class="container">
+                                            <div class="col-lg-12">
+                                                <div class="container">
+                                                    <div class="text-center">
+                                                        <button class="btn btn-lg btn-outline-secondary btn-block"
+                                                                type="button" data-toggle="collapse"
+                                                                data-target="#mosaic"> Click for MOSAIC Rating
+                                                        </button>
+                                                    </div>
+                                                    <br>
+                                                    <div class="collapse collapse-class" role="form" id="mosaic">
+
+                                                        <div class="row">
+                                                            <div class="col-lg-12">
+                                                                <p class="block-tag text-center">
+                                                                    <small class="badge badge-xl badge-default badge-success">
+                                                                        M
+                                                                    </small>
+                                                                </p>
+                                                                <fieldset class="form-group">
+                                                                    <select id="ess_M_select" class="custom-select">
+                                                                        <option selected value="0">Select a Value
+                                                                        </option>
+                                                                        <option value="1">1</option>
+                                                                        <option value="2">2</option>
+                                                                        <option value="3">3</option>
+                                                                        <option value="4">4</option>
+                                                                        <option value="5">5</option>
+                                                                    </select>
+                                                                    <textarea class="form-control"
+                                                                              id="ess_M_overview"
+                                                                              placeholder="Overview"></textarea>
+                                                                </fieldset>
+                                                            </div>
+
+
+                                                            <div class="col-lg-12">
+                                                                <p class="block-tag text-center">
+                                                                    <small class="badge badge-xl badge-default badge-danger">
+                                                                        O
+                                                                    </small>
+                                                                </p>
+                                                                <fieldset class="form-group">
+
+                                                                    <select id="ess_O_select" class="custom-select">
+                                                                        <option selected value="0">Select a Value
+                                                                        </option>
+                                                                        <option value="1">1</option>
+                                                                        <option value="2">2</option>
+                                                                        <option value="3">3</option>
+                                                                        <option value="4">4</option>
+                                                                        <option value="5">5</option>
+                                                                    </select>
+                                                                    <textarea class="form-control"
+                                                                              id="ess_O_overview"
+                                                                              placeholder="Overview"></textarea>
+                                                                </fieldset>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-lg-12">
+                                                                <p class="block-tag text-center">
+                                                                    <small class="badge badge-xl badge-default badge-secondary">
+                                                                        S
+                                                                    </small>
+                                                                </p>
+                                                                <fieldset class="form-group">
+                                                                    <select id="ess_S_select" class="custom-select">
+                                                                        <option selected value="0">Select a Value
+                                                                        </option>
+                                                                        <option value="1">1</option>
+                                                                        <option value="2">2</option>
+                                                                        <option value="3">3</option>
+                                                                        <option value="4">4</option>
+                                                                        <option value="5">5</option>
+                                                                    </select>
+                                                                    <textarea class="form-control"
+                                                                              id="ess_S_overview"
+                                                                              placeholder="Overview"></textarea>
+                                                                </fieldset>
+                                                            </div>
+                                                            <div class="col-lg-12">
+                                                                <p class="block-tag text-center">
+                                                                    <small class="badge badge-xl badge-default badge-dark">
+                                                                        A
+                                                                    </small>
+                                                                </p>
+                                                                <fieldset class="form-group">
+                                                                    <select id="ess_A_select" class="custom-select">
+                                                                        <option selected value="0">Select a Value
+                                                                        </option>
+                                                                        <option value="1">1</option>
+                                                                        <option value="2">2</option>
+                                                                        <option value="3">3</option>
+                                                                        <option value="4">4</option>
+                                                                        <option value="5">5</option>
+                                                                    </select>
+                                                                    <textarea class="form-control"
+                                                                              id="ess_A_overview"
+                                                                              placeholder="Overview"></textarea>
+                                                                </fieldset>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+
+                                                            <div class="col-lg-12">
+                                                                <p class="block-tag text-center">
+                                                                    <small class="badge badge-xl badge-default badge-info">
+                                                                        I
+                                                                    </small>
+                                                                </p>
+                                                                <fieldset class="form-group">
+                                                                    <select id="ess_I_select" class="custom-select">
+                                                                        <option selected value="0">Select a Value
+                                                                        </option>
+                                                                        <option value="1">1</option>
+                                                                        <option value="2">2</option>
+                                                                        <option value="3">3</option>
+                                                                        <option value="4">4</option>
+                                                                        <option value="5">5</option>
+                                                                    </select>
+                                                                    <textarea class="form-control"
+                                                                              id="ess_I_overview"
+                                                                              placeholder="Overview"></textarea>
+                                                                </fieldset>
+                                                            </div>
+                                                            <div class="col-lg-12">
+                                                                <fieldset class="form-group">
+                                                                    <p class="block-tag text-center">
+                                                                        <small class="badge badge-xl badge-default badge-primary">
+                                                                            C
+                                                                        </small>
+                                                                    </p>
+                                                                    <select id="ess_C_select" class="custom-select">
+                                                                        <option selected value="0">Select a Value
+                                                                        </option>
+                                                                        <option value="1">1</option>
+                                                                        <option value="2">2</option>
+                                                                        <option value="3">3</option>
+                                                                        <option value="4">4</option>
+                                                                        <option value="5">5</option>
+                                                                    </select>
+                                                                    <textarea class="form-control"
+                                                                              id="ess_C_overview"
+                                                                              placeholder="Overview"></textarea>
+                                                                </fieldset>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+
                                     </div>
 
 
                                 </div>
-
-
-                            </div>
-                            <div class="modal-footer">
-                                <button id='close_mna_idea_modal' type="button"
-                                        class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
-                                </button>
-                                <input id='submit_ess_idea_new_deal_request' type="submit"
-                                       class="btn btn-outline-primary" value="Save Changes">
-                            </div>
-
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <section class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-head">
-                            <div class="card-header">
-                                <h4 class="card-title center">ESS IDEA Database</h4>
-                                <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
-                                <div class="heading-elements">
-                                    <button id='ess_idea_add_new_deal' class="btn btn-primary btn-sm"
-                                            data-toggle="modal"
-                                            data-target="#ess_idea_new_deal_modal"><i class="ft-plus white"></i> Add
-                                        New
-                                        Deal
+                                <div class="modal-footer">
+                                    <button id='close_mna_idea_modal' type="button"
+                                            class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
                                     </button>
+                                    <input id='submit_ess_idea_new_deal_request' type="submit"
+                                           class="btn btn-outline-primary" value="Save Changes">
+                                </div>
+
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <section class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-head">
+                                <div class="card-header">
+                                    <h4 class="card-title center">ESS IDEA Database</h4>
+                                    <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
+                                    <div class="heading-elements">
+                                        <button id='ess_idea_add_new_deal' class="btn btn-primary btn-sm"
+                                                data-toggle="modal"
+                                                data-target="#ess_idea_new_deal_modal"><i class="ft-plus white"></i> Add
+                                            New
+                                            Deal
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-content">
+
+                                <div class="table-responsive">
+                                    <!-- Task List table -->
+                                    <table class="table table-striped table-bordered" id='ess_idea_table'
+                                           style="font-size:13px;">
+                                        <thead>
+                                        <tr>
+                                            <th>Alpha<br>Ticker</th>
+                                            <th>Category</th>
+                                            <th>Catalyst</th>
+                                            <th>Catalyst<br>(Tier)</th>
+                                            <th>GICSSector</th>
+                                            <th>Price</th>
+                                            <th>PT<br>(Up)</th>
+                                            <th>PT<br>(WIC)</th>
+                                            <th>PT<br>(Down)</th>
+                                            <th>Unaffected <br>Date</th>
+                                            <th>Expected<br>Close</th>
+                                            <th>Gross(%)</th>
+                                            <th>Ann.(%)</th>
+                                            <th>Hedged Vol.</th>
+                                            <th>Sharpe</th>
+                                            <th>Implied<br>Prob(%)</th>
+                                            <th>Event<br>Premium(%)</th>
+                                            <th>Status</th>
+                                            <th>More</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for row in ess_idea_df %}
+                                            <tr id="row_{{ row.id }}"
+                                                data-value="{{ row.needs_downside_attention }}">
+                                                <td>{{ row.alpha_ticker }}</td>
+                                                <td>{{ row.category }}</td>
+                                                <td>{{ row.catalyst }}</td>
+                                                <td>{{ row.catalyst_tier }}</td>
+                                                <td>{{ row.gics_sector }}</td>
+                                                <td>{{ row.price }}</td>
+                                                <td>{{ row.pt_up }}</td>
+                                                <td>{{ row.pt_wic }}</td>
+                                                <td>{{ row.pt_down }}</td>
+                                                <td>{{ row.unaffected_date }}</td>
+                                                <td>{{ row.expected_close }}</td>
+                                                <td>{{ row.gross_percentage }}</td>
+                                                <td>{{ row.ann_percentage }}</td>
+                                                <td>{{ row.hedged_volatility }}</td>
+                                                <td>{{ row.theoretical_sharpe }}</td>
+                                                <td>{{ row.implied_probability }}</td>
+                                                <td>{{ row.event_premium }}</td>
+                                                <td>{{ row.status }}</td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <button type="button"
+                                                                class="btn btn-primary dropdown-toggle"
+                                                                data-toggle="dropdown" aria-haspopup="true"
+                                                                aria-expanded="false">
+                                                            <i class="ft-settings"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu">
+                                                            <li><a id="edit_{{ row.id }}"
+                                                                   data-value="{{ row.id }}" class='dropdown-item'
+                                                            ><i class="ft-edit-2"></i> Edit</a></li>
+                                                            <li><a id="delete_{{ row.id }}"
+                                                                   data-value="{{ row.id }}" class='dropdown-item'
+                                                            ><i class="ft-trash-2"></i> Delete</a>
+                                                            </li>
+                                                            <li><a id="view_{{ row.id }}"
+                                                                   data-value="{{ row.id }}" class='dropdown-item'
+                                                            ><i class="ft-plus-circle primary"></i>
+                                                                View</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+
+                                    </table>
                                 </div>
                             </div>
                         </div>
-                        <div class="card-content">
-
-                            <div class="table-responsive">
-                                <!-- Task List table -->
-                                <table class="table table-striped table-bordered" id='ess_idea_table'
-                                       style="font-size:13px;">
-                                    <thead>
-                                    <tr>
-                                        <th>Alpha<br>Ticker</th>
-                                        <th>Category</th>
-                                        <th>Catalyst</th>
-                                        <th>Catalyst<br>(Tier)</th>
-                                        <th>GICSSector</th>
-                                        <th>Price</th>
-                                        <th>PT<br>(Up)</th>
-                                        <th>PT<br>(WIC)</th>
-                                        <th>PT<br>(Down)</th>
-                                        <th>Unaffected <br>Date</th>
-                                        <th>Expected<br>Close</th>
-                                        <th>Gross(%)</th>
-                                        <th>Ann.(%)</th>
-                                        <th>Hedged Vol.</th>
-                                        <th>Sharpe</th>
-                                        <th>Implied<br>Prob(%)</th>
-                                        <th>Event<br>Premium(%)</th>
-                                        <th>Status</th>
-                                        <th>More</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for row in ess_idea_df %}
-                                        <tr id="row_{{ row.id }}"
-                                            data-value="{{ row.needs_downside_attention }}">
-                                            <td>{{ row.alpha_ticker }}</td>
-                                            <td>{{ row.category }}</td>
-                                            <td>{{ row.catalyst }}</td>
-                                            <td>{{ row.catalyst_tier }}</td>
-                                            <td>{{ row.gics_sector }}</td>
-                                            <td>{{ row.price }}</td>
-                                            <td>{{ row.pt_up }}</td>
-                                            <td>{{ row.pt_wic }}</td>
-                                            <td>{{ row.pt_down }}</td>
-                                            <td>{{ row.unaffected_date }}</td>
-                                            <td>{{ row.expected_close }}</td>
-                                            <td>{{ row.gross_percentage }}</td>
-                                            <td>{{ row.ann_percentage }}</td>
-                                            <td>{{ row.hedged_volatility }}</td>
-                                            <td>{{ row.theoretical_sharpe }}</td>
-                                            <td>{{ row.implied_probability }}</td>
-                                            <td>{{ row.event_premium }}</td>
-                                            <td>{{ row.status }}</td>
-                                            <td>
-                                                <div class="btn-group">
-                                                    <button type="button"
-                                                            class="btn btn-primary dropdown-toggle"
-                                                            data-toggle="dropdown" aria-haspopup="true"
-                                                            aria-expanded="false">
-                                                        <i class="ft-settings"></i>
-                                                    </button>
-                                                    <ul class="dropdown-menu">
-                                                        <li><a id="edit_{{ row.id }}"
-                                                               data-value="{{ row.id }}" class='dropdown-item'
-                                                               href="#"><i class="ft-edit-2"></i> Edit</a></li>
-                                                        <li><a id="delete_{{ row.id }}"
-                                                               data-value="{{ row.id }}" class='dropdown-item'
-                                                               href="#"><i class="ft-trash-2"></i> Delete</a>
-                                                        </li>
-                                                        <li><a id="view_{{ row.id }}"
-                                                               data-value="{{ row.id }}" class='dropdown-item'
-                                                               href="#"><i class="ft-plus-circle primary"></i>
-                                                            View</a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-
-                                </table>
-                            </div>
-
-                        </div>
-
-
                     </div>
-                </div>
+                </section>
+            </div>
         </div>
     </div>
-    </section>
-</div>
 
 
+        <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
 
+        {% block sweetalert_js %}
+            {{ block.super }}
+        {% endblock %}
 
+        {% block checkbox_js %}
+            {{ block.super }}
+        {% endblock %}
 
-<script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+        {% block boootstrap %}
+            {{ block.super }}
+        {% endblock %}
 
-{% block sweetalert_js %}
-    {{ block.super }}
-{% endblock %}
+        {% block summernote_js %}
+            {{ block.super }}
+        {% endblock %}
 
-{% block checkbox_js %}
-    {{ block.super }}
-{% endblock %}
-
-{% block boootstrap %}
-    {{ block.super }}
-{% endblock %}
-
-{% block summernote_js %}
-    {{ block.super }}
-{% endblock %}
-
-<script src="{% static 'app-assets/js/core/ess_idea_database.js' %}" type="text/javascript"></script>
+        <script src="{% static 'app-assets/js/core/ess_idea_database.js' %}" type="text/javascript"></script>
 {% endblock %}

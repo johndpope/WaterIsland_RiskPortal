@@ -169,7 +169,9 @@ def compute_implied_price_from_multiple(metric_name, multiple, mult_underlying_d
             ebitda = float(mult_underlying_df['BEST_EBITDA'].iloc[0])
             eqy_sh_out = float(mult_underlying_df['EQY_SH_OUT'].iloc[0])
             ev_component = float(mult_underlying_df['CUR_EV_COMPONENT'].iloc[0])
-
+            # net_debt =  float(mult_underlying_df['BEST_NET_DEBT'][0])
+            # minority = float(mult_underlying_df['MINORITY_NONCONTROLLING_INTEREST'][0])
+            # pfd_eqy = float(mult_underlying_df['BS_PFD_EQY'][0])
             return ((multiple * ebitda) - ev_component) / eqy_sh_out
 
         if metric_name == 'EV/Sales':
@@ -217,6 +219,14 @@ def calibration_data(alpha_ticker, peer2weight, start_date_yyyy_mm_dd, end_date_
     peer2historical_mult = {
     p: multiples_df(p, start_date_yyyy_mm_dd.strftime('%Y%m%d'), end_date_yyyy_mm_dd.strftime('%Y%m%d'), api_host,
                     fperiod, multiples_to_query=metrics) for p in peer_tickers}
+
+    # calibration_meta_df = dbutils.Wic.get_ess_calibration_meta(alpha_ticker,peer_tickers,start_date_yyyy_mm_dd,end_date_yyyy_mm_dd)
+    # if len(calibration_meta_df) == 0: return None
+    # cid = calibration_meta_df['CID'].iloc[0]
+    # calibration_df = dbutils.Wic.get_multiple_df_from_ess_calibration_timeseries_table(cid) # ['CID','Date','Ticker','PX','P/EPS','EV/EBITDA','EV/Sales','DVD yield','FCF yield']
+    # calibration_df['Ticker'] = calibration_df['Ticker'].apply(lambda x: x.lower() if not pd.isnull(x) else x)
+    # alpha_historical_mult = calibration_df[calibration_df['Ticker']==alpha_ticker.lower()]
+    # peer2historical_mult = {p:calibration_df[calibration_df['Ticker']==p.lower()] for p in peer_tickers}
 
     metric2rel = {}
     for metric in metrics:
@@ -322,8 +332,9 @@ def metric2implied_px(alpha_ticker, peer_tickers, dt, metrics, api_host, metric2
     return metric2data
 
 
-def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_upside, as_of_dt, price_tgt_dt, metrics,
-                            metric2weight, api_host, adjustments_df):
+def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_upside, analyst_downside,
+                            analyst_pt_wic, as_of_dt, price_tgt_dt, metrics, metric2weight, api_host,
+                            adjustments_df_now, adjustments_df_ptd, premium_as_percent=None):
     alpha_historical_mult_df = calib_data[
         'alpha_historical_mult_df']  # ['CID','Date','Ticker','PX','P/EPS','EV/EBITDA','EV/Sales','DVD yield','FCF yield']
     peer2historical_mult_df = calib_data['peer2historical_mult_df']
@@ -365,10 +376,19 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
     df['Alpha Implied Multiple @ Price Target Date'] = df['Metric'].apply(lambda m: sum(
         [metric2peer2coeff[m][p] * peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peer_ticker_list]) +
                                                                                     metric2peer2coeff[m]['Intercept'])
-    df['Alpha Balance Sheet DataFrame @ Price Target Date'] = [alpha_balance_sheet_df_ptd] * len(df)
-    df['Alpha Unaffected PX @ Price Target Date'] = [
-        compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_ptd) for (m, mult) in
-        zip(df['Metric'], df['Alpha Implied Multiple @ Price Target Date'])]
+
+    if adjustments_df_ptd is None:
+        df['Alpha Balance Sheet DataFrame @ Price Target Date'] = [alpha_balance_sheet_df_ptd] * len(df)
+        df['Alpha Unaffected PX @ Price Target Date'] = [
+            compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_ptd) for (m, mult) in
+            zip(df['Metric'], df['Alpha Implied Multiple @ Price Target Date'])]
+    else:
+        adjustments_df2 = adjustments_df_ptd.drop(columns='Date')
+        alpha_balance_sheet_df_ptd_adj = alpha_balance_sheet_df_ptd.add(adjustments_df2, axis='columns')
+        df['Alpha Balance Sheet DataFrame @ Price Target Date'] = [alpha_balance_sheet_df_ptd_adj] * len(df)
+        df['Alpha Unaffected PX @ Price Target Date'] = [
+            compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_ptd_adj) for (m, mult) in
+            zip(df['Metric'], df['Alpha Implied Multiple @ Price Target Date'])]
 
     df['Peers Multiples DataFrame @ Now'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer', 'Multiple'],
                                                                                       data=[(p, peer2now_multiple[p][
@@ -378,35 +398,80 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
         [metric2peer2coeff[m][p] * peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peer_ticker_list]) +
                                                                       metric2peer2coeff[m]['Intercept'])
 
-    if adjustments_df is None:
+    if adjustments_df_now is None:
         df['Alpha Balance Sheet DataFrame @ Now'] = [alpha_balance_sheet_df_now] * len(df)
         df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_now) for
                                            (m, mult) in zip(df['Metric'], df['Alpha Implied Multiple @ Now'])]
     else:
-        adjustments_df1 = adjustments_df.drop(columns='Date')
+        adjustments_df1 = adjustments_df_now.drop(columns='Date')
         alpha_balance_sheet_df_now_adj = alpha_balance_sheet_df_now.add(adjustments_df1, axis='columns')
         df['Alpha Balance Sheet DataFrame @ Now'] = [alpha_balance_sheet_df_now_adj] * len(df)
         df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_now_adj)
                                            for (m, mult) in zip(df['Metric'], df['Alpha Implied Multiple @ Now'])]
 
     df['Alpha Upside (analyst)'] = analyst_upside
-    df['Premium'] = (df['Alpha Upside (analyst)'].astype(float) - df['Alpha Unaffected PX @ Price Target Date'].astype(
-        float)).fillna(0).apply(lambda x: max(x, 0))
+    df['Alpha Downside (analyst)'] = analyst_downside
+    df['Alpha PT WIC (analyst)'] = analyst_pt_wic
 
-    df['Alpha Downside (Adj,weighted)'] = df['Alpha Unaffected PX @ Now'].astype(float) * df['Metric'].apply(
-        lambda m: metric2weight[m]).astype(float)
-    df['Alpha Upside (Adj,weighted)'] = (df['Alpha Unaffected PX @ Now'].astype(float) + df['Premium'].astype(float)) * \
-                                        df['Metric'].apply(lambda m: metric2weight[m]).astype(float)
+    if premium_as_percent is None:
+        df['Premium Up ($)'] = (
+                    df['Alpha Upside (analyst)'].astype(float) - df['Alpha Unaffected PX @ Price Target Date'].astype(
+                float)).fillna(0)
+        df['Premium PT WIC ($)'] = (
+                    df['Alpha PT WIC (analyst)'].astype(float) - df['Alpha Unaffected PX @ Price Target Date'].astype(
+                float)).fillna(0)
+        df['Premium Down ($)'] = (
+                    df['Alpha Downside (analyst)'].astype(float) - df['Alpha Unaffected PX @ Price Target Date'].astype(
+                float)).fillna(0)
+
+        df['Alpha Downside (Adj,weighted)'] = (df['Alpha Unaffected PX @ Now'].astype(float) + df[
+            'Premium Down ($)'].astype(float)) * df['Metric'].apply(lambda m: metric2weight[m]).astype(float)
+        df['Alpha PT WIC (Adj,weighted)'] = (df['Alpha Unaffected PX @ Now'].astype(float) + df[
+            'Premium PT WIC ($)'].astype(float)) * df['Metric'].apply(lambda m: metric2weight[m]).astype(float)
+        df['Alpha Upside (Adj,weighted)'] = (df['Alpha Unaffected PX @ Now'].astype(float) + df[
+            'Premium Up ($)'].astype(float)) * df['Metric'].apply(lambda m: metric2weight[m]).astype(float)
+    else:
+        df['Premium Up (%)'] = (((df['Alpha Upside (analyst)'].astype(float) - df[
+            'Alpha Unaffected PX @ Price Target Date'].astype(float)) / df[
+                                     'Alpha Unaffected PX @ Price Target Date'].astype(float)) * 100.0).fillna(0)
+        df['Premium PT WIC (%)'] = (((df['Alpha PT WIC (analyst)'].astype(float) - df[
+            'Alpha Unaffected PX @ Price Target Date'].astype(float)) / df[
+                                         'Alpha Unaffected PX @ Price Target Date'].astype(float)) * 100.0).fillna(0)
+        df['Premium Down (%)'] = (((df['Alpha Downside (analyst)'].astype(float) - df[
+            'Alpha Unaffected PX @ Price Target Date'].astype(float)) / df[
+                                       'Alpha Unaffected PX @ Price Target Date'].astype(float)) * 100.0).fillna(0)
+
+        df['Alpha Downside (Adj,weighted)'] = (df['Alpha Unaffected PX @ Now'].astype(float) * (
+                    1 + (df['Premium Down (%)'].astype(float)) / 100.0)) * df['Metric'].apply(
+            lambda m: metric2weight[m]).astype(float)
+        df['Alpha PT WIC (Adj,weighted)'] = (df['Alpha Unaffected PX @ Now'].astype(float) * (
+                    1 + (df['Premium PT WIC (%)'].astype(float)) / 100.0)) * df['Metric'].apply(
+            lambda m: metric2weight[m]).astype(float)
+        df['Alpha Upside (Adj,weighted)'] = (df['Alpha Unaffected PX @ Now'].astype(float) * (
+                    1 + (df['Premium Up (%)'].astype(float)) / 100.0)) * df['Metric'].apply(
+            lambda m: metric2weight[m]).astype(float)
 
     return df
 
 
-def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, analyst_upside, metrics, metric2weight,
-                        metric2stat_rel, api_host, adjustments_df):
-    metric2implied_now = metric2implied_px(alpha_ticker, peers, as_of_dt, metrics, api_host, metric2stat_rel,
-                                           adjustments_df, fperiod='1BF')
-    metric2implied_at_price_tgt_date = metric2implied_px(alpha_ticker, peers, last_price_target_dt, metrics, api_host,
-                                                         metric2stat_rel, fperiod='1BF')
+def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, analyst_upside, analyst_downside,
+                        analyst_pt_wic, metrics, metric2weight, metric2stat_rel, api_host, adjustments_df_now=None,
+                        adjustments_df_ptd=None, premium_as_percent=None):
+    if adjustments_df_now is None:
+        metric2implied_now = metric2implied_px(alpha_ticker, peers, as_of_dt, metrics, api_host, metric2stat_rel,
+                                               adjustments_df=None, fperiod='1BF')
+    else:
+        metric2implied_now = metric2implied_px(alpha_ticker, peers, as_of_dt, metrics, api_host, metric2stat_rel,
+                                               adjustments_df=adjustments_df_now, fperiod='1BF')
+
+    if adjustments_df_ptd is None:
+        metric2implied_at_price_tgt_date = metric2implied_px(alpha_ticker, peers, last_price_target_dt, metrics,
+                                                             api_host, metric2stat_rel, adjustments_df=None,
+                                                             fperiod='1BF')
+    else:
+        metric2implied_at_price_tgt_date = metric2implied_px(alpha_ticker, peers, last_price_target_dt, metrics,
+                                                             api_host, metric2stat_rel,
+                                                             adjustments_df=adjustments_df_ptd, fperiod='1BF')
 
     df = pd.DataFrame()
     df['Metric'] = metrics
@@ -423,9 +488,13 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
         lambda m: metric2implied_at_price_tgt_date[m]['Alpha Balance Sheet DataFrame'])
     df['Alpha Unaffected PX @ Price Target Date'] = df['Metric'].apply(
         lambda m: metric2implied_at_price_tgt_date[m]['Alpha Unaffected PX (avg)'])
-    df['Premium'] = None
+    # df['Premium Up'] = None
+    # df['Premium Down'] = None
+    # df['Premium PT WIC'] = None
+
     df['Alpha Upside (analyst)'] = analyst_upside
-    df['Premium'] = df['Alpha Upside (analyst)'] - df['Alpha Unaffected PX @ Price Target Date']
+    df['Alpha Downside (analyst)'] = analyst_downside
+    df['Alpha PT WIC (analyst)'] = analyst_pt_wic
 
     df['Peers Composite Multiple @ Now'] = df['Metric'].apply(lambda m: metric2implied_now[m]['Peers multiple'])
     df['Peer2Multiple @ Now'] = df['Metric'].apply(lambda m: metric2implied_now[m]['Peer2Multiple'])
@@ -440,16 +509,40 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
     df['Alpha Unaffected PX (high) @ Now'] = df['Metric'].apply(
         lambda m: metric2implied_now[m]['Alpha Unaffected PX (+2sigma)'])
 
-    df['Alpha Downside (Adj)'] = df['Alpha Unaffected PX (low) @ Now']
-    df['Alpha Upside (Adj)'] = df['Alpha Unaffected PX (mean) @ Now'] + df['Premium']
-    df['Alpha Downside (Adj,weighted)'] = df['Alpha Downside (Adj)'].astype(float) * df['Metric'].apply(
-        lambda m: metric2weight[m]).astype(float)
-    df['Alpha Upside (Adj,weighted)'] = df['Alpha Upside (Adj)'].astype(float) * df['Metric'].apply(
-        lambda m: metric2weight[m]).astype(float)
+    if premium_as_percent is None:
+        df['Premium Up ($)'] = df['Alpha Upside (analyst)'] - df['Alpha Unaffected PX @ Price Target Date']
+        df['Premium PT WIC ($)'] = df['Alpha PT WIC (analyst)'] - df['Alpha Unaffected PX @ Price Target Date']
+        df['Premium Down ($)'] = df['Alpha Downside (analyst)'] - df['Alpha Unaffected PX @ Price Target Date']
+
+        df['Alpha Downside (Adj)'] = df['Alpha Unaffected PX (mean) @ Now'] + df['Premium Down ($)']
+        df['Alpha Upside (Adj)'] = df['Alpha Unaffected PX (mean) @ Now'] + df['Premium Up ($)']
+        df['Alpha PT WIC (Adj)'] = df['Alpha Unaffected PX (mean) @ Now'] + df['Premium PT WIC ($)']
+        df['Alpha Downside (Adj,weighted)'] = df['Alpha Downside (Adj)'].astype(float) * df['Metric'].apply(
+            lambda m: metric2weight[m]).astype(float)
+        df['Alpha PT WIC (Adj,weighted)'] = df['Alpha PT WIC (Adj)'].astype(float) * df['Metric'].apply(
+            lambda m: metric2weight[m]).astype(float)
+        df['Alpha Upside (Adj,weighted)'] = df['Alpha Upside (Adj)'].astype(float) * df['Metric'].apply(
+            lambda m: metric2weight[m]).astype(float)
+    else:
+        df['Premium Up (%)'] = ((df['Alpha Upside (analyst)'] - df['Alpha Unaffected PX @ Price Target Date']) / df[
+            'Alpha Unaffected PX @ Price Target Date']) * 100.0
+        df['Premium PT WIC (%)'] = ((df['Alpha PT WIC (analyst)'] - df['Alpha Unaffected PX @ Price Target Date']) / df[
+            'Alpha Unaffected PX @ Price Target Date']) * 100.0
+        df['Premium Down (%)'] = ((df['Alpha Downside (analyst)'] - df['Alpha Unaffected PX @ Price Target Date']) / df[
+            'Alpha Unaffected PX @ Price Target Date']) * 100.0
+
+        df['Alpha Downside (Adj)'] = df['Alpha Unaffected PX (mean) @ Now'] * (1 + (df['Premium Down (%)'] / 100.0))
+        df['Alpha Upside (Adj)'] = df['Alpha Unaffected PX (mean) @ Now'] * (1 + (df['Premium Up (%)'] / 100.0))
+        df['Alpha PT WIC (Adj)'] = df['Alpha Unaffected PX (mean) @ Now'] * (1 + (df['Premium PT WIC (%)'] / 100.0))
+        df['Alpha Downside (Adj,weighted)'] = df['Alpha Downside (Adj)'].astype(float) * df['Metric'].apply(
+            lambda m: metric2weight[m]).astype(float)
+        df['Alpha PT WIC (Adj,weighted)'] = df['Alpha PT WIC (Adj)'].astype(float) * df['Metric'].apply(
+            lambda m: metric2weight[m]).astype(float)
+        df['Alpha Upside (Adj,weighted)'] = df['Alpha Upside (Adj)'].astype(float) * df['Metric'].apply(
+            lambda m: metric2weight[m]).astype(float)
 
     # more potential items
     # df['Alpha Current Multiple'] = df['Metric'].apply(lambda m: metric2implied_now[m]['Alpha observed multiple'])
 
     return df
-
 

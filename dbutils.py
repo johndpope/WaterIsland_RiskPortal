@@ -94,13 +94,13 @@ class Wic():
         # region query
         query = "SELECT Fund, Sleeve, TradeGroup, Analyst, LongShort, InceptionDate, EndDate, Status," \
                 "`Metrics in Bet JSON`,`Metrics in Bet notes JSON`,`Metrics in NAV JSON`,`Metrics in NAV notes JSON` " \
-                "FROM `" + settings.DATABASES['waterislandproduction']['NAME'] + "`.tradegroups_snapshot2 where fund like 'ARB'"
+                "FROM `" + settings.DATABASES['waterislandproduction']['NAME'] + "`.tradegroups_snapshot2 "
         # endregion
 
         res = pd.read_sql_query(query, connection)
-        cols = [ 'Fund', 'Sleeve', 'TradeGroup', 'Analyst', 'LongShort', 'InceptionDate', 'EndDate', 'Status',
+        cols = ['Fund', 'Sleeve', 'TradeGroup', 'Analyst', 'LongShort', 'InceptionDate', 'EndDate', 'Status',
                  'Metrics in Bet JSON', 'Metrics in Bet notes JSON', 'Metrics in NAV JSON',
-                 'Metrics in NAV notes JSON' ]
+                 'Metrics in NAV notes JSON']
         return pd.DataFrame(res, columns=cols)
 
     @staticmethod

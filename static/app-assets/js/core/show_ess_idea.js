@@ -1,7 +1,7 @@
 $(document).ready(function () {
 
-    $('#ess_idea_company_overview').summernote({'height':'250px'});
-    $('#ess_idea_situation_overview').summernote({'height':'250px'});
+    $('#ess_idea_company_overview').summernote({'height': '250px'});
+    $('#ess_idea_situation_overview').summernote({'height': '250px'});
     /***********************************************************
      *               New User - Page Visist Stats               *
      ***********************************************************/
@@ -79,20 +79,20 @@ $(document).ready(function () {
     var stockEvents = [];
     /** Save Downside Changes **/
     var downside_changes = $('#ess_idea_downside_changes').val();
-    try{
+    try {
         downside_changes = $.parseJSON(downside_changes);
         console.log(downside_changes);
-        for(var i=0;i<downside_changes.length;i++){
+        for (var i = 0; i < downside_changes.length; i++) {
             stockEvents.push({
-                "date":new Date(2018,05,05),
-                "type":"text",
+                "date": new Date(2018, 05, 05),
+                "type": "text",
                 "backgroundColor": "#85CDE6",
-                "graph":"g1",
-                "text":"Deal Revision Point",
-                "description":"Upside Revised to:"+downside_changes[i]['pt_up']+" & Downside Revised to:"+downside_changes[i]['pt_down']
+                "graph": "g1",
+                "text": "Deal Revision Point",
+                "description": "Upside Revised to:" + downside_changes[i]['pt_up'] + " & Downside Revised to:" + downside_changes[i]['pt_down']
             })
         }
-    }catch(err){
+    } catch (err) {
         console.log(err);
         stockEvents = [];
     }
@@ -402,113 +402,119 @@ $(document).ready(function () {
     let alpha_hedge_market_netural_chart_data = generateAHMChartData();
     let unaffected_date = $('#ess_idea_unaffected_date').val();
     let AHMchart = AmCharts.makeChart("ess_idea_alpha_chart", {
-            "type": "stock",
-            "theme": "black",
-            "legend": {
-                "useGraphSettings": true
+        "type": "stock",
+        "theme": "black",
+        "legend": {
+            "useGraphSettings": true
+        },
+        "dataDateFormat": "YYYY-MM-DD",
+
+
+        "dataSets": [{
+            "fieldMappings": [{
+                "fromField": "px_last",
+                "toField": "px_last"
+            }, {
+                "fromField": "hedges",
+                "toField": "hedges"
             },
-            "dataSets": [{
-                "fieldMappings": [{
-                    "fromField": "px_last",
-                    "toField": "px_last"
-                }, {
-                    "fromField": "hedges",
-                    "toField": "hedges"
-                },
-                    {
-                        "fromField": "market_neutral_val",
-                        "toField": "market_neutral_val"
-                    }],
-                "dataProvider": alpha_hedge_market_netural_chart_data,
-                "dataDateFormat": "YYYY-MM-DD",
-                "categoryField": "date",
-                "parseDates": true,
-                // EVENTS
-                "stockEvents": stockEvents,
-                "fillAlpha":0.3
-            }],
-            // "hideCredits":true,
-            "panels": [{
-                "stockGraphs": [{
-                    "useDataSetColors": false,
-                    "id": "g1",
-                    "valueField": "px_last",
-                    "valueAxis": "a1",
-                    "title": "Alpha Chart",
-                    "lineColor": "#ff0400",
-                    "fillAlphas": 0.1
-
-                }, {
-                    "useDataSetColors": false,
-                    "id": "g2",
-                    "valueField": "hedges",
-                    "valueAxis": "a1",
-                    "title": "Hedge Index",
-                    "lineColor": "orange",
-                    "fillAlphas": 0.1
-                },
-                    {
-                        "useDataSetColors": false,
-                        "id": "g3",
-                        "valueField": "market_neutral_val",
-                        "valueAxis": "a2",
-                        "title": "Market Neutral Chart",
-                        "lineColor": "#1dff00",
-                        "fillAlphas": 0.1
-                    }], "valueAxes": [{
-                    "id": "a1",
-                    "axisColor": "#FF6600",
-                    "position": "left",
-                    "offset": 0
-                }, {
-                    "id": "a2",
-                    "axisColor": "#FCD202",
-                    "position": "right",
-                    "offset": 0
+                {
+                    "fromField": "market_neutral_val",
+                    "toField": "market_neutral_val"
                 }],
-                "stockLegend": {
-                    useGraphSettings: true
-                },
-                "guides": [{
-                    "date": new Date(unaffected_date),
-                    "lineColor": "#ffffff",
-                    "lineAlpha": 1,
-                    "dashLength": 2,
-                    "inside": true,
-                    "labelRotation": 90,
-                    "label": "Unaffected Date"
-                }],
+            "dataProvider": alpha_hedge_market_netural_chart_data,
+            "categoryField": "date",
+            // EVENTS
+            "stockEvents": stockEvents,
+            "fillAlpha": 0.3
+        }],
+        // "hideCredits":true,
+
+        "panels": [{
+            "stockGraphs": [{
+                "useDataSetColors": false,
+                "id": "g1",
+                "valueField": "px_last",
+                "valueAxis": "a1",
+                "title": "Alpha Chart",
+                "lineColor": "#ff0400",
+                "fillAlphas": 0.1
+
+            }, {
+                "useDataSetColors": false,
+                "id": "g2",
+                "valueField": "hedges",
+                "valueAxis": "a1",
+                "title": "Hedge Index",
+                "lineColor": "orange",
+                "fillAlphas": 0.1
+            },
+                {
+                    "useDataSetColors": false,
+                    "id": "g3",
+                    "valueField": "market_neutral_val",
+                    "valueAxis": "a2",
+                    "title": "Market Neutral Chart",
+                    "lineColor": "#1dff00",
+                    "fillAlphas": 0.1
+                }], "valueAxes": [{
+                "id": "a1",
+                "axisColor": "#FF6600",
+                "position": "left",
+                "offset": 0
+            }, {
+                "id": "a2",
+                "axisColor": "#FCD202",
+                "position": "right",
+                "offset": 0
             }],
+            "stockLegend": {
+                useGraphSettings: true
+            },
+            "guides": [{
+                "date": new Date(unaffected_date),
+                "lineColor": "#ffffff",
+                "lineAlpha": 1,
+                "dashLength": 2,
+                "inside": true,
+                "labelRotation": 90,
+                "label": "Unaffected Date"
+            }],
+        }],
 
 
-            "chartScrollbarSettings":
-                {
-                    "graph":
-                        "g1"
-                }
-            ,
+        "chartScrollbarSettings":
+            {
+                "graph":
+                    "g1"
+            }
+        ,
+        "categoryAxesSettings":{
+            "minPeriod":"DD",
+            "maxSeries":0
+        },
+        "chartCursorSettings":
+            {
+                "valueBalloonsEnabled":
+                    true,
+                "graphBulletSize":
+                    1,
+                "valueLineBalloonEnabled":
+                    true,
+                "valueLineEnabled":
+                    true,
+                "valueLineAlpha":
+                    0.5
+            }
+        ,
+        "export":
+            {
+                "enabled":
+                    true
+            },
 
-            "chartCursorSettings":
-                {
-                    "valueBalloonsEnabled":
-                        true,
-                    "graphBulletSize":
-                        1,
-                    "valueLineBalloonEnabled":
-                        true,
-                    "valueLineEnabled":
-                        true,
-                    "valueLineAlpha":
-                        0.5
-                }
-            ,
-            "export":
-                {
-                    "enabled":
-                        true
-                }
-        })
-    ;
+    });
+
 
 // generate some random data, quite different range
     function generateAHMChartData() {
@@ -546,8 +552,6 @@ $(document).ready(function () {
     /** Implied Probability Chart **/
 
     let implied_probability_chart_data = generateIMPChartData();
-
-
 
 
     let IMPchart = AmCharts.makeChart("ess_idea_implied_probability_chart", {
@@ -603,7 +607,10 @@ $(document).ready(function () {
             "useGraphSettings": true,
             "valueText": ""
         },
-
+        "categoryAxesSettings":{
+            "minPeriod":"DD",
+            "maxSeries":0
+        },
         "export": {
             "enabled": true,
             "position": "bottom-right"
@@ -616,7 +623,7 @@ $(document).ready(function () {
         for (let i = 0; i < implied_chart_data.length; i++) {
             chartData.push({
                 date: implied_chart_data[i].date,
-                implied_probability: implied_chart_data[i].implied_probability*100,
+                implied_probability: implied_chart_data[i].implied_probability * 100,
             })
         }
         return chartData;
@@ -624,7 +631,7 @@ $(document).ready(function () {
 
     let upside_downside_records_data = generateUpsideDownsideTrackRecordData();
 
-    function generateUpsideDownsideTrackRecordData(){
+    function generateUpsideDownsideTrackRecordData() {
         let upside_downside_records = JSON.parse($('#upside_downside_records_df').val());
         let chartData = [];
         for (let i = 0; i < upside_downside_records.length; i++) {
@@ -637,6 +644,7 @@ $(document).ready(function () {
         }
         return chartData;
     }
+
     let UpsideDownsideTrackRecordChart = AmCharts.makeChart("ess_idea_upside_downside_track_record_chart", {
         "type": "serial",
         "theme": "black",
@@ -673,28 +681,28 @@ $(document).ready(function () {
             "fillAlphas": 0.1,
             "id": "g1"
         },
-        {
-            "valueAxis": "v1",
-            "lineColor": "#cc0000",
-            "bullet": "round",
-            "bulletBorderThickness": 1,
-            "hideBulletsCount": 30,
-            "title": "Price Target (Down)",
-            "valueField": "pt_down",
-            "fillAlphas": 0.1,
-            "id": "g2"
-        },
-        {
-            "valueAxis": "v1",
-            "lineColor": "#FF6600",
-            "bullet": "round",
-            "bulletBorderThickness": 1,
-            "hideBulletsCount": 30,
-            "title": "Price Target (WIC)",
-            "valueField": "pt_wic",
-            "fillAlphas": 0.1,
-            "id": "g3"
-        }],
+            {
+                "valueAxis": "v1",
+                "lineColor": "#cc0000",
+                "bullet": "round",
+                "bulletBorderThickness": 1,
+                "hideBulletsCount": 30,
+                "title": "Price Target (Down)",
+                "valueField": "pt_down",
+                "fillAlphas": 0.1,
+                "id": "g2"
+            },
+            {
+                "valueAxis": "v1",
+                "lineColor": "#FF6600",
+                "bullet": "round",
+                "bulletBorderThickness": 1,
+                "hideBulletsCount": 30,
+                "title": "Price Target (WIC)",
+                "valueField": "pt_wic",
+                "fillAlphas": 0.1,
+                "id": "g3"
+            }],
 
         "chartScrollbar": {},
         "chartCursor": {
@@ -718,7 +726,6 @@ $(document).ready(function () {
             "position": "bottom-right"
         }
     });
-
 
 
     /** ----------------------- **/
@@ -777,6 +784,10 @@ $(document).ready(function () {
             "useGraphSettings": true,
             "valueText": ""
         },
+        "categoryAxesSettings":{
+            "minPeriod":"DD",
+            "maxSeries":0
+        },
         "export": {
             "enabled": true,
             "position": "bottom-right"
@@ -789,7 +800,7 @@ $(document).ready(function () {
         for (let i = 0; i < event_premium_chart_data.length; i++) {
             chartData.push({
                 date: event_premium_chart_data[i].date,
-                event_premium: event_premium_chart_data[i].event_premium*100,
+                event_premium: event_premium_chart_data[i].event_premium * 100,
             })
         }
         return chartData;
@@ -798,11 +809,6 @@ $(document).ready(function () {
 
 
     /** ------------------------- **/
-
-
-
-
-
 // News Table Clickable Row Functionality
 
     $('.clickable-row-news').click(function () {
@@ -812,13 +818,11 @@ $(document).ready(function () {
         $('#show_ess_idea_news_modal').modal('show');
     });
 
-
 // Add Goto URL onClick Listener
 
     $('#show_ess_idea_go_to_url').on('click', function () {
         window.open($(this).val());
     });
-
 
 // Handlers for Notes
     $('.clickable-row-notes').click(function () {
@@ -848,7 +852,6 @@ $(document).ready(function () {
 
 })
 ;
-
 
 
 /** Section to Show Premium Analysis.... **/
@@ -913,6 +916,8 @@ $('#ess_idea_view_balance_sheet').on('click', function (e) {
 
             let balance_sheet_bloomberg = $.parseJSON(response['balance_sheet']);
             let balance_sheet_adjustments = $.parseJSON(response['balance_sheet_adjustments']);
+            let on_pt_balance_sheet_adjustments = $.parseJSON(response['on_pt_balance_sheet_adjustments']);
+
 
             $('#balance_sheet_date').val(balance_sheet_bloomberg[0]['Date']);
             $('#balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
@@ -927,9 +932,23 @@ $('#ess_idea_view_balance_sheet').on('click', function (e) {
             $('#balance_sheet_best_ebitda').val(balance_sheet_bloomberg[0]['BEST_EBITDA']);
             $('#balance_sheet_eqy_sh_out').val(balance_sheet_bloomberg[0]['EQY_SH_OUT']);
 
+            // Populate for On Price Target Date
+            $('#on_pt_balance_sheet_date').val(balance_sheet_bloomberg[0]['Date']);
+            $('#on_pt_balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
+            $('#on_pt_balance_sheet_best_eps').val(balance_sheet_bloomberg[0]['BEST_EPS']);
+            $('#on_pt_balance_sheet_best_net_income').val(balance_sheet_bloomberg[0]['BEST_NET_INCOME']);
+            $('#on_pt_balance_sheet_best_opp').val(balance_sheet_bloomberg[0]['BEST_OPP']);
+            $('#on_pt_balance_sheet_best_sales').val(balance_sheet_bloomberg[0]['BEST_SALES']);
+            $('#on_pt_balance_sheet_cur_ev_component').val(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT']);
+            $('#on_pt_balance_sheet_cur_mkt_cap').val(balance_sheet_bloomberg[0]['CUR_MKT_CAP']);
+            $('#on_pt_balance_sheet_dvd_indicated_yield').val(balance_sheet_bloomberg[0]['DIVIDEND_INDICATED_YIELD']);
+            $('#on_pt_balance_sheet_best_capex').val(balance_sheet_bloomberg[0]['BEST_CAPEX']);
+            $('#on_pt_balance_sheet_best_ebitda').val(balance_sheet_bloomberg[0]['BEST_EBITDA']);
+            $('#on_pt_balance_sheet_eqy_sh_out').val(balance_sheet_bloomberg[0]['EQY_SH_OUT']);
+
 
             // Populate the Adjustments balance Sheet
-            if(balance_sheet_adjustments.length >0 ){
+            if (balance_sheet_adjustments.length > 0) {
                 $('#adjustment_balance_sheet_date').val(balance_sheet_adjustments[0]['Date']);
                 $('#adjustment_balance_sheet_px').val(balance_sheet_adjustments[0]['PX']);
                 $('#adjustment_balance_sheet_best_eps').val(balance_sheet_adjustments[0]['BEST_EPS']);
@@ -944,9 +963,31 @@ $('#ess_idea_view_balance_sheet').on('click', function (e) {
                 $('#adjustment_balance_sheet_eqy_sh_out').val(balance_sheet_adjustments[0]['EQY_SH_OUT']);
 
             }
-            else{
+            else {
                 $('#adjustment_balance_sheet_date').val(balance_sheet_bloomberg[0]['Date']);
             }
+
+            // Populate the Adjustments on Price Target Date
+
+            if (on_pt_balance_sheet_adjustments.length > 0) {
+                $('#on_pt_adjustment_balance_sheet_date').val(on_pt_balance_sheet_adjustments[0]['Date']);
+                $('#on_pt_adjustment_balance_sheet_px').val(on_pt_balance_sheet_adjustments[0]['PX']);
+                $('#on_pt_adjustment_balance_sheet_best_eps').val(on_pt_balance_sheet_adjustments[0]['BEST_EPS']);
+                $('#on_pt_adjustment_balance_sheet_best_net_income').val(on_pt_balance_sheet_adjustments[0]['BEST_NET_INCOME']);
+                $('#on_pt_adjustment_balance_sheet_best_opp').val(on_pt_balance_sheet_adjustments[0]['BEST_OPP']);
+                $('#on_pt_adjustment_balance_sheet_best_sales').val(on_pt_balance_sheet_adjustments[0]['BEST_SALES']);
+                $('#on_pt_adjustment_balance_sheet_cur_ev_component').val(on_pt_balance_sheet_adjustments[0]['CUR_EV_COMPONENT']);
+                $('#on_pt_adjustment_balance_sheet_cur_mkt_cap').val(on_pt_balance_sheet_adjustments[0]['CUR_MKT_CAP']);
+                $('#on_pt_adjustment_balance_sheet_dvd_indicated_yield').val(on_pt_balance_sheet_adjustments[0]['DIVIDEND_INDICATED_YIELD']);
+                $('#on_pt_adjustment_balance_sheet_best_capex').val(on_pt_balance_sheet_adjustments[0]['BEST_CAPEX']);
+                $('#on_pt_adjustment_balance_sheet_best_ebitda').val(on_pt_balance_sheet_adjustments[0]['BEST_EBITDA']);
+                $('#on_pt_adjustment_balance_sheet_eqy_sh_out').val(on_pt_balance_sheet_adjustments[0]['EQY_SH_OUT']);
+
+            }
+            else {
+                $('#on_pt_adjustment_balance_sheet_date').val(balance_sheet_bloomberg[0]['Date']);
+            }
+
             $('#balance_sheet_modal').modal('show');
             caclulateFinalBalanceSheet();  //Populate the Final Balance Sheet
 
@@ -982,13 +1023,33 @@ $('#save_balance_sheet').on('click', function (e) {
         'BEST_EBITDA': $('#adjustment_balance_sheet_best_ebitda').val(),
         'EQY_SH_OUT': $('#adjustment_balance_sheet_eqy_sh_out').val()
     };
+    // Save the PT Date Balance Sheet.
+
+    var on_pt_balance_sheet = {
+        'Date': $('#on_pt_adjustment_balance_sheet_date').val(),
+        'PX': $('#on_pt_adjustment_balance_sheet_px').val(),
+        'BEST_EPS': $('#on_pt_adjustment_balance_sheet_best_eps').val(),
+        'BEST_NET_INCOME': $('#on_pt_adjustment_balance_sheet_best_net_income').val(),
+        'BEST_OPP': $('#on_pt_adjustment_balance_sheet_best_opp').val(),
+        'BEST_SALES': $('#on_pt_adjustment_balance_sheet_best_sales').val(),
+        'CUR_EV_COMPONENT': $('#on_pt_adjustment_balance_sheet_cur_ev_component').val(),
+        'CUR_MKT_CAP': $('#on_pt_adjustment_balance_sheet_cur_mkt_cap').val(),
+        'DIVIDEND_INDICATED_YIELD': $('#on_pt_adjustment_balance_sheet_dvd_indicated_yield').val(),
+        'BEST_CAPEX': $('#on_pt_adjustment_balance_sheet_best_capex').val(),
+        'BEST_EBITDA': $('#on_pt_adjustment_balance_sheet_best_ebitda').val(),
+        'EQY_SH_OUT': $('#on_pt_adjustment_balance_sheet_eqy_sh_out').val()
+    };
 
     $.ajax({
         'url': '../risk/ess_idea_save_balance_sheet',
         'type': 'POST',
-        'data': {'deal_id': deal_id, 'balance_sheet': JSON.stringify(balance_sheet)},
+        'data': {
+            'deal_id': deal_id,
+            'balance_sheet': JSON.stringify(balance_sheet),
+            'on_pt_balance_sheet': JSON.stringify(on_pt_balance_sheet)
+        },
         'success': function (response) {
-            if (response == 'Success') {
+            if (response === 'Success') {
                 toastr.success('Balance Sheet Updated!', 'Parameters Updated!');
             }
             else {
@@ -1005,9 +1066,7 @@ $('#save_balance_sheet').on('click', function (e) {
 /** Version Drop Down Change **/
 $('#ess_idea_version_number_select').on('change', function () {
     let deal_id = $('#ess_idea_deal_id').val();
-
-
-    let linkHref = '../risk/show_ess_idea?ess_idea_id='+deal_id+'&version='+$(this).val();
+    let linkHref = '../risk/show_ess_idea?ess_idea_id=' + deal_id + '&version=' + $(this).val();
     window.location.href = linkHref;
 
 });
@@ -1016,22 +1075,51 @@ $('#calculate_balance_sheet').on('click', function () {
 });
 
 
-function caclulateFinalBalanceSheet(){
-   $('#final_balance_sheet_best_capex').val(eval($('#balance_sheet_best_capex').val()+"+"+$('#adjustment_balance_sheet_best_capex').val()));
-   $('#final_balance_sheet_px').val(eval($('#balance_sheet_px').val()+"+"+$('#adjustment_balance_sheet_px').val()));
-   $('#final_balance_sheet_best_eps').val(eval($('#balance_sheet_best_eps').val()+"+"+$('#adjustment_balance_sheet_best_eps').val()));
-   $('#final_balance_sheet_best_net_income').val(eval($('#balance_sheet_best_net_income').val()+"+"+$('#adjustment_balance_sheet_best_net_income').val()));
-   $('#final_balance_sheet_best_opp').val(eval($('#balance_sheet_best_opp').val()+"+"+$('#adjustment_balance_sheet_best_opp').val()));
-   $('#final_balance_sheet_best_sales').val(eval($('#balance_sheet_best_sales').val()+"+"+$('#adjustment_balance_sheet_best_sales').val()));
-   $('#final_balance_sheet_cur_ev_component').val(eval($('#balance_sheet_cur_ev_component').val()+"+"+$('#adjustment_balance_sheet_cur_ev_component').val()));
-   $('#final_balance_sheet_cur_mkt_cap').val(eval($('#balance_sheet_cur_mkt_cap').val()+"+"+$('#adjustment_balance_sheet_cur_mkt_cap').val()));
-   $('#final_balance_sheet_dvd_indicated_yield').val(eval($('#balance_sheet_dvd_indicated_yield').val()+"+"+$('#adjustment_balance_sheet_dvd_indicated_yield').val()));
-   $('#final_balance_sheet_best_ebitda').val(eval($('#balance_sheet_best_ebitda').val()+"+"+$('#adjustment_balance_sheet_best_ebitda').val()));
-   $('#final_balance_sheet_eqy_sh_out').val(eval($('#balance_sheet_eqy_sh_out').val()+"+"+$('#adjustment_balance_sheet_eqy_sh_out').val()));
-   $('#final_balance_sheet_date').val($('#balance_sheet_date').val());
+function caclulateFinalBalanceSheet() {
+    $('#final_balance_sheet_best_capex').val(eval($('#balance_sheet_best_capex').val() + "+" + $('#adjustment_balance_sheet_best_capex').val()));
+    $('#final_balance_sheet_px').val(eval($('#balance_sheet_px').val() + "+" + $('#adjustment_balance_sheet_px').val()));
+    $('#final_balance_sheet_best_eps').val(eval($('#balance_sheet_best_eps').val() + "+" + $('#adjustment_balance_sheet_best_eps').val()));
+    $('#final_balance_sheet_best_net_income').val(eval($('#balance_sheet_best_net_income').val() + "+" + $('#adjustment_balance_sheet_best_net_income').val()));
+    $('#final_balance_sheet_best_opp').val(eval($('#balance_sheet_best_opp').val() + "+" + $('#adjustment_balance_sheet_best_opp').val()));
+    $('#final_balance_sheet_best_sales').val(eval($('#balance_sheet_best_sales').val() + "+" + $('#adjustment_balance_sheet_best_sales').val()));
+    $('#final_balance_sheet_cur_ev_component').val(eval($('#balance_sheet_cur_ev_component').val() + "+" + $('#adjustment_balance_sheet_cur_ev_component').val()));
+    $('#final_balance_sheet_cur_mkt_cap').val(eval($('#balance_sheet_cur_mkt_cap').val() + "+" + $('#adjustment_balance_sheet_cur_mkt_cap').val()));
+    $('#final_balance_sheet_dvd_indicated_yield').val(eval($('#balance_sheet_dvd_indicated_yield').val() + "+" + $('#adjustment_balance_sheet_dvd_indicated_yield').val()));
+    $('#final_balance_sheet_best_ebitda').val(eval($('#balance_sheet_best_ebitda').val() + "+" + $('#adjustment_balance_sheet_best_ebitda').val()));
+    $('#final_balance_sheet_eqy_sh_out').val(eval($('#balance_sheet_eqy_sh_out').val() + "+" + $('#adjustment_balance_sheet_eqy_sh_out').val()));
+    $('#final_balance_sheet_date').val($('#balance_sheet_date').val());
+
+    // Calculate Balance Sheet on Price Target Date too
+    $('#on_pt_final_balance_sheet_best_capex').val(eval($('#on_pt_balance_sheet_best_capex').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_capex').val()));
+    $('#on_pt_final_balance_sheet_px').val(eval($('#on_pt_balance_sheet_px').val() + "+" + $('#on_pt_adjustment_balance_sheet_px').val()));
+    $('#on_pt_final_balance_sheet_best_eps').val(eval($('#on_pt_balance_sheet_best_eps').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_eps').val()));
+    $('#on_pt_final_balance_sheet_best_net_income').val(eval($('#on_pt_balance_sheet_best_net_income').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_net_income').val()));
+    $('#on_pt_final_balance_sheet_best_opp').val(eval($('#on_pt_balance_sheet_best_opp').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_opp').val()));
+    $('#on_pt_final_balance_sheet_best_sales').val(eval($('#on_pt_balance_sheet_best_sales').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_sales').val()));
+    $('#on_pt_final_balance_sheet_cur_ev_component').val(eval($('#on_pt_balance_sheet_cur_ev_component').val() + "+" + $('#on_pt_adjustment_balance_sheet_cur_ev_component').val()));
+    $('#on_pt_final_balance_sheet_cur_mkt_cap').val(eval($('#on_pt_balance_sheet_cur_mkt_cap').val() + "+" + $('#on_pt_adjustment_balance_sheet_cur_mkt_cap').val()));
+    $('#on_pt_final_balance_sheet_dvd_indicated_yield').val(eval($('#on_pt_balance_sheet_dvd_indicated_yield').val() + "+" + $('#on_pt_adjustment_balance_sheet_dvd_indicated_yield').val()));
+    $('#on_pt_final_balance_sheet_best_ebitda').val(eval($('#on_pt_balance_sheet_best_ebitda').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_ebitda').val()));
+    $('#on_pt_final_balance_sheet_eqy_sh_out').val(eval($('#on_pt_balance_sheet_eqy_sh_out').val() + "+" + $('#on_pt_adjustment_balance_sheet_eqy_sh_out').val()));
+    $('#on_pt_final_balance_sheet_date').val($('#on_pt_balance_sheet_date').val());
+
 }
 
 
-
-
+/* Copy Function: To Copy Current Balance Sheet Adjustments to Price Target Date Adjustments */
+$('#copy_to_pt_adjustments').on('click', function () {
+    // Set values of on_pt to same as Current Adjustments
+    $('#on_pt_adjustment_balance_sheet_best_capex').val($('#adjustment_balance_sheet_best_capex').val());
+    $('#on_pt_adjustment_balance_sheet_px').val($('#adjustment_balance_sheet_px').val());
+    $('#on_pt_adjustment_balance_sheet_best_eps').val($('#adjustment_balance_sheet_best_eps').val());
+    $('#on_pt_adjustment_balance_sheet_best_net_income').val($('#adjustment_balance_sheet_best_net_income').val());
+    $('#on_pt_adjustment_balance_sheet_best_opp').val($('#adjustment_balance_sheet_best_opp').val());
+    $('#on_pt_adjustment_balance_sheet_best_sales').val($('#adjustment_balance_sheet_best_sales').val());
+    $('#on_pt_adjustment_balance_sheet_cur_ev_component').val($('#adjustment_balance_sheet_cur_ev_component').val());
+    $('#on_pt_adjustment_balance_sheet_cur_mkt_cap').val($('#adjustment_balance_sheet_cur_mkt_cap').val());
+    $('#on_pt_adjustment_balance_sheet_dvd_indicated_yield').val($('#adjustment_balance_sheet_dvd_indicated_yield').val());
+    $('#on_pt_adjustment_balance_sheet_best_ebitda').val($('#adjustment_balance_sheet_best_ebitda').val());
+    $('#on_pt_adjustment_balance_sheet_eqy_sh_out').val($('#adjustment_balance_sheet_eqy_sh_out').val());
+    $('#on_pt_balance_sheet_date').val($('#balance_sheet_date').val());
+});
 

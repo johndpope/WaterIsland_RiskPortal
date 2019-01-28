@@ -26,9 +26,10 @@ def daily_update_of_ytd_performance():
     metric2display_name = {'P&L($)': ''}
     metric2unit = {'P&L($)': '$'}
     # endregion
-
-    funds = ["ARB"]
+    print(df['Fund'].unique())
+    funds = ["ARB", "AED", "MACO", "MALT", "CAM", "LG", "LEV", "TACO", "TAQ"]
     fund2chart_tuple_list = []
+    ArbitrageYTDPerformance.objects.all().delete()  # Delete current Performance.
     for f in funds:
         f_df = df[df['Fund'] == f].copy()
 
@@ -62,7 +63,6 @@ def daily_update_of_ytd_performance():
         del f_df['Metrics in NAV notes JSON']
         del f_df['Metrics in Bet JSON']
         del f_df['Metrics in Bet notes JSON']
-        del f_df['Fund']
         del f_df['Analyst']
 
         sleeve2code = {'Merger Arbitrage': 'M&A',
@@ -75,16 +75,15 @@ def daily_update_of_ytd_performance():
         f_df = f_df[
             (~pd.isnull(f_df[' YTD($)']))]  # don't show null ytds. i.e. tradegroups closed before year started
 
-        base_cols = ['Sleeve', 'TradeGroup', 'LongShort', 'InceptionDate', 'EndDate', 'Status']
+        base_cols = ['Fund', 'Sleeve', 'TradeGroup', 'LongShort', 'InceptionDate', 'EndDate', 'Status']
         dollar_cols = [' YTD($)']
 
         fund_dollar_df = f_df[base_cols + dollar_cols].sort_values(by=' YTD($)')
-        ArbitrageYTDPerformance.objects.all().delete() # Delete current Performance.
 
         fund_dollar_df['InceptionDate'] = fund_dollar_df['InceptionDate'].apply(pd.to_datetime)
         fund_dollar_df['EndDate'] = fund_dollar_df['EndDate'].apply(pd.to_datetime)
 
-        fund_dollar_df.columns = ['sleeve', 'tradegroup', 'long_short', 'inception_date', 'end_date', 'status',
+        fund_dollar_df.columns = ['fund', 'sleeve', 'tradegroup', 'long_short', 'inception_date', 'end_date', 'status',
                                   'ytd_dollar']
 
         fund_dollar_df.to_sql(name='realtime_pnl_impacts_arbitrageytdperformance', con=settings.SQLALCHEMY_CONNECTION,

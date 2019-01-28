@@ -1,3 +1,4 @@
+import sys
 import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 import django
@@ -10,69 +11,148 @@ import datetime
 import requests
 from dateutil.relativedelta import relativedelta
 import numpy as np
-from .models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records
+from risk.models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records
 import bbgclient
 import json
 from django.conf import settings
 import ast
 from django_slack import slack_message
-
+from django.core.mail import EmailMessage
 api_host = bbgclient.bbgclient.get_next_available_host()
 import ess_function
 
 
-
-
-
-
 @shared_task
 def premium_analysis_flagger():
-    ''' Run this task each morning to calculate the Upside/Downside and appropriately flag the deals where the upside/downside differs by more than 5% '''
+    """ Run this task each morning to calculate the Upside/Downside and appropriately flag the
+    deals where the upside/downside differs by more than 5% """
+
+    deal_change_log_columns = ['Date', 'Deal Name', 'Old Upside', 'Adjusted Upside', 'Old Downside',
+                               'Adjusted Downside', 'Old WIC PT', 'Adjusted WIC PT']
+    deal_change_log = pd.DataFrame(columns=deal_change_log_columns)
     for each_deal in ESS_Idea.objects.all():
         try:
+            deal_change_dict = {}
+
             deal_object = ESS_Idea.objects.get(id=each_deal.id)
+            # Reset Downside Attention
+            deal_object.needs_downside_attention = 0
+
             print('Processing for IDEA Ticker: ' + str(deal_object.alpha_ticker))
             multiples_dictionary = ast.literal_eval(deal_object.multiples_dictionary)[0]
             multiples_dictionary = {k: float(v) for k, v in multiples_dictionary.items()}
-            related_peers = ESS_Peers.objects.select_related().filter(ess_idea=deal_object.id)
+            related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=deal_object.id)
             peers_weights_dictionary = {}
 
             for eachPeer in related_peers:
                 peers_weights_dictionary[eachPeer.ticker] = eachPeer.hedge_weight / 100
 
-            df = ess_function.final_df(deal_object.alpha_ticker, deal_object.cix_index, str(deal_object.unaffected_date),
-                                       str(deal_object.expected_close), str(deal_object.price_target_date),
-                                       deal_object.pt_up, deal_object.pt_down, peers_weights_dictionary, multiples_dictionary,
-                                       api_host, f_period="1BF")
+            premium_as_percent = None
+            if deal_object.premium_format == 'percentage': # Adjust with Percentage
+                premium_as_percent = 'percentage'
 
-            cix_down_price = df['Down Price (CIX)']
-            cix_up_price = df['Up Price (CIX)']
-            regression_up_price = df['Up Price (Regression)']
-            regression_down_price = df['Down Price (Regression)']
+            # Process only if Requested
 
-            percentage_change_cix_up = ((cix_up_price - deal_object.pt_up)/cix_up_price) * 100
-            percentage_change_cix_down = ((cix_down_price - deal_object.pt_down) / cix_down_price) * 100
+            if deal_object.pt_down_check == 'Yes' or deal_object.pt_wic_check == 'Yes' or deal_object.pt_up_check== 'Yes':
 
-            percentage_change_reg_up = ((regression_up_price - deal_object.pt_up) / regression_up_price) * 100
-            percentage_change_reg_down = ((regression_down_price - deal_object.pt_down) / regression_down_price) * 100
+                df = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker, cix_index=deal_object.cix_index,
+                                           unaffectedDt=str(deal_object.unaffected_date),
+                                           expected_close=str(deal_object.expected_close),
+                                           tgtDate=str(deal_object.price_target_date),
+                                           analyst_upside=deal_object.pt_up,
+                                           analyst_downside=deal_object.pt_down,
+                                           analyst_pt_wic=deal_object.pt_wic,
+                                           peers2weight=peers_weights_dictionary, metric2weight=multiples_dictionary,
+                                           api_host=api_host, adjustments_df_now=deal_object.idea_balance_sheet,
+                                           adjustments_df_ptd=deal_object.on_pt_balance_sheet,
+                                           premium_as_percent=premium_as_percent,
+                                           f_period="1BF")
 
-            #Check if Any exceeds 5% boundary
-            if abs(percentage_change_cix_up) > 5 or abs(percentage_change_cix_down) > 5 or abs(percentage_change_reg_up)>5 or abs(percentage_change_reg_down)>5:
-                #Flat the deal
-                deal_object.needs_downside_attention = 1
+                cix_down_price = df['Down Price (CIX)']
+                cix_up_price = df['Up Price (CIX)']
+                regression_up_price = df['Up Price (Regression)']
+                regression_down_price = df['Down Price (Regression)']
+                pt_wic_price_cix = df['PT WIC Price (CIX)']
+                pt_wic_price_regression = df['PT WIC Price (Regression)']
+
+                percentage_change_cix_up = ((cix_up_price - deal_object.pt_up)/cix_up_price) * 100
+                percentage_change_cix_down = ((cix_down_price - deal_object.pt_down) / cix_down_price) * 100
+
+                percentage_change_reg_up = ((regression_up_price - deal_object.pt_up) / regression_up_price) * 100
+                percentage_change_reg_down = ((regression_down_price - deal_object.pt_down) / regression_down_price) * 100
+
+                percentage_change_pt_wic_cix = ((pt_wic_price_cix - deal_object.pt_wic) / pt_wic_price_cix) * 100
+                percentage_change_pt_wic_reg = ((pt_wic_price_regression - deal_object.pt_wic) / pt_wic_price_regression) * 100
+
+
+                if deal_object.pt_wic_check == 'Yes':
+                    # Adjust the PT Wic and Record the change
+                    old_pt_wic = deal_object.pt_wic
+                    deal_object.pt_wic = pt_wic_price_cix if deal_object.how_to_adjust == 'cix' else pt_wic_price_regression
+                    deal_change_dict['Old WIC PT'] = old_pt_wic
+                    deal_change_dict['Adjusted WIC PT'] = deal_object.pt_wic
+                    # Here check if it exceeds the 5% threshold to alert the user
+                    if deal_object.how_to_adjust == 'cix':
+                        # Check if it exceeds 5% for Cix adjustments
+                        if abs(percentage_change_pt_wic_cix) > 5:
+                            deal_object.needs_downside_attention = 1
+                    else:
+                        if abs(percentage_change_pt_wic_reg) > 5:
+                            deal_object.needs_downside_attention = 1
+
+                if deal_object.pt_up_check == 'Yes':
+                    old_pt_up = deal_object.pt_up
+                    deal_object.pt_up = cix_up_price if deal_object.how_to_adjust == 'cix' else regression_up_price
+                    deal_change_dict['Old Upside'] = old_pt_up
+                    deal_change_dict['Adjusted Upside'] = deal_object.pt_up
+                    if deal_object.how_to_adjust == 'cix':
+                        # Check if it exceeds 5% for Cix adjustments
+                        if abs(percentage_change_cix_up) > 5:
+                            deal_object.needs_downside_attention = 1
+                    else:
+                        if abs(percentage_change_reg_up) > 5:
+                            deal_object.needs_downside_attention = 1
+
+                if deal_object.pt_down_check == 'Yes':
+                    old_pt_down = deal_object.pt_down
+                    deal_object.pt_down = cix_down_price if deal_object.how_to_adjust == 'cix' else regression_down_price
+                    deal_change_dict['Old Downside'] = old_pt_down
+                    deal_change_dict['Adjusted Downside'] = deal_object.pt_down
+                    if deal_object.how_to_adjust == 'cix':
+                        # Check if it exceeds 5% for Cix adjustments
+                        if abs(percentage_change_cix_down) > 5:
+                            deal_object.needs_downside_attention = 1
+                    else:
+                        if abs(percentage_change_reg_down) > 5:
+                            deal_object.needs_downside_attention = 1
+
+                deal_change_dict['Date'] = datetime.datetime.now().date().strftime("%Y-%m-%d")
+                deal_change_dict['Deal Name'] = deal_object.alpha_ticker
+                deal_change_log = deal_change_log.append(deal_change_dict, ignore_index=True)
                 deal_object.save()
+                # Record this Upside downside change for the deal
+                ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=deal_object.id, deal_key=deal_object.deal_key,
+                                                        pt_up=deal_object.pt_up,
+                                                        pt_wic=deal_object.pt_wic, pt_down=deal_object.pt_down,
+                                                        date_updated=datetime.datetime.now().date()
+                                                        .strftime('%Y-%m-%d')).save()
+
+                print('Recorded Upside/Downside Adjustments for ' + str(deal_object.alpha_ticker))
             else:
-                deal_object.needs_downside_attention = 0
-                deal_object.save()
-
-
-
-
+                print('No Adjustments requested for : ' + str(deal_object.alpha_ticker))
         except Exception as e:
+            print(e)
             print('Failed Calculating Premium Analysis for : '+str(deal_object.alpha_ticker))
             continue
+    # Todo Email the Dataframe to the ESS Team
+    from tabulate import tabulate
+    email = EmailMessage('ESS IDEA Database - Adjustments', body=tabulate(deal_change_log,
+                                                                          headers=deal_change_log.columns,
+                                                                          showindex=False, tablefmt='psql'),
+                         to=['kgorde@wicfunds.com'], from_email='dispatch@wicfunds.com')
 
-
+    email.attach('EssIDEA_Adjustments.csv', deal_change_log.to_csv(), 'text/csv')
+    email.send()
 
 @shared_task
 def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_model_file, update_id, ticker,
@@ -81,7 +161,8 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
                  s_value, a_value, i_value,
                  c_value, m_overview, o_overview, s_overview, a_overview, i_overview, c_overview, ticker_hedge_length,
                  ticker_hedge_mappings, cix_index, price_target_date, multiples, category, catalyst, deal_type,
-                 catalyst_tier, hedges, gics_sector, lead_analyst, status, pt_up_check, pt_down_check, pt_wic_check):
+                 catalyst_tier, hedges, gics_sector, lead_analyst, status, pt_up_check, pt_down_check, pt_wic_check,
+                 adjust_based_off, premium_format):
     try:
         multiples_mappings = json.loads(multiples)
         # Get it into the right format
@@ -276,7 +357,8 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
                                 catalyst_tier=catalyst_tier,
                                 hedges=hedges, gics_sector=gics_sector, lead_analyst=lead_analyst, status=status,
                                 version_number=0, deal_key=latest_deal_key, pt_up_check=pt_up_check,
-                                pt_down_check=pt_down_check, pt_wic_check=pt_wic_check)
+                                pt_down_check=pt_down_check, pt_wic_check=pt_wic_check, how_to_adjust=
+                                adjust_based_off, premium_format=premium_format)
             # Save the Newly created Deal
             if bull_thesis_model_file != None:
                 new_deal.bull_thesis_model = bull_thesis_model_file
@@ -640,7 +722,8 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
                                 deal_type=deal_type, catalyst_tier=catalyst_tier,
                                 hedges=hedges, gics_sector=gics_sector, lead_analyst=lead_analyst, status=status,
                                 version_number=version_number, pt_up_check=pt_up_check, pt_down_check=pt_down_check,
-                                pt_wic_check=pt_wic_check)
+                                pt_wic_check=pt_wic_check, how_to_adjust=adjust_based_off,
+                                premium_format=premium_format)
             # Save the Newly created Deal
 
             if bull_thesis_model_file is not None:
@@ -776,7 +859,8 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
                                 deal_type=deal_type, catalyst_tier=catalyst_tier,
                                 hedges=hedges, gics_sector=gics_sector, lead_analyst=lead_analyst, status=status,
                                 version_number=version_number,  pt_up_check=pt_up_check, pt_down_check=pt_down_check,
-                                pt_wic_check=pt_wic_check)
+                                pt_wic_check=pt_wic_check, how_to_adjust=adjust_based_off,
+                                premium_format=premium_format)
 
             print('Saving New ESS Deal')
             if bull_thesis_model_file is not None:
@@ -1016,17 +1100,19 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
 
 @shared_task
 def ess_idea_daily_update():
-    ''' This is a periodic task that executes every morning at 5. Go through each Deal in ESS Idea Database and
+    """ This is a periodic task that executes every morning at 5. Go through each Deal in ESS Idea Database and
     1. Update Alpha Price with the Last known price
     2. Get the last price of the day and recalculate all the other fields based on that price.
-    3. Update all the Charts with the New values '''
+    3. Update all the Charts with the New values """
 
     # Force a Connection Close to prevent 'My-SQL server has gone away'
-
     try:
+        close_old_connections()
+        unique_deals = set(ESS_Idea.objects.all().values_list('alpha_ticker', flat=True))
+        for eachDealObject in unique_deals:
+            eachDealObject = ESS_Idea.objects.filter(alpha_ticker__exact=eachDealObject).order_by('-version_number')\
+                .first()
 
-        for eachDealObject in ESS_Idea.objects.all():
-            close_old_connections()
             id = eachDealObject.id
             ticker = eachDealObject.alpha_ticker
             price = eachDealObject.price
@@ -1042,15 +1128,23 @@ def ess_idea_daily_update():
             existing_market_neutral_chart = eachDealObject.market_neutral_chart
             # Make a Request for Yesterday
             peer_tickers = []
-            related_peers = ESS_Peers.objects.select_related().filter(ess_idea=id).values_list()
 
-            related_peers_list = ESS_Peers.objects.select_related().filter(ess_idea=id)
+            related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=id).values_list()
+
+            related_peers_list = ESS_Peers.objects.select_related().filter(ess_idea_id_id=id)
+
             # < QuerySet[(300, 'IBM US EQUITY', 30.0), (301, 'AAPL US EQUITY', 10.0), (302, 'QCOM US EQUITY', 10.0), (
             # 303, 'NFLX US EQUITY', 50.0)] >
+            print('Processing Daily Update for Deal: '+ str(ticker))
             peer_weights = []
+
             for i in range(len(related_peers)):
-                peer_tickers.append(related_peers[i][1])
-                peer_weights.append(related_peers[i][2])
+                peer_tickers.append(related_peers[i][2])
+                peer_weights.append(related_peers[i][3])
+
+            hedge_weight_dictionary = {}
+            for i in range(len(peer_tickers)):
+                hedge_weight_dictionary[peer_tickers[i]] = peer_weights[i]
 
             end_date = unaffected_date.strftime("%Y%m%d")
             start_date = parser.parse(end_date) - relativedelta(months=3)
@@ -1060,29 +1154,36 @@ def ess_idea_daily_update():
             # Reset End Date to Get Prices till date
             end_date = datetime.datetime.today()
             end_date = datetime.datetime.strftime(end_date, "%Y%m%d")
+
             r = requests.get("http://192.168.0.15:8080/wic/api/v1.0/general_histdata",
                              params={'idtype': "tickers", "fields": "PX_LAST",
                                      "tickers": ticker + "," + ','.join(peer_tickers),
                                      "override": "", "start_date": start_date, "end_date": end_date},
                              timeout=15)  # Set a 15 secs Timeout
 
-            alpha_prices = r.json()['results'][0][ticker]['fields']['PX_LAST']
-            dates_array = r.json()['results'][0][ticker]['fields']['date']
+            resp = r.json()['results']
+
+            peers_data = []  # Array of dictionaries containing Peer name, its historical prices and hedge weight
+            for i in range(len(resp)):
+                key = list(resp[i].keys())[0]
+                if key == ticker:
+                    # append to alpha tickers
+                    alpha_prices = resp[i][key]['fields']['PX_LAST']
+                    dates_array = resp[i][key]['fields']['date']
+                else:
+                    peers_data.append({
+                        'peer': key,
+                        'historical_prices': resp[i][key]['fields']['PX_LAST'],
+                        'hedge_weight': hedge_weight_dictionary[key]
+                    })
+
+
             # Recalculalte Alpha Chart, Hedge Chart & Market Netural Charts Each day. Only Append to Event Premium and Implied Probability
 
             price = float(alpha_prices[-1])  # Get most Recent Price
 
-            peers_data = []  # Array of dictionaries containing Peer name, its historical prices and hedge weight
-            counter = 1  # Counter 0 will be the Alpha ticker
-
-            for peer_ticker, hedge in zip(peer_tickers, peer_weights):
-                peers_data.append({'peer': peer_ticker,
-                                   'historical_prices': r.json()['results'][counter][peer_ticker]['fields']['PX_LAST']
-                                      , 'hedge_weight': float(hedge)})
-                counter += 1
-
-            # Peers data Obtained
             # Calculate peer ratios
+
             first_price = float(alpha_prices[0])
             ratios = []
             percent_daily_change = []
@@ -1097,15 +1198,25 @@ def ess_idea_daily_update():
             historical_prices_length = len(peers_data[0]['historical_prices'])
 
             counter = 0
-            hedge_index_change = []
-            hedge_index_change.append(
-                float(alpha_prices[0]))  # First day will be the same as alpha price (Consider first day Index)
+            # First day will be the same as alpha price (Consider first day Index)
+            hedge_index_change = [float(alpha_prices[0])]
+
             percent_daily_change.append(0)  # first day's change is 0
+
+            #Todo What happens if Peers Data Prices length is > alpha or vice versa?. ALpha opened today but peers 2mbck
             for i in range(1, historical_prices_length):
-                next_price = float(alpha_prices[i])
+                next_price = 0
+                if i<len(alpha_prices):
+                    next_price = float(alpha_prices[i])
                 changes = []
+
                 while counter < len(ratios):
-                    changes.append(float(peers_data[counter]['historical_prices'][i]) * ratios[counter])
+                    hp = 0
+                    if i >= len(peers_data[counter]['historical_prices']):
+                        hp = 0
+                    else:
+                        hp = float(peers_data[counter]['historical_prices'][i])
+                    changes.append(hp * ratios[counter])
                     counter += 1
 
                 counter = 0
@@ -1254,7 +1365,13 @@ def ess_idea_daily_update():
             for i in range(len(existing_hedge_chart), len(alpha_prices)):
                 changes = []
                 while counter < len(ratios):
-                    changes.append(np.multiply(float(peers_data[counter]['historical_prices'][i]), ratios[counter]))
+                    hp = 0
+                    if i >= len(peers_data[counter]['historical_prices']):
+                        hp = 0
+                    else:
+                        hp = float(peers_data[counter]['historical_prices'][i])
+
+                    changes.append(np.multiply(hp, ratios[counter]))
                     counter += 1
                 counter = 0
                 # Subtract Changes from Next Price
@@ -1264,7 +1381,7 @@ def ess_idea_daily_update():
                 existing_hedge_chart.append({
                     "date": date,
                     "vol": float(change)
-                });
+                })
 
             for date, alpha_price in zip(new_dates, new_prices):
                 existing_implied_probability_chart.append({
@@ -1480,10 +1597,13 @@ def ess_idea_daily_update():
             print('Peers Updated....')
 
     except Exception as e:
-        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
-                      token=settings.SLACK_TOKEN)
+        # slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
+        #               token=settings.SLACK_TOKEN)
         print('Exception in Celery Task' + str(e))
         print(e)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
 
 
 def get_fcf_yield(ticker, api_host, start_date_yyyymmdd, end_date_yyyymmdd, fperiod):
@@ -1516,5 +1636,3 @@ def get_fcf_yield(ticker, api_host, start_date_yyyymmdd, end_date_yyyymmdd, fper
     fcf['FCF yield'] = fcf['FCF'] / fcf['PX']
 
     return fcf[['Date', 'FCF yield']]
-
-

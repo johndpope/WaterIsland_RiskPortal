@@ -201,29 +201,31 @@ class ESS_Idea(models.Model):
     p_eps_chart_ltm = models.TextField()
     fcf_yield_chart = models.TextField()
     price_target_date = models.DateField()
-    multiples_dictionary = models.TextField() #Save Multiples and Weight as Dictionary
+    multiples_dictionary = models.TextField()  # Save Multiples and Weight as Dictionary
     cix_index = models.CharField(max_length=100, null=True)
     category = models.CharField(max_length=100, null=True)
     catalyst = models.CharField(max_length=5, null=True)
     deal_type = models.CharField(max_length=100, null=True)
     catalyst_tier = models.CharField(max_length=5, null=True)
     gics_sector = models.CharField(max_length=100, null=True)
-    hedges = models.CharField(max_length=5, null=True) #Yes/No field
-    needs_downside_attention = models.IntegerField(null=True) #Indicated whether dowside needs to be revised...
-    status = models.CharField(max_length=100, null=True, default='Backlogged') #Backlogged, Completed and Ready for Review
-    lead_analyst = models.CharField(max_length=100, null=True, default='Unallocated') #Analyst working on the deal
+    hedges = models.CharField(max_length=5, null=True) # Yes/No field
+    needs_downside_attention = models.IntegerField(null=True)  # Indicated whether downside needs to be revised...
+    status = models.CharField(max_length=100, null=True, default='Backlogged')
+    lead_analyst = models.CharField(max_length=100, null=True, default='Unallocated')  # Analyst working on the deal
     version_number = models.IntegerField(default=0)
-    idea_balance_sheet = models.TextField(null=True) #This field reflects the Balance Sheet Adjustments.
-
+    idea_balance_sheet = models.TextField(null=True)  # This field reflects the Balance Sheet Adjustments.
+    on_pt_balance_sheet = models.TextField(null=True)  # This field reflects the Adjustments on Price Target Date
     pt_up_check = models.CharField(max_length=10, null=True)
     pt_down_check = models.CharField(max_length=10, null=True)
     pt_wic_check = models.CharField(max_length=10, null=True)
+    how_to_adjust = models.CharField(max_length=10, null=True, default='cix')   # CIX or Regression
+    premium_format = models.CharField(max_length=10, null=True, default='dollar')  # Dollar or Percentage
 
 class CreditDatabase(models.Model):
     id = models.AutoField(primary_key=True)
     deal_name = models.CharField(max_length=100, null=True)
-    deal_bucket = models.CharField(max_length=100, null=True) #populated through drop down
-    deal_strategy_type = models.CharField(max_length=100, null=True) #Populated through drop-down
+    deal_bucket = models.CharField(max_length=100, null=True)  # populated through drop down
+    deal_strategy_type = models.CharField(max_length=100, null=True)  # Populated through drop-down
     catalyst = models.CharField(max_length=100, null=True)
     catalyst_tier = models.CharField(max_length=10, null=True)
     target_security_cusip = models.CharField(max_length=100, null=True)

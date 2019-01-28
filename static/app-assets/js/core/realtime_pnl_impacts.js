@@ -5,6 +5,27 @@ $(document).ready(function () {
         "language": {
         "processing": "Refreshing PnL"
         },
+        initComplete: function () {
+            this.api().columns([0]).every(function () {
+                var column = this;
+                $(column.header()).append("<br>");
+                var select = $('<select class="custom-select" ><option value=""></option></select>')
+                    .appendTo($(column.header()))
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+
+                        column
+                            .search(val ? '^' + val + '$' : '', true, false)
+                            .draw();
+                    });
+
+                column.data().unique().sort().each(function (d, j) {
+                    select.append('<option value="' + d + '">' + d + '</option>')
+                });
+            });
+        },
         "processing": true,
         "searching":true,
         "ajax":{
@@ -12,10 +33,12 @@ $(document).ready(function () {
             "type":"POST",
             dataSrc: function (json) {
                         var obj = JSON.parse(json["data"]);
+                        console.log(obj);
                         return obj;
                     }
         },
         "columns":[
+            {"data" :"Fund"},
             {"data" :"TradeGroup"},
             {"data" :"InceptionDate"},
             {"data" :"EndDate"},

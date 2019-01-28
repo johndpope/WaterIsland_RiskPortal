@@ -1,6 +1,12 @@
 $(document).ready(function () {
 
     var ess_idea_table = $('#ess_idea_table').DataTable({
+        dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
+            '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
+            '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+        fixedHeader: {
+            header: true
+        },
         'rowCallback': function (row, data, index) {
             if ($(row).attr('data-value') === '1') {
                 $(row).css('background-color', '#ff9999');
@@ -9,7 +15,6 @@ $(document).ready(function () {
         initComplete: function () {
             this.api().columns([0,1,2,3,4,10,17]).every(function () {
                 var column = this;
-
                 $(column.header()).append("<br>");
                 var select = $('<select class="custom-select" ><option value=""></option></select>')
                     .appendTo($(column.header()))
@@ -32,6 +37,38 @@ $(document).ready(function () {
         columnDefs:[{targets:[9,10], render:function(data){
             return moment(data).format('YYYY-MM-DD');
         }}],
+        buttons: {
+            buttons: [{
+                extend: 'print',
+                text: '<i class="fa fa-print"></i> Print',
+                title:'',
+                exportOptions: {
+                    columns: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17],
+                },
+                customize: function ( win ) {
+                    $(win.document.body)
+                        .css( 'font-size', '10pt' )
+                        .prepend(
+                            '<p> Water Island Capital, Risk Portal - ESS IDEA Database</p>'
+                        );
+                },
+
+            }, {
+                extend: 'copy',
+                text: '<i class="fa fa-copy"></i> Copy',
+                 exportOptions: {
+                    columns: [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
+                },
+            }],
+            dom: {
+                container: {
+                    className: 'dt-buttons'
+                },
+                button: {
+                    className: 'btn btn-default'
+                }
+            }
+        }
 });
 
 
@@ -270,6 +307,9 @@ $('#ess_new_deal_form').on('submit', function (e) {
 
     var ess_idea_status = $('#ess_idea_status').val();
 
+    let adjust_based_off = $('#select_based_off').val();
+    let premium_format = $('#premium_format').val();
+
     // ------- Append All Data --------------------------------
 
     data.append('bull_thesis_model_file', bull_thesis_model_file);
@@ -317,6 +357,8 @@ $('#ess_new_deal_form').on('submit', function (e) {
     data.append('pt_up_check', pt_up_check);
     data.append('pt_down_check', pt_down_check);
     data.append('pt_wic_check', pt_wic_check);
+    data.append('adjust_based_off', adjust_based_off);
+    data.append('premium_format', premium_format);
     // // Done getting all Fields. Now POST via AJAX and get Response. If response is success, inserting the row (from response) into the Existing DataTable and Redraw it
 
     $.ajax({
@@ -465,6 +507,12 @@ $('.table-responsive').on("click", "#ess_idea_table tr td li a", function () {
                 let pt_down_check = deal_object[0][66];
                 let pt_wic_check = deal_object[0][67];
 
+                let adjust_based_off = deal_object[0][69];
+                let premium_format = deal_object[0][70];
+
+                $('#select_based_off').val(adjust_based_off);
+                $('#premium_format').val(premium_format);
+
                 //If adjustments are not null and contains Yes then check it
                 if( pt_up_check!= 'null' && pt_up_check === 'Yes'){
                     $('#pt_up_check').prop('checked', true);
@@ -609,8 +657,9 @@ $('.table-responsive').on("click", "#ess_idea_table tr td li a", function () {
     else {
         //Logic to View the Deal
         //Just take the URL and redirect to the page. Front-end handling
-        idea_to_view = current_deal.split('_')[1];
+        let idea_to_view = current_deal.split('_')[1];
         window.open("../risk/show_ess_idea?ess_idea_id=" + idea_to_view, '_blank');
+        return false;
     }
 
 

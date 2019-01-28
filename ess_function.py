@@ -5,8 +5,12 @@ import datetime
 import dfutils
 import pandas as pd
 
-def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, analyst_upside, peers2weight, metric2weight,
-                             api_host, adjustments_df=None, f_period='1BF'):
+
+# Function that takes input and runs the ess_premium_analysis.py document
+# The output of this function is the rsults of each model as dataframes
+def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, analyst_upside, analyst_downside,
+                             analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_now=None,
+                             adjustments_df_ptd=None, premium_as_percent=None, f_period='1BF'):
     slicer = dfutils.df_slicer()
     start_date = slicer.prev_n_business_days(120, unaffectedDt)  # lookback is 120 days (6 months)
     metrics = {k: v for k, v in metric2weight.items() if v != 0}
@@ -14,22 +18,25 @@ def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, anal
     metric_list = list(metrics.keys())
 
     calib_data = ess_premium_analysis.calibration_data(alpha_ticker, peers2weight, start_date, unaffectedDt,
-                                                             metric_list, api_host, f_period)
+                                                       metric_list, api_host, f_period)
 
-    OLS_results = ess_premium_analysis.premium_analysis_df_OLS(alpha_ticker, peers_list, calib_data,
-                                                                     analyst_upside, as_of_dt, tgtDate, metric_list,
-                                                                     metric2weight, api_host, adjustments_df)
-    premium_analysis_results = ess_premium_analysis.premium_analysis_df(alpha_ticker, peers_list, as_of_dt,
-                                                                              tgtDate, analyst_upside, metric_list,
-                                                                              metric2weight, calib_data['metric2rel'],
-                                                                              api_host, adjustments_df)
+    OLS_results = ess_premium_analysis.premium_analysis_df_OLS(alpha_ticker, peers_list, calib_data, analyst_upside,
+                                                               analyst_downside, analyst_pt_wic, as_of_dt, tgtDate,
+                                                               metric_list, metric2weight, api_host, adjustments_df_now,
+                                                               adjustments_df_ptd, premium_as_percent)
+    premium_analysis_results = ess_premium_analysis.premium_analysis_df(alpha_ticker, peers_list, as_of_dt, tgtDate,
+                                                                        analyst_upside, analyst_downside,
+                                                                        analyst_pt_wic, metric_list, metric2weight,
+                                                                        calib_data['metric2rel'], api_host,
+                                                                        adjustments_df_now, adjustments_df_ptd,
+                                                                        premium_as_percent)
 
     return (premium_analysis_results, OLS_results)
 
 
 def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, analyst_upside, analyst_downside,
-             peers2weight, metric2weight, api_host, adjustments_df=None, f_period="1BF"):
-
+             analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_now=None, adjustments_df_ptd=None,
+             premium_as_percent=None, f_period="1BF"):
     slicer = dfutils.df_slicer()
     as_of_dt = datetime.datetime.today()
     unaff_dt = datetime.datetime.strptime(unaffectedDt, '%Y-%m-%d')
@@ -43,6 +50,7 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
     df["Expected Close Date"] = exp_close_dt.strftime('%Y-%m-%d')
 
     df["Alpha Downside"] = analyst_downside
+    df["Alpha PT (WIC)"] = analyst_pt_wic
     df["Alpha Upside"] = analyst_upside
 
     df["CIX at Target Date"] = bbgclient.bbgclient.get_timeseries(cix_index, 'PX_LAST',
@@ -64,14 +72,23 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
 
     df["CIX Upside"] = (df["Alpha Upside"] - df["Alpha at Target Date"]) + df["CIX at Target Date"]
     df["CIX Downside"] = df["CIX at Target Date"] - (df["Alpha at Target Date"] - df["Alpha Downside"])
+    df["CIX WIC Adjustment"] = (df["Alpha PT (WIC)"] - df["Alpha at Target Date"]) + df["CIX at Target Date"]
     df["Down Price (CIX)"] = df["Alpha Last Price"] - (df["CIX Last Price"] - df["CIX Downside"])
     df["Up Price (CIX)"] = df["Alpha Last Price"] + (df["CIX Upside"] - df["CIX Last Price"])
+    df["PT WIC Price (CIX)"] = df["Alpha Last Price"] + (df["CIX WIC Adjustment"] - df["CIX Last Price"])
 
-    model1, model2 = run_ess_premium_analysis(alpha_ticker, unaff_dt, tgt_dt, as_of_dt, analyst_upside, peers2weight,
-                                              metric2weight, api_host, adjustments_df, f_period="1BF")
+    # try:
+    model1, model2 = run_ess_premium_analysis(alpha_ticker, unaff_dt, tgt_dt, as_of_dt, analyst_upside,
+                                              analyst_downside, analyst_pt_wic, peers2weight, metric2weight, api_host,
+                                              adjustments_df_now, adjustments_df_ptd, premium_as_percent,
+                                              f_period="1BF")
+    # except Exception as e:
+    # print('failed running WIC and Regression models: ' + str(e.args))
 
     df["Down Price (WIC)"] = model1["Alpha Downside (Adj,weighted)"].sum()
     df["Down Price (Regression)"] = model2["Alpha Downside (Adj,weighted)"].sum()
+    df["PT WIC Price (WIC)"] = model1["Alpha PT WIC (Adj,weighted)"].sum()
+    df["PT WIC Price (Regression)"] = model2["Alpha PT WIC (Adj,weighted)"].sum()
     df["Up Price (WIC)"] = model1["Alpha Upside (Adj,weighted)"].sum()
     df["Up Price (Regression)"] = model2["Alpha Upside (Adj,weighted)"].sum()
 
@@ -145,6 +162,10 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
                  'Down Price (CIX)',
                  'Down Price (WIC)',
                  'Down Price (Regression)',
+                 'Alpha PT (WIC)',
+                 'PT WIC Price (CIX)',
+                 'PT WIC Price (WIC)',
+                 'PT WIC Price (Regression)',
                  'Alpha Upside',
                  'Up Price (CIX)',
                  'Up Price (WIC)',
@@ -157,3 +178,4 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
                  'Ann. Return(%)']
 
     return (df[cols2show])
+

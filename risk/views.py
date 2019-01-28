@@ -713,6 +713,7 @@ def show_ess_idea(request):
         :return: JSON encoded Object with IDEA Sections to be displayed on the front-end
     """
     #try:
+
     if 'version' in request.GET.keys():
         # Use POST for a different Version Request...
         version_requested = request.GET['version']
@@ -1263,7 +1264,12 @@ def ess_idea_save_balance_sheet(request):
         balance_sheet = pd.DataFrame(pd.read_json(request.POST['balance_sheet'], orient='records', typ='series'))\
             .transpose()
 
+        on_pt_balance_sheet = pd.DataFrame(pd.read_json(request.POST['on_pt_balance_sheet'], orient='records',
+                                                        typ='series'))\
+            .transpose()
+
         deal_object.idea_balance_sheet = balance_sheet.to_json(orient='records')
+        deal_object.on_pt_balance_sheet = on_pt_balance_sheet.to_json(orient='records')
         deal_object.save()
 
         response = 'Success'
@@ -1279,6 +1285,8 @@ def ess_idea_view_balance_sheet(request):
     """
     balance_sheet_adjustments = None
     balance_sheet = None
+    on_pt_balance_sheet_adjustments = None
+
     if request.method == 'POST':
         deal_id = request.POST.get('deal_id')
         latest_version = ESS_Idea.objects.filter(id=deal_id).latest(
@@ -1288,6 +1296,7 @@ def ess_idea_view_balance_sheet(request):
         deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
 
         balance_sheet_adjustments = deal_object.idea_balance_sheet
+        on_pt_balance_sheet_adjustments = deal_object.on_pt_balance_sheet
         balance_sheet = ess_premium_analysis.multiple_underlying_df(deal_object.alpha_ticker,
                                                                     datetime.datetime.now().strftime('%Y%m%d'),
                                                                     api_host)
@@ -1299,12 +1308,22 @@ def ess_idea_view_balance_sheet(request):
         else:
             balance_sheet_adjustments = pd.DataFrame()
 
+        if on_pt_balance_sheet_adjustments is not None:
+            # Previous Adjustments are saved for this deal. Fetch and display those in Adjustments table.
+            on_pt_balance_sheet_adjustments = pd.read_json(on_pt_balance_sheet_adjustments)
+            on_pt_balance_sheet_adjustments['Date'] = on_pt_balance_sheet_adjustments['Date'].apply(pd.to_datetime)
+            on_pt_balance_sheet_adjustments['Date'] = on_pt_balance_sheet_adjustments['Date'].apply(lambda x: str(x.date()))
+        else:
+            on_pt_balance_sheet_adjustments = pd.DataFrame()
+
         balance_sheet['Date'] = balance_sheet['Date'].apply(pd.to_datetime)
         balance_sheet['Date'] = balance_sheet['Date'].apply(lambda x:str(x.date()))
         balance_sheet_adjustments = balance_sheet_adjustments.to_json(orient='records')
+        on_pt_balance_sheet_adjustments = on_pt_balance_sheet_adjustments.to_json(orient='records')
         balance_sheet = balance_sheet.to_json(orient='records')
 
-    return JsonResponse({'balance_sheet': balance_sheet, 'balance_sheet_adjustments': balance_sheet_adjustments})
+    return JsonResponse({'balance_sheet': balance_sheet, 'balance_sheet_adjustments': balance_sheet_adjustments,
+                         'on_pt_balance_sheet_adjustments': on_pt_balance_sheet_adjustments})
 
 
 def ess_idea_premium_analysis(request):
@@ -1337,14 +1356,28 @@ def ess_idea_premium_analysis(request):
             peers_weights_dictionary[each_peer.ticker] = each_peer.hedge_weight / 100
 
         balance_sheet = deal_object.idea_balance_sheet
+        on_pt_balance_sheet = deal_object.on_pt_balance_sheet
         adjustments_df = None
+        on_pt_adjustments_df = None
+
         if balance_sheet is not None:
             adjustments_df = pd.read_json(balance_sheet, orient='records')
 
-        df = ess_function.final_df(deal_object.alpha_ticker, deal_object.cix_index, str(deal_object.unaffected_date),
-                                   str(deal_object.expected_close), str(deal_object.price_target_date),
-                                   deal_object.pt_up, deal_object.pt_down, peers_weights_dictionary,
-                                   multiples_dictionary, api_host,adjustments_df=adjustments_df,  f_period="1BF")
+        if on_pt_balance_sheet is not None:
+            on_pt_adjustments_df = pd.read_json(on_pt_balance_sheet, orient='records')
+
+        df = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker, cix_index=deal_object.cix_index,
+                                   unaffectedDt=str(deal_object.unaffected_date),
+                                   expected_close=str(deal_object.expected_close),
+                                   tgtDate=str(deal_object.price_target_date),
+                                   analyst_upside=deal_object.pt_up,
+                                   analyst_downside=deal_object.pt_down,
+                                   analyst_pt_wic=deal_object.pt_wic,
+                                   peers2weight=peers_weights_dictionary,
+                                   metric2weight=multiples_dictionary,
+                                   api_host=api_host, adjustments_df_now=adjustments_df,
+                                   adjustments_df_ptd=on_pt_adjustments_df, premium_as_percent=None,
+                                   f_period="1BF")
 
         cix_down_price = np.round(df['Down Price (CIX)'], decimals=2)
         cix_up_price = np.round(df['Up Price (CIX)'], decimals=2)
@@ -1411,6 +1444,8 @@ def add_new_ess_idea_deal(request):
             pt_up_check = request.POST.get('pt_up_check')
             pt_down_check = request.POST.get('pt_down_check')
             pt_wic_check = request.POST.get('pt_wic_check')
+            adjust_based_off = request.POST.get('adjust_based_off')
+            premium_format = request.POST.get('premium_format')
 
             task = add_new_idea.delay(bull_thesis_model_file, our_thesis_model_file, bear_thesis_model_file, update_id,
                                       ticker, situation_overview, company_overview, bull_thesis,
@@ -1419,7 +1454,8 @@ def add_new_ess_idea_deal(request):
                                       c_value, m_overview, o_overview, s_overview, a_overview, i_overview, c_overview,
                                       ticker_hedge_length, request.POST.get('ticker_hedge'), cix_index,
                                       price_target_date, multiples, category, catalyst, deal_type, catalyst_tier,
-                                      hedges, gics_sector, lead_analyst, status, pt_up_check, pt_down_check, pt_wic_check)
+                                      hedges, gics_sector, lead_analyst, status, pt_up_check, pt_down_check,
+                                      pt_wic_check, adjust_based_off, premium_format)
 
         except Exception as exception:
             print(exception)
