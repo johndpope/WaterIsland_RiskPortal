@@ -8,7 +8,7 @@ import requests
 import ess_premium_analysis
 import ess_function
 from django_pandas.io import read_frame
-
+from django.db.models import Max
 from wic_news.models import NewsMaster
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, Http404
@@ -1213,7 +1213,7 @@ def ess_idea_database(request):
     :param request: Request Object to View all ESS IDEA Deals
     :return: Render object with all ESS IDEA deals in a dataframe
     """
-    df = ESS_Idea.objects.raw("SELECT  * " 
+    df = ESS_Idea.objects.raw("SELECT  * "
                               "FROM  test_wic_db.risk_ess_idea AS A "
                               "INNER JOIN ("
                               "SELECT   "

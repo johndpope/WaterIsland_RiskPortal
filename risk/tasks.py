@@ -30,11 +30,13 @@ def premium_analysis_flagger():
     deal_change_log_columns = ['Date', 'Deal Name', 'Old Upside', 'Adjusted Upside', 'Old Downside',
                                'Adjusted Downside', 'Old WIC PT', 'Adjusted WIC PT']
     deal_change_log = pd.DataFrame(columns=deal_change_log_columns)
-    for each_deal in ESS_Idea.objects.all():
+    unique_deals = set(ESS_Idea.objects.all().values_list('alpha_ticker', flat=True))
+
+    for each_deal in unique_deals:
         try:
             deal_change_dict = {}
+            deal_object = ESS_Idea.objects.filter(alpha_ticker__exact=each_deal).order_by('-version_number').first()
 
-            deal_object = ESS_Idea.objects.get(id=each_deal.id)
             # Reset Downside Attention
             deal_object.needs_downside_attention = 0
 
@@ -48,7 +50,7 @@ def premium_analysis_flagger():
                 peers_weights_dictionary[eachPeer.ticker] = eachPeer.hedge_weight / 100
 
             premium_as_percent = None
-            if deal_object.premium_format == 'percentage': # Adjust with Percentage
+            if deal_object.premium_format == 'percentage':   # Adjust with Percentage
                 premium_as_percent = 'percentage'
 
             # Process only if Requested
@@ -83,7 +85,6 @@ def premium_analysis_flagger():
 
                 percentage_change_pt_wic_cix = ((pt_wic_price_cix - deal_object.pt_wic) / pt_wic_price_cix) * 100
                 percentage_change_pt_wic_reg = ((pt_wic_price_regression - deal_object.pt_wic) / pt_wic_price_regression) * 100
-
 
                 if deal_object.pt_wic_check == 'Yes':
                     # Adjust the PT Wic and Record the change
@@ -153,6 +154,7 @@ def premium_analysis_flagger():
 
     email.attach('EssIDEA_Adjustments.csv', deal_change_log.to_csv(), 'text/csv')
     email.send()
+
 
 @shared_task
 def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_model_file, update_id, ticker,
@@ -1592,7 +1594,6 @@ def ess_idea_daily_update():
                                                                   p_eps_chart_ltm=json.dumps(pe_ratio_chart_ltm))
                 print(str(every_peer.id) + " Peer ID Updated!")
                 # peer.save()
-
             # --------------------------------------------------------------------------------------------------------
             print('Peers Updated....')
 
