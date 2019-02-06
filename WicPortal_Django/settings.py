@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     'django_slack',
     'realtime_pnl_impacts',
     'securities',
+    'storages',
 ]
 
 MIDDLEWARE = [
@@ -203,6 +204,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = '../static'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
@@ -223,3 +225,16 @@ TWEEPY_CONSUMER_SECRET = env('TWEEPY_CONSUMER_SECRET')
 TWEEPY_CONSUMER_KEY = env('TWEEPY_CONSUMER_KEY')
 TWEEPY_ACCESS_TOKEN = env('TWEEPY_ACCESS_TOKEN')
 TWEEPY_ACCESS_TOKEN_SECRET = env('TWEEPY_ACCESS_TOKEN_SECRET')
+
+# ****** AWS S3 for Static Files Serving ********
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME')
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+
+# Tell django-storages the domain to use to refer to static files.
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
+
+# Tell the staticfiles app to use S3Boto3 storage when writing the collected static files (when
+# you run `collectstatic`).
+STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
