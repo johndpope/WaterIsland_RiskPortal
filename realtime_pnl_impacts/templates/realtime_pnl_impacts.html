@@ -13,7 +13,7 @@
 {% block content %}
 {# Show a Button to Add a new Deal#}
 
-<input type="hidden" value="{{ realtime_pnl_impacts }}" id="realtime_pnl_impacts">
+
 <div class="app-content content">
     <div class="content-wrapper">
         <div class="content-header row">
@@ -36,18 +36,13 @@
                                 <table class="table table-striped table-bordered" id='realtime_pnl_table' style="font-size:12px;">
                                     <thead>
                                     <tr>
-                                        <th>Fund</th>
                                         <th>TradeGroup</th>
-                                        <th>InceptionDate</th>
-                                        <th>EndDate</th>
-                                        <th>Status</th>
-                                        <th>YTD($)</th>
-                                        <th>Qty</th>
-                                        <th>Live Profit/Loss</th>
-                                        <th>Live YTD PnL</th>
-                                        <th>Threshold I</th>
-                                        <th>Threshold II</th>
-                                        <th>Threshold III</th>
+                                        <th>ARB (Live YTD PnL)</th>
+                                        <th>AED (Live YTD PnL)</th>
+                                        <th>LG (Live YTD PnL)</th>
+                                        <th>MACO (Live YTD PnL)</th>
+                                        <th>TAQ (Live YTD PnL)</th>
+                                        <th>CAM (Live YTD PnL)</th>
                                     </tr>
                                     </thead>
                                     <tbody>
