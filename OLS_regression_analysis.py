@@ -1,10 +1,9 @@
 __author__ = 'aduprey'
 from rpy2.robjects.packages import importr
 from rpy2.robjects import pandas2ri
-import rpy2.robjects as ro
+#import rpy2.robjects as ro
 pandas2ri.activate()
-ro.r('''.libPaths('C:/Users/aduprey/Documents/R/win-library/3.5')''')
-rblpapi = importr('Rblpapi')
+#ro.r('''.libPaths('C:/Users/aduprey/Documents/R/win-library/3.5')''')
 base = importr('base')
 stats = importr("stats")
 utils = importr('utils')
@@ -19,31 +18,10 @@ import statsmodels.formula.api as sm
 
 def multiple_underlying_df(ticker, start_date_yyyymmdd, end_date_yyyymmdd, api_host, fperiod):
     
-    #def last_elem_or_null2(secid2mnemonic):
-        #try:
-            #secid = secid2mnemonic.keys()[0]
-            #mnemonic2value = secid2mnemonic[secid]
-            #mnemonic = mnemonic2value.keys()[0]
-            #values = mnemonic2value[mnemonic]
-            #return float(values[-1])
-        #except:
-            #return None
     def last_elem_or_null(ts):
         if ts is None: return None
         if len(ts) == 0: return None
         return ts.iloc[-1]
-
-    #px = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['PX_LAST'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
-    #mkt_cap = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['CUR_MKT_CAP'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
-    #ev_component = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['CUR_EV_COMPONENT'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
-    #eqy_sh_out = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['EQY_SH_OUT'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
-    #best_ebitda = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_EBITDA'],start_date_yyyymmdd,end_date_yyyymmdd,{'BEST_FPERIOD_OVERRIDE':fperiod}, api_host=api_host))
-    #best_sales = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_SALES'],start_date_yyyymmdd,end_date_yyyymmdd,{'BEST_FPERIOD_OVERRIDE':fperiod}, api_host=api_host))
-    #best_eps = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_EPS'],start_date_yyyymmdd,end_date_yyyymmdd,{'BEST_FPERIOD_OVERRIDE':fperiod}, api_host=api_host))
-    #div_ind_yield = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['DIVIDEND_INDICATED_YIELD'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
-    #best_opp = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_OPP'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
-    #best_ni = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_NET_INCOME'],start_date_yyyymmdd,end_date_yyyymmdd,overrides_dict={'BEST_FPERIOD_OVERRIDE':fperiod},api_host=api_host))
-    #best_capex = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_CAPEX'],start_date_yyyymmdd,end_date_yyyymmdd,api_host=api_host))
 
     px = last_elem_or_null(bbgclient.bbgclient.get_timeseries(ticker,'PX_LAST',start_date_yyyymmdd,end_date_yyyymmdd,api_host=api_host))
     mkt_cap = last_elem_or_null(bbgclient.bbgclient.get_timeseries(ticker,'CUR_MKT_CAP',start_date_yyyymmdd,end_date_yyyymmdd,api_host=api_host))
@@ -159,21 +137,13 @@ def compute_implied_price_from_multiple(metric_name, multiple, mult_underlying_d
         #dbutils.Wic.log('ESS PREMIUM ANALYSIS','failed calculating implied price from multiple: ' + str(e.message))
         return None
     
-def bloomberg_peers_from_r(alpha):
-    con = rblpapi.blpConnect(host = base.getOption("blpHost", '10.16.1.16'), port = base.getOption("blpPort", '8194'), default = True)
-    peers = rblpapi.bds(alpha, "Bloomberg Peers", con = con)
-    peers_list = list(peers[0])
-    #attach "EQUITY" to the end of every peer - Bloomberg needs entire phrase to query
-    for i in range(0,len(peers_list)):
-        peers_list[i] = peers_list[i] + " EQUITY"
-    return(peers_list)
-
-def compare_multiples(y_mult_df, x_mult_df, mult_colname):
-    if len(y_mult_df[~pd.isnull(y_mult_df[mult_colname])]) == 0: return pd.DataFrame(columns=['Date','Multiple Ratio'])
-    if len(x_mult_df[~pd.isnull(x_mult_df[mult_colname])]) == 0: return pd.DataFrame(columns=['Date','Multiple Ratio'])
-    df = pd.merge(x_mult_df[['Date',mult_colname]],y_mult_df[['Date',mult_colname]], how='right',on='Date')
-    df['Multiple Ratio'] = df[mult_colname+'_y']/df[mult_colname+'_x']
-    return df[['Date','Multiple Ratio']].sort_values(by='Date')
+def bloomberg_peers(alpha):
+    potential_peers = []
+    peer = bbgclient.bbgclient.get_secid2field([alpha], "tickers", ['BLOOMBERG_PEERS'], req_type = "refdata")
+    for i in range(0, len(peer[alpha]["BLOOMBERG_PEERS"])):
+        potential_peers.append(peer[alpha]["BLOOMBERG_PEERS"][i]["Peer Ticker"] + " EQUITY")
+    
+    return(potential_peers)
 
 def premium_analysis_df_OLS(alpha_ticker, analyst_upside, lookback_period, unaffect_dt, tgt_dt, metrics, api_host, fperiod = "1BF"):
     slicer = dfutils.df_slicer()
@@ -181,7 +151,7 @@ def premium_analysis_df_OLS(alpha_ticker, analyst_upside, lookback_period, unaff
     price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
     as_of_dt = datetime.datetime.today()
     
-    peer_ticker_list = bloomberg_peers_from_r(alpha_ticker)
+    peer_ticker_list = bloomberg_peers(alpha_ticker)
     
     alpha_historical_mult_df = multiples_df(alpha_ticker, slicer.prev_n_business_days(lookback_period,unaff_dt).strftime('%Y%m%d'), unaff_dt.strftime('%Y%m%d'), api_host, fperiod) # ['CID','Date','Ticker','PX','P/E','EV/EBITDA','EV/Sales','DVD yield','FCF yield']
     peer2historical_mult_df = {p:multiples_df(p,slicer.prev_n_business_days(lookback_period,unaff_dt).strftime('%Y%m%d'), unaff_dt.strftime('%Y%m%d'), api_host, fperiod, multiples_to_query=metrics) for p in peer_ticker_list}
@@ -205,12 +175,12 @@ def premium_analysis_df_OLS(alpha_ticker, analyst_upside, lookback_period, unaff
             peer_tickers = [p for p in peer_tickers if ~peer2ptd_multiple[p][metric].isnull().all() and ~peer2now_multiple[p][metric].isnull().all()]
             m_ols_df = m_df[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in peer_tickers]]
             formula = alpha_ticker.split(' ')[0] + '~.' #+ " + ".join([t.split(' ')[0] for t in peer_ticker_list])
-            r_df = ro.pandas2ri.py2ri(m_ols_df)
+            r_df = pandas2ri.py2ri(m_ols_df)
             r_df = stats.na_omit(r_df)
             model = stats.lm(formula, data = r_df)
             optimal_model = stats.step(model, direction = "backward", trace = False)
             summary_results = base.summary(optimal_model)
-            summary_results2 = ro.pandas2ri.ri2py(summary_results)
+            summary_results2 = pandas2ri.ri2py(summary_results)
             optimal_peers = base.attr(optimal_model.rx2('terms'), "term.labels")
             optimal_peers2 = []
             for i in optimal_peers:
@@ -271,15 +241,15 @@ def premium_analysis_df_OLS(alpha_ticker, analyst_upside, lookback_period, unaff
                     for p in overlap_peers:
                         m_df2 = pd.merge(m_df2,peer2historical_mult_df[p][['Date',metric]],how='left',on='Date').rename(columns={metric:ticker2short_ticker[p]})
                     overlap_peers = [p for p in overlap_peers if len(m_df[~pd.isnull(m_df[p.split(' ')[0]])])>0] # remove peers with all nulls
-                    m_ols_df2= m_df2[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in overlap_peers]]
+                    m_ols_df2 = m_df2[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in overlap_peers]]
                     #regress a vs. p1,p2,...,pn
                     formula = alpha_ticker.split(' ')[0] + ' ~. ' #+ " + ".join([t.split(' ')[0] for t in overlap_peers])
-                    r_df2 = ro.pandas2ri.py2ri(m_ols_df2)
+                    r_df2 = pandas2ri.py2ri(m_ols_df2)
                     r_df2 = stats.na_omit(r_df2)
                     model2 = stats.lm(formula, data = r_df2)
                     #ols_result = sm.ols(formula=formula, data=m_ols_df).fit()
                     summary = base.summary(model2)
-                    summary = ro.pandas2ri.ri2py(summary)
+                    summary = pandas2ri.ri2py(summary)
                     model_coeff = model2.rx2('coefficients')
                     model_terms = base.attr(model2.rx2('terms'), "term.labels")
                     overlap_peers2 = []
@@ -320,24 +290,20 @@ def premium_analysis_df_OLS(alpha_ticker, analyst_upside, lookback_period, unaff
             df2['Alpha Downside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)
             df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)+df2['Premium'].astype(float)
 
-            return {
-                #'alpha_historical_mult_df':alpha_historical_mult_df,
-                #'peer2historical_mult_df':peer2historical_mult_df,
-                #'peer2ptd_multiple': peer2ptd_multiple,
-                #'peer2now_multiple': peer2now_multiple,
-                'overlap_peers':overlap_peers,
-                'optimal_peers_df': df,
-                'overlap_peers_df': df2
-            }
+            optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
+                
+            overlap_peer_results = {df2['Metric'][i]: {'Overlap Peers': overlap_peers, 'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
+                
+            return { 'optimal_peer_results': optimal_peer_results,
+                   'overlap_peer_results': overlap_peer_results
+                   }
     except:
         print("An exception occurred. There may not be an overlap group.")
         
+    optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
+        
     return {
-        #'alpha_historical_mult_df':alpha_historical_mult_df,
-        #'peer2historical_mult_df':peer2historical_mult_df,
-        #'peer2ptd_multiple': peer2ptd_multiple,
-        #'peer2now_multiple': peer2now_multiple,
-        'optimal_peers_df': df
+        'optimal_peer_results': optimal_peer_results
     }
 
 def premium_analysis_df_OLS_quick(dataframes, alpha_ticker, analyst_upside, lookback_period, unaffect_dt, tgt_dt, metrics, api_host, fperiod = "1BF"):
@@ -346,7 +312,7 @@ def premium_analysis_df_OLS_quick(dataframes, alpha_ticker, analyst_upside, look
     price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
     as_of_dt = datetime.datetime.today()
     
-    peer_ticker_list = bloomberg_peers_from_r(alpha_ticker)
+    peer_ticker_list = bloomberg_peers(alpha_ticker)
     
     alpha_historical_mult_df = dataframes['alpha_historical_mult_df']
     peer2historical_mult_df = dataframes['peer2historical_mult_df']
@@ -370,12 +336,12 @@ def premium_analysis_df_OLS_quick(dataframes, alpha_ticker, analyst_upside, look
             peer_tickers = [p for p in peer_tickers if ~peer2ptd_multiple[p][metric].isnull().all() and ~peer2now_multiple[p][metric].isnull().all()]
             m_ols_df = m_df[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in peer_tickers]]
             formula = alpha_ticker.split(' ')[0] + '~.' #+ " + ".join([t.split(' ')[0] for t in peer_ticker_list])
-            r_df = ro.pandas2ri.py2ri(m_ols_df)
+            r_df = pandas2ri.py2ri(m_ols_df)
             r_df = stats.na_omit(r_df)
             model = stats.lm(formula, data = r_df)
             optimal_model = stats.step(model, direction = "backward", trace = False)
             summary_results = base.summary(optimal_model)
-            summary_results2 = ro.pandas2ri.ri2py(summary_results)
+            summary_results2 = pandas2ri.ri2py(summary_results)
             optimal_peers = base.attr(optimal_model.rx2('terms'), "term.labels")
             optimal_peers2 = []
             for i in optimal_peers:
@@ -439,12 +405,12 @@ def premium_analysis_df_OLS_quick(dataframes, alpha_ticker, analyst_upside, look
                     m_ols_df2= m_df2[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in overlap_peers]]
                     #regress a vs. p1,p2,...,pn
                     formula = alpha_ticker.split(' ')[0] + ' ~. ' #+ " + ".join([t.split(' ')[0] for t in overlap_peers])
-                    r_df2 = ro.pandas2ri.py2ri(m_ols_df2)
+                    r_df2 = pandas2ri.py2ri(m_ols_df2)
                     r_df2 = stats.na_omit(r_df2)
                     model2 = stats.lm(formula, data = r_df2)
                     #ols_result = sm.ols(formula=formula, data=m_ols_df).fit()
                     summary = base.summary(model2)
-                    summary = ro.pandas2ri.ri2py(summary)
+                    summary = pandas2ri.ri2py(summary)
                     model_coeff = model2.rx2('coefficients')
                     model_terms = base.attr(model2.rx2('terms'), "term.labels")
                     overlap_peers2 = []
@@ -485,16 +451,20 @@ def premium_analysis_df_OLS_quick(dataframes, alpha_ticker, analyst_upside, look
             df2['Alpha Downside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)
             df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)+df2['Premium'].astype(float)
 
-            return {
-                'overlap_peers':overlap_peers,
-                'optimal_peers_df': df,
-                'overlap_peers_df': df2
-            }
+            optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
+                
+            overlap_peer_results = {df2['Metric'][i]: {'Overlap Peers': overlap_peers, 'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
+                
+            return { 'optimal_peer_results': optimal_peer_results,
+                   'overlap_peer_results': overlap_peer_results
+                   }
     except:
         print("An exception occurred. There may not be an overlap group.")
         
+    optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
+        
     return {
-        'optimal_peers_df': df
+        'optimal_peer_results': optimal_peer_results
     }
 
 
@@ -504,7 +474,7 @@ def premium_analysis_df_OLS2_quick(dataframes, alpha_ticker, analyst_upside, ana
     price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
     as_of_dt = datetime.datetime.today()
     
-    peer_ticker_list = bloomberg_peers_from_r(alpha_ticker)
+    peer_ticker_list = bloomberg_peers(alpha_ticker)
     
     alpha_historical_mult_df = dataframes['alpha_historical_mult_df']
     peer2historical_mult_df = dataframes['peer2historical_mult_df']
@@ -528,12 +498,12 @@ def premium_analysis_df_OLS2_quick(dataframes, alpha_ticker, analyst_upside, ana
             peer_tickers = [p for p in peer_tickers if ~peer2ptd_multiple[p][metric].isnull().all() and ~peer2now_multiple[p][metric].isnull().all()]
             m_ols_df = m_df[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in peer_tickers]]
             formula = alpha_ticker.split(' ')[0] + '~.' #+ " + ".join([t.split(' ')[0] for t in peer_ticker_list])
-            r_df = ro.pandas2ri.py2ri(m_ols_df)
+            r_df = pandas2ri.py2ri(m_ols_df)
             r_df = stats.na_omit(r_df)
             model = stats.lm(formula, data = r_df)
             optimal_model = stats.step(model, direction = "backward", trace = False)
             summary_results = base.summary(optimal_model)
-            summary_results2 = ro.pandas2ri.ri2py(summary_results)
+            summary_results2 = pandas2ri.ri2py(summary_results)
             optimal_peers = base.attr(optimal_model.rx2('terms'), "term.labels")
             optimal_peers2 = []
             for i in optimal_peers:
@@ -617,12 +587,12 @@ def premium_analysis_df_OLS2_quick(dataframes, alpha_ticker, analyst_upside, ana
                     m_ols_df2= m_df2[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in overlap_peers]]
                     #regress a vs. p1,p2,...,pn
                     formula = alpha_ticker.split(' ')[0] + ' ~. ' #+ " + ".join([t.split(' ')[0] for t in overlap_peers])
-                    r_df2 = ro.pandas2ri.py2ri(m_ols_df2)
+                    r_df2 = pandas2ri.py2ri(m_ols_df2)
                     r_df2 = stats.na_omit(r_df2)
                     model2 = stats.lm(formula, data = r_df2)
                     #ols_result = sm.ols(formula=formula, data=m_ols_df).fit()
                     summary = base.summary(model2)
-                    summary = ro.pandas2ri.ri2py(summary)
+                    summary = pandas2ri.ri2py(summary)
                     model_coeff = model2.rx2('coefficients')
                     model_terms = base.attr(model2.rx2('terms'), "term.labels")
                     overlap_peers2 = []
@@ -683,19 +653,21 @@ def premium_analysis_df_OLS2_quick(dataframes, alpha_ticker, analyst_upside, ana
             df2['Alpha PT WIC (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float) + df2['Premium PT WIC ($)'].astype(float)
             df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float ) + df2['Premium Up ($)'].astype(float)
 
-            return {
-                #'alpha_historical_mult_df':alpha_historical_mult_df,
-                #'peer2historical_mult_df':peer2historical_mult_df,
-                'overlap_peers':overlap_peers,
-                'optimal_peers_df': df,
-                'overlap_peers_df': df2
-            }
+            optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
+                
+            overlap_peer_results = {df2['Metric'][i]: {'Overlap Peers': overlap_peers, 'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df2['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
+                
+            return { 'optimal_peer_results': optimal_peer_results,
+                   'overlap_peer_results': overlap_peer_results
+                   }
     except:
         print("An exception occurred. There may not be an overlap group.")
         
+    optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
+        
     return {
-        'optimal_peers_df': df
-        }
+        'optimal_peer_results': optimal_peer_results
+    }
           
     
 def premium_analysis_df_OLS2(alpha_ticker, analyst_upside, analyst_downside, analyst_pt_wic, lookback_period, unaffect_dt, tgt_dt, metrics, api_host, adjustments_df_now = None, adjustments_df_ptd = None, fperiod = "1BF"):
@@ -704,7 +676,7 @@ def premium_analysis_df_OLS2(alpha_ticker, analyst_upside, analyst_downside, ana
     price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
     as_of_dt = datetime.datetime.today()
     
-    peer_ticker_list = bloomberg_peers_from_r(alpha_ticker)
+    peer_ticker_list = bloomberg_peers(alpha_ticker)
     
     alpha_historical_mult_df = multiples_df(alpha_ticker, slicer.prev_n_business_days(lookback_period,unaff_dt).strftime('%Y%m%d'), unaff_dt.strftime('%Y%m%d'), api_host, fperiod) # ['CID','Date','Ticker','PX','P/E','EV/EBITDA','EV/Sales','DVD yield','FCF yield']
     peer2historical_mult_df = {p:multiples_df(p,slicer.prev_n_business_days(lookback_period,unaff_dt).strftime('%Y%m%d'), unaff_dt.strftime('%Y%m%d'), api_host, fperiod, multiples_to_query=metrics) for p in peer_ticker_list}
@@ -728,12 +700,12 @@ def premium_analysis_df_OLS2(alpha_ticker, analyst_upside, analyst_downside, ana
             peer_tickers = [p for p in peer_tickers if ~peer2ptd_multiple[p][metric].isnull().all() and ~peer2now_multiple[p][metric].isnull().all()]
             m_ols_df = m_df[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in peer_tickers]]
             formula = alpha_ticker.split(' ')[0] + '~.' #+ " + ".join([t.split(' ')[0] for t in peer_ticker_list])
-            r_df = ro.pandas2ri.py2ri(m_ols_df)
+            r_df = pandas2ri.py2ri(m_ols_df)
             r_df = stats.na_omit(r_df)
             model = stats.lm(formula, data = r_df)
             optimal_model = stats.step(model, direction = "backward", trace = False)
             summary_results = base.summary(optimal_model)
-            summary_results2 = ro.pandas2ri.ri2py(summary_results)
+            summary_results2 = pandas2ri.ri2py(summary_results)
             optimal_peers = base.attr(optimal_model.rx2('terms'), "term.labels")
             optimal_peers2 = []
             for i in optimal_peers:
@@ -817,12 +789,12 @@ def premium_analysis_df_OLS2(alpha_ticker, analyst_upside, analyst_downside, ana
                     m_ols_df2= m_df2[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in overlap_peers]]
                     #regress a vs. p1,p2,...,pn
                     formula = alpha_ticker.split(' ')[0] + ' ~. ' #+ " + ".join([t.split(' ')[0] for t in overlap_peers])
-                    r_df2 = ro.pandas2ri.py2ri(m_ols_df2)
+                    r_df2 = pandas2ri.py2ri(m_ols_df2)
                     r_df2 = stats.na_omit(r_df2)
                     model2 = stats.lm(formula, data = r_df2)
                     #ols_result = sm.ols(formula=formula, data=m_ols_df).fit()
                     summary = base.summary(model2)
-                    summary = ro.pandas2ri.ri2py(summary)
+                    summary = pandas2ri.ri2py(summary)
                     model_coeff = model2.rx2('coefficients')
                     model_terms = base.attr(model2.rx2('terms'), "term.labels")
                     overlap_peers2 = []
@@ -883,16 +855,18 @@ def premium_analysis_df_OLS2(alpha_ticker, analyst_upside, analyst_downside, ana
             df2['Alpha PT WIC (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float) + df2['Premium PT WIC ($)'].astype(float)
             df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float ) + df2['Premium Up ($)'].astype(float)
 
-            return {
-                #'alpha_historical_mult_df':alpha_historical_mult_df,
-                #'peer2historical_mult_df':peer2historical_mult_df,
-                'overlap_peers':overlap_peers,
-                'optimal_peers_df': df,
-                'overlap_peers_df': df2
-            }
+            optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
+                
+            overlap_peer_results = {df2['Metric'][i]: {'Overlap Peers': overlap_peers, 'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df2['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
+                
+            return { 'optimal_peer_results': optimal_peer_results,
+                   'overlap_peer_results': overlap_peer_results
+                   }
     except:
         print("An exception occurred. There may not be an overlap group.")
         
+    optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
+        
     return {
-        'optimal_peers_df': df
-        }
+        'optimal_peer_results': optimal_peer_results
+    }
