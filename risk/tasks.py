@@ -1412,8 +1412,11 @@ def ess_idea_daily_update():
             theoretical_sharpe = str(round(theoretical_sharpe, 2))
 
             # Save this to the Database
-            ESS_Idea.objects.filter(id=id).update(alpha_ticker=ticker, price=price, pt_up=pt_up, pt_down=pt_down,
-                                                  pt_wic=pt_wic, unaffected_date=unaffected_date,
+            ESS_Idea.objects.filter(id=id).update(alpha_ticker=ticker, price=price, pt_up=np.round(float(pt_up),
+                                                                                                   decimals=2),
+                                                  pt_down=np.round(float(pt_down), decimals=2),
+                                                  pt_wic=np.round(float(pt_wic), decimals=2),
+                                                  unaffected_date=unaffected_date,
                                                   expected_close=expected_close,
                                                   gross_percentage=gross_percentage, ann_percentage=ann_percentage,
                                                   hedged_volatility=hedged_volatility,

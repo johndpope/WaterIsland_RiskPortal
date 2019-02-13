@@ -6,7 +6,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
-    <title>Water Island Capital, Risk Portal</title>
+    <title>{% block title_block %}{% endblock %}</title>
     {#    Stylesheets Section   #}
 
     <link rel="apple-touch-icon" href="{% static 'app-assets/images/ico/apple-icon-120.png' %}">
@@ -504,6 +504,9 @@
                         </li>
                     </ul>
                 </li>
+                <li class=" nav-item"><a href="{% url 'exposures:exposures_snapshot' %}"><i class="icon-pie-chart"></i><span class="menu-title">Exposure Snapshot</span>
+                </a></li>
+
                 <li class=" nav-item"><a href="#"><i class="icon-feed"></i><span class="menu-title">News & Notes</span></a>
                     <ul class="menu-content">
                         <li><a class="menu-item" href="{% url 'news:list_news_from_wic' %}"

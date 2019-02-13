@@ -503,9 +503,9 @@ $('.table-responsive').on("click", "#ess_idea_table tr td li a", function () {
                 let price_target_date = deal_object[0][51];
                 let cix_index = deal_object[0][53];
 
-                let pt_up_check = deal_object[0][65];
-                let pt_down_check = deal_object[0][66];
-                let pt_wic_check = deal_object[0][67];
+                let pt_up_check = deal_object[0][66];
+                let pt_down_check = deal_object[0][67];
+                let pt_wic_check = deal_object[0][68];
 
                 let adjust_based_off = deal_object[0][69];
                 let premium_format = deal_object[0][70];
@@ -514,21 +514,21 @@ $('.table-responsive').on("click", "#ess_idea_table tr td li a", function () {
                 $('#premium_format').val(premium_format);
 
                 //If adjustments are not null and contains Yes then check it
-                if( pt_up_check!= 'null' && pt_up_check === 'Yes'){
+                if( pt_up_check!= null && pt_up_check === 'Yes'){
                     $('#pt_up_check').prop('checked', true);
                 }
                 else{
                     $('#pt_up_check').prop('checked', false);
                 }
 
-                if( pt_down_check!= 'null' && pt_down_check === 'Yes'){
+                if( pt_down_check!= null && pt_down_check === 'Yes'){
                     $('#pt_down_check').prop('checked', true);
                 }
                 else{
                     $('#pt_down_check').prop('checked', false);
                 }
 
-                if( pt_wic_check!= 'null' && pt_wic_check === 'Yes'){
+                if( pt_wic_check!= null && pt_wic_check === 'Yes'){
                     $('#pt_wic_check').prop('checked', true);
                 }
                 else{
