@@ -40,7 +40,8 @@ urlpatterns = [
     url('risk_reporting/', include('risk_reporting.urls')),
     url('portfolio_analytics/', include('portfolio_analytics.urls')),
     url('realtime_pnl_impacts/', include('realtime_pnl_impacts.urls')),
-    url('securities/', include('securities.urls'))
+    url('securities/', include('securities.urls')),
+    url('exposures/', include('exposures.urls'))
 ]
 
 
