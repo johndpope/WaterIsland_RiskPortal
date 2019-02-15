@@ -145,11 +145,11 @@ def bloomberg_peers(alpha):
     
     return(potential_peers)
 
-def premium_analysis_df_OLS(alpha_ticker, analyst_upside, lookback_period, unaffect_dt, tgt_dt, metrics, api_host, fperiod = "1BF"):
+def run_regression_optimal_peers(alpha_ticker, unaffect_dt, lookback_period = 120, fperiod = "1BF"):
+    metrics = ['P/E', "EV/EBITDA", "EV/Sales", 'DVD Yield', 'FCF Yield']
+    api_host = bbgclient.bbgclient.get_next_available_host()
     slicer = dfutils.df_slicer()
     unaff_dt = datetime.datetime.strptime(unaffect_dt, '%Y-%m-%d')
-    price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
-    as_of_dt = datetime.datetime.today()
     
     peer_ticker_list = bloomberg_peers(alpha_ticker)
     
@@ -157,13 +157,11 @@ def premium_analysis_df_OLS(alpha_ticker, analyst_upside, lookback_period, unaff
     peer2historical_mult_df = {p:multiples_df(p,slicer.prev_n_business_days(lookback_period,unaff_dt).strftime('%Y%m%d'), unaff_dt.strftime('%Y%m%d'), api_host, fperiod, multiples_to_query=metrics) for p in peer_ticker_list}
     ticker2short_ticker = {p:p.split(' ')[0] for p in peer_ticker_list+[alpha_ticker]}
     
-    peer2ptd_multiple = {p:multiples_df(p,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod='1BF',multiples_to_query=metrics) for p in peer_ticker_list}
-    peer2now_multiple = {p:multiples_df(p,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod='1BF',multiples_to_query=metrics) for p in peer_ticker_list}
-    alpha_balance_sheet_df_ptd = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
-    alpha_balance_sheet_df_now = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
+    #peer2ptd_multiple = {p:multiples_df(p,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod='1BF',multiples_to_query=metrics) for p in peer_ticker_list}
+    #peer2now_multiple = {p:multiples_df(p,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod='1BF',multiples_to_query=metrics) for p in peer_ticker_list}
     
-    #Runs the regression on all metrics and find the optimal peer group per metric which it then uses to calculate the downside
-    rows=[]
+    #Runs the regression on all metrics and find the optimal peer group per metric which is then uses to calculate the downside
+    rows = {}
     metric2peer2coeff = {m:{} for m in metrics}
     peers_d = {}
     for metric in metrics:
@@ -172,7 +170,7 @@ def premium_analysis_df_OLS(alpha_ticker, analyst_upside, lookback_period, unaff
             for p in peer2historical_mult_df:
                 m_df = pd.merge(m_df,peer2historical_mult_df[p][['Date',metric]],how='left',on='Date').rename(columns={metric:ticker2short_ticker[p]})
             peer_tickers = [p for p in peer_ticker_list if len(m_df[~pd.isnull(m_df[p.split(' ')[0]])])>0] # remove peers with all nulls
-            peer_tickers = [p for p in peer_tickers if ~peer2ptd_multiple[p][metric].isnull().all() and ~peer2now_multiple[p][metric].isnull().all()]
+            #peer_tickers = [p for p in peer_tickers if ~peer2ptd_multiple[p][metric].isnull().all() and ~peer2now_multiple[p][metric].isnull().all()]
             m_ols_df = m_df[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in peer_tickers]]
             formula = alpha_ticker.split(' ')[0] + '~.' #+ " + ".join([t.split(' ')[0] for t in peer_ticker_list])
             r_df = pandas2ri.py2ri(m_ols_df)
@@ -206,195 +204,18 @@ def premium_analysis_df_OLS(alpha_ticker, analyst_upside, lookback_period, unaff
                 count = count + 1
             peer2coeff["(Intercept)"] = optimal_model_coeff[0]
             metric2peer2coeff[metric] = peer2coeff
-            rows.append([metric, summary_results2, optimal_model_coeff_df]) #+[peer2coeff[p] for p in optimal_peers2]+[peer2coeff['(Intercept)']])
+            #rows.append([metric, summary_results2, optimal_model_coeff_df])
+            #rows[metric] = optimal_model_coeff_df
         else:
             continue
-    
-    df = pd.DataFrame(columns=['Metric', 'Summary Results', 'Coefficients'] ,data=rows)
-    df['Peers Multiples DataFrame @ Price Target Date'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
-    df['Alpha Implied Multiple @ Price Target Date'] = df['Metric'].apply(lambda m: sum([metric2peer2coeff[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+metric2peer2coeff[m]['(Intercept)'])
-    df['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df)
-    df['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Price Target Date'])]
-
-    df['Peers Multiples DataFrame @ Now'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
-    df['Alpha Implied Multiple @ Now'] = df['Metric'].apply(lambda m: sum([metric2peer2coeff[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+metric2peer2coeff[m]['(Intercept)'])
-    df['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df)
-    df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Now'])]
-
-    df['Alpha Upside (analyst)'] = analyst_upside
-    df['Premium'] = (df['Alpha Upside (analyst)'].astype(float)-df['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0).apply(lambda x: max(x,0))
-
-    df['Alpha Downside (Adj,weighted)'] = df['Alpha Unaffected PX @ Now'].astype(float)
-    df['Alpha Upside (Adj,weighted)'] = df['Alpha Unaffected PX @ Now'].astype(float)+df['Premium'].astype(float)
-    
+            
     try:
         peer_set = {k:set(v) for k, v in peers_d.items()}
         overlap_peers = set.intersection(*peer_set.values()) #Select overlap group from the optimal regression peers above
     
         #Regression of the overlap group which is then used to calculate downside based on all metrics
         if overlap_peers != set():
-            rows2=[]
-            metric2peer2coeff2 = {m:{} for m in metrics}
-            for metric in metrics:
-                if len(alpha_historical_mult_df[~pd.isnull(alpha_historical_mult_df[metric])])>0:
-                    m_df2 = alpha_historical_mult_df[['Date',metric]].rename(columns={metric:ticker2short_ticker[alpha_ticker]})
-                    for p in overlap_peers:
-                        m_df2 = pd.merge(m_df2,peer2historical_mult_df[p][['Date',metric]],how='left',on='Date').rename(columns={metric:ticker2short_ticker[p]})
-                    overlap_peers = [p for p in overlap_peers if len(m_df[~pd.isnull(m_df[p.split(' ')[0]])])>0] # remove peers with all nulls
-                    m_ols_df2 = m_df2[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in overlap_peers]]
-                    #regress a vs. p1,p2,...,pn
-                    formula = alpha_ticker.split(' ')[0] + ' ~. ' #+ " + ".join([t.split(' ')[0] for t in overlap_peers])
-                    r_df2 = pandas2ri.py2ri(m_ols_df2)
-                    r_df2 = stats.na_omit(r_df2)
-                    model2 = stats.lm(formula, data = r_df2)
-                    #ols_result = sm.ols(formula=formula, data=m_ols_df).fit()
-                    summary = base.summary(model2)
-                    summary = pandas2ri.ri2py(summary)
-                    model_coeff = model2.rx2('coefficients')
-                    model_terms = base.attr(model2.rx2('terms'), "term.labels")
-                    overlap_peers2 = []
-                    for i in model_terms:
-                        for k in overlap_peers:
-                            if k.startswith(i + ' '):
-                                overlap_peers2.append(k)
-                            elif i.startswith('X') and k.startswith(i[1:] + ' '):
-                                overlap_peers2.append(k)
-                            elif '.' in i:
-                                i = i.replace('.', '/')
-                                if k.startswith(i + ' '):
-                                    overlap_peers2.append(k)
-                            #Add the "__ EQUITY" phrase back into the optimal peer list for Bloomberg search
-                    peer2coeff2 = {}
-                    for p in range(0,len(overlap_peers)):
-                        peer2coeff2[overlap_peers2[p]] = model_coeff[p+1]
-                    peer2coeff2['Intercept'] = model_coeff[0]
-                    metric2peer2coeff2[metric] = peer2coeff2
-                    rows2.append([metric,summary]+[peer2coeff2[p] for p in overlap_peers2]+[peer2coeff2['Intercept']])
-                else:
-                    continue
-
-            df2 = pd.DataFrame(columns=['Metric','OLS HTML'] + overlap_peers2 + ['Intercept'], data=rows2)
-            df2['Peers Multiples DataFrame @ Price Target Date'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers2]))
-            df2['Alpha Implied Multiple @ Price Target Date'] = df2['Metric'].apply(lambda m: sum([metric2peer2coeff2[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers2])+metric2peer2coeff2[m]['Intercept'])
-            df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df2)
-            df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]
-
-            df2['Peers Multiples DataFrame @ Now'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers2]))
-            df2['Alpha Implied Multiple @ Now'] = df2['Metric'].apply(lambda m: sum([metric2peer2coeff2[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers2])+metric2peer2coeff2[m]['Intercept'])
-            df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df2)
-            df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Now'])]
-
-            df2['Alpha Upside (analyst)'] = analyst_upside
-            df2['Premium'] = (df2['Alpha Upside (analyst)'].astype(float)-df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0).apply(lambda x: max(x,0))
-
-            df2['Alpha Downside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)
-            df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)+df2['Premium'].astype(float)
-
-            optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
-                
-            overlap_peer_results = {df2['Metric'][i]: {'Overlap Peers': overlap_peers, 'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
-                
-            return { 'optimal_peer_results': optimal_peer_results,
-                   'overlap_peer_results': overlap_peer_results
-                   }
-    except:
-        print("An exception occurred. There may not be an overlap group.")
-        
-    optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
-        
-    return {
-        'optimal_peer_results': optimal_peer_results
-    }
-
-def premium_analysis_df_OLS_quick(dataframes, alpha_ticker, analyst_upside, lookback_period, unaffect_dt, tgt_dt, metrics, api_host, fperiod = "1BF"):
-    slicer = dfutils.df_slicer()
-    unaff_dt = datetime.datetime.strptime(unaffect_dt, '%Y-%m-%d')
-    price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
-    as_of_dt = datetime.datetime.today()
-    
-    peer_ticker_list = bloomberg_peers(alpha_ticker)
-    
-    alpha_historical_mult_df = dataframes['alpha_historical_mult_df']
-    peer2historical_mult_df = dataframes['peer2historical_mult_df']
-    ticker2short_ticker = {p:p.split(' ')[0] for p in peer_ticker_list+[alpha_ticker]}
-    
-    peer2ptd_multiple = dataframes['peer2ptd_multiple']
-    peer2now_multiple = dataframes['peer2now_multiple']
-    alpha_balance_sheet_df_ptd = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
-    alpha_balance_sheet_df_now = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
-    
-    #Runs the regression on all metrics and find the optimal peer group per metric which it then uses to calculate the downside
-    rows=[]
-    metric2peer2coeff = {m:{} for m in metrics}
-    peers_d = {}
-    for metric in metrics:
-        if len(alpha_historical_mult_df[~pd.isnull(alpha_historical_mult_df[metric])])>0:
-            m_df = alpha_historical_mult_df[['Date',metric]].rename(columns={metric:ticker2short_ticker[alpha_ticker]})
-            for p in peer2historical_mult_df:
-                m_df = pd.merge(m_df,peer2historical_mult_df[p][['Date',metric]],how='left',on='Date').rename(columns={metric:ticker2short_ticker[p]})
-            peer_tickers = [p for p in peer_ticker_list if len(m_df[~pd.isnull(m_df[p.split(' ')[0]])])>0] # remove peers with all nulls
-            peer_tickers = [p for p in peer_tickers if ~peer2ptd_multiple[p][metric].isnull().all() and ~peer2now_multiple[p][metric].isnull().all()]
-            m_ols_df = m_df[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in peer_tickers]]
-            formula = alpha_ticker.split(' ')[0] + '~.' #+ " + ".join([t.split(' ')[0] for t in peer_ticker_list])
-            r_df = pandas2ri.py2ri(m_ols_df)
-            r_df = stats.na_omit(r_df)
-            model = stats.lm(formula, data = r_df)
-            optimal_model = stats.step(model, direction = "backward", trace = False)
-            summary_results = base.summary(optimal_model)
-            summary_results2 = pandas2ri.ri2py(summary_results)
-            optimal_peers = base.attr(optimal_model.rx2('terms'), "term.labels")
-            optimal_peers2 = []
-            for i in optimal_peers:
-                for k in peer_tickers:
-                    if k.startswith(i + ' '):
-                        optimal_peers2.append(k)
-                    elif i.startswith('X') and k.startswith(i[1:] + ' '):
-                        optimal_peers2.append(k)
-                    elif '.' in i:
-                        i = i.replace('.', '/')
-                        if k.startswith(i + ' '):
-                            optimal_peers2.append(k)
-                    #Add the "__ EQUITY" phrase back into the optimal peer list for Bloomberg search
-            peers_d[metric] = optimal_peers2
-            optimal_model_coeff = optimal_model.rx2('coefficients')
-            optimal_model_coeff_df = pd.DataFrame(columns=['Peer','Coefficient'],data=[(optimal_peers2[count],optimal_model_coeff[count + 1]) for count in range(0,len(optimal_model_coeff.names)-1)])
-            optimal_model_coeff_df = optimal_model_coeff_df.append({'Peer': 'Intercept', 'Coefficient': optimal_model_coeff[0]}, ignore_index = True)
-            peer2coeff = {p:optimal_model_coeff.rx2(p)[0] for p in optimal_model_coeff.names}
-            del peer2coeff["(Intercept)"]
-            count = 0
-            for k in optimal_peers:
-                peer2coeff[optimal_peers2[count]] = peer2coeff.pop(k)
-                count = count + 1
-            peer2coeff["(Intercept)"] = optimal_model_coeff[0]
-            metric2peer2coeff[metric] = peer2coeff
-            rows.append([metric, summary_results2, optimal_model_coeff_df]) #+[peer2coeff[p] for p in optimal_peers2]+[peer2coeff['(Intercept)']])
-        else:
-            continue
-    
-    df = pd.DataFrame(columns=['Metric', 'Summary Results', 'Coefficients'] ,data=rows)
-    df['Peers Multiples DataFrame @ Price Target Date'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
-    df['Alpha Implied Multiple @ Price Target Date'] = df['Metric'].apply(lambda m: sum([metric2peer2coeff[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+metric2peer2coeff[m]['(Intercept)'])
-    df['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df)
-    df['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Price Target Date'])]
-
-    df['Peers Multiples DataFrame @ Now'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
-    df['Alpha Implied Multiple @ Now'] = df['Metric'].apply(lambda m: sum([metric2peer2coeff[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+metric2peer2coeff[m]['(Intercept)'])
-    df['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df)
-    df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Now'])]
-
-    df['Alpha Upside (analyst)'] = analyst_upside
-    df['Premium'] = (df['Alpha Upside (analyst)'].astype(float)-df['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0).apply(lambda x: max(x,0))
-
-    df['Alpha Downside (Adj,weighted)'] = df['Alpha Unaffected PX @ Now'].astype(float)
-    df['Alpha Upside (Adj,weighted)'] = df['Alpha Unaffected PX @ Now'].astype(float)+df['Premium'].astype(float)
-    
-    try:
-        peer_set = {k:set(v) for k, v in peers_d.items()}
-        overlap_peers = set.intersection(*peer_set.values()) #Select overlap group from the optimal regression peers above
-    
-        #Regression of the overlap group which is then used to calculate downside based on all metrics
-        if overlap_peers != set():
-            rows2=[]
+            rows2 = {}
             metric2peer2coeff2 = {m:{} for m in metrics}
             for metric in metrics:
                 if len(alpha_historical_mult_df[~pd.isnull(alpha_historical_mult_df[metric])])>0:
@@ -430,112 +251,231 @@ def premium_analysis_df_OLS_quick(dataframes, alpha_ticker, analyst_upside, look
                         peer2coeff2[overlap_peers2[p]] = model_coeff[p+1]
                     peer2coeff2['Intercept'] = model_coeff[0]
                     metric2peer2coeff2[metric] = peer2coeff2
-                    rows2.append([metric,summary]+[peer2coeff2[p] for p in overlap_peers2]+[peer2coeff2['Intercept']])
+                    #rows2.append([metric,summary]+[peer2coeff2[p] for p in overlap_peers2]+[peer2coeff2['Intercept']])
                 else:
                     continue
-
-            df2 = pd.DataFrame(columns=['Metric','OLS HTML'] + overlap_peers2 + ['Intercept'], data=rows2)
-            df2['Peers Multiples DataFrame @ Price Target Date'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers2]))
-            df2['Alpha Implied Multiple @ Price Target Date'] = df2['Metric'].apply(lambda m: sum([metric2peer2coeff2[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers2])+metric2peer2coeff2[m]['Intercept'])
-            df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df2)
-            df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]
-
-            df2['Peers Multiples DataFrame @ Now'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers2]))
-            df2['Alpha Implied Multiple @ Now'] = df2['Metric'].apply(lambda m: sum([metric2peer2coeff2[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers2])+metric2peer2coeff2[m]['Intercept'])
-            df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df2)
-            df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Now'])]
-
-            df2['Alpha Upside (analyst)'] = analyst_upside
-            df2['Premium'] = (df2['Alpha Upside (analyst)'].astype(float)-df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0).apply(lambda x: max(x,0))
-
-            df2['Alpha Downside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)
-            df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)+df2['Premium'].astype(float)
-
-            optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
-                
-            overlap_peer_results = {df2['Metric'][i]: {'Overlap Peers': overlap_peers, 'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
-                
-            return { 'optimal_peer_results': optimal_peer_results,
-                   'overlap_peer_results': overlap_peer_results
-                   }
+                    
+            return(metric2peer2coeff, metric2peer2coeff2)
     except:
         print("An exception occurred. There may not be an overlap group.")
+            
+    return(metric2peer2coeff)
+
+def premium_analysis_df_OLS(alpha_ticker, regression_results, analyst_upside, tgt_dt, api_host, fperiod = "1BF"):
+    metrics = ['P/E', "EV/EBITDA", "EV/Sales", 'DVD Yield', 'FCF Yield']
+    slicer = dfutils.df_slicer()
+    price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
+    as_of_dt = datetime.datetime.today()
+    
+    if len(regression_results) == 2:
+        optimal_results = regression_results[0]
+        overlap_results = regression_results[1]
+    else:
+        optimal_results = regression_results
         
-    optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
+    peers = []
+    for metric in metrics:
+        results = optimal_results[metric]
+        for x in optimal_results[metric]:
+            if x not in peers:
+                peers.append(x)
+    peers.remove('(Intercept)')
+    
+    peer2ptd_multiple = {p:multiples_df(p,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod='1BF',multiples_to_query=metrics) for p in peers}
+    peer2now_multiple = {p:multiples_df(p,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod='1BF',multiples_to_query=metrics) for p in peers}
+    alpha_balance_sheet_df_ptd = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
+    alpha_balance_sheet_df_now = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
+    
+    col_metrics = []
+    peers_d = {}
+    for metric in metrics:
+        if metric in optimal_results.keys():
+            peers_d[metric] = list(optimal_results[metric].keys())
+            col_metrics.append(metric)
+    for metric in metrics:
+        del peers_d[metric][-1]
+        
+    df = pd.DataFrame(columns=['Metric'] ,data= col_metrics)
+    df['Peers Multiples DataFrame @ Price Target Date'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
+    df['Alpha Implied Multiple @ Price Target Date'] = df['Metric'].apply(lambda m: sum([optimal_results[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+optimal_results[m]['(Intercept)'])
+    df['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df)
+    df['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Price Target Date'])]
+
+    df['Peers Multiples DataFrame @ Now'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
+    df['Alpha Implied Multiple @ Now'] = df['Metric'].apply(lambda m: sum([optimal_results[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+optimal_results[m]['(Intercept)'])
+    df['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df)
+    df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Now'])]
+
+    df['Alpha Upside (analyst)'] = analyst_upside
+    df['Premium'] = (df['Alpha Upside (analyst)'].astype(float)-df['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0).apply(lambda x: max(x,0))
+
+    df['Alpha Downside (Adj,weighted)'] = df['Alpha Unaffected PX @ Now'].astype(float)
+    df['Alpha Upside (Adj,weighted)'] = df['Alpha Unaffected PX @ Now'].astype(float)+df['Premium'].astype(float)
+    
+    if len(regression_results) == 2:
+        for metric in metrics:
+            if metric in overlap_results.keys():
+                overlap_peers = list(overlap_results[metric].keys())
+                break
+    
+        overlap_peers.remove('Intercept')
+
+        df2 = pd.DataFrame(columns = ['Metric'], data = col_metrics)
+        df2['Peers Multiples DataFrame @ Price Target Date'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers]))
+        df2['Alpha Implied Multiple @ Price Target Date'] = df2['Metric'].apply(lambda m: sum([overlap_results[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers]) + overlap_results[m]['Intercept'])
+        df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df2)
+        df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]
+
+        df2['Peers Multiples DataFrame @ Now'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers]))
+        df2['Alpha Implied Multiple @ Now'] = df2['Metric'].apply(lambda m: sum([overlap_results[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers]) + overlap_results[m]['Intercept'])
+        df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df2)
+        df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Now'])]
+
+        df2['Alpha Upside (analyst)'] = analyst_upside
+        df2['Premium'] = (df2['Alpha Upside (analyst)'].astype(float)-df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0).apply(lambda x: max(x,0))
+
+        df2['Alpha Downside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)
+        df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)+df2['Premium'].astype(float)
+
+        optimal_peer_results = {df['Metric'][i]: {'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
+                
+        overlap_peer_results = {df2['Metric'][i]: {'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
+                
+        return { 'optimal_peer_results': optimal_peer_results,
+                   'overlap_peer_results': overlap_peer_results
+                }
+
+    optimal_peer_results = {df['Metric'][i]: {'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
         
     return {
         'optimal_peer_results': optimal_peer_results
     }
 
-
-def premium_analysis_df_OLS2_quick(dataframes, alpha_ticker, analyst_upside, analyst_downside, analyst_pt_wic, lookback_period, unaffect_dt, tgt_dt, metrics, api_host, adjustments_df_now = None, adjustments_df_ptd = None, fperiod = "1BF"):
+def premium_analysis_df_OLS_quick(dataframes, regression_results, alpha_ticker, analyst_upside, tgt_dt, api_host, fperiod = "1BF"):
+    metrics = ['P/E', "EV/EBITDA", "EV/Sales", 'DVD Yield', 'FCF Yield']
     slicer = dfutils.df_slicer()
-    unaff_dt = datetime.datetime.strptime(unaffect_dt, '%Y-%m-%d')
     price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
     as_of_dt = datetime.datetime.today()
     
-    peer_ticker_list = bloomberg_peers(alpha_ticker)
-    
-    alpha_historical_mult_df = dataframes['alpha_historical_mult_df']
-    peer2historical_mult_df = dataframes['peer2historical_mult_df']
-    ticker2short_ticker = {p:p.split(' ')[0] for p in peer_ticker_list+[alpha_ticker]}
+    if len(regression_results) == 2:
+        optimal_results = regression_results[0]
+        overlap_results = regression_results[1]
+    else:
+        optimal_results = regression_results
+        
+    peers = []
+    for metric in metrics:
+        for x in optimal_results[metric]:
+            if x not in peers:
+                peers.append(x)
+    peers.remove('(Intercept)')
     
     peer2ptd_multiple = dataframes['peer2ptd_multiple']
     peer2now_multiple = dataframes['peer2now_multiple']
     alpha_balance_sheet_df_ptd = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
     alpha_balance_sheet_df_now = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
-    
-    #Runs the regression on all metrics and find the optimal peer group per metric which it then uses to calculate the downside
-    rows=[]
-    metric2peer2coeff = {m:{} for m in metrics}
+
+    col_metrics = []
     peers_d = {}
     for metric in metrics:
-        if len(alpha_historical_mult_df[~pd.isnull(alpha_historical_mult_df[metric])])>0:
-            m_df = alpha_historical_mult_df[['Date',metric]].rename(columns={metric:ticker2short_ticker[alpha_ticker]})
-            for p in peer2historical_mult_df:
-                m_df = pd.merge(m_df,peer2historical_mult_df[p][['Date',metric]],how='left',on='Date').rename(columns={metric:ticker2short_ticker[p]})
-            peer_tickers = [p for p in peer_ticker_list if len(m_df[~pd.isnull(m_df[p.split(' ')[0]])])>0] # remove peers with all nulls
-            peer_tickers = [p for p in peer_tickers if ~peer2ptd_multiple[p][metric].isnull().all() and ~peer2now_multiple[p][metric].isnull().all()]
-            m_ols_df = m_df[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in peer_tickers]]
-            formula = alpha_ticker.split(' ')[0] + '~.' #+ " + ".join([t.split(' ')[0] for t in peer_ticker_list])
-            r_df = pandas2ri.py2ri(m_ols_df)
-            r_df = stats.na_omit(r_df)
-            model = stats.lm(formula, data = r_df)
-            optimal_model = stats.step(model, direction = "backward", trace = False)
-            summary_results = base.summary(optimal_model)
-            summary_results2 = pandas2ri.ri2py(summary_results)
-            optimal_peers = base.attr(optimal_model.rx2('terms'), "term.labels")
-            optimal_peers2 = []
-            for i in optimal_peers:
-                for k in peer_tickers:
-                    if k.startswith(i + ' '):
-                        optimal_peers2.append(k)
-                    elif i.startswith('X') and k.startswith(i[1:] + ' '):
-                        optimal_peers2.append(k)
-                    elif '.' in i:
-                        i = i.replace('.', '/')
-                        if k.startswith(i + ' '):
-                            optimal_peers2.append(k)
-                    #Add the "__ EQUITY" phrase back into the optimal peer list for Bloomberg search
-            peers_d[metric] = optimal_peers2
-            optimal_model_coeff = optimal_model.rx2('coefficients')
-            optimal_model_coeff_df = pd.DataFrame(columns=['Peer','Coefficient'],data=[(optimal_peers2[count],optimal_model_coeff[count + 1]) for count in range(0,len(optimal_model_coeff.names)-1)])
-            optimal_model_coeff_df = optimal_model_coeff_df.append({'Peer': 'Intercept', 'Coefficient': optimal_model_coeff[0]}, ignore_index = True)
-            peer2coeff = {p:optimal_model_coeff.rx2(p)[0] for p in optimal_model_coeff.names}
-            del peer2coeff["(Intercept)"]
-            count = 0
-            for k in optimal_peers:
-                peer2coeff[optimal_peers2[count]] = peer2coeff.pop(k)
-                count = count + 1
-            peer2coeff["(Intercept)"] = optimal_model_coeff[0]
-            metric2peer2coeff[metric] = peer2coeff
-            rows.append([metric, summary_results2, optimal_model_coeff_df]) #+[peer2coeff[p] for p in optimal_peers2]+[peer2coeff['(Intercept)']])
-        else:
-            continue
+        if metric in optimal_results.keys():
+            peers_d[metric] = list(optimal_results[metric].keys())
+            col_metrics.append(metric)
+    for metric in metrics:
+        del peers_d[metric][-1]
     
-    df = pd.DataFrame(columns=['Metric', 'Summary Results', 'Coefficients'] ,data=rows)
+    df = pd.DataFrame(columns=['Metric'], data = col_metrics)
     df['Peers Multiples DataFrame @ Price Target Date'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
-    df['Alpha Implied Multiple @ Price Target Date'] = df['Metric'].apply(lambda m: sum([metric2peer2coeff[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+metric2peer2coeff[m]['(Intercept)'])
+    df['Alpha Implied Multiple @ Price Target Date'] = df['Metric'].apply(lambda m: sum([optimal_results[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+ optimal_results[m]['(Intercept)'])
+    df['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df)
+    df['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Price Target Date'])]
+
+    df['Peers Multiples DataFrame @ Now'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
+    df['Alpha Implied Multiple @ Now'] = df['Metric'].apply(lambda m: sum([optimal_results[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+optimal_results[m]['(Intercept)'])
+    df['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df)
+    df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Now'])]
+
+    df['Alpha Upside (analyst)'] = analyst_upside
+    df['Premium'] = (df['Alpha Upside (analyst)'].astype(float)-df['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0).apply(lambda x: max(x,0))
+
+    df['Alpha Downside (Adj,weighted)'] = df['Alpha Unaffected PX @ Now'].astype(float)
+    df['Alpha Upside (Adj,weighted)'] = df['Alpha Unaffected PX @ Now'].astype(float)+df['Premium'].astype(float)
+    
+
+    if len(regression_results) == 2:
+        for metric in metrics:
+            if metric in overlap_results.keys():
+                overlap_peers = list(overlap_results[metric].keys())
+                break
+    
+        overlap_peers.remove('Intercept')
+
+        df2 = pd.DataFrame(columns=['Metric'], data = col_metrics)
+        df2['Peers Multiples DataFrame @ Price Target Date'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns = ['Peer','Multiple'],data = [(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers]))
+        df2['Alpha Implied Multiple @ Price Target Date'] = df2['Metric'].apply(lambda m: sum([overlap_results[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers]) + overlap_results[m]['Intercept'])
+        df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df2)
+        df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]
+
+        df2['Peers Multiples DataFrame @ Now'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns = ['Peer','Multiple'],data = [(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers]))
+        df2['Alpha Implied Multiple @ Now'] = df2['Metric'].apply(lambda m: sum([overlap_results[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers]) + overlap_results[m]['Intercept'])
+        df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df2)
+        df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Now'])]
+
+        df2['Alpha Upside (analyst)'] = analyst_upside
+        df2['Premium'] = (df2['Alpha Upside (analyst)'].astype(float)-df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0).apply(lambda x: max(x,0))
+
+        df2['Alpha Downside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)
+        df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float)+df2['Premium'].astype(float)
+
+        optimal_peer_results = {df['Metric'][i]: {'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}        
+        overlap_peer_results = {df2['Metric'][i]: {'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
+                
+        return { 'optimal_peer_results': optimal_peer_results,
+                'overlap_peer_results': overlap_peer_results
+        }
+        
+    optimal_peer_results = {df['Metric'][i]: {'Alpha Downside': df['Alpha Downside (Adj,weighted)'][i], 'Alpha Upside': df['Alpha Upside (Adj,weighted)'][i]} for i in range(0,len(df))}
+        
+    return {
+        'optimal_peer_results': optimal_peer_results
+    }
+
+def premium_analysis_df_OLS2(alpha_ticker, regression_results, analyst_upside, analyst_downside, analyst_pt_wic, tgt_dt, api_host, adjustments_df_now = None, adjustments_df_ptd = None, fperiod = "1BF"):
+    metrics = ['P/E', "EV/EBITDA", "EV/Sales", 'DVD Yield', 'FCF Yield']
+    slicer = dfutils.df_slicer()
+    price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
+    as_of_dt = datetime.datetime.today()
+    
+    if len(regression_results) == 2:
+        optimal_results = regression_results[0]
+        overlap_results = regression_results[1]
+    else:
+        optimal_results = regression_results
+        
+    peers = []
+    for metric in metrics:
+        for x in optimal_results[metric]:
+            if x not in peers:
+                peers.append(x)
+    peers.remove('(Intercept)') 
+    
+    peer2ptd_multiple = {p:multiples_df(p,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod = '1BF',multiples_to_query = metrics) for p in peers}
+    peer2now_multiple = {p:multiples_df(p,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod = '1BF',multiples_to_query = metrics) for p in peers}
+    alpha_balance_sheet_df_ptd = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod = '1BF')
+    alpha_balance_sheet_df_now = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod = '1BF')
+    
+    col_metrics = []
+    peers_d = {}
+    for metric in metrics:
+        if metric in optimal_results.keys():
+            peers_d[metric] = list(optimal_results[metric].keys())
+            col_metrics.append(metric)
+    for metric in metrics:
+        del peers_d[metric][-1]    
+        
+    df = pd.DataFrame(columns = ['Metric'], data = col_metrics)
+    df['Peers Multiples DataFrame @ Price Target Date'] = df['Metric'].apply(lambda m: pd.DataFrame(columns = ['Peer','Multiple'], data = [(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
+    df['Alpha Implied Multiple @ Price Target Date'] = df['Metric'].apply(lambda m: sum([optimal_results[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]]) + optimal_results[m]['(Intercept)'])
     
     if adjustments_df_ptd is None:
         df['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df)
@@ -546,8 +486,8 @@ def premium_analysis_df_OLS2_quick(dataframes, alpha_ticker, analyst_upside, ana
         df['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd_adj]*len(df)
         df['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd_adj) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Price Target Date'])]
 
-    df['Peers Multiples DataFrame @ Now'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
-    df['Alpha Implied Multiple @ Now'] = df['Metric'].apply(lambda m: sum([metric2peer2coeff[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+metric2peer2coeff[m]['(Intercept)'])
+    df['Peers Multiples DataFrame @ Now'] = df['Metric'].apply(lambda m: pd.DataFrame(columns = ['Peer','Multiple'], data = [(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
+    df['Alpha Implied Multiple @ Now'] = df['Metric'].apply(lambda m: sum([optimal_results[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]]) + optimal_results[m]['(Intercept)'])
     
     if adjustments_df_now is None:
         df['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df)
@@ -570,303 +510,192 @@ def premium_analysis_df_OLS2_quick(dataframes, alpha_ticker, analyst_upside, ana
     df['Alpha PT WIC (Adj)'] = df['Alpha Unaffected PX @ Now'].astype(float) + df['Premium PT WIC ($)'].astype(float)
     df['Alpha Upside (Adj)'] = df['Alpha Unaffected PX @ Now'].astype(float) + df['Premium Up ($)'].astype(float)
     
-    try:
-        peer_set = {k:set(v) for k, v in peers_d.items()}
-        overlap_peers = set.intersection(*peer_set.values()) #Select overlap group from the optimal regression peers above
+    if len(regression_results) == 2:
+        for metric in metrics:
+            if metric in overlap_results.keys():
+                overlap_peers = list(overlap_results[metric].keys())
+                break
     
-        if overlap_peers != set():
-            #Regression of the overlap group which is then used to calculate downside based on all metrics
-            rows2=[]
-            metric2peer2coeff2 = {m:{} for m in metrics}
-            for metric in metrics:
-                if len(alpha_historical_mult_df[~pd.isnull(alpha_historical_mult_df[metric])])>0:
-                    m_df2 = alpha_historical_mult_df[['Date',metric]].rename(columns={metric:ticker2short_ticker[alpha_ticker]})
-                    for p in overlap_peers:
-                        m_df2 = pd.merge(m_df2,peer2historical_mult_df[p][['Date',metric]],how='left',on='Date').rename(columns={metric:ticker2short_ticker[p]})
-                    overlap_peers = [p for p in overlap_peers if len(m_df[~pd.isnull(m_df[p.split(' ')[0]])])>0] # remove peers with all nulls
-                    m_ols_df2= m_df2[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in overlap_peers]]
-                    #regress a vs. p1,p2,...,pn
-                    formula = alpha_ticker.split(' ')[0] + ' ~. ' #+ " + ".join([t.split(' ')[0] for t in overlap_peers])
-                    r_df2 = pandas2ri.py2ri(m_ols_df2)
-                    r_df2 = stats.na_omit(r_df2)
-                    model2 = stats.lm(formula, data = r_df2)
-                    #ols_result = sm.ols(formula=formula, data=m_ols_df).fit()
-                    summary = base.summary(model2)
-                    summary = pandas2ri.ri2py(summary)
-                    model_coeff = model2.rx2('coefficients')
-                    model_terms = base.attr(model2.rx2('terms'), "term.labels")
-                    overlap_peers2 = []
-                    for i in model_terms:
-                        for k in overlap_peers:
-                            if k.startswith(i + ' '):
-                                overlap_peers2.append(k)
-                            elif i.startswith('X') and k.startswith(i[1:] + ' '):
-                                overlap_peers2.append(k)
-                            elif '.' in i:
-                                i = i.replace('.', '/')
-                                if k.startswith(i + ' '):
-                                    overlap_peers2.append(k)
-                            #Add the "__ EQUITY" phrase back into the optimal peer list for Bloomberg search
-                    peer2coeff2 = {}
-                    for p in range(0,len(overlap_peers)):
-                        peer2coeff2[overlap_peers2[p]] = model_coeff[p+1]
-                    peer2coeff2['Intercept'] = model_coeff[0]
-                    metric2peer2coeff2[metric] = peer2coeff2
-                    rows2.append([metric,summary]+[peer2coeff2[p] for p in overlap_peers2]+[peer2coeff2['Intercept']])
-                else:
-                    continue
+        overlap_peers.remove('Intercept')
 
-            df2 = pd.DataFrame(columns=['Metric','OLS HTML'] + overlap_peers2 + ['Intercept'], data=rows2)
-            df2['Peers Multiples DataFrame @ Price Target Date'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers2]))
-            df2['Alpha Implied Multiple @ Price Target Date'] = df2['Metric'].apply(lambda m: sum([metric2peer2coeff2[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers2])+metric2peer2coeff2[m]['Intercept'])
+        df2 = pd.DataFrame(columns = ['Metric'], data = col_metrics)
+        df2['Peers Multiples DataFrame @ Price Target Date'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns = ['Peer','Multiple'], data = [(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers]))
+        df2['Alpha Implied Multiple @ Price Target Date'] = df2['Metric'].apply(lambda m: sum([overlap_results[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers]) + overlap_results[m]['Intercept'])
         
-            if adjustments_df_ptd is None:
-                df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df2)
-                df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]
-            else:
-                adjustments_df2 = adjustments_df_ptd.drop(columns = 'Date')
-                alpha_balance_sheet_df_ptd_adj = alpha_balance_sheet_df_ptd.add(adjustments_df2, axis = 'columns')
-                df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd_adj]*len(df)
-                df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd_adj) for (m,mult) in zip(df['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]        
+        if adjustments_df_ptd is None:
+            df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df2)
+            df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]
+        else:
+            adjustments_df2 = adjustments_df_ptd.drop(columns = 'Date')
+            alpha_balance_sheet_df_ptd_adj = alpha_balance_sheet_df_ptd.add(adjustments_df2, axis = 'columns')
+            df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd_adj]*len(df)
+            df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd_adj) for (m,mult) in zip(df['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]        
 
-            df2['Peers Multiples DataFrame @ Now'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers2]))
-            df2['Alpha Implied Multiple @ Now'] = df2['Metric'].apply(lambda m: sum([metric2peer2coeff2[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers2])+metric2peer2coeff2[m]['Intercept'])
+        df2['Peers Multiples DataFrame @ Now'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns = ['Peer','Multiple'], data = [(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers]))
+        df2['Alpha Implied Multiple @ Now'] = df2['Metric'].apply(lambda m: sum([overlap_results[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers]) + overlap_results[m]['Intercept'])
         
-            if adjustments_df_now is None:
-                df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df2)
-                df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Now'])]
-            else:
-                adjustments_df1 = adjustments_df_now.drop(columns = 'Date')
-                alpha_balance_sheet_df_now_adj = alpha_balance_sheet_df_now.add(adjustments_df1, axis = 'columns')
-                df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now_adj]*len(df)
-                df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now_adj) for (m,mult) in zip(df['Metric'],df2['Alpha Implied Multiple @ Now'])]            
+        if adjustments_df_now is None:
+            df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df2)
+            df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Now'])]
+        else:
+            adjustments_df1 = adjustments_df_now.drop(columns = 'Date')
+            alpha_balance_sheet_df_now_adj = alpha_balance_sheet_df_now.add(adjustments_df1, axis = 'columns')
+            df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now_adj]*len(df)
+            df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now_adj) for (m,mult) in zip(df['Metric'],df2['Alpha Implied Multiple @ Now'])]            
 
-            df2['Alpha Upside (analyst)'] = analyst_upside
-            df2['Alpha Downside (analyst)'] = analyst_downside
-            df2['Alpha PT WIC (analyst)'] = analyst_pt_wic
+        df2['Alpha Upside (analyst)'] = analyst_upside
+        df2['Alpha Downside (analyst)'] = analyst_downside
+        df2['Alpha PT WIC (analyst)'] = analyst_pt_wic
         
-            df2['Premium Up ($)'] = (df2['Alpha Upside (analyst)'].astype(float) - df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
-            df2['Premium PT WIC ($)'] = (df2['Alpha PT WIC (analyst)'].astype(float) - df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
-            df2['Premium Down ($)'] = (df2['Alpha Downside (analyst)'].astype(float)  -df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
+        df2['Premium Up ($)'] = (df2['Alpha Upside (analyst)'].astype(float) - df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
+        df2['Premium PT WIC ($)'] = (df2['Alpha PT WIC (analyst)'].astype(float) - df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
+        df2['Premium Down ($)'] = (df2['Alpha Downside (analyst)'].astype(float) - df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
 
-            df2['Alpha Downside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float) + df2['Premium Down ($)'].astype(float)
-            df2['Alpha PT WIC (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float) + df2['Premium PT WIC ($)'].astype(float)
-            df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float ) + df2['Premium Up ($)'].astype(float)
+        df2['Alpha Downside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float) + df2['Premium Down ($)'].astype(float)
+        df2['Alpha PT WIC (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float) + df2['Premium PT WIC ($)'].astype(float)
+        df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float ) + df2['Premium Up ($)'].astype(float)
 
-            optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
+        optimal_peer_results = {df['Metric'][i]: {'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
                 
-            overlap_peer_results = {df2['Metric'][i]: {'Overlap Peers': overlap_peers, 'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df2['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
+        overlap_peer_results = {df2['Metric'][i]: {'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df2['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
                 
-            return { 'optimal_peer_results': optimal_peer_results,
-                   'overlap_peer_results': overlap_peer_results
-                   }
-    except:
-        print("An exception occurred. There may not be an overlap group.")
+        return { 'optimal_peer_results': optimal_peer_results,
+                'overlap_peer_results': overlap_peer_results
+                }
         
-    optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
+    optimal_peer_results = {df['Metric'][i]: {'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
+        
+    return {
+        'optimal_peer_results': optimal_peer_results
+    }
+
+def premium_analysis_df_OLS2_quick(dataframes, regression_results, alpha_ticker, analyst_upside, analyst_downside, analyst_pt_wic, tgt_dt,  api_host, adjustments_df_now = None, adjustments_df_ptd = None, fperiod = "1BF"):
+    metrics = ['P/E', "EV/EBITDA", "EV/Sales", 'DVD Yield', 'FCF Yield']
+    slicer = dfutils.df_slicer()
+    price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
+    as_of_dt = datetime.datetime.today()
+    
+    if len(regression_results) == 2:
+        optimal_results = regression_results[0]
+        overlap_results = regression_results[1]
+    else:
+        optimal_results = regression_results
+        
+    peers = []
+    for metric in metrics:
+        for x in optimal_results[metric]:
+            if x not in peers:
+                peers.append(x)
+    peers.remove('(Intercept)')
+    
+    peer2ptd_multiple = dataframes['peer2ptd_multiple']
+    peer2now_multiple = dataframes['peer2now_multiple']
+    alpha_balance_sheet_df_ptd = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
+    alpha_balance_sheet_df_now = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
+    
+    col_metrics = []
+    peers_d = {}
+    for metric in metrics:
+        if metric in optimal_results.keys():
+            peers_d[metric] = list(optimal_results[metric].keys())
+            col_metrics.append(metric)
+    for metric in metrics:
+        del peers_d[metric][-1]    
+    
+    df = pd.DataFrame(columns = ['Metric'], data = col_metrics)
+    df['Peers Multiples DataFrame @ Price Target Date'] = df['Metric'].apply(lambda m: pd.DataFrame(columns = ['Peer','Multiple'], data = [(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
+    df['Alpha Implied Multiple @ Price Target Date'] = df['Metric'].apply(lambda m: sum([optimal_results[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]]) + optimal_results[m]['(Intercept)'])
+    
+    if adjustments_df_ptd is None:
+        df['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df)
+        df['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Price Target Date'])]
+    else:
+        adjustments_df2 = adjustments_df_ptd.drop(columns = 'Date')
+        alpha_balance_sheet_df_ptd_adj = alpha_balance_sheet_df_ptd.add(adjustments_df2, axis = 'columns')
+        df['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd_adj]*len(df)
+        df['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd_adj) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Price Target Date'])]
+
+    df['Peers Multiples DataFrame @ Now'] = df['Metric'].apply(lambda m: pd.DataFrame(columns = ['Peer','Multiple'],data = [(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
+    df['Alpha Implied Multiple @ Now'] = df['Metric'].apply(lambda m: sum([optimal_results[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]]) + optimal_results[m]['(Intercept)'])
+    
+    if adjustments_df_now is None:
+        df['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df)
+        df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Now'])]
+    else:
+        adjustments_df1 = adjustments_df_now.drop(columns = 'Date')
+        alpha_balance_sheet_df_now_adj = alpha_balance_sheet_df_now.add(adjustments_df1, axis = 'columns')
+        df['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now_adj]*len(df)
+        df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now_adj) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Now'])]    
+        
+    df['Alpha Upside (analyst)'] = analyst_upside
+    df['Alpha Downside (analyst)'] = analyst_downside
+    df['Alpha PT WIC (analyst)'] = analyst_pt_wic
+    
+    df['Premium Up ($)'] = (df['Alpha Upside (analyst)'].astype(float) - df['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
+    df['Premium PT WIC ($)'] = (df['Alpha PT WIC (analyst)'].astype(float) - df['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
+    df['Premium Down ($)'] = (df['Alpha Downside (analyst)'].astype(float) - df['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
+        
+    df['Alpha Downside (Adj)'] = df['Alpha Unaffected PX @ Now'].astype(float) + df['Premium Down ($)'].astype(float)
+    df['Alpha PT WIC (Adj)'] = df['Alpha Unaffected PX @ Now'].astype(float) + df['Premium PT WIC ($)'].astype(float)
+    df['Alpha Upside (Adj)'] = df['Alpha Unaffected PX @ Now'].astype(float) + df['Premium Up ($)'].astype(float)
+    
+    if len(regression_results) == 2:
+        for metric in metrics:
+            if metric in overlap_results.keys():
+                overlap_peers = list(overlap_results[metric].keys())
+                break
+    
+        overlap_peers.remove('Intercept')
+
+        df2 = pd.DataFrame(columns = ['Metric'], data = col_metrics)
+        df2['Peers Multiples DataFrame @ Price Target Date'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns = ['Peer','Multiple'], data = [(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers]))
+        df2['Alpha Implied Multiple @ Price Target Date'] = df2['Metric'].apply(lambda m: sum([overlap_results[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers]) + overlap_results[m]['Intercept'])
+        
+        if adjustments_df_ptd is None:
+            df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df2)
+            df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]
+        else:
+            adjustments_df2 = adjustments_df_ptd.drop(columns = 'Date')
+            alpha_balance_sheet_df_ptd_adj = alpha_balance_sheet_df_ptd.add(adjustments_df2, axis = 'columns')
+            df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd_adj]*len(df)
+            df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd_adj) for (m,mult) in zip(df['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]        
+
+        df2['Peers Multiples DataFrame @ Now'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns  =['Peer','Multiple'],data = [(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers]))
+        df2['Alpha Implied Multiple @ Now'] = df2['Metric'].apply(lambda m: sum([overlap_results[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers]) + overlap_results[m]['Intercept'])
+        
+        if adjustments_df_now is None:
+            df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df2)
+            df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Now'])]
+        else:
+            adjustments_df1 = adjustments_df_now.drop(columns = 'Date')
+            alpha_balance_sheet_df_now_adj = alpha_balance_sheet_df_now.add(adjustments_df1, axis = 'columns')
+            df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now_adj]*len(df)
+            df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now_adj) for (m,mult) in zip(df['Metric'],df2['Alpha Implied Multiple @ Now'])]            
+
+        df2['Alpha Upside (analyst)'] = analyst_upside
+        df2['Alpha Downside (analyst)'] = analyst_downside
+        df2['Alpha PT WIC (analyst)'] = analyst_pt_wic
+        
+        df2['Premium Up ($)'] = (df2['Alpha Upside (analyst)'].astype(float) - df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
+        df2['Premium PT WIC ($)'] = (df2['Alpha PT WIC (analyst)'].astype(float) - df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
+        df2['Premium Down ($)'] = (df2['Alpha Downside (analyst)'].astype(float)  -df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
+
+        df2['Alpha Downside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float) + df2['Premium Down ($)'].astype(float)
+        df2['Alpha PT WIC (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float) + df2['Premium PT WIC ($)'].astype(float)
+        df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float ) + df2['Premium Up ($)'].astype(float)
+
+        optimal_peer_results = {df['Metric'][i]: {'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
+                
+        overlap_peer_results = {df2['Metric'][i]: {'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df2['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
+                
+        return { 'optimal_peer_results': optimal_peer_results,
+                'overlap_peer_results': overlap_peer_results
+                }
+        
+    optimal_peer_results = {df['Metric'][i]: {'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
         
     return {
         'optimal_peer_results': optimal_peer_results
     }
           
     
-def premium_analysis_df_OLS2(alpha_ticker, analyst_upside, analyst_downside, analyst_pt_wic, lookback_period, unaffect_dt, tgt_dt, metrics, api_host, adjustments_df_now = None, adjustments_df_ptd = None, fperiod = "1BF"):
-    slicer = dfutils.df_slicer()
-    unaff_dt = datetime.datetime.strptime(unaffect_dt, '%Y-%m-%d')
-    price_tgt_dt = datetime.datetime.strptime(tgt_dt, '%Y-%m-%d')
-    as_of_dt = datetime.datetime.today()
-    
-    peer_ticker_list = bloomberg_peers(alpha_ticker)
-    
-    alpha_historical_mult_df = multiples_df(alpha_ticker, slicer.prev_n_business_days(lookback_period,unaff_dt).strftime('%Y%m%d'), unaff_dt.strftime('%Y%m%d'), api_host, fperiod) # ['CID','Date','Ticker','PX','P/E','EV/EBITDA','EV/Sales','DVD yield','FCF yield']
-    peer2historical_mult_df = {p:multiples_df(p,slicer.prev_n_business_days(lookback_period,unaff_dt).strftime('%Y%m%d'), unaff_dt.strftime('%Y%m%d'), api_host, fperiod, multiples_to_query=metrics) for p in peer_ticker_list}
-    ticker2short_ticker = {p:p.split(' ')[0] for p in peer_ticker_list+[alpha_ticker]}
-    
-    peer2ptd_multiple = {p:multiples_df(p,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod='1BF',multiples_to_query=metrics) for p in peer_ticker_list}
-    peer2now_multiple = {p:multiples_df(p,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod='1BF',multiples_to_query=metrics) for p in peer_ticker_list}
-    alpha_balance_sheet_df_ptd = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,price_tgt_dt).strftime('%Y%m%d'),price_tgt_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
-    alpha_balance_sheet_df_now = multiple_underlying_df(alpha_ticker,slicer.prev_n_business_days(100,as_of_dt).strftime('%Y%m%d'),as_of_dt.strftime('%Y%m%d'),api_host,fperiod='1BF')
-    
-    #Runs the regression on all metrics and find the optimal peer group per metric which it then uses to calculate the downside
-    rows=[]
-    metric2peer2coeff = {m:{} for m in metrics}
-    peers_d = {}
-    for metric in metrics:
-        if len(alpha_historical_mult_df[~pd.isnull(alpha_historical_mult_df[metric])])>0:
-            m_df = alpha_historical_mult_df[['Date',metric]].rename(columns={metric:ticker2short_ticker[alpha_ticker]})
-            for p in peer2historical_mult_df:
-                m_df = pd.merge(m_df,peer2historical_mult_df[p][['Date',metric]],how='left',on='Date').rename(columns={metric:ticker2short_ticker[p]})
-            peer_tickers = [p for p in peer_ticker_list if len(m_df[~pd.isnull(m_df[p.split(' ')[0]])])>0] # remove peers with all nulls
-            peer_tickers = [p for p in peer_tickers if ~peer2ptd_multiple[p][metric].isnull().all() and ~peer2now_multiple[p][metric].isnull().all()]
-            m_ols_df = m_df[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in peer_tickers]]
-            formula = alpha_ticker.split(' ')[0] + '~.' #+ " + ".join([t.split(' ')[0] for t in peer_ticker_list])
-            r_df = pandas2ri.py2ri(m_ols_df)
-            r_df = stats.na_omit(r_df)
-            model = stats.lm(formula, data = r_df)
-            optimal_model = stats.step(model, direction = "backward", trace = False)
-            summary_results = base.summary(optimal_model)
-            summary_results2 = pandas2ri.ri2py(summary_results)
-            optimal_peers = base.attr(optimal_model.rx2('terms'), "term.labels")
-            optimal_peers2 = []
-            for i in optimal_peers:
-                for k in peer_tickers:
-                    if k.startswith(i + ' '):
-                        optimal_peers2.append(k)
-                    elif i.startswith('X') and k.startswith(i[1:] + ' '):
-                        optimal_peers2.append(k)
-                    elif '.' in i:
-                        i = i.replace('.', '/')
-                        if k.startswith(i + ' '):
-                            optimal_peers2.append(k)
-                    #Add the "__ EQUITY" phrase back into the optimal peer list for Bloomberg search
-            peers_d[metric] = optimal_peers2
-            optimal_model_coeff = optimal_model.rx2('coefficients')
-            optimal_model_coeff_df = pd.DataFrame(columns=['Peer','Coefficient'],data=[(optimal_peers2[count],optimal_model_coeff[count + 1]) for count in range(0,len(optimal_model_coeff.names)-1)])
-            optimal_model_coeff_df = optimal_model_coeff_df.append({'Peer': 'Intercept', 'Coefficient': optimal_model_coeff[0]}, ignore_index = True)
-            peer2coeff = {p:optimal_model_coeff.rx2(p)[0] for p in optimal_model_coeff.names}
-            del peer2coeff["(Intercept)"]
-            count = 0
-            for k in optimal_peers:
-                peer2coeff[optimal_peers2[count]] = peer2coeff.pop(k)
-                count = count + 1
-            peer2coeff["(Intercept)"] = optimal_model_coeff[0]
-            metric2peer2coeff[metric] = peer2coeff
-            rows.append([metric, summary_results2, optimal_model_coeff_df]) #+[peer2coeff[p] for p in optimal_peers2]+[peer2coeff['(Intercept)']])
-        else:
-            continue
-    
-    df = pd.DataFrame(columns=['Metric', 'Summary Results', 'Coefficients'] ,data=rows)
-    df['Peers Multiples DataFrame @ Price Target Date'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
-    df['Alpha Implied Multiple @ Price Target Date'] = df['Metric'].apply(lambda m: sum([metric2peer2coeff[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+metric2peer2coeff[m]['(Intercept)'])
-    
-    if adjustments_df_ptd is None:
-        df['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df)
-        df['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Price Target Date'])]
-    else:
-        adjustments_df2 = adjustments_df_ptd.drop(columns = 'Date')
-        alpha_balance_sheet_df_ptd_adj = alpha_balance_sheet_df_ptd.add(adjustments_df2, axis = 'columns')
-        df['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd_adj]*len(df)
-        df['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd_adj) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Price Target Date'])]
-
-    df['Peers Multiples DataFrame @ Now'] = df['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in peers_d[m]]))
-    df['Alpha Implied Multiple @ Now'] = df['Metric'].apply(lambda m: sum([metric2peer2coeff[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peers_d[m]])+metric2peer2coeff[m]['(Intercept)'])
-    
-    if adjustments_df_now is None:
-        df['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df)
-        df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Now'])]
-    else:
-        adjustments_df1 = adjustments_df_now.drop(columns = 'Date')
-        alpha_balance_sheet_df_now_adj = alpha_balance_sheet_df_now.add(adjustments_df1, axis = 'columns')
-        df['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now_adj]*len(df)
-        df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now_adj) for (m,mult) in zip(df['Metric'],df['Alpha Implied Multiple @ Now'])]    
-        
-    df['Alpha Upside (analyst)'] = analyst_upside
-    df['Alpha Downside (analyst)'] = analyst_downside
-    df['Alpha PT WIC (analyst)'] = analyst_pt_wic
-    
-    df['Premium Up ($)'] = (df['Alpha Upside (analyst)'].astype(float) - df['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
-    df['Premium PT WIC ($)'] = (df['Alpha PT WIC (analyst)'].astype(float) - df['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
-    df['Premium Down ($)'] = (df['Alpha Downside (analyst)'].astype(float) - df['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
-        
-    df['Alpha Downside (Adj)'] = df['Alpha Unaffected PX @ Now'].astype(float) + df['Premium Down ($)'].astype(float)
-    df['Alpha PT WIC (Adj)'] = df['Alpha Unaffected PX @ Now'].astype(float) + df['Premium PT WIC ($)'].astype(float)
-    df['Alpha Upside (Adj)'] = df['Alpha Unaffected PX @ Now'].astype(float) + df['Premium Up ($)'].astype(float)
-    
-    try:
-        peer_set = {k:set(v) for k, v in peers_d.items()}
-        overlap_peers = set.intersection(*peer_set.values()) #Select overlap group from the optimal regression peers above
-    
-        if overlap_peers != set():
-            #Regression of the overlap group which is then used to calculate downside based on all metrics
-            rows2=[]
-            metric2peer2coeff2 = {m:{} for m in metrics}
-            for metric in metrics:
-                if len(alpha_historical_mult_df[~pd.isnull(alpha_historical_mult_df[metric])])>0:
-                    m_df2 = alpha_historical_mult_df[['Date',metric]].rename(columns={metric:ticker2short_ticker[alpha_ticker]})
-                    for p in overlap_peers:
-                        m_df2 = pd.merge(m_df2,peer2historical_mult_df[p][['Date',metric]],how='left',on='Date').rename(columns={metric:ticker2short_ticker[p]})
-                    overlap_peers = [p for p in overlap_peers if len(m_df[~pd.isnull(m_df[p.split(' ')[0]])])>0] # remove peers with all nulls
-                    m_ols_df2= m_df2[[alpha_ticker.split(' ')[0]]+[t.split(' ')[0] for t in overlap_peers]]
-                    #regress a vs. p1,p2,...,pn
-                    formula = alpha_ticker.split(' ')[0] + ' ~. ' #+ " + ".join([t.split(' ')[0] for t in overlap_peers])
-                    r_df2 = pandas2ri.py2ri(m_ols_df2)
-                    r_df2 = stats.na_omit(r_df2)
-                    model2 = stats.lm(formula, data = r_df2)
-                    #ols_result = sm.ols(formula=formula, data=m_ols_df).fit()
-                    summary = base.summary(model2)
-                    summary = pandas2ri.ri2py(summary)
-                    model_coeff = model2.rx2('coefficients')
-                    model_terms = base.attr(model2.rx2('terms'), "term.labels")
-                    overlap_peers2 = []
-                    for i in model_terms:
-                        for k in overlap_peers:
-                            if k.startswith(i + ' '):
-                                overlap_peers2.append(k)
-                            elif i.startswith('X') and k.startswith(i[1:] + ' '):
-                                overlap_peers2.append(k)
-                            elif '.' in i:
-                                i = i.replace('.', '/')
-                                if k.startswith(i + ' '):
-                                    overlap_peers2.append(k)
-                            #Add the "__ EQUITY" phrase back into the optimal peer list for Bloomberg search
-                    peer2coeff2 = {}
-                    for p in range(0,len(overlap_peers)):
-                        peer2coeff2[overlap_peers2[p]] = model_coeff[p+1]
-                    peer2coeff2['Intercept'] = model_coeff[0]
-                    metric2peer2coeff2[metric] = peer2coeff2
-                    rows2.append([metric,summary]+[peer2coeff2[p] for p in overlap_peers2]+[peer2coeff2['Intercept']])
-                else:
-                    continue
-
-            df2 = pd.DataFrame(columns=['Metric','OLS HTML'] + overlap_peers2 + ['Intercept'], data=rows2)
-            df2['Peers Multiples DataFrame @ Price Target Date'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2ptd_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers2]))
-            df2['Alpha Implied Multiple @ Price Target Date'] = df2['Metric'].apply(lambda m: sum([metric2peer2coeff2[m][p]*peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers2])+metric2peer2coeff2[m]['Intercept'])
-        
-            if adjustments_df_ptd is None:
-                df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd]*len(df2)
-                df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]
-            else:
-                adjustments_df2 = adjustments_df_ptd.drop(columns = 'Date')
-                alpha_balance_sheet_df_ptd_adj = alpha_balance_sheet_df_ptd.add(adjustments_df2, axis = 'columns')
-                df2['Alpha Balance Sheet DataFrame @ Price Target Date'] =  [alpha_balance_sheet_df_ptd_adj]*len(df)
-                df2['Alpha Unaffected PX @ Price Target Date'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_ptd_adj) for (m,mult) in zip(df['Metric'],df2['Alpha Implied Multiple @ Price Target Date'])]        
-
-            df2['Peers Multiples DataFrame @ Now'] = df2['Metric'].apply(lambda m: pd.DataFrame(columns=['Peer','Multiple'],data=[(p,peer2now_multiple[p][m].fillna(0).iloc[-1]) for p in overlap_peers2]))
-            df2['Alpha Implied Multiple @ Now'] = df2['Metric'].apply(lambda m: sum([metric2peer2coeff2[m][p]*peer2now_multiple[p][m].fillna(0).iloc[-1] for p in overlap_peers2])+metric2peer2coeff2[m]['Intercept'])
-        
-            if adjustments_df_now is None:
-                df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now]*len(df2)
-                df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now) for (m,mult) in zip(df2['Metric'],df2['Alpha Implied Multiple @ Now'])]
-            else:
-                adjustments_df1 = adjustments_df_now.drop(columns = 'Date')
-                alpha_balance_sheet_df_now_adj = alpha_balance_sheet_df_now.add(adjustments_df1, axis = 'columns')
-                df2['Alpha Balance Sheet DataFrame @ Now'] =  [alpha_balance_sheet_df_now_adj]*len(df)
-                df2['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m,mult,alpha_balance_sheet_df_now_adj) for (m,mult) in zip(df['Metric'],df2['Alpha Implied Multiple @ Now'])]            
-
-            df2['Alpha Upside (analyst)'] = analyst_upside
-            df2['Alpha Downside (analyst)'] = analyst_downside
-            df2['Alpha PT WIC (analyst)'] = analyst_pt_wic
-        
-            df2['Premium Up ($)'] = (df2['Alpha Upside (analyst)'].astype(float) - df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
-            df2['Premium PT WIC ($)'] = (df2['Alpha PT WIC (analyst)'].astype(float) - df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
-            df2['Premium Down ($)'] = (df2['Alpha Downside (analyst)'].astype(float)  -df2['Alpha Unaffected PX @ Price Target Date'].astype(float)).fillna(0)
-
-            df2['Alpha Downside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float) + df2['Premium Down ($)'].astype(float)
-            df2['Alpha PT WIC (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float) + df2['Premium PT WIC ($)'].astype(float)
-            df2['Alpha Upside (Adj)'] = df2['Alpha Unaffected PX @ Now'].astype(float ) + df2['Premium Up ($)'].astype(float)
-
-            optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
-                
-            overlap_peer_results = {df2['Metric'][i]: {'Overlap Peers': overlap_peers, 'Alpha Downside': df2['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df2['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df2['Alpha Upside (Adj)'][i]} for i in range(0,len(df2))}
-                
-            return { 'optimal_peer_results': optimal_peer_results,
-                   'overlap_peer_results': overlap_peer_results
-                   }
-    except:
-        print("An exception occurred. There may not be an overlap group.")
-        
-    optimal_peer_results = {df['Metric'][i]: {'Optimal Peers': peers_d[df['Metric'][i]], 'Alpha Downside': df['Alpha Downside (Adj)'][i], 'Alpha PT WIC': df['Alpha PT WIC (Adj)'][i], 'Alpha Upside': df['Alpha Upside (Adj)'][i]} for i in range(0,len(df))}
-        
-    return {
-        'optimal_peer_results': optimal_peer_results
-    }
