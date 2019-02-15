@@ -1,5 +1,5 @@
 __author__ = 'aduprey'
-import OLS_regression_analysis_new
+import OLS_regression_analysis
 import bbgclient
 import datetime
 import dfutils
