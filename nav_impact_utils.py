@@ -6,8 +6,15 @@ import bbgclient
 import dbutils
 import pandas as pd
 from sqlalchemy import create_engine
-engine = create_engine("mysql://root:Mkaymkay1@10.16.1.19/waterisland-test1")
+
+
+WIC_DB_HOST = 'wic-risk-database.cwi02trt7ww1.us-east-1.rds.amazonaws.com'
+DB_USER = 'root'
+DB_PASSWORD = 'waterislandcapital'
+DB_NAME = 'wic'
+engine = create_engine("mysql://"+DB_USER+":"+DB_PASSWORD+"@"+WIC_DB_HOST+"/wic")
 con = engine.connect()
+
 
 #Following Task should Run periodically (every morning at 9.45am to capture live data and report the NAV Impacts for each Tradegroup)
 def pnl_calculations():
@@ -96,6 +103,9 @@ def update_positions_for_downside_formulae_merger_arb():
     # Perform an Outer Merge on current and new df on Underlying and Tradegroup....After that delete the previous Risklimit and DealValue
     current_df = pd.merge(current_df, df, how='outer', on=cols2merge).reset_index().drop(columns=['id']).rename(columns={'index':'id'})
 
+    # Delete all deals that are in CurrentDF but not present in the New DF (these are the closed positions)
+    current_df = current_df[current_df['TradeGroup'].isin(df['TradeGroup'])]
+
     current_df.rename(columns={'DealValue_y':'DealValue', 'LastPrice_y':'LastPrice', 'RiskLimit_y':'RiskLimit', 'TargetAcquirer_y':'TargetAcquirer', 'Analyst_y':'Analyst', 'OriginationDate_y':'OriginationDate'}, inplace=True)
     #Delete the Old values...
     del current_df['DealValue_x']
@@ -142,4 +152,4 @@ def update_live_price_of_formula_based_downsides_positions():
     print('Updated Live Prices of Formula Based Downsides')
 
 
-update_positions_for_downside_formulae_merger_arb()
+#update_positions_for_downside_formulae_merger_arb()

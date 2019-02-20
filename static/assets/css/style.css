@@ -125,6 +125,10 @@ body{
 #mna_idea_fcf_yield_chart .amChartsCompareList div {
   box-sizing: content-box;
 }
+#mna_idea_ev_sales_chart .amChartsCompareList div {
+  box-sizing: content-box;
+}
+
 #mna_idea_lawyer_reports_table {
 	table-layout:fixed;
 }
