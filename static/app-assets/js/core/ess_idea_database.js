@@ -491,6 +491,11 @@ $(document).ready(function () {
                 },
                 success: function (response) {
                     let deal_object = response['deal_object'];
+                    let bull_thesis_files = response['bull_thesis_files'];
+                    let our_thesis_files = response['our_thesis_files'];
+                    let bear_thesis_files = response['bear_thesis_files'];
+
+                    console.log(deal_object);
                     let related_peers_length = response['related_peers'].length;
                     // Get all Required Fields
                     let id = deal_object[0][0];
@@ -505,32 +510,28 @@ $(document).ready(function () {
                     let bull_thesis = deal_object[0][17];
                     let our_thesis = deal_object[0][18];
                     let bear_thesis = deal_object[0][19];
-                    let m_value = deal_object[0][23];
-                    let o_value = deal_object[0][24];
-                    let s_value = deal_object[0][25];
-                    let a_value = deal_object[0][26];
-                    let i_value = deal_object[0][27];
-                    let c_value = deal_object[0][28];
-                    let m_description = deal_object[0][29];
-                    let o_description = deal_object[0][30];
-                    let s_description = deal_object[0][31];
-                    let a_description = deal_object[0][32];
-                    let i_description = deal_object[0][33];
-                    let c_description = deal_object[0][34];
+                    let m_value = deal_object[0][20];
+                    let o_value = deal_object[0][21];
+                    let s_value = deal_object[0][22];
+                    let a_value = deal_object[0][23];
+                    let i_value = deal_object[0][24];
+                    let c_value = deal_object[0][25];
+                    let m_description = deal_object[0][26];
+                    let o_description = deal_object[0][27];
+                    let s_description = deal_object[0][28];
+                    let a_description = deal_object[0][29];
+                    let i_description = deal_object[0][30];
+                    let c_description = deal_object[0][31];
 
-                    let bull_thesis_model_file = deal_object[0][20].toString().split('/')[deal_object[0][20].toString().split('/').length - 1];
-                    let our_thesis_model_file = deal_object[0][21].toString().split('/')[deal_object[0][21].toString().split('/').length - 1];
-                    let bear_thesis_model_file = deal_object[0][22].toString().split('/')[deal_object[0][22].toString().split('/').length - 1];
+                    let price_target_date = deal_object[0][48];
+                    let cix_index = deal_object[0][50];
 
-                    let price_target_date = deal_object[0][51];
-                    let cix_index = deal_object[0][53];
+                    let pt_up_check = deal_object[0][63];
+                    let pt_down_check = deal_object[0][64];
+                    let pt_wic_check = deal_object[0][65];
 
-                    let pt_up_check = deal_object[0][66];
-                    let pt_down_check = deal_object[0][67];
-                    let pt_wic_check = deal_object[0][68];
-
-                    let adjust_based_off = deal_object[0][69];
-                    let premium_format = deal_object[0][70];
+                    let adjust_based_off = deal_object[0][66];
+                    let premium_format = deal_object[0][67];
 
                     $('#select_based_off').val(adjust_based_off);
                     $('#premium_format').val(premium_format);
@@ -589,9 +590,9 @@ $(document).ready(function () {
                     $('#ess_I_overview').val(i_description);
                     $('#ess_C_overview').val(c_description);
                     $('#ess_idea_new_deal_update_id').val(id);
-                    $('#target_bear_thesis').text(bear_thesis_model_file);
-                    $('#target_bull_thesis').text(bull_thesis_model_file);
-                    $('#target_our_thesis').text(our_thesis_model_file);
+                    $('#target_bear_thesis').text(bear_thesis_files);
+                    $('#target_bull_thesis').text(bull_thesis_files);
+                    $('#target_our_thesis').text(our_thesis_files);
                     $('#ess_idea_new_deal_cix_index').val(cix_index);
                     $('#ess_idea_new_deal_price_target_date').val(price_target_date);
                     //Add category
@@ -604,15 +605,15 @@ $(document).ready(function () {
                     $('#fcf_yield_weight').val(multiples_dict[4]['FCF yield']);
 
 
-                    $('#ess_category_select').val(deal_object[0][54]);
-                    $('#ess_catalyst_select').val(deal_object[0][55]);
-                    $('#ess_deal_type').val(deal_object[0][56]);
+                    $('#ess_category_select').val(deal_object[0][51]);
+                    $('#ess_catalyst_select').val(deal_object[0][52]);
+                    $('#ess_deal_type').val(deal_object[0][53]);
 
-                    $('#ess_catalyst_tier_select').val(deal_object[0][57]);
-                    $('#ess_idea_gics_sector').val(deal_object[0][58]);
-                    $('#ess_hedges_select').val(deal_object[0][59]);
-                    $('#ess_idea_status').val(deal_object[0][61]);
-                    $('#ess_idea_lead_analyst').val(deal_object[0][62]);
+                    $('#ess_catalyst_tier_select').val(deal_object[0][54]);
+                    $('#ess_idea_gics_sector').val(deal_object[0][55]);
+                    $('#ess_hedges_select').val(deal_object[0][56]);
+                    $('#ess_idea_status').val(deal_object[0][58]);
+                    $('#ess_idea_lead_analyst').val(deal_object[0][59]);
 
 
                     // Adjust Peers

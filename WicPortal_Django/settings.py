@@ -244,10 +244,10 @@ else:
     DEBUG = False
 
 
+STATICFILES_LOCATION = 'static'
 if not DEBUG:
     STATICFILES_LOCATION = 'static'
     STATICFILES_STORAGE = 'custom_storages.StaticStorage'
 
 MEDIAFILES_LOCATION = 'media'
 DEFAULT_FILE_STORAGE = 'custom_storages.MediaStorage'
-STATICFILES_LOCATION = 'static'
