@@ -2,7 +2,7 @@ import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 import django
 django.setup()
-from celery import shared_task
+from django.db import connection
 import pandas as pd
 from risk_reporting.models import ArbNAVImpacts, DailyNAVImpacts
 from bbgclient import bbgclient
@@ -14,14 +14,6 @@ api_host = bbgclient.get_next_available_host()
 
 
 def update_merger_arb_nav_impacts():
-    from sqlalchemy import create_engine
-
-    WIC_DB_HOST = 'wic-risk-database.cwi02trt7ww1.us-east-1.rds.amazonaws.com'
-    DB_USER = 'root'
-    DB_PASSWORD = 'waterislandcapital'
-    DB_NAME = 'wic'
-    engine = create_engine("mysql://" + DB_USER + ":" + DB_PASSWORD + "@" + WIC_DB_HOST + "/test_wic_db")
-    con = engine.connect()
     # Get the Dataframe from models
     nav_impacts_positions_df = pd.DataFrame.from_records(ArbNAVImpacts.objects.all().values())
 
@@ -82,14 +74,14 @@ def update_merger_arb_nav_impacts():
 
     print(nav_impacts_sum_df)
 
-    nav_impacts_sum_df.to_sql(con=con, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
+    nav_impacts_sum_df.to_sql(con=connection, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
                               schema='test_wic_db')
 
 
-    real_time_arb_impacts = pd.read_sql_query('select TradeGroup, RiskLimit, BASE_CASE_NAV_IMPACT_ARB from test_wic_db.risk_reporting_dailynavimpacts where abs(RiskLimit) < abs(BASE_CASE_NAV_IMPACT_ARB) and BASE_CASE_NAV_IMPACT_ARB <> \'N/A\'', con=con)
+    real_time_arb_impacts = pd.read_sql_query('select TradeGroup, RiskLimit, BASE_CASE_NAV_IMPACT_ARB from test_wic_db.risk_reporting_dailynavimpacts where abs(RiskLimit) < abs(BASE_CASE_NAV_IMPACT_ARB) and BASE_CASE_NAV_IMPACT_ARB <> \'N/A\'', con=connection)
 
     slack_message('navinspector.slack', {'impacts': tabulate(real_time_arb_impacts, tablefmt='fancy_grid')})
-    con.close()
+
 
 # Following NAV Impacts Utilities
 def calculate_pl_base_case(row):
