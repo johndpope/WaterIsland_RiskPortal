@@ -1,18 +1,19 @@
-from celery import shared_task
+import os
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
+import django
+django.setup()
+from django.db import connection
 import pandas as pd
-from .models import ArbNAVImpacts, DailyNAVImpacts
+from risk_reporting.models import ArbNAVImpacts, DailyNAVImpacts
 from bbgclient import bbgclient
 from django_slack import slack_message
 import numpy as np
 from tabulate import tabulate
 api_host = bbgclient.get_next_available_host()
 
-@shared_task
-def update_merger_arb_nav_impacts():
-    from sqlalchemy import create_engine
 
-    engine = create_engine("mysql://root:Mkaymkay1@10.16.1.19/test_wic_db")
-    con = engine.connect()
+
+def update_merger_arb_nav_impacts():
     # Get the Dataframe from models
     nav_impacts_positions_df = pd.DataFrame.from_records(ArbNAVImpacts.objects.all().values())
 
@@ -33,7 +34,7 @@ def update_merger_arb_nav_impacts():
 
     nav_impacts_positions_df['LastPrice'] = nav_impacts_positions_df.apply(last_price_cascade_logic, axis=1)
 
-
+    print('Updated with Latest Prices..')
     float_cols = ['DealTermsCash', 'DealTermsStock', 'DealValue', 'NetMktVal', 'FxFactor', 'Capital',
                   'BaseCaseNavImpact', 'RiskLimit',
                   'OutlierNavImpact', 'QTY', 'NAV', 'PM_BASE_CASE', 'Outlier', 'StrikePrice', 'LastPrice']
@@ -51,7 +52,7 @@ def update_merger_arb_nav_impacts():
     nav_impacts_positions_df.rename(columns={'TG': 'TradeGroup'}, inplace=True)  # Rename to TradeGroup
     # Sum Impacts of Individual Securities for Impacts @ TradeGroup level...
     nav_impacts_positions_df = nav_impacts_positions_df.round({'BASE_CASE_NAV_IMPACT': 2, 'OUTLIER_NAV_IMPACT': 2})
-    nav_impacts_positions_df.to_csv('nav_impactsbeforegoruping.csv')
+
     nav_impacts_sum_df = nav_impacts_positions_df.groupby(['TradeGroup', 'FundCode', 'PM_BASE_CASE', 'RiskLimit']).agg(
         {'BASE_CASE_NAV_IMPACT': 'sum', 'OUTLIER_NAV_IMPACT': 'sum'})
 
@@ -63,21 +64,24 @@ def update_merger_arb_nav_impacts():
     nav_impacts_sum_df.columns = ["_".join((i, j)) for i, j in nav_impacts_sum_df.columns]
     nav_impacts_sum_df.reset_index(inplace=True)
 
+    del nav_impacts_sum_df['BASE_CASE_NAV_IMPACT_MALT']
+    del nav_impacts_sum_df['OUTLIER_NAV_IMPACT_MALT']
+
     #Clear Previous DailyNavImpacts
     DailyNAVImpacts.objects.all().delete()
 
     #Post new Impacts on Slack Channel
 
+    print(nav_impacts_sum_df)
 
-
-    nav_impacts_sum_df.to_sql(con=con, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
+    nav_impacts_sum_df.to_sql(con=connection, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
                               schema='test_wic_db')
 
 
-    real_time_arb_impacts = pd.read_sql_query('select TradeGroup, RiskLimit, BASE_CASE_NAV_IMPACT_ARB from test_wic_db.risk_reporting_dailynavimpacts where abs(RiskLimit) < abs(BASE_CASE_NAV_IMPACT_ARB) and BASE_CASE_NAV_IMPACT_ARB <> \'N/A\'', con=con)
+    real_time_arb_impacts = pd.read_sql_query('select TradeGroup, RiskLimit, BASE_CASE_NAV_IMPACT_ARB from test_wic_db.risk_reporting_dailynavimpacts where abs(RiskLimit) < abs(BASE_CASE_NAV_IMPACT_ARB) and BASE_CASE_NAV_IMPACT_ARB <> \'N/A\'', con=connection)
 
     slack_message('navinspector.slack', {'impacts': tabulate(real_time_arb_impacts, tablefmt='fancy_grid')})
-    con.close()
+
 
 # Following NAV Impacts Utilities
 def calculate_pl_base_case(row):
@@ -121,3 +125,6 @@ def calculate_outlier_pl(row):
 
 def calculate_outlier_nav_impact(row):
     return ((row['OUTLIER_PL'] / row['NAV']) * 100)
+
+
+#update_merger_arb_nav_impacts()

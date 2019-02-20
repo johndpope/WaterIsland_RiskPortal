@@ -5,9 +5,14 @@
 {% load staticfiles %}
 
 {% block css_styles %}
+    {{ block.super }}
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.bootstrap.min.css">
+
 {% endblock %}
 
 {% block datatables_bootstrap_css %}
+    {{ block.super }}
 {% endblock %}
 
 {% block content %}
@@ -35,7 +40,7 @@
                             <div class="card-content">
                                 <div class="table-responsive">
                                     <!-- Task List table -->
-                                    <table class="table table-striped table-bordered" id='downside_formulae_table'
+                                    <table class="table table-bordered" id='downside_formulae_table'
                                            style="font-size:12px;">
                                         <thead>
                                         <tr>
@@ -100,10 +105,10 @@
                                                     <select class="custom-select2 mr-sm-2 BaseCaseDownsideType">
                                                         <option selected value="{{ row.BaseCaseDownsideType }}">{{ row.BaseCaseDownsideType }}
                                                         </option>
-                                                        <option value="Fixed Value">Fixed Value</option>
+                                                        <option value="Fundamental Valuation">Fundamental Valuation</option>
                                                         <option value="Break Spread">Break Spread</option>
                                                         <option value="Peer Index">Peer Index</option>
-                                                        <option value="Price * Premium/Discount">Price *
+                                                        <option value="Premium/Discount">Price *
                                                             Premium/Discount
                                                         </option>
                                                         <option value="Last Price">Last Price</option>
@@ -128,10 +133,10 @@
                                                     <select class="custom-select2 mr-sm-2 OutlierDownsideType">
                                                         <option selected value="{{ row.OutlierDownsideType }}">{{ row.OutlierDownsideType }}
                                                         </option>
-                                                        <option value="Fixed Value">Fixed Value</option>
+                                                        <option value="Fundamental Valuation">Fundamental Valuation</option>
                                                         <option value="Break Spread">Break Spread</option>
                                                         <option value="Peer Index">Peer Index</option>
-                                                        <option value="Price * Premium/Discount">Price *
+                                                        <option value="Premium/Discount">
                                                             Premium/Discount
                                                         </option>
                                                         <option value="Last Price">Last Price</option>

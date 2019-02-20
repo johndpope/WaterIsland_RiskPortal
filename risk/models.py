@@ -1,3 +1,4 @@
+import os
 from django.db import models
 
 class MA_Deals(models.Model):
@@ -72,6 +73,9 @@ class MA_Deals_PeerSet(models.Model):
     ev_ebitda_chart_ltm = models.TextField()
     ev_ebitda_chart_1bf = models.TextField()
     ev_ebitda_chart_2bf = models.TextField()
+    ev_sales_chart_ltm = models.TextField()
+    ev_sales_chart_1bf = models.TextField()
+    ev_sales_chart_2bf = models.TextField()
     pe_ratio_chart_ltm = models.TextField()
     pe_ratio_chart_1bf = models.TextField()
     pe_ratio_chart_2bf = models.TextField()
@@ -143,6 +147,34 @@ class ESS_Idea_Upside_Downside_Change_Records(models.Model):
     date_updated = models.DateField(null=False) #Updated Record shouldn't be Null
 
 
+class ESS_Idea_BullFileUploads(models.Model):
+    ess_idea_id = models.ForeignKey('ESS_Idea', on_delete=models.CASCADE)
+    deal_key = models.IntegerField(null=True)  # DealKey reflecting a deal
+    bull_thesis_model = models.FileField(null=True, upload_to='ESS_IDEA_DB_FILES/BULL_THESIS_FILES')
+    uploaded_at = models.DateField(null=True)
+
+    def filename(self):
+        return os.path.basename(self.bull_thesis_model.name)
+
+
+class ESS_Idea_OurFileUploads(models.Model):
+    ess_idea_id = models.ForeignKey('ESS_Idea', on_delete=models.CASCADE)
+    deal_key = models.IntegerField(null=True)  # DealKey reflecting a deal
+    our_thesis_model = models.FileField(null=True, upload_to='ESS_IDEA_DB_FILES/OUR_THESIS_FILES')
+    uploaded_at = models.DateField(null=True)
+
+    def filename(self):
+        return os.path.basename(self.our_thesis_model.name)
+
+class ESS_Idea_BearFileUploads(models.Model):
+    ess_idea_id = models.ForeignKey('ESS_Idea', on_delete=models.CASCADE)
+    deal_key = models.IntegerField(null=True)  # DealKey reflecting a deal
+    bear_thesis_model = models.FileField(null=True, upload_to='ESS_IDEA_DB_FILES/BEAR_THESIS_FILES')
+    uploaded_at = models.DateField(null=True)
+
+    def filename(self):
+        return os.path.basename(self.bear_thesis_model.name)
+
 class ESS_Idea(models.Model):
     class Meta:
         unique_together = (('id', 'version_number'))
@@ -167,9 +199,6 @@ class ESS_Idea(models.Model):
     bull_thesis = models.TextField()
     our_thesis = models.TextField()
     bear_thesis = models.TextField()
-    bull_thesis_model = models.FileField(upload_to='ESS_IDEA_MODELS/BULL_THESIS/%Y%m%d', default='NA')
-    our_thesis_model = models.FileField(upload_to='ESS_IDEA_MODELS/OUR_THESIS/%Y%m%d', default='NA')
-    bear_thesis_model = models.FileField(upload_to='ESS_IDEA_MODELS/BEAR_THESIS/%Y%m%d', default='NA')
     m_value = models.IntegerField(default=0)
     o_value = models.IntegerField(default=0)
     s_value = models.IntegerField(default=0)
