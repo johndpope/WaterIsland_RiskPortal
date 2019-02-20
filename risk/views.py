@@ -772,6 +772,7 @@ def show_ess_idea(request):
     our_thesis_files = ESS_Idea_OurFileUploads.objects.select_related().filter(deal_key=ess_idea.deal_key)
     bear_thesis_files = ESS_Idea_BearFileUploads.objects.select_related().filter(deal_key=ess_idea.deal_key)
 
+
     # Get Upside/Downside Record Changes
     upside_downside_records = ESS_Idea_Upside_Downside_Change_Records.objects.filter(deal_key=ess_idea.deal_key).values('date_updated', 'pt_up', 'pt_wic', 'pt_down')
 
@@ -1192,9 +1193,30 @@ def edit_ess_deal(request):
                 'version_number'
             ).version_number
 
+            deal_key = ESS_Idea.objects.filter(id=deal_id).first().deal_key
+
+
             deal_object = ESS_Idea.objects.filter(id=deal_id, version_number=latest_version).values_list()
             related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=deal_id,
                                                                       version_number=latest_version).values_list()
+
+
+            bull_thesis_files = []
+            our_thesis_files = []
+            bear_thesis_files = []
+
+            for file in ESS_Idea_BullFileUploads.objects.select_related().filter(deal_key=deal_key):
+                bull_thesis_files.append(file.filename())
+
+            for file in ESS_Idea_OurFileUploads.objects.select_related().filter(deal_key=deal_key):
+                our_thesis_files.append(file.filename())
+
+            for file in ESS_Idea_BearFileUploads.objects.select_related().filter(deal_key=deal_key):
+                bear_thesis_files.append(file.filename())
+
+            response['bull_thesis_files'] = bull_thesis_files
+            response['our_thesis_files'] = our_thesis_files
+            response['bear_thesis_files'] = bear_thesis_files
 
             response['deal_object'] = list(deal_object)
             response['related_peers'] = list(related_peers)
