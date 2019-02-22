@@ -1,4 +1,7 @@
 {% extends 'base.html' %}
+{% block title_block %}
+    View ESS IDEA
+{% endblock %}
 {% load staticfiles %}
 
 {% block amcharts_scripts %}
@@ -825,7 +828,9 @@
                                     <div class="container" id="ess_bull_thesis">
                                     </div>
                                     <br>
-
+                                    {% for file in bull_thesis_files %}
+                                        <li><a href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.bull_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a> --> Uploaded on: {{ file.uploaded_at }}</li>
+                                    {% endfor %}
                                     <a href="{% url 'risk:ess_idea_download_handler' %}?path={{ bull_thesis_model.path|default_if_none:'#' }}"
                                        id='bull_thesis_model' target="_blank" class="btn btn-primary">Model</a>
                                 </div>

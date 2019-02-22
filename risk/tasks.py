@@ -11,7 +11,8 @@ import datetime
 import requests
 from dateutil.relativedelta import relativedelta
 import numpy as np
-from risk.models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records
+from risk.models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records, ESS_Idea_BearFileUploads, \
+    ESS_Idea_BullFileUploads, ESS_Idea_OurFileUploads
 import bbgclient
 import json
 from django.conf import settings
@@ -20,12 +21,18 @@ from django_slack import slack_message
 from django.core.mail import EmailMessage
 api_host = bbgclient.bbgclient.get_next_available_host()
 import ess_function
+from django import db
+from django.core.exceptions import ObjectDoesNotExist
 
 
 @shared_task
 def premium_analysis_flagger():
     """ Run this task each morning to calculate the Upside/Downside and appropriately flag the
     deals where the upside/downside differs by more than 5% """
+
+    for name, info in django.db.connections.databases.items():  # Close the DB connections
+        django.db.connection.close()
+        print('Closing connection: ' + str(name))
 
     deal_change_log_columns = ['Date', 'Deal Name', 'Old Upside', 'Adjusted Upside', 'Old Downside',
                                'Adjusted Downside', 'Old WIC PT', 'Adjusted WIC PT']
@@ -157,7 +164,7 @@ def premium_analysis_flagger():
 
 
 @shared_task
-def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_model_file, update_id, ticker,
+def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id, ticker,
                  situation_overview, company_overview, bull_thesis,
                  our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close, m_value, o_value,
                  s_value, a_value, i_value,
@@ -362,20 +369,30 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
                                 pt_down_check=pt_down_check, pt_wic_check=pt_wic_check, how_to_adjust=
                                 adjust_based_off, premium_format=premium_format)
             # Save the Newly created Deal
-            if bull_thesis_model_file != None:
-                new_deal.bull_thesis_model = bull_thesis_model_file
-            else:
-                new_deal.bull_thesis_model = 'NA'
-            if bear_thesis_model_file != None:
-                new_deal.bear_thesis_model = bear_thesis_model_file
-            else:
-                new_deal.bear_thesis_model = 'NA'
-            if our_thesis_model_file != None:
-                new_deal.our_thesis_model = our_thesis_model_file
-            else:
-                new_deal.our_thesis_model = 'NA'
 
             new_deal.save()
+
+            print('Saving File Uploads....')
+
+            if bull_thesis_model_files is not None:
+                for file in bull_thesis_model_files:
+                    ESS_Idea_BullFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                             bull_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+
+            if our_thesis_model_files is not None:
+                for file in our_thesis_model_files:
+                    ESS_Idea_OurFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                            our_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+
+            if bear_thesis_model_files is not None:
+                for file in bear_thesis_model_files:
+                    ESS_Idea_BearFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                             bear_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+
+
+
+
+
             return 'Task done'
 
         # -------------- REGION FOR ONLY ALPHA CALCULATION --------------------------------------------------------
@@ -415,8 +432,6 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
         price = float(alpha_prices[-1])  # Get most Recent Price
 
         peers_data = []  # Array of dictionaries containing Peer name, its historical prices and hedge weight
-
-
 
 
         for peer_ticker, hedge in zip(peer_tickers, peer_hedge_weights):
@@ -521,7 +536,7 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
         for change, date in zip(hedge_index_change, dates_array):
             hedge_chart.append({
                 "date": date,
-                "vol": float(change)
+                "vol": np.round(float(change), decimals=2)
             })
 
         # -------- Market Neutral Chart --------------
@@ -532,7 +547,7 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
             # first_price is price on 0th day
             market_neutral_chart.append({
                 "date": date,
-                "market_netural_value": (float(alpha) - float(hedge))
+                "market_netural_value": np.round((float(alpha) - float(hedge)), decimals=2)
             })
 
         # ------------------- Save the Ev/Ebitda, P/Eps and P/Fcf charts for Alpha Ticker -------------------
@@ -691,7 +706,11 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
         # Valuation Metrics
 
         if update_id == 'false':
-            latest_deal_key = ESS_Idea.objects.latest('deal_key').deal_key + 1
+            try:
+                latest_deal_key = ESS_Idea.objects.latest('deal_key').deal_key + 1
+            except ObjectDoesNotExist:
+                print('Database seems to be empty..')
+                latest_deal_key = 0
 
             #No Update ID means its a New deal to be added....Start with Version Number = 0
             version_number = 0
@@ -728,21 +747,24 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
                                 premium_format=premium_format)
             # Save the Newly created Deal
 
-            if bull_thesis_model_file is not None:
-                new_deal.bull_thesis_model = bull_thesis_model_file
-            else:
-                new_deal.bull_thesis_model = 'NA'
-            if bear_thesis_model_file is not None:
-                new_deal.bear_thesis_model = bear_thesis_model_file
-            else:
-                new_deal.bear_thesis_model = 'NA'
-            if our_thesis_model_file is not None:
-                new_deal.our_thesis_model = our_thesis_model_file
-            else:
-                new_deal.our_thesis_model = 'NA'
-
             new_deal.save()
             print('Successfully Saved Alpha...')
+
+            print('Now saving, File Uploads...')
+            if bull_thesis_model_files is not None:
+                for file in bull_thesis_model_files:
+                    ESS_Idea_BullFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                             bull_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+
+            if our_thesis_model_files is not None:
+                for file in our_thesis_model_files:
+                    ESS_Idea_OurFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                            our_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+
+            if bear_thesis_model_files is not None:
+                for file in bear_thesis_model_files:
+                    ESS_Idea_BearFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                             bear_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
 
         else:
             print('Updating the current IDEA. Creating a new Version ..%%')
@@ -865,20 +887,24 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
                                 premium_format=premium_format)
 
             print('Saving New ESS Deal')
-            if bull_thesis_model_file is not None:
-                new_deal.bull_thesis_model = bull_thesis_model_file
-            else:
-                new_deal.bull_thesis_model = 'NA'
-            if bear_thesis_model_file is not None:
-                new_deal.bear_thesis_model = bear_thesis_model_file
-            else:
-                new_deal.bear_thesis_model = 'NA'
-            if our_thesis_model_file is not None:
-                new_deal.our_thesis_model = our_thesis_model_file
-            else:
-                new_deal.our_thesis_model = 'NA'
-
             new_deal.save()
+
+            print('Saving File Uploads....')
+
+            if bull_thesis_model_files is not None:
+                for file in bull_thesis_model_files:
+                    ESS_Idea_BullFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                             bull_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+
+            if our_thesis_model_files is not None:
+                for file in our_thesis_model_files:
+                    ESS_Idea_OurFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                            our_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+
+            if bear_thesis_model_files is not None:
+                for file in bear_thesis_model_files:
+                    ESS_Idea_BearFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                             bear_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
 
         # Associate the Deal with each of its Peers
         # First delete existing Peers
@@ -1087,16 +1113,16 @@ def add_new_idea(bull_thesis_model_file, our_thesis_model_file, bear_thesis_mode
 
     except Exception as e:
         print(e)
-        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
-                      token=settings.SLACK_TOKEN,
-                      name='ESS_IDEA_DB_ERROR_INSPECTOR')
+        # slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
+        #               token=settings.SLACK_TOKEN,
+        #               name='ESS_IDEA_DB_ERROR_INSPECTOR')
         raise Exception
 
-    slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
-                  {'errors':'No Errors Detected...Your IDEA Was successfully added (alpha ticker)'+str(ticker)},
-                  channel='ess_idea_db_errors',
-                  token=settings.SLACK_TOKEN,
-                  name='ESS_IDEA_DB_ERROR_INSPECTOR')
+    # slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
+    #               {'errors':'No Errors Detected...Your IDEA Was successfully added (alpha ticker)'+str(ticker)},
+    #               channel='ess_idea_db_errors',
+    #               token=settings.SLACK_TOKEN,
+    #               name='ESS_IDEA_DB_ERROR_INSPECTOR')
     return 'Task Done'
 
 
@@ -1109,7 +1135,10 @@ def ess_idea_daily_update():
 
     # Force a Connection Close to prevent 'My-SQL server has gone away'
     try:
-        close_old_connections()
+        for name, info in django.db.connections.databases.items():  # Close the DB connections
+            django.db.connection.close()
+            print('Closing connection: ' + str(name))
+
         unique_deals = set(ESS_Idea.objects.all().values_list('alpha_ticker', flat=True))
         for eachDealObject in unique_deals:
             eachDealObject = ESS_Idea.objects.filter(alpha_ticker__exact=eachDealObject).order_by('-version_number')\
@@ -1412,8 +1441,11 @@ def ess_idea_daily_update():
             theoretical_sharpe = str(round(theoretical_sharpe, 2))
 
             # Save this to the Database
-            ESS_Idea.objects.filter(id=id).update(alpha_ticker=ticker, price=price, pt_up=pt_up, pt_down=pt_down,
-                                                  pt_wic=pt_wic, unaffected_date=unaffected_date,
+            ESS_Idea.objects.filter(id=id).update(alpha_ticker=ticker, price=price, pt_up=np.round(float(pt_up),
+                                                                                                   decimals=2),
+                                                  pt_down=np.round(float(pt_down), decimals=2),
+                                                  pt_wic=np.round(float(pt_wic), decimals=2),
+                                                  unaffected_date=unaffected_date,
                                                   expected_close=expected_close,
                                                   gross_percentage=gross_percentage, ann_percentage=ann_percentage,
                                                   hedged_volatility=hedged_volatility,

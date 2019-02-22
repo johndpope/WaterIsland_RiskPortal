@@ -1,4 +1,3 @@
-import os
 import datetime
 import json
 import ast
@@ -8,12 +7,11 @@ import requests
 import ess_premium_analysis
 import ess_function
 from django_pandas.io import read_frame
-from django.db.models import Max
+from django.shortcuts import redirect
 from wic_news.models import NewsMaster
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, Http404
 from django.core import serializers
-from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from celery.result import AsyncResult
 from risk.chart_utils import *
@@ -330,28 +328,41 @@ def mna_idea_add_peers(request):
 
         peer_clear_flag = False  # Flag to Track the first peer on line no 239.
         # For deleting the peers already in the system and adding the new ones..
+        api_host = bbgclient.bbgclient.get_next_available_host()
 
         for eachPeer in peer_set:
             ev_ebitda_chart_ltm = get_ev_ebitda(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, 'ltm',
-                                                mneumonic='CURRENT_EV_TO_T12M_EBITDA').reset_index().rename(
+                                                mneumonic='CURRENT_EV_TO_T12M_EBITDA', api_host=api_host).reset_index().rename(
                                                 columns={"index": "date", 0: "ev_ebitda_value"})
             ev_ebitda_chart_1bf = get_ev_ebitda(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '1bf',
-                                                mneumonic='BEST_CUR_EV_TO_EBITDA').reset_index().rename(
+                                                mneumonic='BEST_CUR_EV_TO_EBITDA', api_host=api_host).reset_index().rename(
                                                 columns={"index": "date", 0: "ev_ebitda_value"})
             ev_ebitda_chart_2bf = get_ev_ebitda(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '2bf',
-                                                mneumonic='BEST_CUR_EV_TO_EBITDA').reset_index().rename(
+                                                mneumonic='BEST_CUR_EV_TO_EBITDA', api_host=api_host).reset_index().rename(
                                                 columns={"index": "date", 0: "ev_ebitda_value"})
 
+            ev_sales_chart_ltm = get_ev_sales(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, 'ltm',
+                                                mneumonic='BEST_CURRENT_EV_BEST_SALES', api_host=api_host).reset_index().rename(
+                                                columns={"index": "date", 0: "ev_sales_value"})
+
+            ev_sales_chart_1bf = get_ev_sales(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '1bf',
+                                                mneumonic='BEST_CURRENT_EV_BEST_SALES', api_host=api_host).reset_index().rename(
+                                                columns={"index": "date", 0: "ev_sales_value"})
+
+            ev_sales_chart_2bf = get_ev_sales(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '2bf',
+                                                mneumonic='BEST_CURRENT_EV_BEST_SALES', api_host=api_host).reset_index().rename(
+                                                columns={"index": "date", 0: "ev_sales_value"})
+
             pe_ratio_ltm = get_pe_ratio(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, 'ltm',
-                                        mneumonic='T12M_DIL_PE_CONT_OPS').reset_index().rename(
+                                        mneumonic='T12M_DIL_PE_CONT_OPS', api_host=api_host).reset_index().rename(
                                         columns={"index": "date", 0: "pe_ratio"})
             pe_ratio_1bf = get_pe_ratio(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '1bf',
-                                        mneumonic='BEST_PE_RATIO').reset_index().rename(
+                                        mneumonic='BEST_PE_RATIO', api_host=api_host).reset_index().rename(
                                         columns={"index": "date", 0: "pe_ratio"})
             pe_ratio_2bf = get_pe_ratio(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '2bf',
-                                        mneumonic='BEST_PE_RATIO').reset_index().rename(
+                                        mneumonic='BEST_PE_RATIO', api_host=api_host).reset_index().rename(
                                         columns={"index": "date", 0: "pe_ratio"})
-            fcf_yield = get_fcf_yield(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd).rename(
+            fcf_yield = get_fcf_yield(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, api_host=api_host).rename(
                                         columns={"Date": "date", 'FCF yield': "p_fcf_value"})
 
             if save_to_db_flag == 'ON':
@@ -367,7 +378,10 @@ def mna_idea_add_peers(request):
                                  pe_ratio_chart_ltm=pe_ratio_ltm.to_json(orient='records'),
                                  pe_ratio_chart_1bf=pe_ratio_1bf.to_json(orient='records'),
                                  pe_ratio_chart_2bf=pe_ratio_2bf.to_json(orient='records'),
-                                 fcf_yield_chart=fcf_yield.to_json(orient='records')).save()
+                                 fcf_yield_chart=fcf_yield.to_json(orient='records'),
+                                 ev_sales_chart_1bf=ev_sales_chart_1bf.to_json(orient='records'),
+                                 ev_sales_chart_ltm=ev_sales_chart_ltm.to_json(orient='records'),
+                                 ev_sales_chart_2bf=ev_sales_chart_2bf.to_json(orient='records')).save()
 
             charts[eachPeer] = {'ev_ebitda_ltm': ev_ebitda_chart_ltm.to_json(orient='records'),
                                 'ev_ebitda_1bf': ev_ebitda_chart_1bf.to_json(orient='records'),
@@ -375,7 +389,10 @@ def mna_idea_add_peers(request):
                                 'pe_ratio_ltm': pe_ratio_ltm.to_json(orient='records'),
                                 'pe_ratio_1bf': pe_ratio_1bf.to_json(orient='records'),
                                 'pe_ratio_2bf': pe_ratio_2bf.to_json(orient='records'),
-                                'fcf_yield': fcf_yield.to_json(orient='records')}
+                                'fcf_yield': fcf_yield.to_json(orient='records'),
+                                'ev_sales_ltm':ev_sales_chart_ltm.to_json(orient='records'),
+                                'ev_sales_1bf':ev_sales_chart_1bf.to_json(orient='records'),
+                                'ev_sales_2bf':ev_sales_chart_2bf.to_json(orient='records')}
 
         response = json.dumps(charts)
 
@@ -465,12 +482,14 @@ def mna_idea_run_scenario_analysis(request):
 
             break_df = pd.DataFrame(bps_to_lose, columns=['bps_impact'])
             deal_break_change = (deal_downside - target_current_price) if not stock_component_involved else (
-                                 spread - break_spread)
+                                 break_spread)
 
             # Change Upside/downside based on Stock component
             if stock_component_involved:
                 deal_upside = spread
                 deal_downside = spread - break_spread
+
+
 
             break_df['shares'] = ((aum * break_df['bps_impact'] * 0.01) / abs(deal_break_change)).astype(int)
             break_df['NAV break'] = round(100.0 * ((break_df['shares'] * deal_break_change) / aum), 2)
@@ -684,6 +703,9 @@ def show_mna_idea(request):
         peer_charts[eachPeer.peer] = {'ev_ebitda_ltm': eachPeer.ev_ebitda_chart_ltm,
                                       'ev_ebitda_1bf': eachPeer.ev_ebitda_chart_1bf,
                                       'ev_ebitda_2bf': eachPeer.ev_ebitda_chart_2bf,
+                                      'ev_sales_ltm': eachPeer.ev_sales_chart_ltm,
+                                      'ev_sales_1bf': eachPeer.ev_sales_chart_1bf,
+                                      'ev_sales_2bf': eachPeer.ev_sales_chart_2bf,
                                       'pe_ratio_ltm': eachPeer.pe_ratio_chart_ltm,
                                       'pe_ratio_1bf': eachPeer.pe_ratio_chart_1bf,
                                       'pe_ratio_2bf': eachPeer.pe_ratio_chart_2bf,
@@ -745,6 +767,11 @@ def show_ess_idea(request):
     implied_probability_chart = ess_idea.implied_probability_chart.replace("\'", "\"")
     market_neutral_chart = ess_idea.market_neutral_chart.replace("\'", "\"")
     related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=ess_idea.id, version_number=latest_version)
+
+    bull_thesis_files = ESS_Idea_BullFileUploads.objects.select_related().filter(deal_key=ess_idea.deal_key)
+    our_thesis_files = ESS_Idea_OurFileUploads.objects.select_related().filter(deal_key=ess_idea.deal_key)
+    bear_thesis_files = ESS_Idea_BearFileUploads.objects.select_related().filter(deal_key=ess_idea.deal_key)
+
 
     # Get Upside/Downside Record Changes
     upside_downside_records = ESS_Idea_Upside_Downside_Change_Records.objects.filter(deal_key=ess_idea.deal_key).values('date_updated', 'pt_up', 'pt_wic', 'pt_down')
@@ -885,21 +912,6 @@ def show_ess_idea(request):
     # Append the Alpha Valuation Metrics
 
     p_fcf_chart.append(ess_idea.fcf_yield_chart)
-
-    if ess_idea.bull_thesis_model == 'NA':
-        bull_thesis_model = None
-    else:
-        bull_thesis_model = ess_idea.bull_thesis_model
-
-    if ess_idea.our_thesis_model == 'NA':
-        our_thesis_model = None
-    else:
-        our_thesis_model = ess_idea.our_thesis_model
-
-    if ess_idea.bear_thesis_model == 'NA':
-        bear_thesis_model = None
-    else:
-        bear_thesis_model = ess_idea.bear_thesis_model
 
     ev_ebitda_chart_1bf_df = pd.DataFrame()
     ev_ebitda_chart_ltm_df = pd.DataFrame()
@@ -1146,6 +1158,8 @@ def show_ess_idea(request):
     #     print(exception)
     #     return HttpResponse('Deal is Still being Calculated!')
 
+    # Show the Optimal Peers
+
     return render(request, 'show_ess_idea.html',
                   context={'news_master': news_master, 'ess_idea_object': ess_idea, 'alpha_chart': alpha_chart,
                            'hedge_chart': hedge_chart, 'event_premium_chart': event_premium_chart,
@@ -1158,8 +1172,8 @@ def show_ess_idea(request):
                            'p_eps_chart_2bf': p_eps_chart_2bf,
                            'p_fcf_chart': p_fcf_chart, 'peer_tickers': ','.join(peer_tickers),
                            'related_peers': related_peers, 'summary_object': summary_dictionary,
-                           'bull_thesis_model': bull_thesis_model, 'bear_thesis_model': bear_thesis_model,
-                           'our_thesis_model': our_thesis_model, 'mosaic_sum': mosaic_sum,
+                           'bull_thesis_files': bull_thesis_files, 'bear_thesis_files': bear_thesis_files,
+                           'our_thesis_files': our_thesis_files, 'mosaic_sum': mosaic_sum,
                            'version_numbers': version_numbers, 'downside_changes':downside_changes,
                            'upside_downside_records_df':upside_downside_records_df.to_json(orient='records')})
 
@@ -1179,9 +1193,30 @@ def edit_ess_deal(request):
                 'version_number'
             ).version_number
 
+            deal_key = ESS_Idea.objects.filter(id=deal_id).first().deal_key
+
+
             deal_object = ESS_Idea.objects.filter(id=deal_id, version_number=latest_version).values_list()
             related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=deal_id,
                                                                       version_number=latest_version).values_list()
+
+
+            bull_thesis_files = []
+            our_thesis_files = []
+            bear_thesis_files = []
+
+            for file in ESS_Idea_BullFileUploads.objects.select_related().filter(deal_key=deal_key):
+                bull_thesis_files.append(file.filename())
+
+            for file in ESS_Idea_OurFileUploads.objects.select_related().filter(deal_key=deal_key):
+                our_thesis_files.append(file.filename())
+
+            for file in ESS_Idea_BearFileUploads.objects.select_related().filter(deal_key=deal_key):
+                bear_thesis_files.append(file.filename())
+
+            response['bull_thesis_files'] = bull_thesis_files
+            response['our_thesis_files'] = our_thesis_files
+            response['bear_thesis_files'] = bear_thesis_files
 
             response['deal_object'] = list(deal_object)
             response['related_peers'] = list(related_peers)
@@ -1402,9 +1437,10 @@ def add_new_ess_idea_deal(request):
         # Get all the required fields
         # Get the Historical Data to Calculate Hedge Volatility
         try:
-            bull_thesis_model_file = request.FILES.get('bull_thesis_model_file')
-            our_thesis_model_file = request.FILES.get('our_thesis_model_file')
-            bear_thesis_model_file = request.FILES.get('bear_thesis_model_file')
+            bull_thesis_model_files = request.FILES.getlist('filesBullThesis[]')
+            our_thesis_model_files = request.FILES.getlist('filesOurThesis[]')
+            bear_thesis_model_files = request.FILES.getlist('filesBearThesis[]')
+
             update_id = request.POST.get('update_id')
             ticker = request.POST.get('ticker')
             situation_overview = request.POST.get('situation_overview')
@@ -1447,7 +1483,7 @@ def add_new_ess_idea_deal(request):
             adjust_based_off = request.POST.get('adjust_based_off')
             premium_format = request.POST.get('premium_format')
 
-            task = add_new_idea.delay(bull_thesis_model_file, our_thesis_model_file, bear_thesis_model_file, update_id,
+            task = add_new_idea.delay(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id,
                                       ticker, situation_overview, company_overview, bull_thesis,
                                       our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close,
                                       m_value, o_value, s_value, a_value, i_value,
@@ -1488,12 +1524,13 @@ def ess_idea_download_handler(request):
     :param request:
     :return:
     """
-    file_path = os.path.join(settings.MEDIA_URL, request.GET['path'])
-    if os.path.exists(file_path):
-        with open(file_path, 'rb') as file_handle:
-            response = HttpResponse(file_handle.read(), content_type="application/liquid")
-            response['Content-Disposition'] = 'inline; filename=' + os.path.basename(file_path)
-            return response
+    url = request.GET['path']
+    try:
+        response = redirect(url)
+        return response
+    except Exception as e:
+        print(e)
+
     raise Http404('You have not uploaded any File to support this Model!!')
 
 # endregion

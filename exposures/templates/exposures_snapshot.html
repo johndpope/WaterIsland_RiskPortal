@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title_block %}
+    Exposures Snapshot
+{% endblock %}
+{% load staticfiles %}
+
+{% block css_styles %}
+    {{ block.super }}
+{% endblock %}
+{% block amcharts_scripts %}
+    <script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
+    <script src="https://www.amcharts.com/lib/3/pie.js"></script>
+    <script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
+    <link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css" type="text/css" media="all"/>
+    <script src="https://www.amcharts.com/lib/3/themes/dark.js"></script>
+{% endblock %}
+{% block datatables_bootstrap_css %}
+    {{ block.super }}
+{% endblock %}
+
+{% block content %}
+    {# Show a Button to Add a new Deal#}
+
+    <input type="hidden" id="exposures" value="{{ exposures }}">
+
+    <div class="app-content content">
+            <div class="content-header row">
+            </div>
+            <div id="mna_idea_content_wrapper" class="content-body">
+                <section class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-head">
+                                <div class="card-header">
+                                    <h4 class="card-title font-medium-3 center">Exposure Snapshots</h4>
+                                </div>
+                                <p class="lead h6 text-center font-size-small">As of <mark>{{ as_of }}</mark></p>
+                                {% if not error %}
+                                {% else %}
+                                    <p class="lead text-danger text-center font-size-small">{{ error }}</p>
+                                {% endif %}
+
+                            </div>
+                            <div class="card-body">
+                                <small class="badge badge-default badge-danger">Note: </small> <p class="font-italic text-dark">For historical expsoures prior to 02/08/2018 please visit <a href="http://wicportal.wicfunds.local/risk-exp-snapshot" target="_blank"><u>wicportal.wicfunds.local/risk-exp-snapshot</u></a> </p>
+                                <div class="row">
+                                    <div class="col-lg-4"></div>
+                                    <div class="col-lg-1 block-tag">
+                                        <small class="badge badge-default badge-success">Retrieve Historical Exposures
+                                        </small>
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <fieldset class="form-group">
+                                            <input type="date" class="form-control" required
+                                                   id="exposures_as_of"
+                                                   >
+                                        </fieldset>
+                                    </div>
+                                    <div class="col-lg-1">
+                                        <fieldset class="form-group">
+                                            <button type="button" class="btn btn-info" id="submit_expoures_as_of" >
+                                                Submit
+                                            </button>
+                                        </fieldset>
+                                    </div>
+
+                                    <div class="col-lg-4"></div>
+                                </div>
+
+                                <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg" id="fundtabs">
+
+                                </ul>
+
+                                <div class="tab-content" id="fund-tab-content">
+
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </div>
+
+
+        <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+        <script src="{% static 'app-assets/js/core/exposures_snapshot.js' %}" type="text/javascript"></script>
+
+
+{% endblock %}

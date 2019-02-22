@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     'realtime_pnl_impacts',
     'securities',
     'storages',
+    'exposures',
 ]
 
 MIDDLEWARE = [
@@ -234,7 +235,19 @@ AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
 
 # Tell django-storages the domain to use to refer to static files.
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
-
+MEDIA_URL = 'http://s3.amazonaws.com/{}/media/'.format(AWS_STORAGE_BUCKET_NAME)
 # Tell the staticfiles app to use S3Boto3 storage when writing the collected static files (when
 # you run `collectstatic`).
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+if DEBUG == 'on':
+    DEBUG = True
+else:
+    DEBUG = False
+
+
+STATICFILES_LOCATION = 'static'
+if not DEBUG:
+    STATICFILES_LOCATION = 'static'
+    STATICFILES_STORAGE = 'custom_storages.StaticStorage'
+
+MEDIAFILES_LOCATION = 'media'
+DEFAULT_FILE_STORAGE = 'custom_storages.MediaStorage'

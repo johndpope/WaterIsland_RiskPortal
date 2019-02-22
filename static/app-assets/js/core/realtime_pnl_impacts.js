@@ -5,54 +5,29 @@ $(document).ready(function () {
         "language": {
         "processing": "Refreshing PnL"
         },
-        initComplete: function () {
-            this.api().columns([0]).every(function () {
-                var column = this;
-                $(column.header()).append("<br>");
-                var select = $('<select class="custom-select" ><option value=""></option></select>')
-                    .appendTo($(column.header()))
-                    .on('change', function () {
-                        var val = $.fn.dataTable.util.escapeRegex(
-                            $(this).val()
-                        );
 
-                        column
-                            .search(val ? '^' + val + '$' : '', true, false)
-                            .draw();
-                    });
-
-                column.data().unique().sort().each(function (d, j) {
-                    select.append('<option value="' + d + '">' + d + '</option>')
-                });
-            });
-        },
         "processing": true,
         "searching":true,
         "ajax":{
             "url":"live_tradegroup_pnl",
             "type":"POST",
             dataSrc: function (json) {
-                        var obj = JSON.parse(json["data"]);
-                        console.log(obj);
+                        let obj = JSON.parse(json["data"]);
                         return obj;
                     }
         },
         "columns":[
-            {"data" :"Fund"},
-            {"data" :"TradeGroup"},
-            {"data" :"InceptionDate"},
-            {"data" :"EndDate"},
-            {"data" :"Status"},
-            {"data" :"YTD($)"},
-            {"data" :"Qty_x"},
-            {"data" :"MKTVAL_CHG_USD"},
-            {"data" :"Total YTD PnL"},
-            {"data" :"Threshold I"},
-            {"data" :"Threshold II"},
-            {"data" :"Threshold III"},
+            {"data" :"TradeGroup_"},
+            {"data" :"Total YTD PnL_ARB"},
+            {"data" :"Total YTD PnL_AED"},
+            {"data" :"Total YTD PnL_LG"},
+            {"data" :"Total YTD PnL_MACO"},
+            {"data" :"Total YTD PnL_TAQ"},
+            {"data" :"Total YTD PnL_CAM"},
+
         ],
         "columnDefs": [{
-            "targets": [4, 6, 7],
+            "targets": [1,2,3,4,5,6],
             "createdCell": function (td, cellData, rowData, rowIndex) {
                 //Check for % Float and %Shares Out
                 if (cellData < 0) {

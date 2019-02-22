@@ -11,4 +11,4 @@ def handler404(request):
     return render(request, 'coming_soon.html',status=404)
 
 def handler500(request):
-    return render(request, 'coming_soon.html', status=500)
+    return render(request, 'error.html', status=500)

@@ -6,7 +6,7 @@ __pycache__/
 local_settings.py
 db.sqlite3
 media
-
+.idea/*/*
 # Distribution / packaging
 .Python
 build/
@@ -65,7 +65,8 @@ ipython_config.py
 
 # pyenv
 .python-version
-
+*.iml
+*.xml
 # celery beat schedule file
 celerybeat-schedule
 .pid

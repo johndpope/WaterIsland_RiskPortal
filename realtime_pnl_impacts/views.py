@@ -21,7 +21,8 @@ def live_tradegroup_pnl(request):
     ytd_performance = read_frame(ArbitrageYTDPerformance.objects.all())
     ytd_performance.columns = ['id', 'Fund', 'Sleeve', 'TradeGroup', 'LongShort', 'InceptionDate', 'EndDate', 'Status',
                                'YTD($)']
-    ytd_performance.drop(columns={'id'}, inplace=True)
+    del ytd_performance['id']
+
     assert len(ytd_performance) > 0
     all_portfolios_df = dbutils.Wic.get_live_pnl_monitored_portfolio_ids()
     portfolio_df = all_portfolios_df.copy()
@@ -83,13 +84,26 @@ def live_tradegroup_pnl(request):
     final_live_df['InceptionDate'] = final_live_df['InceptionDate'].apply(str)
     final_live_df['EndDate'] = final_live_df['EndDate'].apply(str)
 
-    final_live_df['Threshold I'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -500000 else 'Not Breached')
-    final_live_df['Threshold II'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -750000 else 'Not Breached')
-    final_live_df['Threshold III'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -1000000 else 'Not Breached')
 
-    print(final_live_df[final_live_df['Fund'] == 'ARB']['Total YTD PnL'].sum())
+
+    # final_live_df['Threshold I'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -500000 else 'Not Breached')
+    # final_live_df['Threshold II'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -750000 else 'Not Breached')
+    # final_live_df['Threshold III'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -1000000 else 'Not Breached')
+    final_live_df = final_live_df[final_live_df['Fund'].isin(['ARB','AED','LG', 'MACO', 'TAQ', 'CAM',])]
+    final_live_df = final_live_df[['Fund', 'TradeGroup', 'Total YTD PnL']]
+
+
+    final_live_df = pd.pivot_table(final_live_df, index=['TradeGroup'], columns='Fund', fill_value='N/A').reset_index()
+    final_live_df.columns = ["_".join((i, j)) for i, j in final_live_df.columns]
+    final_live_df.reset_index(inplace=True)
+    del final_live_df['index']
+
+
     if request.is_ajax():
         return_data = {'data':final_live_df.to_json(orient='records')}
+
+
+
         return HttpResponse(json.dumps(return_data), content_type='application/json')
 
     return render(request, 'realtime_pnl_impacts.html',{})

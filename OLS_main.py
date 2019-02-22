@@ -56,3 +56,6 @@ def run_OLS_regression_analysis(alpha_ticker, tgtDate, analyst_upside, analyst_d
            }
 
 #run_OLS_regression_analysis(alpha_ticker, target_date, analyst_upside, analyst_downside, analyst_pt_wic, results, api_host, adjustments_df_now = None, adjustments_df_ptd = None, f_period = '1BF')
+
+
+    

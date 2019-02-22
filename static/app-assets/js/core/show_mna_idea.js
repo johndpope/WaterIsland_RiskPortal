@@ -15,6 +15,10 @@ $(document).ready(function () {
     var ev_ebitda_onebf_valuation_multiple_datasets = [];
     var ev_ebitda_twobf_valuation_multiple_datasets = [];
 
+    var ev_sales_ltm_valuation_multiple_datasets = [];
+    var ev_sales_onebf_valuation_multiple_datasets = [];
+    var ev_sales_twobf_valuation_multiple_datasets = [];
+
     var pe_ratio_ltm_valuation_multiple_datasets = [];
     var pe_ratio_onebf_valuation_multiple_datasets = [];
     var pe_ratio_twobf_valuation_multiple_datasets = [];
@@ -34,6 +38,7 @@ $(document).ready(function () {
     let analyst_comments = $('#mna_idea_analyst_comments').summernote({'height': '400px'});
     let downside_comments = $('#mna_idea_weekly_downside_estimate_comment').summernote({'height': '300px'});
     var ebitda_charts = null;
+    var ev_sales_charts = null;
     var pe_ratio_charts = null;
 
     analyst_comments.summernote('code', $('#deal_comments').val());
@@ -199,7 +204,6 @@ $(document).ready(function () {
     var hist_prices_dates = historical_px['fields']['PX_LAST'];
 
 
-    console.log(historical_px);
     var dates = historical_px['fields']['date'];
     var target_ticker = $('#target_ticker').val();
     var acquirer_ticker = $('#acquirer_ticker').val();
@@ -219,7 +223,7 @@ $(document).ready(function () {
         console.log(err);
     }
 
-    console.log(acquirer_error_flag);
+
     try {
         generateTargetPriceChart(hist_prices_dates, dates, hist_prices_dates_acquirer, 'mna_idea_targetAcquirer_chart', target_ticker, acquirer_ticker, acquirer_error_flag);
 
@@ -264,7 +268,6 @@ $(document).ready(function () {
             });
         }
 
-        console.log(stockEvents);
 
         if (acquirer_error_flag != 1) {
             for (var i = 0; i < target_ticker_prices.length; i++) {
@@ -662,26 +665,38 @@ $(document).ready(function () {
         let ev_ebitda_chart_1bf = parsePeerMultiplesChartData(response, 'ev_ebitda_1bf');
         let ev_ebitda_chart_2bf = parsePeerMultiplesChartData(response, 'ev_ebitda_2bf');
 
+        //let ev_sales_chart_ltm = parsePeerMultiplesChartData(response, 'ev_sales_ltm');
+        let ev_sales_chart_1bf = parsePeerMultiplesChartData(response, 'ev_sales_1bf');
+        let ev_sales_chart_2bf = parsePeerMultiplesChartData(response, 'ev_sales_2bf');
+
         let pe_ratio_chart_ltm = parsePeerMultiplesChartData(response, 'pe_ratio_ltm');
         let pe_ratio_chart_1bf = parsePeerMultiplesChartData(response, 'pe_ratio_1bf');
         let pe_ratio_chart_2bf = parsePeerMultiplesChartData(response, 'pe_ratio_2bf');
 
         let fcf_yield_chart = parsePeerMultiplesChartData(response, 'fcf_yield');
 
-        //Call make Charts and supply the data
 
-        createDataset(ev_ebitda_chart_ltm, 'ev_ebitda_value', '(LTM)');
+        //Call make Charts and supply the data
+        //createDataset(ev_sales_chart_ltm, 'ev_sales_value', '(LTM)');
+        createDataset(ev_sales_chart_1bf, 'ev_sales_value', '(1BF)');
+        createDataset(ev_sales_chart_2bf, 'ev_sales_value', '(2BF)');
+
+
+
+        ev_sales_charts = createMultipleLineChart('mna_idea_ev_sales_chart', ev_sales_ltm_valuation_multiple_datasets, 'EV/Sales', 'ev_sales_value');
+        valuationMultipleDatasets = []; //Reset Global Dataset
+
         createDataset(ev_ebitda_chart_1bf, 'ev_ebitda_value', '(1BF)');
         createDataset(ev_ebitda_chart_2bf, 'ev_ebitda_value', '(2BF)');
+        createDataset(ev_ebitda_chart_ltm, 'ev_ebitda_value', '(LTM)');
 
         ebitda_charts = createMultipleLineChart('mna_idea_ev_ebitda_chart', ev_ebitda_ltm_valuation_multiple_datasets, 'EV-EBITDA', 'ev_ebitda_value');
         valuationMultipleDatasets = []; //Reset Global Dataset
         //Populate PE Ratio Chart
 
-
-        createDataset(pe_ratio_chart_ltm, 'pe_ratio', '(LTM)');
         createDataset(pe_ratio_chart_1bf, 'pe_ratio', '(1BF)');
         createDataset(pe_ratio_chart_2bf, 'pe_ratio', '(2BF)');
+        createDataset(pe_ratio_chart_ltm, 'pe_ratio', '(LTM)');
 
         pe_ratio_charts = createMultipleLineChart('mna_idea_pe_ratio_chart', pe_ratio_ltm_valuation_multiple_datasets, 'PE Ratio', 'pe_ratio');
         //Populate FCF Yield charts
@@ -718,6 +733,7 @@ $(document).ready(function () {
 
             if (override === '(LTM)' && valueField === 'ev_ebitda_value') {
                 //Push into LTM dataset
+
                 ev_ebitda_ltm_valuation_multiple_datasets.push({
                     "title": k + override,
                     "dataProvider": ev_ebitda_ltm_data_provider,
@@ -758,6 +774,38 @@ $(document).ready(function () {
                     "compared": true,
                 });
             }
+
+
+            else  if (override === '(1BF)' && valueField === 'ev_sales_value') {
+                //Push into 2 bf
+                ev_sales_onebf_valuation_multiple_datasets.push({
+                    "title": k + override,
+                    "dataProvider": ev_ebitda_ltm_data_provider,
+                    categoryField: "date",
+                    fieldMappings: [{
+                        fromField: [valueField],
+                        toField: [valueField]
+                    }],
+                    "stockEvents": stockEvents,
+                    "compared": true,
+                });
+            }
+
+            else  if (override === '(2BF)' && valueField === 'ev_sales_value') {
+                //Push into 2 bf
+                ev_sales_twobf_valuation_multiple_datasets.push({
+                    "title": k + override,
+                    "dataProvider": ev_ebitda_ltm_data_provider,
+                    categoryField: "date",
+                    fieldMappings: [{
+                        fromField: [valueField],
+                        toField: [valueField]
+                    }],
+                    "stockEvents": stockEvents,
+                    "compared": true,
+                });
+            }
+
             else  if (override === '(LTM)' && valueField === 'pe_ratio') {
                 //Push into 2 bf
                 pe_ratio_ltm_valuation_multiple_datasets.push({
@@ -823,6 +871,7 @@ $(document).ready(function () {
     function parsePeerMultiplesChartData(response, mneumonic) {
         var chartData = {};
         var innerChartData = {};
+
         $.each(response, function (peer_ticker, v) {
             $.each(response[peer_ticker], function (k, v) {
                 try {
@@ -843,6 +892,7 @@ $(document).ready(function () {
 
 
     function createMultipleLineChart(div_id, dataset, title, valueField) {
+
         var chart = AmCharts.makeChart(div_id, {
             "type": "stock",
             "theme": "light",
@@ -1241,17 +1291,21 @@ $(document).ready(function () {
     $('.show_ltm_dataset').on('click', function(){
         ebitda_charts.dataSets = [];
         pe_ratio_charts.dataSets = [];
-
+        ev_sales_charts.dataSets = [];
         for(var i=0;i<ev_ebitda_ltm_valuation_multiple_datasets.length;i++){
             ebitda_charts.dataSets.push(ev_ebitda_ltm_valuation_multiple_datasets[i]);
             ebitda_charts.mainDataSet = ev_ebitda_ltm_valuation_multiple_datasets[i];
+            ev_sales_charts.dataSets.push(ev_sales_ltm_valuation_multiple_datasets[i]);
+            ev_sales_charts.mainDataSet = ev_sales_ltm_valuation_multiple_datasets[i];
             pe_ratio_charts.dataSets.push(pe_ratio_ltm_valuation_multiple_datasets[i]);
             pe_ratio_charts.mainDataSet = pe_ratio_ltm_valuation_multiple_datasets[i];
         }
        ebitda_charts.validateData();
+       ev_sales_charts.validateData();
        pe_ratio_charts.validateData();
        ebitda_charts.validateNow();
        pe_ratio_charts.validateNow();
+       ev_sales_charts.validateNow();
 
 
     });
@@ -1260,37 +1314,47 @@ $(document).ready(function () {
 
         ebitda_charts.dataSets = [];
         pe_ratio_charts.dataSets = [];
+        ev_sales_charts.dataSets = [];
 
         for(var i=0;i<ev_ebitda_onebf_valuation_multiple_datasets.length;i++){
             ebitda_charts.dataSets.push(ev_ebitda_onebf_valuation_multiple_datasets[i]);
             ebitda_charts.mainDataSet = ev_ebitda_onebf_valuation_multiple_datasets[i];
+            ev_sales_charts.dataSets.push(ev_sales_onebf_valuation_multiple_datasets[i]);
+            ev_sales_charts.mainDataSet = ev_sales_onebf_valuation_multiple_datasets[i];
             pe_ratio_charts.dataSets.push(pe_ratio_onebf_valuation_multiple_datasets[i]);
             pe_ratio_charts.mainDataSet = pe_ratio_onebf_valuation_multiple_datasets[i];
         }
        ebitda_charts.validateData();
+       ev_sales_charts.validateData();
        pe_ratio_charts.validateData();
        ebitda_charts.validateNow();
        pe_ratio_charts.validateNow();
+       ev_sales_charts.validateNow();
 
     });
 
     $('.show_2bf_dataset').on('click', function(){
         ebitda_charts.dataSets = [];
+        ev_sales_charts.dataSets = [];
         pe_ratio_charts.dataSets = [];
 
         for(var i=0;i<ev_ebitda_twobf_valuation_multiple_datasets.length;i++){
             ebitda_charts.dataSets.push(ev_ebitda_twobf_valuation_multiple_datasets[i]);
             ebitda_charts.mainDataSet = ev_ebitda_twobf_valuation_multiple_datasets[i];
+            ev_sales_charts.dataSets.push(ev_sales_twobf_valuation_multiple_datasets[i]);
+            ev_sales_charts.mainDataSet = ev_sales_twobf_valuation_multiple_datasets[i];
             pe_ratio_charts.dataSets.push(pe_ratio_twobf_valuation_multiple_datasets[i]);
             pe_ratio_charts.mainDataSet = pe_ratio_twobf_valuation_multiple_datasets[i];
         }
        ebitda_charts.validateData();
+       ev_sales_charts.validateData();
        pe_ratio_charts.validateData();
        ebitda_charts.validateNow();
        pe_ratio_charts.validateNow();
+       ev_sales_charts.validateNow();
 
     });
 
 
-
+$('.show_1bf_dataset').trigger('click'); // Show 1BF dataset by Default..
 });
