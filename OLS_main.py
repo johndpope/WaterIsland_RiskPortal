@@ -17,7 +17,7 @@ api_host = bbgclient.bbgclient.get_next_available_host()
 fperiod = "1BF"
 
 #The line below is the function to run the REGRESSION PART
-#results = OLS_regression_analysis_new.run_regression_optimal_peers(alpha_ticker, unaffected_date, lookback_period = 120)
+#results = OLS_regression_analysis.run_regression_optimal_peers(alpha_ticker, unaffected_date, lookback_period = 120)
 
 def run_OLS_regression_analysis(alpha_ticker, tgtDate, analyst_upside, analyst_downside, analyst_pt_wic, regression_results, api_host, adjustments_df_now = None, adjustments_df_ptd = None, f_period = '1BF'):
     metrics = ['P/E', "EV/EBITDA", "EV/Sales", 'DVD Yield', 'FCF Yield']
