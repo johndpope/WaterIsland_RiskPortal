@@ -19,8 +19,8 @@ from sqlalchemy import create_engine
 env = environ.Env()
 environ.Env.read_env()  # Read the .env File
 
-engine = create_engine("mysql://"+env('WICFUNDS_DATABASE_USER')+":"+env('WICFUNDS_DATABASE_PASSWORD')
-                       + "@" + env('WICFUNDS_DATABASE_HOST')+"/"+env('WICFUNDS_DATABASE_NAME'))
+engine = create_engine("mysql://" + env('WICFUNDS_DATABASE_USER') + ":" + env('WICFUNDS_DATABASE_PASSWORD')
+                       + "@" + env('WICFUNDS_DATABASE_HOST') + "/" + env('WICFUNDS_DATABASE_NAME'))
 con = engine.connect()
 
 SQLALCHEMY_CONNECTION = con
@@ -29,7 +29,7 @@ WICFUNDS_TEST_DATABASE_NAME = env('WICFUNDS_TEST_DATABASE_NAME')
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-INTERNAL_IPS = ('127.0.0.1','10.16.1.151')
+INTERNAL_IPS = ('127.0.0.1', '10.16.1.151')
 
 SECRET_KEY = env('SECRET_KEY')
 
@@ -43,18 +43,22 @@ CELERY_TIMEZONE = 'US/Eastern'
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
 
 CELERYBEAT_SCHEDULE = {
-    'ESS_IDEA_DAILY_UPDATE':{
-        'task':'risk.tasks.ess_idea_daily_update',
-        'schedule':crontab(hour=9, minute=45, day_of_week='mon-fri') #Execute every morning at 9.40 after market opens
+    'ESS_IDEA_DAILY_UPDATE': {
+        'task': 'risk.tasks.ess_idea_daily_update',
+        'schedule': crontab(hour=9, minute=45, day_of_week='mon-fri')
+    # Execute every morning at 9.40 after market opens
     },
-    # 'MERGER_ARB_NAV_IMPACTS_UPDATES':{
-    #     'task':'risk_reporting.tasks.update_merger_arb_nav_impacts',
-    #     'schedule':crontab(minute='*/15'), #Execute every morning at 9.40 after market opens
-    # },
-    'ESS_IDEA_FLAGGER':{
-        'task':'risk.tasks.premium_analysis_flagger',
-        'schedule':crontab(hour=10, minute=38, day_of_week='mon-fri'), #Execute every morning after daily update
+
+    'ESS_IDEA_FLAGGER': {
+        'task': 'risk.tasks.premium_analysis_flagger',
+        'schedule': crontab(hour=10, minute=38, day_of_week='mon-fri'),  # Execute every morning after daily update
+    },
+
+    'DYNAMIC_DOWNSIDE_UPDATE': {
+        'task': 'risk_reporting.tasks.refresh_base_case_and_outlier_downsides',
+        'schedule': crontab(minute="*/20", hour=[10, 11, 12, 13, 14, 15, 16], day_of_week='mon-fri'),  # Execute 20 min
     }
+
 }
 
 BROKER_POOL_LIMIT = 0
@@ -106,7 +110,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_PORT = env('EMAIL_PORT')
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = '$'+env('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_PASSWORD = '$' + env('EMAIL_HOST_PASSWORD')
 EMAIL_USE_TLS = True
 
 ROOT_URLCONF = 'WicPortal_Django.urls'
@@ -152,14 +156,14 @@ DATABASES = {
         'CONN_MAX_AGE': None,
     },
 
-    'NorthPoint-PnLAppDb':{
+    'NorthPoint-PnLAppDb': {
         'ENGINE': 'sql_server.pyodbc',
         'HOST': env('NORTHPOINT_PNLAPPDB_DATABASE_HOST'),
         'USER': env('NORTHPOINT_PNLAPPDB_DATABASE_USER'),
         'PASSWORD': env('NORTHPOINT_PNLAPPDB_DATABASE_PASSWORD'),
         'NAME': env('NORTHPOINT_PNLAPPDB_DATABASE_NAME')
     },
-    'NorthPoint-SecurityMaster':{
+    'NorthPoint-SecurityMaster': {
         'ENGINE': 'sql_server.pyodbc',
         'HOST': env('NORTHPOINT_PNLAPPDB_DATABASE_HOST'),
         'USER': env('NORTHPOINT_PNLAPPDB_DATABASE_USER'),
@@ -185,7 +189,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
@@ -242,7 +245,6 @@ if DEBUG == 'on':
     DEBUG = True
 else:
     DEBUG = False
-
 
 STATICFILES_LOCATION = 'static'
 if not DEBUG:

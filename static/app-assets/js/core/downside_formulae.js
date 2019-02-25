@@ -130,7 +130,7 @@ $(document).ready(function () {
         let base_case_custom_input = $(this).parent().parent().find("td").eq(15).find("input").val();
         let base_case = $(this).parent().parent().find("td").eq(16).find("input").val();
         let base_case_notes = $(this).parent().parent().find("td").eq(17).find("input").val();
-
+        let cix_ticker = $(this).parent().parent().find("td").eq(6).find("input").val();
         // Get data for the Outlier
         let outlier_downside_type = $(this).parent().parent().find("td").eq(18).find(".custom-select2").val();
         let outlier_reference_data_point = $(this).parent().parent().find("td").eq(19).find("input").val();
@@ -154,7 +154,7 @@ $(document).ready(function () {
         downsides_data_dictionary['base_case_custom_input'] = base_case_custom_input;
         downsides_data_dictionary['base_case'] = base_case;
         downsides_data_dictionary['base_case_notes'] = base_case_notes;
-
+        downsides_data_dictionary['cix_ticker'] = cix_ticker;
         downsides_data_dictionary['outlier_downside_type'] = outlier_downside_type;
         downsides_data_dictionary['outlier_reference_data_point'] = outlier_reference_data_point;
         downsides_data_dictionary['outlier_reference_price'] = outlier_reference_price;

@@ -11,7 +11,7 @@ class MA_Deals(models.Model):
     target_last_price = models.CharField(max_length=10, default='0')
     analyst = models.CharField(max_length=50)
     created = models.DateField(default=None)
-    last_modified = models.DateTimeField(default=None)
+    last_modified = models.DateField(default=None)
     is_complete = models.CharField(default=None, max_length=5)
     deal_cash_terms = models.CharField(max_length=40,default=None)
     deal_share_terms = models.FloatField(default=0)
@@ -22,7 +22,7 @@ class MA_Deals(models.Model):
     acquirer_upside = models.FloatField(null=True, default=0)
     fund = models.CharField(max_length=30, default='ARB')
     fund_aum = models.CharField(max_length=20, default='0')
-    last_downside_update = models.DateTimeField(null=True)
+    last_downside_update = models.DateField(null=True)
     catalyst = models.CharField(max_length=10, null=True)  # Hard/Soft
     catalyst_tier = models.CharField(max_length=10, null=True)  # 1,2,3
     expected_closing_date = models.DateField(null=True)
@@ -37,7 +37,7 @@ class MA_Deals(models.Model):
     cix_index_chart = models.TextField(null=True)
     spread_index = models.CharField(max_length=100, null=True)
     spread_index_chart = models.TextField(null=True)
-
+    archived = models.BooleanField(default=False)
 
     def __str__(self):
         return self.deal_name + ' By-'+self.analyst

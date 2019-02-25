@@ -20,8 +20,6 @@ $(document).ready(function () {
 
 function addFundMainTab(name, addToTab, addToContent, sleeve, exposures) {
     // create the tab
-
-
     // Tab content should actually be another Tab and Tab content, this time with Funds Sleeves
 
     // create the tab content

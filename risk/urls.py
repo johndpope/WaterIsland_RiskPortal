@@ -16,6 +16,8 @@ urlpatterns = [
     url('mna_idea_run_scenario_analysis$',views.mna_idea_run_scenario_analysis,name='mna_idea_run_scenario_analysis'),
     url('update_comments$',views.update_comments,name='update_comments'),
     url('add_new_mna_idea$',views.add_new_mna_idea,name='add_new_mna_idea'),
+    url('archive_mna_idea$',views.archive_mna_idea,name='archive_mna_idea'),
+    url('restore_merger_arb_idea$',views.restore_from_archive_mna_idea,name='restore_from_archive_mna_idea'),
     url('get_gics_sector$',views.get_gics_sector,name='get_gics_sector'),
     url('mna_idea_add_peers$',views.mna_idea_add_peers,name='mna_idea_add_peers'),
     url('add_new_mna_idea_lawyer_report$',views.add_new_mna_idea_lawyer_report,name='add_new_mna_idea_lawyer_report'),
@@ -35,6 +37,8 @@ urlpatterns = [
     url('show_all_credit_deals$',views.show_all_credit_deals,name = 'show_all_credit_deals'),
     url('ess_idea_view_balance_sheet$',views.ess_idea_view_balance_sheet,name = 'ess_idea_view_balance_sheet'),
     url('ess_idea_save_balance_sheet$',views.ess_idea_save_balance_sheet,name = 'ess_idea_save_balance_sheet'),
+
+
 
 ]
 

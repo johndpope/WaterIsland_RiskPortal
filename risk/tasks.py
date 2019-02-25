@@ -157,7 +157,8 @@ def premium_analysis_flagger():
     email = EmailMessage('ESS IDEA Database - Adjustments', body=tabulate(deal_change_log,
                                                                           headers=deal_change_log.columns,
                                                                           showindex=False, tablefmt='psql'),
-                         to=['kgorde@wicfunds.com'], from_email='dispatch@wicfunds.com')
+                         to=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com',
+                             'kkeung@wicfunds.com'], from_email='dispatch@wicfunds.com')
 
     email.attach('EssIDEA_Adjustments.csv', deal_change_log.to_csv(), 'text/csv')
     email.send()

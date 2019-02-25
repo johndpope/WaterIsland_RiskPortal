@@ -228,7 +228,7 @@ def add_or_update_mna_idea_weekly_downside_estimates(request):
                                              estimate=downside_estimate, date_updated=datetime.datetime.now()).save()
             # Save the last Updated downside estimate
             deal_obj = MA_Deals.objects.get(id=deal_id)
-            deal_obj.last_downside_update = datetime.datetime.now()
+            deal_obj.last_downside_update = datetime.datetime.now().date()
             deal_obj.save()
             response = 'Success'
         except Exception as exception:
@@ -421,7 +421,8 @@ def add_new_mna_idea(request):
         deal_object = MA_Deals(deal_name=deal_name, analyst=analyst, target_ticker=target_ticker,
                                acquirer_ticker=acquirer_ticker, deal_cash_terms=deal_cash_terms,
                                deal_share_terms=deal_share_terms,
-                               deal_value=deal_value, status=status, created=created)
+                               deal_value=deal_value, status=status, created=created, last_modified=datetime.datetime.now().date(),
+                               is_complete='No')
         deal_object.save()
         response = 'Success'
 
@@ -440,9 +441,9 @@ def update_comments(request):
             deal_id_under_consideration = request.POST['deal_id']
             comments = request.POST['comments']
             MA_Deals_Notes.objects.update_or_create(deal_id=deal_id_under_consideration,
-                                                    defaults={'note': comments, 'last_edited': datetime.datetime.now()})
+                                                    defaults={'note': comments, 'last_edited': datetime.datetime.now().date()})
             MA_Deals.objects.update_or_create(id=deal_id_under_consideration,
-                                              defaults={'last_modified': datetime.datetime.now()})
+                                              defaults={'last_modified': datetime.datetime.now().date()})
             response = 'Success'
         except Exception as exception:
             print(exception)
@@ -559,13 +560,47 @@ def mna_idea_run_scenario_analysis(request):
             return HttpResponse('Failed')
 
 
+def restore_from_archive_mna_idea(request):
+    response = 'Failed'
+    if request.method == 'POST':
+        try:
+            deal_id = request.POST['id']
+            deal_object = MA_Deals.objects.get(id=deal_id)
+            deal_object.archived = False
+            deal_object.save()
+            response = 'Success'
+        except Exception as exception:
+            print(exception)  # Exception should be logged..
+            response = 'Failed'
+
+    return HttpResponse(response)
+
+
+def archive_mna_idea(request):
+    response = 'Failed'
+    if request.method == 'POST':
+        try:
+            deal_id = request.POST['id']
+            deal_object = MA_Deals.objects.get(id=deal_id)
+            deal_object.archived = True
+            deal_object.save()
+            response = 'Success'
+        except Exception as exception:
+            print(exception)    # Exception should be logged..
+            response = 'Failed'
+
+    return HttpResponse(response)
+
+
 def mna_idea_database(request):
     """
     :param request: Request Object with no fields
     :return: All Deals in the Merger Arb IDEA Database
     """
-    deals_df = MA_Deals.objects.all()
-    return render(request, 'mna_idea_database.html', {'deals_df': deals_df})
+    deals_df = MA_Deals.objects.all().filter(archived=False)
+    archived_deals_df = MA_Deals.objects.all().filter(archived=True)
+
+    return render(request, 'mna_idea_database.html', {'deals_df': deals_df, 'archived_deals_df': archived_deals_df})
 
 
 def show_mna_idea(request):
@@ -1413,6 +1448,7 @@ def ess_idea_premium_analysis(request):
                                    api_host=api_host, adjustments_df_now=adjustments_df,
                                    adjustments_df_ptd=on_pt_adjustments_df, premium_as_percent=None,
                                    f_period="1BF")
+
 
         cix_down_price = np.round(df['Down Price (CIX)'], decimals=2)
         cix_up_price = np.round(df['Up Price (CIX)'], decimals=2)
