@@ -45,8 +45,8 @@
                                         <thead>
                                         <tr>
                                             <th colspan="10">Position Info</th>
-                                            <th colspan="7">BASE CASE</th>
-                                            <th colspan="7">OUTLIER</th>
+                                            <th colspan="8">BASE CASE</th>
+                                            <th colspan="8">OUTLIER</th>
                                         </tr>
                                         <tr>
                                             <th>TradeGroup</th>
@@ -86,7 +86,7 @@
                                                 <td>{{ row.TargetAcquirer }}</td>
                                                 <td>{{ row.OriginationDate }}</td>
                                                 <td>{{ row.LastUpdate }}</td>
-                                                <td>{{ row.cix_ticker }}</td>
+                                                <td><input type="text" value="{{ row.cix_ticker }}"></td>
                                                 <td>{{ row.DealValue }}</td>
                                                 <td> {{ row.LastPrice }}</td>
                                                 <td>
@@ -108,10 +108,11 @@
                                                         <option value="Fundamental Valuation">Fundamental Valuation</option>
                                                         <option value="Break Spread">Break Spread</option>
                                                         <option value="Peer Index">Peer Index</option>
-                                                        <option value="Premium/Discount">Price *
+                                                        <option value="Premium/Discount">
                                                             Premium/Discount
                                                         </option>
                                                         <option value="Last Price">Last Price</option>
+                                                        <option value="Reference Security">Reference Security</option>
                                                     </select>
                                                 </td>
                                                 <td><input type="text" value="{{ row.BaseCaseReferenceDataPoint }}"></td>
@@ -140,6 +141,7 @@
                                                             Premium/Discount
                                                         </option>
                                                         <option value="Last Price">Last Price</option>
+                                                        <option value="Reference Security">Reference Security</option>
                                                     </select>
                                                 </td>
                                                 <td><input type="text" value="{{ row.OutlierReferenceDataPoint }}"></td>

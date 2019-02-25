@@ -10,7 +10,123 @@ from django_slack import slack_message
 import numpy as np
 from tabulate import tabulate
 api_host = bbgclient.get_next_available_host()
+from django.conf import settings
 
+
+def refresh_base_case_and_outlier_downsides():
+    ''' Refreshes the base case and outlier downsides every 20 minutes for dynamically linked downsides '''
+    import pandas as pd
+    import bbgclient
+    con = settings.SQLALCHEMY_CONNECTION
+
+    formulae_based_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
+                                                 con=con)
+    # Update the Last Prices of Each Deal
+    api_host = bbgclient.bbgclient.get_next_available_host()
+    # formulae_based_downsides['Underlying'] = formulae_based_downsides['Underlying'].apply(lambda x: ' '.join(x.split(' ')[:2]))
+    all_unique_tickers = list(formulae_based_downsides['Underlying'].unique())
+    live_price_df = pd.DataFrame.from_dict(
+        bbgclient.bbgclient.get_secid2field(all_unique_tickers, 'tickers', ['PX_LAST'], req_type='refdata',
+                                             api_host=api_host), orient='index').reset_index()
+    live_price_df['PX_LAST'] = live_price_df['PX_LAST'].apply(lambda x: x[0])
+    live_price_df.columns = ['Underlying', 'PX_LAST']
+
+    # Merge Live Price Df
+    formulae_based_downsides = pd.merge(formulae_based_downsides, live_price_df, how='left', on=['Underlying'])
+
+    def populate_last_prices(row):
+        if pd.isnull(row['PX_LAST']) or row['PX_LAST'] is None or row['PX_LAST'] == 'None':
+            return row['LastPrice']  # Return the Last Price fetched from the OMS
+
+        return row['PX_LAST']
+
+    formulae_based_downsides['PX_LAST'] = formulae_based_downsides.apply(populate_last_prices, axis=1)
+
+    # Delete the old LastPrice
+    del formulae_based_downsides['LastPrice']
+
+    formulae_based_downsides.rename(columns={'PX_LAST': 'LastPrice'}, inplace=True)
+
+    # Got the Latest Last Prices now iterate and refresh the ReferenceDataPoint based on DownsideType
+    def update_base_case_reference_price(row):
+        if row['BaseCaseDownsideType'] == 'Break Spread':
+            return row['DealValue']  # Reference Price should be the deal value
+        elif row['BaseCaseDownsideType'] == 'Last Price':
+            return row['LastPrice']  # Reference Price is refreshed Last price...
+
+        elif row['BaseCaseDownsideType'] == 'Premium/Discount':
+            return row['LastPrice']  # Reference Price is refreshed Last price...
+
+        elif row['BaseCaseDownsideType'] == 'Reference Security':
+            return float(
+                live_price_df[live_price_df['Underlying'] == row['BaseCaseReferenceDataPoint']]['PX_LAST'].iloc[0])
+
+        # Else just return the original BaseCaseReferencePrice
+        return row['BaseCaseReferencePrice']
+
+    def update_outlier_reference_price(row):
+        if row['OutlierDownsideType'] == 'Break Spread':
+            return row['DealValue']  # Reference Price should be the deal value
+        elif row['OutlierDownsideType'] == 'Last Price':
+            return row['LastPrice']  # Reference Price is refreshed Last price...
+
+        elif row['OutlierDownsideType'] == 'Premium/Discount':
+            return row['LastPrice']  # Reference Price is refreshed Last price...
+
+        elif row['OutlierDownsideType'] == 'Reference Security':
+            return float(
+                live_price_df[live_price_df['Underlying'] == row['OutlierReferenceDataPoint']]['PX_LAST'].iloc[0])
+
+        # Else just return the original BaseCaseReferencePrice
+        return row['OutlierReferencePrice']
+
+    formulae_based_downsides['BaseCaseReferencePrice'] = formulae_based_downsides.apply(
+        update_base_case_reference_price, axis=1)
+    formulae_based_downsides['OutlierReferencePrice'] = formulae_based_downsides.apply(update_outlier_reference_price,
+                                                                                       axis=1)
+
+    # Reference Prices are Refreshed now recalculate the Base case and outlier downsides
+    def update_base_case_downsides(row):
+        try:
+            if row['BaseCaseDownsideType'] == 'Fundamental Valuation':
+                return row['base_case']
+            else:
+                return row['BaseCaseReferencePrice'] if row['BaseCaseOperation'] == 'None' else eval(
+                    row['BaseCaseReferencePrice'] + row['BaseCaseOperation'] + row['BaseCaseCustomInput'])
+        except Exception as e:
+            return row['base_case']
+
+    def update_outlier_downsides(row):
+        try:
+            if row['OutlierDownsideType'] == 'Fundamental Valuation':
+                return row['outlier']
+            else:
+                return row['OutlierReferencePrice'] if row['OutlierOperation'] == 'None' else eval(
+                    row['OurlierReferencePrice'] + row['OutlierOperation'] + row['OutlierCustomInput'])
+        except Exception as e:
+            return row['outlier']
+
+    formulae_based_downsides['base_case'] = formulae_based_downsides.apply(update_base_case_downsides, axis=1)
+    formulae_based_downsides['outlier'] = formulae_based_downsides.apply(update_outlier_downsides, axis=1)
+
+    old_formulaes = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides', con=con)
+    # Base Case and Outliers are now updated! Delete the old table and insert new ones
+    try:
+        con.execute('TRUNCATE TABLE test_wic_db.risk_reporting_formulaebaseddownsides')
+        formulae_based_downsides.to_sql(name='risk_reporting_formulaebaseddownsides', con=con, if_exists='append',
+                                        index=False, schema='test_wic_db')
+        print('Refreshed Base Case and Outlier Downsides successfully...')
+    except Exception as e:
+        print(e)
+        print('Some Error occured....Rolling back changes to downsides')
+        old_formulaes.to_sql(name='risk_reporting_formulaebaseddownsides', con=con, if_exists='append', index=False,
+                             schema='test_wic_db')
+        print('Restored Downside formulae state to previous...!')
+
+    # Post to Slack
+    slack_message('navinspector.slack', {'impacts': 'Base Case and Outlier Downsides refreshed...'})
+    print('Closing Connection to Relational Database Service....')
+    con.close()
 
 
 def update_merger_arb_nav_impacts():
@@ -72,9 +188,8 @@ def update_merger_arb_nav_impacts():
 
     #Post new Impacts on Slack Channel
 
-    print(nav_impacts_sum_df)
 
-    nav_impacts_sum_df.to_sql(con=connection, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
+    nav_impacts_sum_df.to_sql(con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
                               schema='test_wic_db')
 
 
@@ -127,4 +242,4 @@ def calculate_outlier_nav_impact(row):
     return ((row['OUTLIER_PL'] / row['NAV']) * 100)
 
 
-#update_merger_arb_nav_impacts()
+update_merger_arb_nav_impacts()

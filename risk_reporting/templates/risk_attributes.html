@@ -33,7 +33,7 @@
                         <div class="card">
                             <div class="card-head">
                                 <div class="card-header">
-                                    <h4 class="card-title font-medium-3 center">Merger ARB Base Case NAV Impacts</h4>
+                                    <h4 class="card-title font-medium-3 center">Merger ARB NAV Impacts</h4>
                                     <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
                                     <div class="heading-elements">
                                     </div>
@@ -46,34 +46,59 @@
                                     <table class="table table-striped table-bordered" id='arb_risk_attributes_table' style="font-size:12px;">
                                         <thead>
                                         <tr>
+                                            <th colspan="3"></th>
+                                            <th colspan="7">Base Case NAV Impact</th>
+                                            <th colspan="7">Outlier NAV Impact</th>
+
+                                        </tr>
+                                        <tr>
                                             <th>Strategy</th>
                                             <th>RiskLimit</th>
+                                            <th>LastUpdate</th>
                                             <th>ARB</th>
-                                            <th>AED</th>
                                             <th>MACO</th>
+                                            <th>MALT</th>
+                                            <th>AED</th>
                                             <th>CAM</th>
                                             <th>LG</th>
                                             <th>LEV</th>
-                                            <th>WED</th>
-                                            <th>WIC</th>
+                                            <th>ARB</th>
+                                            <th>MACO</th>
+                                            <th>MALT</th>
+                                            <th>AED</th>
+                                            <th>CAM</th>
+                                            <th>LG</th>
+                                            <th>LEV</th>
+
 
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        {% for row in impacts %}
-                                        <tr id="row_{{ row.id }}">
-                                            <td>{{ row.TradeGroup }}</td>
-                                            <td>{{ row.RiskLimit }}</td>
-                                            <td>{{ row.BASE_CASE_NAV_IMPACT_ARB }}</td>
-                                            <td>{{ row.BASE_CASE_NAV_IMPACT_AED }}</td>
-                                            <td>{{ row.BASE_CASE_NAV_IMPACT_MACO }}</td>
-                                            <td>{{ row.BASE_CASE_NAV_IMPACT_CAM }}</td>
-                                            <td> {{ row.BASE_CASE_NAV_IMPACT_LG }}</td>
-                                            <td> {{ row.BASE_CASE_NAV_IMPACT_LEV }}</td>
-                                            <td> {{ row.BASE_CASE_NAV_IMPACT_WED }}</td>
-                                            <td> {{ row.BASE_CASE_NAV_IMPACT_WIC }}</td>
-                                        </tr>
-                                        {% endfor %}
+
+{#                                        <tr>#}
+{#                                            <td>{{ row.TradeGroup }}</td>#}
+{#                                            <td>{{ row.RiskLimit }}</td>#}
+{#                                            <td>{{ row.PM_BASE_CASE }}</td>#}
+{#                                            <td>{{ row.LastUpdate }}</td>#}
+{##}
+{#                                            <td>{{ row.BASE_CASE_NAV_IMPACT_ARB }}</td>#}
+{#                                            <td>{{ row.BASE_CASE_NAV_IMPACT_MACO }}</td>#}
+{#                                            <td>{{ row.BASE_CASE_NAV_IMPACT_MALT }}</td>#}
+{#                                            <td>{{ row.BASE_CASE_NAV_IMPACT_AED }}</td>#}
+{#                                            <td> {{ row.BASE_CASE_NAV_IMPACT_CAM }}</td>#}
+{#                                            <td> {{ row.BASE_CASE_NAV_IMPACT_LG }}</td>#}
+{#                                            <td> {{ row.BASE_CASE_NAV_IMPACT_LEV }}</td>#}
+{##}
+{#                                            <td>{{ row.OUTLIER_NAV_IMPACT_ARB }}</td>#}
+{#                                            <td>{{ row.OUTLIER_NAV_IMPACT_MACO }}</td>#}
+{#                                            <td>{{ row.OUTLIER_NAV_IMPACT_MALT }}</td>#}
+{#                                            <td>{{ row.OUTLIER_NAV_IMPACT_AED }}</td>#}
+{#                                            <td> {{ row.OUTLIER_NAV_IMPACT_CAM }}</td>#}
+{#                                            <td> {{ row.OUTLIER_NAV_IMPACT_LG }}</td>#}
+{#                                            <td> {{ row.OUTLIER_NAV_IMPACT_LEV }}</td>#}
+{##}
+{#                                        </tr>#}
+
                                         </tbody>
                                     </table>
                                 </div>

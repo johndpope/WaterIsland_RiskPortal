@@ -93,7 +93,7 @@ def live_tradegroup_pnl(request):
     final_live_df = final_live_df[['Fund', 'TradeGroup', 'Total YTD PnL']]
 
 
-    final_live_df = pd.pivot_table(final_live_df, index=['TradeGroup'], columns='Fund', fill_value='N/A').reset_index()
+    final_live_df = pd.pivot_table(final_live_df, index=['TradeGroup'], columns='Fund', fill_value=0).reset_index()
     final_live_df.columns = ["_".join((i, j)) for i, j in final_live_df.columns]
     final_live_df.reset_index(inplace=True)
     del final_live_df['index']
