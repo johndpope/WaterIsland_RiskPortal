@@ -7,7 +7,8 @@
 {% block css_styles %}
     {{ block.super }}
 
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.bootstrap.min.css">
+    <link rel="stylesheet" type="text/css"
+          href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.bootstrap.min.css">
 
 {% endblock %}
 
@@ -16,6 +17,121 @@
 {% endblock %}
 
 {% block content %}
+    {# DOWNSIDES FORMULAE NEW DEAL ADD MODAL#}
+    <div class="modal animated fadeInDown text-left" id="downsides_formulae_new_deal_modal" tabindex="-1"
+         role="dialog"
+         aria-labelledby="myModalLabel42" aria-hidden="true">
+        <div class="modal-lg modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="myModalLabel42">Add a new Deal</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="container">
+                        <div class="col-lg-12">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-2 block-tag">
+                                    <small class="badge badge-default badge-success">TradeGroup</small>
+                                </div>
+                                <div class="col-lg-6">
+                                    <input type="text" placeholder="eg. RHT - IBM" class="form-control"
+                                           id="formulae_tradegroup"/>
+                                </div>
+
+                            </div>
+                        </div><br>
+
+
+                        <div class="col-lg-12">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-2 block-tag">
+                                    <small class="badge badge-default badge-success">Underlying Security</small>
+                                </div>
+                                <div class="col-lg-6">
+                                    <input type="text" placeholder="eg. RHT US EQUITY" class="form-control"
+                                           id="formulae_underlying"/>
+                                </div>
+                            </div>
+                        </div><br>
+
+
+                        <div class="col-lg-12">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-2 block-tag">
+                                    <small class="badge badge-default badge-success">Analyst</small>
+                                </div>
+                                <div class="col-lg-6">
+                                    <input type="text" placeholder="eg. JSO" class="form-control"
+                                           id="formulae_analyst"/>
+                                </div>
+                            </div>
+                        </div><br>
+
+
+                        <div class="col-lg-12">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-2 block-tag">
+                                    <small class="badge badge-default badge-success">Target/Acquirer?</small>
+                                </div>
+                                <div class="col-lg-6">
+                                    <input type="text" placeholder="eg. Target" class="form-control"
+                                           id="formulae_target"/>
+                                </div>
+                            </div>
+                        </div><br>
+
+
+                        <div class="col-lg-12">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-2 block-tag">
+                                    <small class="badge badge-default badge-success">Origination Date</small>
+                                </div>
+                                <div class="col-lg-6">
+                                    <input type="date" placeholder="eg. JSO" class="form-control"
+                                           id="formulae_origination_date"/>
+                                </div>
+                            </div>
+                        </div><br>
+
+
+                        <div class="col-lg-12">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-2 block-tag">
+                                    <small class="badge badge-default badge-success">Deal Value</small>
+                                </div>
+                                <div class="col-lg-6">
+                                    <input type="text" placeholder="eg. 190.00" class="form-control"
+                                           id="formulae_deal_value"/>
+                                </div>
+                            </div>
+                        </div><br>
+                    </div>
+
+                    <div class="modal-footer">
+                        <input id='downsides_formulae_save_new_deal' type="button"
+                               class="btn btn-success" value="Save Deal">
+
+                        <button type="button"
+                                class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    {# DOWNSIDES FORMULAE NEW DEAL ADDITION END#}
+
+
+
+
     {# Show a Button to Add a new Deal#}
     <div class="app-content content">
         <div class="content-wrapper">
@@ -31,6 +147,13 @@
                                         downside..</h4>
                                     <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
                                     <div class="heading-elements">
+                                        <button id='ess_idea_add_new_deal' class="btn btn-primary btn-sm"
+                                                data-toggle="modal"
+                                                data-target="#downsides_formulae_new_deal_modal"><i
+                                                class="ft-plus white"></i> Add
+                                            New
+                                            Deal
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -79,87 +202,105 @@
                                         </thead>
                                         <tbody>
                                         {% for row in marb_positions %}
-                                            <tr id="{{ row.id }}">
-                                                <td>{{ row.TradeGroup }}</td>
-                                                <td>{{ row.Underlying }}</td>
-                                                <td>{{ row.Analyst }}</td>
-                                                <td>{{ row.TargetAcquirer }}</td>
-                                                <td>{{ row.OriginationDate }}</td>
-                                                <td>{{ row.LastUpdate }}</td>
-                                                <td><input type="text" value="{{ row.cix_ticker }}"></td>
-                                                <td>{{ row.DealValue }}</td>
-                                                <td> {{ row.LastPrice }}</td>
-                                                <td>
-                                                    <select class="custom-select2 mr-sm-2">
-                                                        <option selected value="{{ row.IsExcluded }}">{{ row.IsExcluded }}
-                                                        </option>
-                                                        {% if row.IsExcluded == 'Yes' %}
-                                                            <option value="No">No..</option>
-                                                        {% else %}
-                                                            <option value="Yes">Yes..</option>
-                                                        {% endif %}
-                                                    </select>
-                                                </td>
-                                                <td><input type="number" step="0.01" value="{{ row.RiskLimit }}"></td>
-                                                <td>
-                                                    <select class="custom-select2 mr-sm-2 BaseCaseDownsideType">
-                                                        <option selected value="{{ row.BaseCaseDownsideType }}">{{ row.BaseCaseDownsideType }}
-                                                        </option>
-                                                        <option value="Fundamental Valuation">Fundamental Valuation</option>
-                                                        <option value="Break Spread">Break Spread</option>
-                                                        <option value="Peer Index">Peer Index</option>
-                                                        <option value="Premium/Discount">
-                                                            Premium/Discount
-                                                        </option>
-                                                        <option value="Last Price">Last Price</option>
-                                                        <option value="Reference Security">Reference Security</option>
-                                                    </select>
-                                                </td>
-                                                <td><input type="text" value="{{ row.BaseCaseReferenceDataPoint }}"></td>
-                                                <td><input type="text" value="{{ row.BaseCaseReferencePrice }}"></td>
-                                                <td><select id= "basecaseoperator" class="custom-select2 mr-sm-2">
-                                                        <option selected value="{{ row.BaseCaseOperation }}">{{ row.BaseCaseOperation }}
-                                                        </option>
-                                                        <option value="+">+</option>
-                                                        <option value="-">-</option>
-                                                        <option value="/">/</option>
-                                                        <option value="*">*
-                                                        </option>
-                                                    </select></td>
-                                                <td><input type="text" id="basecasecustominput" value="{{ row.BaseCaseCustomInput }}"></td>
-                                                <td><input type="text" id="calculated_basecase" value="{{ row.base_case }}"></td>
-                                                <td><input type="text" id="base_case_notes" value="{{ row.base_case_notes }}"></td>
+                                            {% if row.IsExcluded == 'No' %}
+                                                {% if row.base_case == None or row.outlier == None %}
+                                                    <tr class="bg-grey text-white" id="{{ row.id }}">
+                                                {% endif %}
+                                            {% else %}
+                                                <tr id="{{ row.id }}">
+                                            {% endif %}
+                                        <td>{{ row.TradeGroup }}</td>
+                                        <td>{{ row.Underlying }}</td>
+                                        <td>{{ row.Analyst }}</td>
+                                        <td>{{ row.TargetAcquirer }}</td>
+                                        <td>{{ row.OriginationDate }}</td>
+                                        <td>{{ row.LastUpdate }}</td>
+                                        <td><input type="text" value="{{ row.cix_ticker }}"></td>
+                                        <td>{{ row.DealValue }}</td>
+                                        <td> {{ row.LastPrice }}</td>
+                                        <td>
+                                            <select class="custom-select2 mr-sm-2 IsExcluded">
+                                                <option selected value="{{ row.IsExcluded }}">{{ row.IsExcluded }}
+                                                </option>
+                                                {% if row.IsExcluded == 'Yes' %}
+                                                    <option value="No">No..</option>
+                                                {% else %}
+                                                    <option value="Yes">Yes..</option>
+                                                {% endif %}
+                                            </select>
+                                        </td>
+                                        <td><input type="number" step="0.01" value="{{ row.RiskLimit }}"></td>
+                                        <td>
+                                            <select class="custom-select2 mr-sm-2 BaseCaseDownsideType">
+                                                <option selected
+                                                        value="{{ row.BaseCaseDownsideType }}">{{ row.BaseCaseDownsideType }}
+                                                </option>
+                                                <option value="Fundamental Valuation">Fundamental Valuation</option>
+                                                <option value="Break Spread">Break Spread</option>
+                                                <option value="Peer Index">Peer Index</option>
+                                                <option value="Premium/Discount">
+                                                    Premium/Discount
+                                                </option>
+                                                <option value="Last Price">Last Price</option>
+                                                <option value="Reference Security">Reference Security</option>
+                                            </select>
+                                        </td>
+                                        <td><input type="text" value="{{ row.BaseCaseReferenceDataPoint }}"></td>
+                                        <td><input type="text" value="{{ row.BaseCaseReferencePrice }}"></td>
+                                        <td><select id="basecaseoperator" class="custom-select2 mr-sm-2">
+                                            <option selected
+                                                    value="{{ row.BaseCaseOperation }}">{{ row.BaseCaseOperation }}
+                                            </option>
+                                            <option value="+">+</option>
+                                            <option value="-">-</option>
+                                            <option value="/">/</option>
+                                            <option value="*">*
+                                            </option>
+                                        </select></td>
+                                        <td><input type="text" id="basecasecustominput"
+                                                   value="{{ row.BaseCaseCustomInput }}"></td>
 
-                                                <td>
-                                                    <select class="custom-select2 mr-sm-2 OutlierDownsideType">
-                                                        <option selected value="{{ row.OutlierDownsideType }}">{{ row.OutlierDownsideType }}
-                                                        </option>
-                                                        <option value="Fundamental Valuation">Fundamental Valuation</option>
-                                                        <option value="Break Spread">Break Spread</option>
-                                                        <option value="Peer Index">Peer Index</option>
-                                                        <option value="Premium/Discount">
-                                                            Premium/Discount
-                                                        </option>
-                                                        <option value="Last Price">Last Price</option>
-                                                        <option value="Reference Security">Reference Security</option>
-                                                    </select>
-                                                </td>
-                                                <td><input type="text" value="{{ row.OutlierReferenceDataPoint }}"></td>
-                                                <td><input type="text" value="{{ row.OutlierReferencePrice }}"></td>
-                                                <td><select id="outlieroperator" class="custom-select2 mr-sm-2">
-                                                        <option selected value="{{ row.OutlierOperation }}">{{ row.OutlierOperation }}
-                                                        </option>
-                                                        <option value="+">+</option>
-                                                        <option value="-">-</option>
-                                                        <option value="/">/</option>
-                                                        <option value="*">*
-                                                        </option>
-                                                    </select></td>
-                                                <td><input type="text" id="outliercustominput" value="{{ row.OutlierCustomInput }}"></td>
-                                                <td><input type="text" id="calculated_outlier" value="{{ row.outlier }}"></td>
-                                                <td><input type="text" id="outlier_notes" value="{{ row.outlier_notes }}"></td>
-                                                <td><button class="btn btn-sm btn-success" >Save</button> </td>
-                                            </tr>
+                                        <td><input type="text" class="BaseCaseDownside" id="calculated_basecase"
+                                                   value="{{ row.base_case }}"></td>
+                                        <td><input type="text" id="base_case_notes" value="{{ row.base_case_notes }}">
+                                        </td>
+
+                                        <td>
+                                            <select class="custom-select2 mr-sm-2 OutlierDownsideType">
+                                                <option selected
+                                                        value="{{ row.OutlierDownsideType }}">{{ row.OutlierDownsideType }}
+                                                </option>
+                                                <option value="Fundamental Valuation">Fundamental Valuation</option>
+                                                <option value="Break Spread">Break Spread</option>
+                                                <option value="Peer Index">Peer Index</option>
+                                                <option value="Premium/Discount">
+                                                    Premium/Discount
+                                                </option>
+                                                <option value="Last Price">Last Price</option>
+                                                <option value="Reference Security">Reference Security</option>
+                                            </select>
+                                        </td>
+                                        <td><input type="text" value="{{ row.OutlierReferenceDataPoint }}"></td>
+                                        <td><input type="text" value="{{ row.OutlierReferencePrice }}"></td>
+                                        <td><select id="outlieroperator" class="custom-select2 mr-sm-2">
+                                            <option selected
+                                                    value="{{ row.OutlierOperation }}">{{ row.OutlierOperation }}
+                                            </option>
+                                            <option value="+">+</option>
+                                            <option value="-">-</option>
+                                            <option value="/">/</option>
+                                            <option value="*">*
+                                            </option>
+                                        </select></td>
+                                        <td><input type="text" id="outliercustominput"
+                                                   value="{{ row.OutlierCustomInput }}"></td>
+                                        <td><input type="text" class="OutlierDownside" id="calculated_outlier"
+                                                   value="{{ row.outlier }}"></td>
+                                        <td><input type="text" id="outlier_notes" value="{{ row.outlier_notes }}"></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-success">Save</button>
+                                        </td>
+                                        </tr>
 
                                         {% endfor %}
                                         </tbody>

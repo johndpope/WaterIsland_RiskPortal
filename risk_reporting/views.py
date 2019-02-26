@@ -10,6 +10,7 @@ from django.http import HttpResponse
 from django.db import connection
 from .models import ArbNAVImpacts, DailyNAVImpacts, FormulaeBasedDownsides
 from django.conf import settings
+from django.db.models import Max
 # Following NAV Impacts Utilities
 
 
@@ -67,7 +68,7 @@ def merger_arb_risk_attributes(request):
     """ View to Populate the Risk attributes for the Arbitrage Fund """
 
     # Populate all the deals
-    nav_impacts_positions_df = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_arbnavimpacts', con=connection)
+    nav_impacts_positions_df = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=connection)
 
     # Convert Underlying Ticker to format Ticker Equity
     nav_impacts_positions_df['Underlying'] = nav_impacts_positions_df['Underlying'].apply(lambda x: x + " EQUITY" if "EQUITY" not in x else x)
@@ -75,6 +76,7 @@ def merger_arb_risk_attributes(request):
                                                   con=connection)
 
     forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'base_case', 'outlier', 'LastUpdate']]
+
     merged_df = pd.merge(nav_impacts_positions_df, forumale_linked_downsides, how='inner',
                          on=['TradeGroup', 'Underlying'])
 
@@ -101,13 +103,17 @@ def merger_arb_risk_attributes(request):
                                                                                      axis=1)
     nav_impacts_positions_df = nav_impacts_positions_df.round({'BASE_CASE_NAV_IMPACT': 2, 'OUTLIER_NAV_IMPACT': 2})
 
-    nav_impacts_sum_df = nav_impacts_positions_df.groupby(['TradeGroup', 'FundCode', 'RiskLimit', 'LastUpdate']).agg(
+    nav_impacts_sum_df = nav_impacts_positions_df.groupby(['TradeGroup', 'FundCode', 'RiskLimit']).agg(
         {'BASE_CASE_NAV_IMPACT': 'sum', 'OUTLIER_NAV_IMPACT': 'sum'})
 
-    nav_impacts_sum_df = pd.pivot_table(nav_impacts_sum_df, index=['TradeGroup', 'RiskLimit', 'LastUpdate'], columns='FundCode',
+    nav_impacts_sum_df = pd.pivot_table(nav_impacts_sum_df, index=['TradeGroup', 'RiskLimit'], columns='FundCode',
                                         aggfunc=np.sum,
                                         fill_value='')
 
+
+    # Get last updated values for the tradegroup
+
+    #nav_impacts_sum_df['LastUpdate']
 
     nav_impacts_sum_df.columns = ["_".join((i, j)) for i, j in nav_impacts_sum_df.columns]
     nav_impacts_sum_df.reset_index(inplace=True)
@@ -118,13 +124,52 @@ def merger_arb_risk_attributes(request):
                               schema='test_wic_db')
 
     impacts = DailyNAVImpacts.objects.all()
+    impacts_df = pd.DataFrame.from_records(impacts.values())
+
+    def get_last_update_downside(row):
+        return forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']]['LastUpdate'].max()
+
+    impacts_df['LastUpdate'] = impacts_df.apply(get_last_update_downside, axis=1)
+
     if request.is_ajax():
-        return_data = {'data': pd.DataFrame.from_records(impacts.values()).to_json(orient='records')}
+        return_data = {'data': impacts_df.to_json(orient='records')}
         return HttpResponse(json.dumps(return_data), content_type='application/json')
 
     return render(request, 'risk_attributes.html', context={})
 
 # The following should run in a scheduled job. Over here just get values from DB and render to the Front end...
+
+
+def formulae_downsides_new_deal_add(request):
+    """ Add new deal to formulae based downsides page """
+    response = 'Failed'
+    if request.method == 'POST':
+        # Get the Data
+        tradegroup = request.POST['tradegroup']
+        underlying_security = request.POST['underlying_security']
+        analyst = request.POST['analyst']
+        target_acquirer = request.POST['target_acquirer']
+        origination_date = request.POST['origination_date']
+        deal_value = request.POST['deal_value']
+        # Get the max ID
+        try:
+            max_id = int(FormulaeBasedDownsides.objects.all().aggregate(Max('id'))['id__max'])
+            insert_id = max_id + 1
+            obj = FormulaeBasedDownsides()
+            obj.id = insert_id
+            obj.TradeGroup = tradegroup
+            obj.Underlying = underlying_security
+            obj.TargetAcquirer = target_acquirer
+            obj.Analyst = analyst
+            obj.OriginationDate = origination_date
+            obj.DealValue = deal_value
+            obj.save()
+            response = 'Success'
+
+        except Exception as e:
+            response = 'Failed'
+            print(e)
+    return HttpResponse(response)
 
 
 def merger_arb_nav_impacts(request):
@@ -195,29 +240,26 @@ def update_downside_formulae(request):
             outlier_custom_input = request.POST['outlier_custom_input']
             outlier = request.POST['outlier']
             outlier_notes = request.POST['outlier_notes']
-
-            FormulaeBasedDownsides.objects.update_or_create(id=id,
-                                                            defaults={'IsExcluded': is_excluded,
-                                                                      'RiskLimit': risk_limit,
-                                                                      'BaseCaseDownsideType': base_case_downside_type,
-                                                                      'BaseCaseReferenceDataPoint':
-                                                                          base_case_reference_data_point,
-                                                                      'cix_ticker':cix_ticker,
-                                                                      'BaseCaseReferencePrice':
-                                                                          base_case_reference_price,
-                                                                      'BaseCaseOperation': base_case_operation,
-                                                                      'BaseCaseCustomInput': base_case_custom_input,
-                                                                      'base_case': base_case,
-                                                                      'base_case_notes': base_case_notes,
-                                                                      'OutlierDownsideType': outlier_downside_type,
-                                                                      'OutlierReferenceDataPoint':
-                                                                          outlier_reference_data_point,
-                                                                      'OutlierReferencePrice': outlier_reference_price,
-                                                                      'OutlierOperation': outlier_operation,
-                                                                      'OutlierCustomInput': outlier_custom_input,
-                                                                      'outlier': outlier,
-                                                                      'outlier_notes': outlier_notes,
-                                                                      'LastUpdate': datetime.datetime.now()})
+            obj = FormulaeBasedDownsides.objects.get(id=id)
+            obj.IsExcluded = is_excluded
+            obj.RiskLimit = risk_limit
+            obj.BaseCaseDownsideType = base_case_downside_type
+            obj.BaseCaseReferenceDataPoint = base_case_reference_data_point
+            obj.cix_ticker = cix_ticker
+            obj.BaseCaseReferencePrice = base_case_reference_price
+            obj.BaseCaseOperation = base_case_operation
+            obj.BaseCaseCustomInput = base_case_custom_input
+            obj.base_case = base_case
+            obj.base_case_notes = base_case_notes
+            obj.OutlierDownsideType = outlier_downside_type
+            obj.OutlierReferenceDataPoint = outlier_reference_data_point
+            obj.OutlierReferencePrice = outlier_reference_price
+            obj.OutlierOperation = outlier_operation
+            obj.OutlierCustomInput = outlier_custom_input
+            obj.outlier = outlier
+            obj.outlier_notes = outlier_notes
+            obj.LastUpdate = datetime.datetime.now()
+            obj.save()
             response = 'Success'
         except Exception as e:
             print(e)

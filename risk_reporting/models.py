@@ -67,7 +67,8 @@ class DailyNAVImpacts(models.Model):
     BASE_CASE_NAV_IMPACT_LG = models.CharField(max_length=100)
     BASE_CASE_NAV_IMPACT_MACO = models.CharField(max_length=100)
     BASE_CASE_NAV_IMPACT_TAQ = models.CharField(max_length=100)
-
+    BASE_CASE_NAV_IMPACT_WED = models.CharField(max_length=100)
+    BASE_CASE_NAV_IMPACT_WIC = models.CharField(max_length=100)
     BASE_CASE_NAV_IMPACT_MALT = models.CharField(max_length=100, null=True)
     OUTLIER_NAV_IMPACT_AED = models.CharField(max_length=100)
     OUTLIER_NAV_IMPACT_ARB = models.CharField(max_length=100)
@@ -76,6 +77,8 @@ class DailyNAVImpacts(models.Model):
     OUTLIER_NAV_IMPACT_LG = models.CharField(max_length=100)
     OUTLIER_NAV_IMPACT_MACO = models.CharField(max_length=100)
     OUTLIER_NAV_IMPACT_TAQ = models.CharField(max_length=100)
+    OUTLIER_NAV_IMPACT_WED = models.CharField(max_length=100)
+    OUTLIER_NAV_IMPACT_WIC = models.CharField(max_length=100)
     OUTLIER_NAV_IMPACT_MALT = models.CharField(max_length=100, null=True)
 
 class FormulaeBasedDownsides(models.Model):
@@ -88,7 +91,7 @@ class FormulaeBasedDownsides(models.Model):
     OriginationDate = models.DateField(null=True)
     LastUpdate = models.DateField(null=True)
     LastPrice = models.FloatField(null=True)
-    IsExcluded = models.CharField(max_length=22) #Denote by Yes/No
+    IsExcluded = models.CharField(max_length=22, default='No') #Denote by Yes/No
     RiskLimit = models.FloatField(null=True)
     BaseCaseDownsideType = models.CharField(max_length=50, null=True) #Store the downside type
     BaseCaseReferenceDataPoint = models.CharField(max_length=50, null=True) #Based on Downside Type

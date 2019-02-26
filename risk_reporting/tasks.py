@@ -2,6 +2,7 @@ import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 import django
 django.setup()
+from celery import shared_task
 from django.db import connection
 import pandas as pd
 from risk_reporting.models import ArbNAVImpacts, DailyNAVImpacts
@@ -12,7 +13,7 @@ from tabulate import tabulate
 api_host = bbgclient.get_next_available_host()
 from django.conf import settings
 
-
+@shared_task
 def refresh_base_case_and_outlier_downsides():
     ''' Refreshes the base case and outlier downsides every 20 minutes for dynamically linked downsides '''
     import pandas as pd
@@ -242,4 +243,4 @@ def calculate_outlier_nav_impact(row):
     return ((row['OUTLIER_PL'] / row['NAV']) * 100)
 
 
-update_merger_arb_nav_impacts()
+#update_merger_arb_nav_impacts()

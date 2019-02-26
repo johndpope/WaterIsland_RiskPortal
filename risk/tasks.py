@@ -154,7 +154,7 @@ def premium_analysis_flagger():
             continue
     # Todo Email the Dataframe to the ESS Team
     from tabulate import tabulate
-    email = EmailMessage('ESS IDEA Database - Adjustments', body=tabulate(deal_change_log,
+    email = EmailMessage('(Risk Automation) ESS IDEA Database Adjustments', body=tabulate(deal_change_log,
                                                                           headers=deal_change_log.columns,
                                                                           showindex=False, tablefmt='psql'),
                          to=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com',

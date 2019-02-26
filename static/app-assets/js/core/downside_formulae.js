@@ -7,7 +7,16 @@ $(document).ready(function () {
         fixedColumns: {
             leftColumns: 2
         },
+        order: [[4, 'desc']],
+        columnDefs: [{
+            targets: [4], render: function (data) {
+                return moment(data).format('YYYY-MM-DD');
+            }
+        }],
+
     });
+
+
 
 
     // Event Handler for Datatable dropdown
@@ -195,5 +204,41 @@ $(document).ready(function () {
 
 
     });
+
+});
+
+
+// Save a New Deal into the Database
+$('#downsides_formulae_save_new_deal').on('click', function(){
+   // Get Data and fire an Ajax Request. Post Insertion, refresh the page...
+   let tradegroup = $('#formulae_tradegroup').val();
+   let underlying_security = $('#formulae_underlying').val();
+   let analyst = $('#formulae_analyst').val();
+   let target_acquirer = $('#formulae_target').val();
+   let origination_date = $('#formulae_origination_date').val();
+   let deal_value = $('#formulae_deal_value').val();
+
+   $.ajax({
+       url: '../risk_reporting/formulae_downsides_new_deal_add',
+       type:'POST',
+       data: {'tradegroup':tradegroup, 'underlying_security':underlying_security,'analyst':analyst,
+       'target_acquirer':target_acquirer, 'origination_date':origination_date, 'deal_value':deal_value},
+       success:function(response){
+            if(response === 'Success'){
+                toastr.success('Refreshing Page', 'Successfully added new deal', {
+                        positionClass: 'toast-top-right',
+                        containerId: 'toast-top-right'
+                    });
+                window.location.reload()
+            }
+       },
+       error: function(err){
+           console.log(err);
+       }
+   })
+
+
+
+
 
 });

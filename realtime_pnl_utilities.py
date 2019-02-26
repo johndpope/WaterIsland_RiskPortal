@@ -83,8 +83,13 @@ def daily_update_of_ytd_performance():
         fund_dollar_df['InceptionDate'] = fund_dollar_df['InceptionDate'].apply(pd.to_datetime)
         fund_dollar_df['EndDate'] = fund_dollar_df['EndDate'].apply(pd.to_datetime)
 
+        # Get the Hard/Soft Catalyst Type from Risk Database
+        catalyst_df = pd.read_sql_query('select distinct TradeGroup, CatalystTypeWIC from wic.daily_flat_file_db where '
+                               'CatalystTypeWIC is not null', con=connection)
+
+        fund_dollar_df = pd.merge(fund_dollar_df, catalyst_df, how='left', on='TradeGroup')
         fund_dollar_df.columns = ['fund', 'sleeve', 'tradegroup', 'long_short', 'inception_date', 'end_date', 'status',
-                                  'ytd_dollar']
+                                  'ytd_dollar', 'catalyst_wic']
 
         fund_dollar_df.to_sql(name='realtime_pnl_impacts_arbitrageytdperformance', con=settings.SQLALCHEMY_CONNECTION,
                               if_exists='append',index=False, schema=settings.WICFUNDS_TEST_DATABASE_NAME)

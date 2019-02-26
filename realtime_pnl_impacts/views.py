@@ -19,7 +19,8 @@ def live_tradegroup_pnl(request):
 
     """ Returns the Live PnL and YTD PnL at the Tradegroup level """
     ytd_performance = read_frame(ArbitrageYTDPerformance.objects.all())
-    ytd_performance.columns = ['id', 'Fund', 'Sleeve', 'TradeGroup', 'LongShort', 'InceptionDate', 'EndDate', 'Status',
+
+    ytd_performance.columns = ['id', 'Fund', 'Sleeve','Catalyst', 'TradeGroup', 'LongShort', 'InceptionDate', 'EndDate', 'Status',
                                'YTD($)']
     del ytd_performance['id']
 
@@ -90,10 +91,10 @@ def live_tradegroup_pnl(request):
     # final_live_df['Threshold II'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -750000 else 'Not Breached')
     # final_live_df['Threshold III'] = final_live_df['Total YTD PnL'].apply(lambda x: 'Breached' if x < -1000000 else 'Not Breached')
     final_live_df = final_live_df[final_live_df['Fund'].isin(['ARB','AED','LG', 'MACO', 'TAQ', 'CAM',])]
-    final_live_df = final_live_df[['Fund', 'TradeGroup', 'Total YTD PnL']]
+    final_live_df = final_live_df[['Fund', 'TradeGroup','Sleeve', 'Catalyst', 'Total YTD PnL']]
 
 
-    final_live_df = pd.pivot_table(final_live_df, index=['TradeGroup'], columns='Fund', fill_value=0).reset_index()
+    final_live_df = pd.pivot_table(final_live_df, index=['TradeGroup', 'Sleeve', 'Catalyst'], columns='Fund', fill_value=0).reset_index()
     final_live_df.columns = ["_".join((i, j)) for i, j in final_live_df.columns]
     final_live_df.reset_index(inplace=True)
     del final_live_df['index']
