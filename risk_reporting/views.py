@@ -10,8 +10,10 @@ from django.http import HttpResponse
 from django.db import connection
 from .models import ArbNAVImpacts, DailyNAVImpacts, FormulaeBasedDownsides
 from django.conf import settings
+from django_slack import slack_message
 from django.db.models import Max
 # Following NAV Impacts Utilities
+
 
 
 def calculate_pl_base_case(row):
@@ -241,6 +243,8 @@ def update_downside_formulae(request):
             outlier = request.POST['outlier']
             outlier_notes = request.POST['outlier_notes']
             obj = FormulaeBasedDownsides.objects.get(id=id)
+            old_base_case_downside = obj.base_case
+            old_outlier = obj.outlier
             obj.IsExcluded = is_excluded
             obj.RiskLimit = risk_limit
             obj.BaseCaseDownsideType = base_case_downside_type
@@ -261,6 +265,14 @@ def update_downside_formulae(request):
             obj.LastUpdate = datetime.datetime.now()
             obj.save()
             response = 'Success'
+            slack_message('portal_downsides.slack',
+                          {'downsides': 'Downside Updated for '+str(obj.TradeGroup)+' Underlying:'+obj.Underlying+
+                                        ' Old Base Case->' + str(old_base_case_downside)+' Updated to ->' +
+                                        str(obj.base_case)+' Old Outlier->' + str(old_outlier)+ ' Updated to ->' +
+                                        str(obj.outlier)},
+                          channel='portal_downsides',
+                          token=settings.SLACK_TOKEN,
+                          name='PORTAL DOWNSIDE UPDATE AGENT')
         except Exception as e:
             print(e)
             response = 'Failed'

@@ -205,6 +205,9 @@
                                             {% if row.IsExcluded == 'No' %}
                                                 {% if row.base_case == None or row.outlier == None %}
                                                     <tr class="bg-grey text-white" id="{{ row.id }}">
+
+                                                    {% else %}
+                                                    <tr id="{{ row.id }}">
                                                 {% endif %}
                                             {% else %}
                                                 <tr id="{{ row.id }}">
