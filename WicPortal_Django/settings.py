@@ -248,7 +248,7 @@ if DEBUG == 'on':
 else:
     DEBUG = False
 
-DEBUG = False
+# DEBUG = False
 #STATICFILES_LOCATION = 'static'
 if not DEBUG:
     STATICFILES_LOCATION = 'static'
