@@ -214,6 +214,7 @@ def formula_based_downsides(request):
     the calulation fields for each deal at security level """
     # Gather data from Model and send to front end..Listen for any updates
     marb_positions = FormulaeBasedDownsides.objects.all()
+
     return render(request, 'downside_fomulae.html', context={'marb_positions': marb_positions})
 
 

@@ -22,7 +22,7 @@
     {# Show a Button to Add a new Deal#}
 
     <input type="hidden" id="exposures" value="{{ exposures }}">
-
+    {% csrf_token %}
     <div class="app-content content">
             <div class="content-header row">
             </div>
