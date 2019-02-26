@@ -241,12 +241,15 @@ AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
 MEDIA_URL = 'http://s3.amazonaws.com/{}/media/'.format(AWS_STORAGE_BUCKET_NAME)
 # Tell the staticfiles app to use S3Boto3 storage when writing the collected static files (when
 # you run `collectstatic`).
+
+
 if DEBUG == 'on':
     DEBUG = True
 else:
     DEBUG = False
 
-STATICFILES_LOCATION = 'static'
+DEBUG = False
+#STATICFILES_LOCATION = 'static'
 if not DEBUG:
     STATICFILES_LOCATION = 'static'
     STATICFILES_STORAGE = 'custom_storages.StaticStorage'
