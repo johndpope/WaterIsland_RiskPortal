@@ -17,6 +17,7 @@
 {% endblock %}
 
 {% block content %}
+    {% csrf_token %}
     {# DOWNSIDES FORMULAE NEW DEAL ADD MODAL#}
     <div class="modal animated fadeInDown text-left" id="downsides_formulae_new_deal_modal" tabindex="-1"
          role="dialog"
