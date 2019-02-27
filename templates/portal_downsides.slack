@@ -1,6 +1,6 @@
 {% extends django_slack %}
 
 {% block text %}
-
+    FROM IP: {{ IP }}
    {{ downsides }}
 {% endblock %}
