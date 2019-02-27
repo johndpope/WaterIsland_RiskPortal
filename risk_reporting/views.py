@@ -5,6 +5,7 @@ import datetime
 import pandas as pd
 import numpy as np
 import json
+from ipware import get_client_ip
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db import connection
@@ -266,11 +267,19 @@ def update_downside_formulae(request):
             obj.LastUpdate = datetime.datetime.now()
             obj.save()
             response = 'Success'
+            ip_addr = None
+            client_ip, is_routable = get_client_ip(request)
+            if client_ip is None:
+                ip_addr = 'NA'
+            else:
+                ip_addr = client_ip
+
             slack_message('portal_downsides.slack',
                           {'downsides': 'Downside Updated for '+str(obj.TradeGroup)+' Underlying:'+obj.Underlying+
                                         ' Old Base Case->' + str(old_base_case_downside)+' Updated to ->' +
                                         str(obj.base_case)+' Old Outlier->' + str(old_outlier)+ ' Updated to ->' +
-                                        str(obj.outlier)},
+                                        str(obj.outlier),
+                           'IP':str(ip_addr)},
                           channel='portal_downsides',
                           token=settings.SLACK_TOKEN,
                           name='PORTAL DOWNSIDE UPDATE AGENT')
