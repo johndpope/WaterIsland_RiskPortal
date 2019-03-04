@@ -77,7 +77,7 @@ $(document).ready(function () {
 
         ],
         "columnDefs": [{
-            "targets": [1, 3, 4, 5, 7, 10, 11, 12],
+            "targets": [2, 4, 5, 6, 8, 11, 12, 13],
             "render": $.fn.dataTable.render.number(',', '.', 2),
             "createdCell": function (td, cellData, rowData, rowIndex) {
                 //Check for % Float and %Shares Out
@@ -94,7 +94,7 @@ $(document).ready(function () {
             }
         },
             {   // Multi - Strats and Leveraged Fund (Risk is 2x and 3x respectively
-                "targets": [6, 7, 8, 13, 14, 15],
+                "targets": [7, 8, 9, 14, 15, 16],
                 "render": $.fn.dataTable.render.number(',', '.', 2),
                 "createdCell": function (td, cellData, rowData, rowIndex) {
                     //Check for % Float and %Shares Out
@@ -110,7 +110,7 @@ $(document).ready(function () {
                 }
             },
             { // Handle 3x Risk for Leveraged Fund
-                "targets": [9, 16],
+                "targets": [10, 17],
                 "render": $.fn.dataTable.render.number(',', '.', 2),
                 "createdCell": function (td, cellData, rowData, rowIndex) {
                     //Check for % Float and %Shares Out
