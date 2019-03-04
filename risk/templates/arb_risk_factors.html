@@ -1,0 +1,656 @@
+{% extends 'base.html' %}
+{% load staticfiles %}
+{% block title_block %}
+    Arbitrage Risk Factors
+{% endblock %}
+
+
+{% block content %}
+
+    {# ARB RISK FORM MODAL#}
+    {% csrf_token %}
+    <input type="hidden" id="deal_id" value="{{ deal_id }}"/>
+    <div class="loader">
+                        <div class="loader-inner ball-grid-pulse">
+                        </div>
+                    </div>
+    <div class="app-content content"><br>
+        <p class="h3 text-center text-bold-500">Risk Factors for: {{ deal_name }}</p>
+        <div class="content-wrapper">
+            <div class="content-body">
+                <div class="container-fluid">
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Definiteness</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="definiteness">
+                                        <option selected>{{ risk_factors.definiteness }}</option>
+                                        <option>Definitive Agreement</option>
+                                        <option>Agreement in Principle</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Hostile/Friendly</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="hostile_friendly">
+                                        <option selected>{{ risk_factors.hostile_friendly }}</option>
+                                        <option>Friendly</option>
+                                        <option>Hostile</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Strategic/PE</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="strategic_pe">
+                                        <option selected>{{ risk_factors.strategic_pe }}</option>
+                                        <option>Strategic</option>
+                                        <option>PE</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Deal Rationale</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="deal_rationale">
+                                        <option selected>{{ risk_factors.deal_rationale }}</option>
+                                        <option>One of a kind asset</option>
+                                        <option>Synergy</option>
+                                        <option>Market Share</option>
+                                        <option>Economy of Scale</option>
+                                        <option>Taxation</option>
+                                        <option>Diversification</option>
+                                        <option>Vertical Integration</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Premium(%)</small>
+                                <fieldset class="form-group position-relative">
+                                    <input type="text" class="form-control" id="premium"
+                                           value="{{ risk_factors.premium_percentage }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Stock/Cash</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="stock_cash">
+                                        <option selected>{{ risk_factors.stock_cash }}</option>
+                                        <option>Cash Tender</option>
+                                        <option>Stock Exchange</option>
+                                        <option>Scheme of an Arrangement</option>
+                                        <option>Merger all Cash</option>
+                                        <option>Merger with Stock Portion</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Financing % of deal value
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <input type="text" class="form-control"
+                                           id="financing_percent_deal_value"
+                                           value="{{ risk_factors.financing_percent_of_deal_value }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Pro-forma leverage
+                                    (Debt/EBITDA)
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <input type="text" class="form-control" id="proforma_leverage"
+                                           value="{{ risk_factors.pro_forma_leverage }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Estimated Closing Date
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <input type="date" class="form-control" id="estimated_closing_date"
+                                           value="{{ risk_factors.estimated_closing_date.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Go Shop?</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="go_shop">
+                                        <option selected>{{ risk_factors.go_shop }}</option>
+                                        <option>No</option>
+                                        <option>Yes</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Divestitures Required?
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="divestitures_required">
+                                        <option selected>{{ risk_factors.divestitures_required }}</option>
+                                        <option>Not Required</option>
+                                        <option>Required</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Termination Fee for
+                                    Acquirer($MM)
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <input type="text" class="form-control" id="termination_fee_acquirer"
+                                           value="{{ risk_factors.termination_fee_for_acquirer }}"/>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Termination Fee for
+                                    Target($MM)
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <input type="text" class="form-control" id="termination_fee_target"
+                                           value="{{ risk_factors.termination_fee_for_target }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Fair Valuation</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="fair_valuation">
+                                        <option selected>{{ risk_factors.fair_valuation }}</option>
+                                        <option>N/A</option>
+                                        <option>Fair</option>
+                                        <option>Overvalued</option>
+                                        <option>Undervalued</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Cyclical Industry</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="cyclical_industry">
+                                        <option selected>{{ risk_factors.cyclical_industry }}</option>
+                                        <option>No</option>
+                                        <option>Yes</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-dark">SEC Requirement</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="sec_required">
+                                        <option selected>{{ risk_factors.sec_requirement }}</option>
+                                        <option>Not required</option>
+                                        <option>Required - Proxy Review</option>
+                                        <option>Required - S4 for US Buyer</option>
+                                        <option>Required - S4 for Foreign Buyer</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Expected Clearance</small>
+                                    <input type="date" class="form-control" id="expected_sec"
+                                           value="{{ risk_factors.sec_expected_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Actual Clearance</small>
+                                    <input type="date" class="form-control" id="actual_sec"
+                                           value="{{ risk_factors.sec_actual_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-dark">HSR Requirement</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="hsr_required">
+                                        <option>{{ risk_factors.hsr_requirement }}</option>
+                                        <option>Not required</option>
+                                        <option>Required - Expected Phase I</option>
+                                        <option>Required - Expected Phase II</option>
+                                        <option>Required - Potential Block</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Expected Clearance</small>
+                                    <input type="date" class="form-control" id="expected_hsr"
+                                           value="{{ risk_factors.hsr_expected_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Actual Clearance</small>
+                                    <input type="date" class="form-control" id="actual_hsr"
+                                           value="{{ risk_factors.hsr_actual_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-dark">MOFCOM Requirement</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="mofcom_required">
+                                        <option selected>{{ risk_factors.mofcom_requirement }}</option>
+                                        <option>Not required</option>
+                                        <option>Required - Expected Phase I</option>
+                                        <option>Required - Expected Phase II</option>
+                                        <option>Required - Expected Phase III</option>
+                                        <option>Required - Potential Block</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Expected Clearance</small>
+                                    <input type="date" class="form-control" id="expected_mofcom"
+                                           value="{{ risk_factors.mofcom_expected_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Actual Clearance</small>
+                                    <input type="date" class="form-control" id="actual_mofcom"
+                                           value="{{ risk_factors.mofcom_actual_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-dark">CFIUS Requirement</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="cfius_required">
+                                        <option selected>{{ risk_factors.cifius_requirement }}</option>
+                                        <option>Not required</option>
+                                        <option>Required - Expected 45 day approval</option>
+                                        <option>Required - Expected 75 day approval</option>
+                                        <option>Required - Potential Block</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Expected Clearance</small>
+                                    <input type="date" class="form-control" id="expected_cfius"
+                                           value="{{ risk_factors.cifius_expected_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Actual Clearance</small>
+                                    <input type="date" class="form-control" id="actual_cfius"
+                                           value="{{ risk_factors.cifius_actual_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-dark">EC Requirement</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="ec_required">
+                                        <option selected>{{ risk_factors.ec_requirement }}</option>
+                                        <option>Not required</option>
+                                        <option>Required - Expected Phase I</option>
+                                        <option>Required - Expected Phase II</option>
+                                        <option>Required - Potential Block</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Expected Clearance</small>
+                                    <input type="date" class="form-control" id="expected_ec"
+                                           value="{{ risk_factors.ec_expected_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Actual Clearance</small>
+                                    <input type="date" class="form-control" id="actual_ec"
+                                           value="{{ risk_factors.ec_actual_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-dark">ACCC Requirement</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="accc_required">
+                                        <option selected>{{ risk_factors.accc_requirement }}</option>
+                                        <option>Not required</option>
+                                        <option>Required - Expected approval < 90 days</option>
+                                        <option>Required - Expected approval > 90 days</option>
+                                        <option>Required - Potential Block</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Expected Clearance</small>
+                                    <input type="date" class="form-control" id="expected_accc"
+                                           value="{{ risk_factors.accc_expected_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Actual Clearance</small>
+                                    <input type="date" class="form-control" id="actual_accc"
+                                           value="{{ risk_factors.accc_actual_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-dark">Investment/Competition Canada
+                                    Requirement
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="canada_required">
+                                        <option selected>{{ risk_factors.investment_canada_requirement }}</option>
+                                        <option>Not required</option>
+                                        <option>Required - Expected approval during initial review</option>
+                                        <option>Required - Expected approval following extended review
+                                        </option>
+                                        <option>Required - Potential Block</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Expected Clearance</small>
+                                    <input type="date" class="form-control" id="expected_canada"
+                                           value="{{ risk_factors.investment_canada_expected_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Actual Clearance</small>
+                                    <input type="date" class="form-control" id="actual_canada"
+                                           value="{{ risk_factors.investment_canada_actual_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-dark">CADE Requirement</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="cade_required">
+                                        <option selected>{{ risk_factors.cade_requirement }}</option>
+                                        <option>Not required</option>
+                                        <option>Required - Expected approval < 60 days</option>
+                                        <option>Required - Expected approval < 240 days</option>
+                                        <option>Required - Expected approval < 330 days</option>
+                                        <option>Required - Potential Block</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Expected Clearance</small>
+                                    <input type="date" class="form-control" id="expected_cade"
+                                           value="{{ risk_factors.cade_expected_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <fieldset class="form-group position-relative">
+                                    <small class="badge badge-default badge-info">Actual Clearance</small>
+                                    <input type="date" class="form-control" id="actual_cade"
+                                           value="{{ risk_factors.cade_actual_clearance.isoformat }}"/>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">1. Other Country Regulatory
+                                    Risk
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="other_country_one">
+                                        <option selected>{{ risk_factors.other_country_regulatory_risk_one }}</option>
+                                        <option>Germany</option>
+                                        <option>Japan</option>
+                                        <option>France</option>
+                                        <option>Italy</option>
+                                        <option>Israel</option>
+                                        <option>Russia</option>
+                                        <option>Spain</option>
+                                        <option>Mexico</option>
+                                        <option>Switzerland</option>
+                                        <option>Sweden</option>
+                                        <option>Belgium</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">2. Other Country Regulatory
+                                    Risk
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="other_country_two">
+                                        <option selected>{{ risk_factors.other_country_regulatory_risk_two }}</option>
+                                        <option>N/A</option>
+                                        <option>Germany</option>
+                                        <option>Japan</option>
+                                        <option>France</option>
+                                        <option>Italy</option>
+                                        <option>Israel</option>
+                                        <option>Russia</option>
+                                        <option>Spain</option>
+                                        <option>Mexico</option>
+                                        <option>Switzerland</option>
+                                        <option>Sweden</option>
+                                        <option>Belgium</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Acquirer SH Vote Required
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="sh_vote_required">
+                                        <option selected>{{ risk_factors.acquirer_sh_vote_required }}</option>
+                                        <option>Not Required</option>
+                                        <option>Required</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Target SH acceptance/vote
+                                    required(%)
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="target_sh_vote_required">
+                                        <option selected>{{ risk_factors.target_sh_vote_required_percentage }}</option>
+                                        <option>50</option>
+                                        <option>67</option>
+                                        <option>75</option>
+                                        <option>90</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Acquirer becomes Target
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="acquirer_becomes_target">
+                                        <option>{{ risk_factors.acquirer_becomes_target }}</option>
+                                        <option>Highly Unlikely</option>
+                                        <option>Unlikely</option>
+                                        <option>Neutral</option>
+                                        <option>Likely</option>
+                                        <option>Highly Likely</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Potential bidding war</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="potential_bidding_war">
+                                        <option>{{ risk_factors.potential_bidding_war }}</option>
+                                        <option>Highly Unlikely</option>
+                                        <option>Unlikely</option>
+                                        <option>Neutral</option>
+                                        <option>Likely</option>
+                                        <option>Highly Likely</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Commodity Risk</small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg" id="commodity_risk">
+                                        <option>{{ risk_factors.commodity_risk }}</option>
+                                        <option>N/A</option>
+                                        <option>Energy</option>
+                                        <option>Metals</option>
+                                        <option>Grains</option>
+                                        <option>Other</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Estimated Market Share of
+                                    Acquirer(%)
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="estimated_market_share_acquirer">
+                                        <option>{{ risk_factors.estimated_market_share_acquirer }}</option>
+                                        <option>N/A</option>
+                                        <option>0% - 10%</option>
+                                        <option>11% - 20%</option>
+                                        <option>20% - 30%</option>
+                                        <option>30% - 40%</option>
+                                        <option>40%+</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Estimated Market Share of
+                                    Target(%)
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="estimated_market_share_target">
+                                        <option>{{ risk_factors.estimated_market_share_target }}</option>
+                                        <option>N/A</option>
+                                        <option>0% - 10%</option>
+                                        <option>11% - 20%</option>
+                                        <option>20% - 30%</option>
+                                        <option>30% - 40%</option>
+                                        <option>40%+</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Is Inversion Deal or Tax Avoidance
+                                </small>
+                                <fieldset class="form-group position-relative">
+                                    <select class="custom-select form-control input-lg"
+                                            id="is_inversion_deal">
+                                        <option selected>{{ risk_factors.is_iversion_deal_or_tax_avoidance }}</option>
+                                        <option>No</option>
+                                        <option>Yes</option>
+                                    </select>
+                                </fieldset>
+                            </div>
+
+                            <div class="col-lg-4">
+                                <small class="badge badge-default badge-success">Activists Involved (separated by ,)
+                                </small>
+                                <input type="text" class="form-control" id="activists_involved"
+                                       value="{{ risk_factors.activists_involved }}"/>
+                            </div>
+                        </div>
+                    </div>
+
+                        <button id='submit_mna_idea_risk_form' type="button"
+                                class="btn btn-primary">Save Changes
+                        </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+
+<script src="{% static 'app-assets/vendors/js/pickers/dateTime/moment-with-locales.min.js' %}"
+        type="text/javascript"></script>
+<script src="{% static 'app-assets/vendors/js/pickers/daterange/daterangepicker.js' %}"
+        type="text/javascript"></script>
+<script src="{% static 'app-assets/vendors/js/loaders/loaders.css.js' %}"></script>
+<script src="{% static 'app-assets/js/core/arb_risk_factors.js' %}"></script>
+
+{% endblock %}

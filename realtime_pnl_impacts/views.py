@@ -20,8 +20,9 @@ def live_tradegroup_pnl(request):
     """ Returns the Live PnL and YTD PnL at the Tradegroup level """
     ytd_performance = read_frame(ArbitrageYTDPerformance.objects.all())
 
+
     ytd_performance.columns = ['id', 'Fund', 'Sleeve','Catalyst', 'TradeGroup', 'LongShort', 'InceptionDate', 'EndDate', 'Status',
-                               'YTD($)']
+                               'YTD($)', 'fund_aum', 'pnl_bps']
     del ytd_performance['id']
 
     assert len(ytd_performance) > 0

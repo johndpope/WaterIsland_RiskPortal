@@ -173,6 +173,11 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                  ticker_hedge_mappings, cix_index, price_target_date, multiples, category, catalyst, deal_type,
                  catalyst_tier, hedges, gics_sector, lead_analyst, status, pt_up_check, pt_down_check, pt_wic_check,
                  adjust_based_off, premium_format):
+
+    for name, info in django.db.connections.databases.items():  # Close old DB connections
+        django.db.connection.close()
+        print('Closing connection: ' + str(name))
+
     try:
         multiples_mappings = json.loads(multiples)
         # Get it into the right format

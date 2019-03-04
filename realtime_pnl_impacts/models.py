@@ -14,3 +14,5 @@ class ArbitrageYTDPerformance(models.Model):
     end_date = models.DateField(null=True)
     status = models.CharField(max_length=100, null=True)
     ytd_dollar = models.FloatField(null=True)
+    fund_aum = models.FloatField(null=True)
+    pnl_bps = models.FloatField(null=True)

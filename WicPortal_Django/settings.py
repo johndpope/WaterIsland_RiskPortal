@@ -20,9 +20,10 @@ env = environ.Env()
 environ.Env.read_env()  # Read the .env File
 
 engine = create_engine("mysql://" + env('WICFUNDS_DATABASE_USER') + ":" + env('WICFUNDS_DATABASE_PASSWORD')
-                       + "@" + env('WICFUNDS_DATABASE_HOST') + "/" + env('WICFUNDS_DATABASE_NAME'))
+                       + "@" + env('WICFUNDS_DATABASE_HOST') + "/" + env('WICFUNDS_DATABASE_NAME'), pool_pre_ping=True)
 con = engine.connect()
-
+DATE_FORMAT = 'Y-m-d'
+USE_L10N = False
 SQLALCHEMY_CONNECTION = con
 WICFUNDS_TEST_DATABASE_NAME = env('WICFUNDS_TEST_DATABASE_NAME')
 
@@ -56,7 +57,7 @@ CELERYBEAT_SCHEDULE = {
 
     'DYNAMIC_DOWNSIDE_UPDATE': {
         'task': 'risk_reporting.tasks.refresh_base_case_and_outlier_downsides',
-        'schedule': crontab(minute="*/20", hour=[10, 11, 12, 13, 14, 15, 16], day_of_week='mon-fri'),  # Execute 20 min
+        'schedule': crontab(minute="*/20", hour='9-16', day_of_week='mon-fri'),  # Execute 20 min
     }
 
 }

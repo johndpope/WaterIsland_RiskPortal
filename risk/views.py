@@ -19,7 +19,6 @@ from notes.models import NotesMaster
 from .tasks import add_new_idea
 from .models import *
 
-
 api_host = bbgclient.bbgclient.get_next_available_host()
 
 
@@ -42,9 +41,9 @@ def retrieve_cix_index(request):
                                               "override": "",
                                               "start_date": (datetime.datetime.now() -
                                                              relativedelta(months=12))
-                                                            .strftime('%Y%m%d'),
+                                      .strftime('%Y%m%d'),
                                               "end_date": datetime.datetime.now()
-                                                          .strftime('%Y%m%d')},
+                                      .strftime('%Y%m%d')},
                                       timeout=15)  # Set a 15 secs Timeout
             hist_data_results = r_histdata.json()['results']
             px_last_historical = json.dumps(hist_data_results[0][cix_index]['fields'])
@@ -91,9 +90,9 @@ def retrieve_spread_index(request):
                                               "override": "",
                                               "start_date": (datetime.datetime.now()
                                                              - relativedelta(months=12))
-                                                            .strftime('%Y%m%d'),
+                                      .strftime('%Y%m%d'),
                                               "end_date": datetime.datetime.now()
-                                                          .strftime('%Y%m%d')},
+                                      .strftime('%Y%m%d')},
                                       timeout=15)  # Set a 15 secs Timeout
             hist_data_results = r_histdata.json()['results']
             px_last_historical = json.dumps(hist_data_results[0][spread_index]['fields'])
@@ -121,7 +120,7 @@ def calculate_mna_idea_deal_value(request):
             # Get latest acquirer price
 
             px_last = float(bbgclient.bbgclient.get_secid2field([acquirer_ticker], 'tickers',
-                                                                ['CRNCY_ADJ_PX_LAST'],req_type='refdata',
+                                                                ['CRNCY_ADJ_PX_LAST'], req_type='refdata',
                                                                 api_host=api_host)[acquirer_ticker]
                             ['CRNCY_ADJ_PX_LAST'][0]) if deal_stock_terms > 0 else 0
 
@@ -258,7 +257,7 @@ def update_mna_idea_lawyer_report(request):
                                                                        'analyst_rating': analyst_rating})
             response = 'Success'
         except Exception as exception:
-            print(exception)    # Exceptions should be Logged...
+            print(exception)  # Exceptions should be Logged...
 
     return HttpResponse(response)
 
@@ -275,7 +274,7 @@ def delete_mna_idea_lawyer_report(request):
             MA_Deals_Lawyer_Reports.objects.get(id=id_to_be_deleted).delete()
             response = 'Success'
         except Exception as exception:
-            print(exception)    #Exceptions should be Logged...
+            print(exception)  # Exceptions should be Logged...
 
     return HttpResponse(response)
 
@@ -300,7 +299,7 @@ def add_new_mna_idea_lawyer_report(request):
             response = 'Success'
 
         except Exception as exception:
-            print(exception)    # Exception should be logged..
+            print(exception)  # Exception should be logged..
             response = 'Failed'
 
     return HttpResponse(response)
@@ -332,38 +331,44 @@ def mna_idea_add_peers(request):
 
         for eachPeer in peer_set:
             ev_ebitda_chart_ltm = get_ev_ebitda(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, 'ltm',
-                                                mneumonic='CURRENT_EV_TO_T12M_EBITDA', api_host=api_host).reset_index().rename(
-                                                columns={"index": "date", 0: "ev_ebitda_value"})
+                                                mneumonic='CURRENT_EV_TO_T12M_EBITDA',
+                                                api_host=api_host).reset_index().rename(
+                columns={"index": "date", 0: "ev_ebitda_value"})
             ev_ebitda_chart_1bf = get_ev_ebitda(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '1bf',
-                                                mneumonic='BEST_CUR_EV_TO_EBITDA', api_host=api_host).reset_index().rename(
-                                                columns={"index": "date", 0: "ev_ebitda_value"})
+                                                mneumonic='BEST_CUR_EV_TO_EBITDA',
+                                                api_host=api_host).reset_index().rename(
+                columns={"index": "date", 0: "ev_ebitda_value"})
             ev_ebitda_chart_2bf = get_ev_ebitda(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '2bf',
-                                                mneumonic='BEST_CUR_EV_TO_EBITDA', api_host=api_host).reset_index().rename(
-                                                columns={"index": "date", 0: "ev_ebitda_value"})
+                                                mneumonic='BEST_CUR_EV_TO_EBITDA',
+                                                api_host=api_host).reset_index().rename(
+                columns={"index": "date", 0: "ev_ebitda_value"})
 
             ev_sales_chart_ltm = get_ev_sales(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, 'ltm',
-                                                mneumonic='BEST_CURRENT_EV_BEST_SALES', api_host=api_host).reset_index().rename(
-                                                columns={"index": "date", 0: "ev_sales_value"})
+                                              mneumonic='BEST_CURRENT_EV_BEST_SALES',
+                                              api_host=api_host).reset_index().rename(
+                columns={"index": "date", 0: "ev_sales_value"})
 
             ev_sales_chart_1bf = get_ev_sales(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '1bf',
-                                                mneumonic='BEST_CURRENT_EV_BEST_SALES', api_host=api_host).reset_index().rename(
-                                                columns={"index": "date", 0: "ev_sales_value"})
+                                              mneumonic='BEST_CURRENT_EV_BEST_SALES',
+                                              api_host=api_host).reset_index().rename(
+                columns={"index": "date", 0: "ev_sales_value"})
 
             ev_sales_chart_2bf = get_ev_sales(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '2bf',
-                                                mneumonic='BEST_CURRENT_EV_BEST_SALES', api_host=api_host).reset_index().rename(
-                                                columns={"index": "date", 0: "ev_sales_value"})
+                                              mneumonic='BEST_CURRENT_EV_BEST_SALES',
+                                              api_host=api_host).reset_index().rename(
+                columns={"index": "date", 0: "ev_sales_value"})
 
             pe_ratio_ltm = get_pe_ratio(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, 'ltm',
                                         mneumonic='T12M_DIL_PE_CONT_OPS', api_host=api_host).reset_index().rename(
-                                        columns={"index": "date", 0: "pe_ratio"})
+                columns={"index": "date", 0: "pe_ratio"})
             pe_ratio_1bf = get_pe_ratio(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '1bf',
                                         mneumonic='BEST_PE_RATIO', api_host=api_host).reset_index().rename(
-                                        columns={"index": "date", 0: "pe_ratio"})
+                columns={"index": "date", 0: "pe_ratio"})
             pe_ratio_2bf = get_pe_ratio(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, '2bf',
                                         mneumonic='BEST_PE_RATIO', api_host=api_host).reset_index().rename(
-                                        columns={"index": "date", 0: "pe_ratio"})
+                columns={"index": "date", 0: "pe_ratio"})
             fcf_yield = get_fcf_yield(eachPeer, start_date_yyyymmdd, end_date_yyyymmdd, api_host=api_host).rename(
-                                        columns={"Date": "date", 'FCF yield': "p_fcf_value"})
+                columns={"Date": "date", 'FCF yield': "p_fcf_value"})
 
             if save_to_db_flag == 'ON':
                 # First Delete Existing Peers
@@ -390,9 +395,9 @@ def mna_idea_add_peers(request):
                                 'pe_ratio_1bf': pe_ratio_1bf.to_json(orient='records'),
                                 'pe_ratio_2bf': pe_ratio_2bf.to_json(orient='records'),
                                 'fcf_yield': fcf_yield.to_json(orient='records'),
-                                'ev_sales_ltm':ev_sales_chart_ltm.to_json(orient='records'),
-                                'ev_sales_1bf':ev_sales_chart_1bf.to_json(orient='records'),
-                                'ev_sales_2bf':ev_sales_chart_2bf.to_json(orient='records')}
+                                'ev_sales_ltm': ev_sales_chart_ltm.to_json(orient='records'),
+                                'ev_sales_1bf': ev_sales_chart_1bf.to_json(orient='records'),
+                                'ev_sales_2bf': ev_sales_chart_2bf.to_json(orient='records')}
 
         response = json.dumps(charts)
 
@@ -421,7 +426,8 @@ def add_new_mna_idea(request):
         deal_object = MA_Deals(deal_name=deal_name, analyst=analyst, target_ticker=target_ticker,
                                acquirer_ticker=acquirer_ticker, deal_cash_terms=deal_cash_terms,
                                deal_share_terms=deal_share_terms,
-                               deal_value=deal_value, status=status, created=created, last_modified=datetime.datetime.now().date(),
+                               deal_value=deal_value, status=status, created=created,
+                               last_modified=datetime.datetime.now().date(),
                                is_complete='No')
         deal_object.save()
         response = 'Success'
@@ -441,7 +447,8 @@ def update_comments(request):
             deal_id_under_consideration = request.POST['deal_id']
             comments = request.POST['comments']
             MA_Deals_Notes.objects.update_or_create(deal_id=deal_id_under_consideration,
-                                                    defaults={'note': comments, 'last_edited': datetime.datetime.now().date()})
+                                                    defaults={'note': comments,
+                                                              'last_edited': datetime.datetime.now().date()})
             MA_Deals.objects.update_or_create(id=deal_id_under_consideration,
                                               defaults={'last_modified': datetime.datetime.now().date()})
             response = 'Success'
@@ -483,14 +490,12 @@ def mna_idea_run_scenario_analysis(request):
 
             break_df = pd.DataFrame(bps_to_lose, columns=['bps_impact'])
             deal_break_change = (deal_downside - target_current_price) if not stock_component_involved else (
-                                 break_spread)
+                break_spread)
 
             # Change Upside/downside based on Stock component
             if stock_component_involved:
                 deal_upside = spread
                 deal_downside = spread - break_spread
-
-
 
             break_df['shares'] = ((aum * break_df['bps_impact'] * 0.01) / abs(deal_break_change)).astype(int)
             break_df['NAV break'] = round(100.0 * ((break_df['shares'] * deal_break_change) / aum), 2)
@@ -586,7 +591,7 @@ def archive_mna_idea(request):
             deal_object.save()
             response = 'Success'
         except Exception as exception:
-            print(exception)    # Exception should be logged..
+            print(exception)  # Exception should be logged..
             response = 'Failed'
 
     return HttpResponse(response)
@@ -698,7 +703,7 @@ def show_mna_idea(request):
     try:
         px_last_historical_acquirer = json.dumps(hist_data_results[1][acquirer_ticker])
     except Exception as exception:
-        print(exception)    # Log this Exception
+        print(exception)  # Log this Exception
         px_last_historical_acquirer = None
     try:
         cix_histdata = requests.get("http://" + api_host + "/wic/api/v1.0/general_histdata",
@@ -721,7 +726,7 @@ def show_mna_idea(request):
                                                "tickers": ','.join([deal_core.spread_index]),
                                                "override": "",
                                                "start_date": (
-                                                           datetime.datetime.now() - relativedelta(months=12)).strftime(
+                                                       datetime.datetime.now() - relativedelta(months=12)).strftime(
                                                    '%Y%m%d'),
                                                "end_date": datetime.datetime.now().strftime('%Y%m%d')},
                                        timeout=15)  # Set a 15 secs Timeout
@@ -759,6 +764,130 @@ def show_mna_idea(request):
                    'px_last_cix_index': px_last_cix_index, 'px_last_spread_index': px_last_spread_index
                    })
 
+
+def update_or_create_arb_risk_factors(request):
+    response = 'Failed'
+    if request.method == 'POST':
+        try:
+            deal_id = request.POST['deal_id']
+            definiteness = request.POST['definiteness']
+            hostile_friendly = request.POST['hostile_friendly']
+            strategic_pe = request.POST['strategic_pe']
+            deal_rationale = request.POST['deal_rationale']
+            premium_percentage = request.POST['premium_percentage']
+            stock_cash = request.POST['stock_cash']
+            financing_percent_of_deal_value = request.POST['financing_percent_of_deal_value']
+            proforma_leverage = request.POST['proforma_leverage']
+            estimated_close = request.POST['estimated_close']
+            go_shop = request.POST['go_shop']
+            divestitures_required = request.POST['divestitures_required']
+            termination_fee_acquirer = request.POST['termination_fee_acquirer']
+            termination_fee_target = request.POST['termination_fee_target']
+            fair_valuation = request.POST['fair_valuation']
+            cyclical_industry = request.POST['cyclical_industry']
+            sec_required = request.POST['sec_required']
+            sec_expected = request.POST['sec_expected']
+            sec_actual = request.POST['sec_actual']
+            hsr_required = request.POST['hsr_required']
+            hsr_expected = request.POST['hsr_expected']
+            hsr_actual = request.POST['hsr_actual']
+            mofcom_required = request.POST['mofcom_required']
+            mofcom_expected = request.POST['mofcom_expected']
+            mofcom_actual = request.POST['mofcom_actual']
+            cfius_required = request.POST['cfius_required']
+            cfius_expected = request.POST['cfius_expected']
+            cfius_actual = request.POST['cfius_actual']
+            ec_required = request.POST['ec_required']
+            ec_expected = request.POST['ec_expected']
+            ec_actual = request.POST['ec_actual']
+            accc_required = request.POST['accc_required']
+            accc_expected = request.POST['accc_expected']
+            accc_actual = request.POST['accc_actual']
+            canada_required = request.POST['canada_required']
+            canada_expected = request.POST['canada_expected']
+            canada_actual = request.POST['canada_actual']
+            cade_required = request.POST['cade_required']
+            cade_expected = request.POST['cade_expected']
+            cade_actual = request.POST['cade_actual']
+            other_country_one = request.POST['other_country_one']
+            other_country_two = request.POST['other_country_two']
+            acquirer_sh_vote_required = request.POST['acquirer_sh_vote_required']
+            target_sh_vote_required = request.POST['target_sh_vote_required']
+            acquirer_becomes_target = request.POST['acquirer_becomes_target']
+            potential_bidding_war = request.POST['potential_bidding_war']
+            commodity_risk = request.POST['commodity_risk']
+            estimated_market_share_acquirer = request.POST['estimated_market_share_acquirer']
+            estimated_market_share_target = request.POST['estimated_market_share_target']
+
+            to_update = {
+                'definiteness':definiteness,
+                'hostile_friendly':hostile_friendly,
+                'strategic_pe':strategic_pe,
+                'deal_rationale':deal_rationale,
+                'premium_percentage':premium_percentage,
+                'stock_cash':stock_cash,
+                'financing_percent_of_deal_value':financing_percent_of_deal_value,
+                'pro_forma_leverage':proforma_leverage,
+                'estimated_closing_date':estimated_close if estimated_close != '' else None,
+                'go_shop':go_shop,
+                'divestitures_required':divestitures_required,
+                'termination_fee_for_acquirer':termination_fee_acquirer,
+                'termination_fee_for_target':termination_fee_target,
+                'fair_valuation':fair_valuation,
+                'cyclical_industry':cyclical_industry,
+                'sec_requirement':sec_required,
+                'sec_expected_clearance':sec_expected if sec_expected != '' else None,
+                'sec_actual_clearance':sec_actual if sec_actual != '' else None,
+                'hsr_requirement':hsr_required, 'hsr_expected_clearance':hsr_expected if hsr_expected != '' else None,
+                'hsr_actual_clearance':hsr_actual if hsr_actual != '' else None,
+                'mofcom_requirement':mofcom_required,
+                'mofcom_expected_clearance':mofcom_expected if mofcom_expected != '' else None,
+                'mofcom_actual_clearance':mofcom_actual if mofcom_actual != '' else None,
+                'cifius_requirement':cfius_required,
+                'cifius_expected_clearance':cfius_expected if cfius_expected != '' else None,
+                'cifius_actual_clearance':cfius_actual if cfius_actual != '' else None, 'ec_requirement':ec_required,
+                'ec_actual_clearance':ec_actual if ec_actual != '' else None,
+                'ec_expected_clearance':ec_expected if ec_expected != '' else None,
+                'accc_requirement':accc_required,
+                'accc_expected_clearance':accc_expected if accc_expected != '' else None,
+                'accc_actual_clearance':accc_actual if accc_actual != '' else None,
+                'investment_canada_requirement':canada_required,
+                'investment_canada_expected_clearance':canada_expected if canada_expected != '' else None,
+                'investment_canada_actual_clearance':canada_actual if canada_actual != '' else None,
+                'cade_requirement':cade_required,
+                'cade_expected_clearance':cade_expected if cade_expected != '' else None,
+                'cade_actual_clearance':cade_actual if cade_actual != '' else None,
+                'other_country_regulatory_risk_one':other_country_one,
+                'other_country_regulatory_risk_two':other_country_two,
+                'acquirer_sh_vote_required':acquirer_sh_vote_required,
+                'target_sh_vote_required_percentage':target_sh_vote_required,
+                'acquirer_becomes_target':acquirer_becomes_target,
+                'potential_bidding_war':potential_bidding_war,
+                'commodity_risk':commodity_risk,
+                'estimated_market_share_acquirer':estimated_market_share_acquirer,
+                'estimated_market_share_target':estimated_market_share_target
+            }
+
+            MA_Deals_Risk_Factors.objects.update_or_create(deal_id=deal_id,defaults=to_update)
+            response = 'Success'
+        except Exception as e:
+            print(e)
+
+    return HttpResponse(response)
+
+
+
+def show_risk_factors(request, deal_id):
+    # Get all Risk Factors for the deal
+    deal_name = MA_Deals.objects.get(id=deal_id).deal_name
+    try:
+        risk_factors = MA_Deals_Risk_Factors.objects.get(deal__id=deal_id)
+    except MA_Deals_Risk_Factors.DoesNotExist:
+        risk_factors = None
+    return render(request, 'arb_risk_factors.html', {'deal_name': deal_name, 'risk_factors': risk_factors, 'deal_id':deal_id})
+
+
+
 # endregion
 
 
@@ -769,7 +898,7 @@ def show_ess_idea(request):
         :param request: Request Object containing ID for the ESS IDEA to be displayed
         :return: JSON encoded Object with IDEA Sections to be displayed on the front-end
     """
-    #try:
+    # try:
 
     if 'version' in request.GET.keys():
         # Use POST for a different Version Request...
@@ -807,9 +936,9 @@ def show_ess_idea(request):
     our_thesis_files = ESS_Idea_OurFileUploads.objects.select_related().filter(deal_key=ess_idea.deal_key)
     bear_thesis_files = ESS_Idea_BearFileUploads.objects.select_related().filter(deal_key=ess_idea.deal_key)
 
-
     # Get Upside/Downside Record Changes
-    upside_downside_records = ESS_Idea_Upside_Downside_Change_Records.objects.filter(deal_key=ess_idea.deal_key).values('date_updated', 'pt_up', 'pt_wic', 'pt_down')
+    upside_downside_records = ESS_Idea_Upside_Downside_Change_Records.objects.filter(deal_key=ess_idea.deal_key).values(
+        'date_updated', 'pt_up', 'pt_wic', 'pt_down')
 
     upside_downside_records_df = read_frame(upside_downside_records)
     upside_downside_records_df['date_updated'] = upside_downside_records_df['date_updated'].apply(str)
@@ -1180,8 +1309,7 @@ def show_ess_idea(request):
 
         p_fcf_chart.append(str(p_fcf_chart_df.iloc[:, [0, i]].to_dict('records')).replace('u\'', '\''))
 
-
-    #Get The downside Changes for the deal
+    # Get The downside Changes for the deal
     downside_changes = ESS_Idea_Upside_Downside_Change_Records.objects.filter(deal_key=deal_key)
     if len(downside_changes) > 0:
         downside_changes = pd.DataFrame().from_records(list(downside_changes.
@@ -1209,8 +1337,8 @@ def show_ess_idea(request):
                            'related_peers': related_peers, 'summary_object': summary_dictionary,
                            'bull_thesis_files': bull_thesis_files, 'bear_thesis_files': bear_thesis_files,
                            'our_thesis_files': our_thesis_files, 'mosaic_sum': mosaic_sum,
-                           'version_numbers': version_numbers, 'downside_changes':downside_changes,
-                           'upside_downside_records_df':upside_downside_records_df.to_json(orient='records')})
+                           'version_numbers': version_numbers, 'downside_changes': downside_changes,
+                           'upside_downside_records_df': upside_downside_records_df.to_json(orient='records')})
 
 
 # @login_required
@@ -1230,11 +1358,9 @@ def edit_ess_deal(request):
 
             deal_key = ESS_Idea.objects.filter(id=deal_id).first().deal_key
 
-
             deal_object = ESS_Idea.objects.filter(id=deal_id, version_number=latest_version).values_list()
             related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=deal_id,
                                                                       version_number=latest_version).values_list()
-
 
             bull_thesis_files = []
             our_thesis_files = []
@@ -1268,9 +1394,9 @@ def get_gics_sector(request):
     response = 'Failed'
     if request.method == 'POST':
         ticker = request.POST['ticker']
-        ticker = ticker+" EQUITY" if "EQUITY" not in ticker else ticker
+        ticker = ticker + " EQUITY" if "EQUITY" not in ticker else ticker
         gics_sector = bbgclient.bbgclient.get_secid2field([ticker], 'ticker', ['GICS_SECTOR_NAME'], req_type='refdata',
-                                            api_host=api_host)
+                                                          api_host=api_host)
         gics_sector = gics_sector[ticker]['GICS_SECTOR_NAME'][0]
         response = gics_sector
 
@@ -1331,11 +1457,11 @@ def ess_idea_save_balance_sheet(request):
         ).version_number
 
         deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
-        balance_sheet = pd.DataFrame(pd.read_json(request.POST['balance_sheet'], orient='records', typ='series'))\
+        balance_sheet = pd.DataFrame(pd.read_json(request.POST['balance_sheet'], orient='records', typ='series')) \
             .transpose()
 
         on_pt_balance_sheet = pd.DataFrame(pd.read_json(request.POST['on_pt_balance_sheet'], orient='records',
-                                                        typ='series'))\
+                                                        typ='series')) \
             .transpose()
 
         deal_object.idea_balance_sheet = balance_sheet.to_json(orient='records')
@@ -1382,12 +1508,13 @@ def ess_idea_view_balance_sheet(request):
             # Previous Adjustments are saved for this deal. Fetch and display those in Adjustments table.
             on_pt_balance_sheet_adjustments = pd.read_json(on_pt_balance_sheet_adjustments)
             on_pt_balance_sheet_adjustments['Date'] = on_pt_balance_sheet_adjustments['Date'].apply(pd.to_datetime)
-            on_pt_balance_sheet_adjustments['Date'] = on_pt_balance_sheet_adjustments['Date'].apply(lambda x: str(x.date()))
+            on_pt_balance_sheet_adjustments['Date'] = on_pt_balance_sheet_adjustments['Date'].apply(
+                lambda x: str(x.date()))
         else:
             on_pt_balance_sheet_adjustments = pd.DataFrame()
 
         balance_sheet['Date'] = balance_sheet['Date'].apply(pd.to_datetime)
-        balance_sheet['Date'] = balance_sheet['Date'].apply(lambda x:str(x.date()))
+        balance_sheet['Date'] = balance_sheet['Date'].apply(lambda x: str(x.date()))
         balance_sheet_adjustments = balance_sheet_adjustments.to_json(orient='records')
         on_pt_balance_sheet_adjustments = on_pt_balance_sheet_adjustments.to_json(orient='records')
         balance_sheet = balance_sheet.to_json(orient='records')
@@ -1448,7 +1575,6 @@ def ess_idea_premium_analysis(request):
                                    api_host=api_host, adjustments_df_now=adjustments_df,
                                    adjustments_df_ptd=on_pt_adjustments_df, premium_as_percent=None,
                                    f_period="1BF")
-
 
         cix_down_price = np.round(df['Down Price (CIX)'], decimals=2)
         cix_up_price = np.round(df['Up Price (CIX)'], decimals=2)
@@ -1519,7 +1645,8 @@ def add_new_ess_idea_deal(request):
             adjust_based_off = request.POST.get('adjust_based_off')
             premium_format = request.POST.get('premium_format')
 
-            task = add_new_idea.delay(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id,
+            task = add_new_idea.delay(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files,
+                                      update_id,
                                       ticker, situation_overview, company_overview, bull_thesis,
                                       our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close,
                                       m_value, o_value, s_value, a_value, i_value,
@@ -1568,6 +1695,7 @@ def ess_idea_download_handler(request):
         print(e)
 
     raise Http404('You have not uploaded any File to support this Model!!')
+
 
 # endregion
 
@@ -1632,6 +1760,5 @@ def show_all_credit_deals(request):
     """
     credit_deals_df = CreditDatabase.objects.all()
     return render(request, 'credit_database.html', context={'credit_deals_df': credit_deals_df})
-
 
 # endregion
