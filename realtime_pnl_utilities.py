@@ -94,4 +94,4 @@ def daily_update_of_ytd_performance():
         fund_dollar_df.to_sql(name='realtime_pnl_impacts_arbitrageytdperformance', con=settings.SQLALCHEMY_CONNECTION,
                               if_exists='append',index=False, schema=settings.WICFUNDS_TEST_DATABASE_NAME)
 
-daily_update_of_ytd_performance()
+#daily_update_of_ytd_performance()

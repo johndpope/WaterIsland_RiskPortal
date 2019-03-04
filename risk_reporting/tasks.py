@@ -12,7 +12,7 @@ import numpy as np
 from tabulate import tabulate
 api_host = bbgclient.get_next_available_host()
 from django.conf import settings
-
+import time
 @shared_task
 def refresh_base_case_and_outlier_downsides():
     ''' Refreshes the base case and outlier downsides every 20 minutes for dynamically linked downsides '''
@@ -93,8 +93,9 @@ def refresh_base_case_and_outlier_downsides():
                 return row['base_case']
             else:
                 return row['BaseCaseReferencePrice'] if row['BaseCaseOperation'] == 'None' else eval(
-                    row['BaseCaseReferencePrice'] + row['BaseCaseOperation'] + row['BaseCaseCustomInput'])
+                    str(row['BaseCaseReferencePrice']) + str(row['BaseCaseOperation']) + str(row['BaseCaseCustomInput']))
         except Exception as e:
+            print(e)
             return row['base_case']
 
     def update_outlier_downsides(row):
@@ -103,8 +104,9 @@ def refresh_base_case_and_outlier_downsides():
                 return row['outlier']
             else:
                 return row['OutlierReferencePrice'] if row['OutlierOperation'] == 'None' else eval(
-                    row['OurlierReferencePrice'] + row['OutlierOperation'] + row['OutlierCustomInput'])
+                    str(row['OutlierReferencePrice']) + str(row['OutlierOperation']) + str(row['OutlierCustomInput']))
         except Exception as e:
+            print(e)
             return row['outlier']
 
     formulae_based_downsides['base_case'] = formulae_based_downsides.apply(update_base_case_downsides, axis=1)
@@ -114,6 +116,7 @@ def refresh_base_case_and_outlier_downsides():
     # Base Case and Outliers are now updated! Delete the old table and insert new ones
     try:
         con.execute('TRUNCATE TABLE test_wic_db.risk_reporting_formulaebaseddownsides')
+        time.sleep(1)
         formulae_based_downsides.to_sql(name='risk_reporting_formulaebaseddownsides', con=con, if_exists='append',
                                         index=False, schema='test_wic_db')
         print('Refreshed Base Case and Outlier Downsides successfully...')
@@ -126,8 +129,7 @@ def refresh_base_case_and_outlier_downsides():
 
     # Post to Slack
     slack_message('navinspector.slack', {'impacts': 'Base Case and Outlier Downsides refreshed...'})
-    print('Closing Connection to Relational Database Service....')
-    con.close()
+
 
 
 def update_merger_arb_nav_impacts():

@@ -1,5 +1,5 @@
 $(document).ready(function () {
-
+    let position_level_impacts = null;
     let nav_impacts_table = $('#arb_risk_attributes_table').DataTable({
         "language": {
             "processing": "Getting Real-time NAV Impacts"
@@ -46,10 +46,17 @@ $(document).ready(function () {
             "type": "POST",
             dataSrc: function (json) {
                 let obj = JSON.parse(json["data"]);
+                position_level_impacts = JSON.parse(json["positions"]);
                 return obj;
             }
         },
         "columns": [
+            {
+                "className": 'details-control',
+                "orderable": false,
+                "data": null,
+                "defaultContent": ''
+            },
             {"data": "TradeGroup"},
             {"data": "RiskLimit"},
             {"data": "LastUpdate"},
@@ -118,16 +125,80 @@ $(document).ready(function () {
                     }
                 }
             }
-        ]
+        ],
+        "initComplete": function (settings, json) {
+
+        }
 
 
     });
 
+    function format(d) {
+        let tradegroup = d['TradeGroup'];
+
+        let return_rows = '';
+        // Get Equivalent Row from Positions Impacts
+        for (var i = 0; i < position_level_impacts.length; i++) {
+            if (position_level_impacts[i]['TradeGroup'] === tradegroup) {
+                // Return corresponding rows
+                return_rows += '<tr>' +
+                    '<td>' + position_level_impacts[i]['TradeGroup'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['Ticker'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['PM_BASE_CASE'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['Outlier'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['BASE_CASE_NAV_IMPACT_ARB'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['BASE_CASE_NAV_IMPACT_MACO'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['BASE_CASE_NAV_IMPACT_MALT'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['BASE_CASE_NAV_IMPACT_AED'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['BASE_CASE_NAV_IMPACT_CAM'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['BASE_CASE_NAV_IMPACT_LG'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['BASE_CASE_NAV_IMPACT_LEV'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['OUTLIER_NAV_IMPACT_ARB'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['OUTLIER_NAV_IMPACT_MACO'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['OUTLIER_NAV_IMPACT_MALT'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['OUTLIER_NAV_IMPACT_AED'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['OUTLIER_NAV_IMPACT_CAM'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['OUTLIER_NAV_IMPACT_LG'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['OUTLIER_NAV_IMPACT_LEV'] + '</td>' +
+                    '</tr>'
+            }
+        }
+
+
+        // `d` is the original data object for the row
+        return '<div class="table-responsive" style="padding-left:6%"> <table class="table table-striped table-bordered" border="0">' +
+            '<thead>' +
+            '<tr>' +
+            '<th>Strategy</th>' + '<th>Ticker</th>' + '<th>BaseCase</th>' + '<th>Outlier</th>' + '<th>ARB(BCase)</th>' +
+            '<th>MACO(Bcase)</th>' + '<th>MALT(BCase)</th>' + '<th>AED(BCase)</th>' + '<th>CAM(BCase)</th>' + '<th>LG(BCase)</th>' + '<th>LEV(BCase)</th>'
+            + '<th>ARB(Outlier)</th>' +
+            '<th>MACO(Outlier)</th>' + '<th>MALT(Outlier)</th>' + '<th>AED(Outlier)</th>' + '<th>CAM(Outlier)</th>' + '<th>LG(Outlier)</th>' +  '<th>LEV(Outlier)</th>' +
+            '</tr>' +
+            '</thead>'+'<tbody>' + return_rows +
+            '</tbody>'+
+
+        '</table></div>';
+    }
 
     setInterval(function () {
         nav_impacts_table.ajax.reload(null, true);
         console.log('Requesting Updated P&L..');
     }, 3600000); // Every Hour
 
+    $('#arb_risk_attributes_table tbody').on('click', 'td.details-control', function () {
+        var tr = $(this).closest('tr');
+        var row = nav_impacts_table.row(tr);
+
+        if (row.child.isShown()) {
+            // This row is already open - close it
+            row.child.hide();
+            tr.removeClass('shown');
+        }
+        else {
+            // Open this row
+            row.child(format(row.data())).show();
+            tr.addClass('shown');
+        }
+    });
 
 });

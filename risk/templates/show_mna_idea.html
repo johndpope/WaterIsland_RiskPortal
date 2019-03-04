@@ -4,25 +4,25 @@
 {% endblock %}
 {% load staticfiles %}
 
-    {% block summernote_css %}
-        {{ block.super }}
-    {% endblock %}
+{% block summernote_css %}
+    {{ block.super }}
+{% endblock %}
 
-    {% block amcharts_scripts %}
-        {{ block.super }}
-    {% endblock %}
+{% block amcharts_scripts %}
+    {{ block.super }}
+{% endblock %}
 
-    {% block loaders_css %}
-        {{ block.super }}
-    {% endblock %}
+{% block loaders_css %}
+    {{ block.super }}
+{% endblock %}
 
-    {% block date_range_pickers %}
-        {{ block.super }}
-    {% endblock %}
+{% block date_range_pickers %}
+    {{ block.super }}
+{% endblock %}
 
-    {% block css_styles %}
-        {{ block.super }}
-    {% endblock %}
+{% block css_styles %}
+    {{ block.super }}
+{% endblock %}
 
 {% block content %}
     <div class="app-content content">
@@ -132,7 +132,8 @@
                                 <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg">
 
                                     <li class="nav-item">
-                                        <a class="nav-link active" id="base-tab48" data-toggle="tab" aria-controls="tab50"
+                                        <a class="nav-link active" id="base-tab48" data-toggle="tab"
+                                           aria-controls="tab50"
                                            href="#tab50"
                                            aria-expanded="false">Weekly Downside Estimates</a>
                                     </li>
@@ -799,7 +800,6 @@
 
             {# MA IDEA ADD PEERS MODAL END#}
 
-
             <div class="row">
 
 
@@ -817,7 +817,7 @@
                         <div class="card-content"><br>
 
                             <div class="row">
-                                <div class="col-lg-3 block-tag">
+                                <div class="col-lg-3 block-tag offset-3">
                                     <small class="badge badge-default badge-success">Analyst Comments</small>
                                     <br>
                                     <small class="badge badge-default badge-info">
@@ -826,14 +826,29 @@
                                     <br>
                                 </div>
 
-                                <div class="col-lg-12">
-                                    <div class="container" id="mna_idea_analyst_comments"
-                                         data-value="{{ deal_note.note }}">
-                                    </div>
+                                <div class="col-lg-3 block-tag offset-3">
+                                    <button id='open_arb_risk_form' class="btn btn-primary btn-sm">
+                                            <i class="ft-flag"></i> <a href="{% url 'risk:show_risk_factors' deal_id=deal_core.id %}" target="_blank" style="text-decoration:none">Open Risk Form</a>
+                                    </button>
                                 </div>
-                                <br><br>
-
                             </div>
+
+                            <div class="col-lg-12">
+                                <div class="row">
+                                    <div class="col-lg-8">
+                                        <div class="container" id="mna_idea_analyst_comments"
+                                             data-value="{{ deal_note.note }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+
+                                    </div>
+
+                                </div>
+
+                                <br><br>
+                            </div>
+
 
                             <br><br>
 
