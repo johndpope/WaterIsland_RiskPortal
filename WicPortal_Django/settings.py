@@ -22,8 +22,7 @@ environ.Env.read_env()  # Read the .env File
 engine = create_engine("mysql://" + env('WICFUNDS_DATABASE_USER') + ":" + env('WICFUNDS_DATABASE_PASSWORD')
                        + "@" + env('WICFUNDS_DATABASE_HOST') + "/" + env('WICFUNDS_DATABASE_NAME'), pool_pre_ping=True)
 con = engine.connect()
-DATE_FORMAT = 'Y-m-d'
-USE_L10N = False
+
 SQLALCHEMY_CONNECTION = con
 WICFUNDS_TEST_DATABASE_NAME = env('WICFUNDS_TEST_DATABASE_NAME')
 
