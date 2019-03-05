@@ -34,6 +34,9 @@
                             <div class="card-head">
                                 <div class="card-header">
                                     <h4 class="card-title font-medium-3 center">Merger ARB NAV Impacts</h4>
+                                    {% if not negative_pnl_accounted %}
+                                        <p class="h6 bg-danger white text-center">Negative PnL is not accounted</p>
+                                    {% endif %}
                                     <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
                                     <div class="heading-elements">
                                     </div>

@@ -80,11 +80,13 @@ def merger_arb_risk_attributes(request):
                                                   con=connection)
 
     forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'base_case', 'outlier', 'LastUpdate']]
-
     merged_df = pd.merge(nav_impacts_positions_df, forumale_linked_downsides, how='inner',
                          on=['TradeGroup', 'Underlying'])
 
-    merged_df = pd.merge(merged_df, ytd_performances, on=['TradeGroup', 'FundCode'])
+    negative_pnl_accounted = True
+    if len(ytd_performances) == 0:
+        negative_pnl_accounted = False
+    merged_df = pd.merge(merged_df, ytd_performances, on=['TradeGroup', 'FundCode'], how='left')
 
     merged_df.drop(columns=['PM_BASE_CASE', 'Outlier'], inplace=True)
     merged_df.rename(columns={'base_case': 'PM_BASE_CASE', 'outlier': 'Outlier'}, inplace=True)
@@ -100,6 +102,7 @@ def merger_arb_risk_attributes(request):
 
     nav_impacts_positions_df['CurrMktVal'] = nav_impacts_positions_df['QTY'] * nav_impacts_positions_df['LastPrice']
     # Calculate the Impacts
+
 
     nav_impacts_positions_df['PL_BASE_CASE'] = nav_impacts_positions_df.apply(calculate_pl_base_case, axis=1)
     nav_impacts_positions_df['BASE_CASE_NAV_IMPACT'] = nav_impacts_positions_df.apply(calculate_base_case_nav_impact,
@@ -169,7 +172,8 @@ def merger_arb_risk_attributes(request):
         return_data = {'data': impacts_df.to_json(orient='records'), 'positions':nav_impacts_positions_df.to_json(orient='records')}
         return HttpResponse(json.dumps(return_data), content_type='application/json')
 
-    return render(request, 'risk_attributes.html', context={})
+    print(negative_pnl_accounted)
+    return render(request, 'risk_attributes.html', context={'negative_pnl_accounted':negative_pnl_accounted})
 
 # The following should run in a scheduled job. Over here just get values from DB and render to the Front end...
 
