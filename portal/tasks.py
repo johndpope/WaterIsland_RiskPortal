@@ -19,4 +19,4 @@ def sqlalchemy_connection_pinging():
     except Exception as e:
         slack_message('generic.slack', {'message':'Warning!. SQL Server has gone away! Trying to Reconnect\n' + str(e)},
                       channel='sqlconnectionmonitor', token=settings.SLACK_TOKEN, name='ESS_IDEA_DB_ERROR_INSPECTOR')
-        settings.SQLALCHEMY_CONNECTION = settings.engine.connect()
+        settings.SQLALCHEMY_CONNECTION.close()
