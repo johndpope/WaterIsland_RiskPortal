@@ -34,6 +34,9 @@
     <orderEntry type="library" name="datetime-moment" level="application" />
     <orderEntry type="library" name="datetime" level="application" />
     <orderEntry type="library" name="ellipsis" level="application" />
+    <orderEntry type="library" name="pie" level="application" />
+    <orderEntry type="library" name="dark" level="application" />
+    <orderEntry type="library" name="dataTables.fixedColumns" level="application" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Django" />

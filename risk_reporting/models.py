@@ -110,3 +110,26 @@ class FormulaeBasedDownsides(models.Model):
     outlier = models.CharField(max_length=50, null=True)  # Based on Downside Type
     outlier_notes = models.TextField(null=True)
 
+
+class PositionLevelNAVImpacts(models.Model):
+    TradeGroup = models.CharField(max_length=300)
+    ticker = models.CharField(max_length=200)
+    PM_BASE_CASE = models.FloatField(null=True)
+    Outlier = models.FloatField(null=True)
+    BASE_CASE_NAV_IMPACT_AED = models.FloatField(null=True)
+    BASE_CASE_NAV_IMPACT_ARB = models.FloatField(null=True)
+    BASE_CASE_NAV_IMPACT_CAM = models.FloatField(null=True)
+    BASE_CASE_NAV_IMPACT_LEV = models.FloatField(null=True)
+    BASE_CASE_NAV_IMPACT_LG = models.FloatField(null=True)
+    BASE_CASE_NAV_IMPACT_MACO = models.FloatField(null=True)
+    BASE_CASE_NAV_IMPACT_MALT = models.FloatField(null=True)
+    BASE_CASE_NAV_IMPACT_TAQ = models.FloatField(null=True)
+    OUTLIER_NAV_IMPACT_AED = models.FloatField(null=True)
+    OUTLIER_NAV_IMPACT_ARB = models.FloatField(null=True)
+    OUTLIER_NAV_IMPACT_CAM = models.FloatField(null=True)
+    OUTLIER_NAV_IMPACT_LEV = models.FloatField(null=True)
+    OUTLIER_NAV_IMPACT_LG = models.FloatField(null=True)
+    OUTLIER_NAV_IMPACT_MACO = models.FloatField(null=True)
+    OUTLIER_NAV_IMPACT_MALT = models.FloatField(null=True)
+    OUTLIER_NAV_IMPACT_TAQ = models.FloatField(null=True)
+    CALCULATED_ON = models.DateTimeField(null=True)

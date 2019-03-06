@@ -5,7 +5,7 @@ django.setup()
 from celery import shared_task
 from django.db import connection
 import pandas as pd
-from risk_reporting.models import ArbNAVImpacts, DailyNAVImpacts
+from risk_reporting.models import ArbNAVImpacts, DailyNAVImpacts, PositionLevelNAVImpacts
 from bbgclient import bbgclient
 from django_slack import slack_message
 import numpy as np
@@ -14,6 +14,9 @@ api_host = bbgclient.get_next_available_host()
 from django.conf import settings
 from sqlalchemy.exc import OperationalError
 import time
+import datetime
+
+
 @shared_task
 def refresh_base_case_and_outlier_downsides():
     ''' Refreshes the base case and outlier downsides every 20 minutes for dynamically linked downsides '''
@@ -42,6 +45,12 @@ def refresh_base_case_and_outlier_downsides():
     live_price_df['PX_LAST'] = live_price_df['PX_LAST'].apply(lambda x: x[0])
     live_price_df.columns = ['Underlying', 'PX_LAST']
 
+    def adjust_for_london_stock(row):
+        if ' LN EQUITY' in row['Underlying']:
+            return row['PX_LAST']/100
+        return row['PX_LAST']
+
+    live_price_df['PX_LAST'] = live_price_df.apply(adjust_for_london_stock, axis=1)
     # Merge Live Price Df
     formulae_based_downsides = pd.merge(formulae_based_downsides, live_price_df, how='left', on=['Underlying'])
 
@@ -255,4 +264,142 @@ def calculate_outlier_nav_impact(row):
     return ((row['OUTLIER_PL'] / row['NAV']) * 100)
 
 
-#update_merger_arb_nav_impacts()
+
+@shared_task
+def refresh_nav_impacts():
+    """ This Task should run every 20 minutes to show the updated NAV Impacts... """
+    try:
+        api_host = bbgclient.get_next_available_host()
+        # Populate all the deals
+        nav_impacts_positions_df = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=connection)
+        # Drop the Last Price
+        nav_impacts_positions_df.drop(columns=['LastPrice'], inplace=True)
+
+        ytd_performances = pd.read_sql_query('SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance', con=connection)
+        ytd_performances.columns = ['TradeGroup', 'FundCode', 'PnL_BPS']
+        # Convert Underlying Ticker to format Ticker Equity
+        nav_impacts_positions_df['Underlying'] = nav_impacts_positions_df['Underlying'].apply(lambda x: x + " EQUITY" if "EQUITY" not in x else x)
+        forumale_linked_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
+                                                      con=connection)
+
+        forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'base_case', 'outlier',
+                                                               'LastUpdate', 'LastPrice']]
+
+
+        # Query Options Last Prices
+        options_df = nav_impacts_positions_df[nav_impacts_positions_df['SecType'] == 'EXCHOPT']
+        all_unique_tickers = options_df['Ticker'].apply(lambda x: x+ " EQUITY").unique()
+
+        options_live_price_df = pd.DataFrame.from_dict(bbgclient.get_secid2field(all_unique_tickers, 'tickers', ['PX_LAST'], req_type='refdata',api_host=api_host), orient='index').reset_index()
+        options_live_price_df['PX_LAST'] = options_live_price_df['PX_LAST'].apply(lambda x: x[0])
+        options_live_price_df.columns = ['Ticker', 'OptionLastPrice']
+
+        merged_df = pd.merge(nav_impacts_positions_df, forumale_linked_downsides, how='inner',
+                             on=['TradeGroup', 'Underlying'])
+
+        # Now merge with Options live Price Dataframe on Ticker
+        merged_df['Ticker'] = merged_df['Ticker'].apply(lambda x: x + ' EQUITY')
+        merged_df = pd.merge(merged_df, options_live_price_df, how='left', on='Ticker')
+
+        #merged_df = pd.merge(merged_df, ytd_performances, on=['TradeGroup', 'FundCode'], how='left')
+
+        merged_df.drop(columns=['PM_BASE_CASE', 'Outlier'], inplace=True)
+        merged_df.rename(columns={'base_case': 'PM_BASE_CASE', 'outlier': 'Outlier'}, inplace=True)
+        nav_impacts_positions_df = merged_df.copy()
+        nav_impacts_positions_df = nav_impacts_positions_df[
+            (nav_impacts_positions_df['PM_BASE_CASE'] != 'None') & (nav_impacts_positions_df['Outlier'] != 'None')]
+
+        float_cols = ['DealTermsCash', 'DealTermsStock', 'DealValue', 'NetMktVal', 'FxFactor', 'Capital',
+                      'BaseCaseNavImpact', 'RiskLimit',
+                      'OutlierNavImpact', 'QTY', 'NAV', 'PM_BASE_CASE', 'Outlier', 'StrikePrice', 'LastPrice']
+
+        nav_impacts_positions_df[float_cols] = nav_impacts_positions_df[float_cols].fillna(0).astype(float)
+
+        def get_current_mkt_val(row):
+            if row['SecType'] != 'EXCHOPT':
+                return row['QTY'] * row['LastPrice']
+            if row['SecType'] == 'EXCHOPT':
+                #print(row['OptionLastPrice'])
+                return row['QTY'] * float(row['OptionLastPrice'])
+
+        nav_impacts_positions_df['CurrMktVal'] = nav_impacts_positions_df.apply(get_current_mkt_val, axis=1)
+        # Calculate the Impacts
+        nav_impacts_positions_df['PL_BASE_CASE'] = nav_impacts_positions_df.apply(calculate_pl_base_case, axis=1)
+        nav_impacts_positions_df['BASE_CASE_NAV_IMPACT'] = nav_impacts_positions_df.apply(calculate_base_case_nav_impact,
+                                                                                          axis=1)
+        # Calculate Outlier Impacts
+        nav_impacts_positions_df['OUTLIER_PL'] = nav_impacts_positions_df.apply(calculate_outlier_pl, axis=1)
+        nav_impacts_positions_df['OUTLIER_NAV_IMPACT'] = nav_impacts_positions_df.apply(calculate_outlier_nav_impact,
+                                                                                         axis=1)
+        def adjust_with_ytd_performance(row, compare_to):
+            if row['PnL_BPS'] < 0:
+                return row[compare_to] + row['PnL_BPS']
+            return row[compare_to]
+
+        nav_impacts_positions_df = nav_impacts_positions_df.round({'BASE_CASE_NAV_IMPACT': 2, 'OUTLIER_NAV_IMPACT': 2})
+        nav_impacts_sum_df = nav_impacts_positions_df.groupby(['TradeGroup', 'FundCode', 'RiskLimit']).agg(
+            {'BASE_CASE_NAV_IMPACT': 'sum', 'OUTLIER_NAV_IMPACT': 'sum'}).reset_index()
+
+
+        nav_impacts_sum_df = pd.merge(nav_impacts_sum_df, ytd_performances, how='left', on=['TradeGroup', 'FundCode'])
+        nav_impacts_sum_df['BASE_CASE_NAV_IMPACT'] = nav_impacts_sum_df.apply(lambda x:
+                                                                                          adjust_with_ytd_performance
+                                                                                          (x,compare_to=
+                                                                                          'BASE_CASE_NAV_IMPACT'), axis=1)
+        nav_impacts_sum_df['OUTLIER_NAV_IMPACT'] = nav_impacts_sum_df.apply(lambda x:
+                                                                                         adjust_with_ytd_performance
+                                                                                         (x,compare_to=
+                                                                                         'OUTLIER_NAV_IMPACT'), axis=1)
+        nav_impacts_sum_df.drop(columns='PnL_BPS', inplace=True)
+
+        nav_impacts_sum_df = pd.pivot_table(nav_impacts_sum_df, index=['TradeGroup', 'RiskLimit'], columns='FundCode',
+                                            aggfunc=np.sum,
+                                            fill_value='')
+
+
+        nav_impacts_sum_df.columns = ["_".join((i, j)) for i, j in nav_impacts_sum_df.columns]
+        nav_impacts_sum_df.reset_index(inplace=True)
+
+        DailyNAVImpacts.objects.all().delete()
+
+        nav_impacts_sum_df.to_sql(con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
+                                  schema='test_wic_db')
+
+        impacts = DailyNAVImpacts.objects.all()
+        impacts_df = pd.DataFrame.from_records(impacts.values())
+
+        def get_last_update_downside(row):
+            return forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']]['LastUpdate'].max()
+
+        impacts_df['LastUpdate'] = impacts_df.apply(get_last_update_downside, axis=1)
+
+        # NAV Impacts @ Position Level
+
+        nav_impacts_positions_df = nav_impacts_positions_df.groupby(['FundCode', 'TradeGroup', 'Ticker','PM_BASE_CASE',
+                                                                     'Outlier']).agg({'BASE_CASE_NAV_IMPACT':'sum',
+                                                                                      'OUTLIER_NAV_IMPACT':'sum',
+                                                                                     })
+
+        nav_impacts_positions_df = pd.pivot_table(nav_impacts_positions_df, index=['TradeGroup', 'Ticker','PM_BASE_CASE',
+                                                                                   'Outlier'], columns=['FundCode'],
+                                                  aggfunc=np.sum,
+                                                  fill_value='')
+
+        nav_impacts_positions_df.columns = ["_".join((i, j)) for i, j in nav_impacts_positions_df.columns]
+        nav_impacts_positions_df.reset_index(inplace=True)
+        nav_impacts_positions_df['CALCULATED_ON'] = datetime.datetime.now()
+        PositionLevelNAVImpacts.objects.all().delete()
+
+        nav_impacts_positions_df.to_sql(name='risk_reporting_positionlevelnavimpacts', con=settings.SQLALCHEMY_CONNECTION,
+                                        if_exists='append', index=False, schema='test_wic_db')
+
+        slack_message('generic.slack', {'message': 'NAV Impacts refreshed with Latest Prices'},
+                          channel='realtimenavimpacts',
+                          token=settings.SLACK_TOKEN,
+                          name='ESS_IDEA_DB_ERROR_INSPECTOR')
+    except Exception as e:
+        print(e)
+        slack_message('generic.slack', {'message': 'ERROR: ' + str(e)},
+                          channel='realtimenavimpacts',
+                          token=settings.SLACK_TOKEN,
+                          name='ESS_IDEA_DB_ERROR_INSPECTOR')

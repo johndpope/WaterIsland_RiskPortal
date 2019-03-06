@@ -20,8 +20,8 @@ env = environ.Env()
 environ.Env.read_env()  # Read the .env File
 
 engine = create_engine("mysql://" + env('WICFUNDS_DATABASE_USER') + ":" + env('WICFUNDS_DATABASE_PASSWORD')
-                       + "@" + env('WICFUNDS_DATABASE_HOST') + "/" + env('WICFUNDS_DATABASE_NAME'), pool_pre_ping=True,
-                       pool_recycle=3600, pool_size=30)
+                       + "@" + env('WICFUNDS_DATABASE_HOST') + "/" + env('WICFUNDS_DATABASE_NAME')
+                       )
 con = engine.connect()
 
 SQLALCHEMY_CONNECTION = con
@@ -59,10 +59,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'risk_reporting.tasks.refresh_base_case_and_outlier_downsides',
         'schedule': crontab(minute="*/20", hour='9-16', day_of_week='mon-fri'),  # Execute 20 min
     },
-    # 'SQLALCHEMY_KEEPALIVE_PINGS': {
-    #     'task': 'portal.tasks.sqlalchemy_connection_pinging',
-    #     'schedule': crontab(minute="*/60"),  # Execute 1 hour
-    # }
+    'ARB_NAV_IMPACTS_REFRESH': {
+        'task': 'risk_reporting.tasks.refresh_nav_impacts',
+        'schedule': crontab(minute="*/20", hour='9-16', day_of_week='mon-fri'),
+    }
 
 }
 
@@ -151,16 +151,6 @@ DATABASES = {
         'NAME': env('WICFUNDS_DATABASE_NAME'),
         'CONN_MAX_AGE': None,
     },
-    'waterislandproduction': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': env('WICFUNDS_PRODUCTION_DATABASE_HOST'),
-        'PORT': env('WICFUNDS_PRODUCTION_DATABASE_PORT'),
-        'USER': env('WICFUNDS_PRODUCTION_DATABASE_USER'),
-        'PASSWORD': env('WICFUNDS_PRODUCTION_DATABASE_PASSWORD'),
-        'NAME': env('WICFUNDS_PRODUCTION_DATABASE_NAME'),
-        'CONN_MAX_AGE': None,
-    },
-
     'NorthPoint-PnLAppDb': {
         'ENGINE': 'sql_server.pyodbc',
         'HOST': env('NORTHPOINT_PNLAPPDB_DATABASE_HOST'),
