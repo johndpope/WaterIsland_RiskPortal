@@ -9,10 +9,11 @@ from ipware import get_client_ip
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db import connection
-from .models import ArbNAVImpacts, DailyNAVImpacts, FormulaeBasedDownsides
+from .models import ArbNAVImpacts, DailyNAVImpacts, FormulaeBasedDownsides, PositionLevelNAVImpacts
 from django.conf import settings
 from django_slack import slack_message
 from django.db.models import Max
+import bbgclient
 # Following NAV Impacts Utilities
 
 
@@ -150,109 +151,29 @@ def security_info_download(request):
 def merger_arb_risk_attributes(request):
     """ View to Populate the Risk attributes for the Arbitrage Fund """
 
-    # Populate all the deals
-    nav_impacts_positions_df = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=connection)
     ytd_performances = pd.read_sql_query('SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance', con=connection)
     ytd_performances.columns = ['TradeGroup', 'FundCode', 'PnL_BPS']
-    # Convert Underlying Ticker to format Ticker Equity
-    nav_impacts_positions_df['Underlying'] = nav_impacts_positions_df['Underlying'].apply(lambda x: x + " EQUITY" if "EQUITY" not in x else x)
+
     forumale_linked_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
                                                   con=connection)
-
-    forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'base_case', 'outlier', 'LastUpdate']]
-    merged_df = pd.merge(nav_impacts_positions_df, forumale_linked_downsides, how='inner',
-                         on=['TradeGroup', 'Underlying'])
-
     negative_pnl_accounted = True
     if len(ytd_performances) == 0:
         negative_pnl_accounted = False
-    merged_df = pd.merge(merged_df, ytd_performances, on=['TradeGroup', 'FundCode'], how='left')
 
-    merged_df.drop(columns=['PM_BASE_CASE', 'Outlier'], inplace=True)
-    merged_df.rename(columns={'base_case': 'PM_BASE_CASE', 'outlier': 'Outlier'}, inplace=True)
-    nav_impacts_positions_df = merged_df.copy()
-    nav_impacts_positions_df = nav_impacts_positions_df[
-        (nav_impacts_positions_df['PM_BASE_CASE'] != 'None') & (nav_impacts_positions_df['Outlier'] != 'None')]
+    last_calculated_on = PositionLevelNAVImpacts.objects.latest('CALCULATED_ON').CALCULATED_ON
 
-    float_cols = ['DealTermsCash', 'DealTermsStock', 'DealValue', 'NetMktVal', 'FxFactor', 'Capital',
-                  'BaseCaseNavImpact', 'RiskLimit',
-                  'OutlierNavImpact', 'QTY', 'NAV', 'PM_BASE_CASE', 'Outlier', 'StrikePrice', 'LastPrice', 'PnL_BPS']
-
-    nav_impacts_positions_df[float_cols] = nav_impacts_positions_df[float_cols].fillna(0).astype(float)
-
-    nav_impacts_positions_df['CurrMktVal'] = nav_impacts_positions_df['QTY'] * nav_impacts_positions_df['LastPrice']
-    # Calculate the Impacts
-
-
-    nav_impacts_positions_df['PL_BASE_CASE'] = nav_impacts_positions_df.apply(calculate_pl_base_case, axis=1)
-    nav_impacts_positions_df['BASE_CASE_NAV_IMPACT'] = nav_impacts_positions_df.apply(calculate_base_case_nav_impact,
-                                                                                      axis=1)
-    # Calculate Outlier Impacts
-    nav_impacts_positions_df['OUTLIER_PL'] = nav_impacts_positions_df.apply(calculate_outlier_pl, axis=1)
-    nav_impacts_positions_df['OUTLIER_NAV_IMPACT'] = nav_impacts_positions_df.apply(calculate_outlier_nav_impact,
-                                                                                     axis=1)
-    #nav_impacts_positions_df.to_csv('CHECKTHIS.csv')
-    def adjust_with_ytd_performance(row, compare_to):
-        if row['PnL_BPS'] < 0:
-            return row[compare_to] + row['PnL_BPS']
-        return row[compare_to]
-
-    nav_impacts_positions_df['BASE_CASE_NAV_IMPACT'] = nav_impacts_positions_df.apply(lambda x:
-                                                                                      adjust_with_ytd_performance
-                                                                                      (x,compare_to=
-                                                                                      'BASE_CASE_NAV_IMPACT'), axis=1)
-    nav_impacts_positions_df['OUTLIER_NAV_IMPACT'] = nav_impacts_positions_df.apply(lambda x:
-                                                                                     adjust_with_ytd_performance
-                                                                                     (x,compare_to=
-                                                                                     'OUTLIER_NAV_IMPACT'), axis=1)
-
-
-    nav_impacts_positions_df = nav_impacts_positions_df.round({'BASE_CASE_NAV_IMPACT': 2, 'OUTLIER_NAV_IMPACT': 2})
-
-    nav_impacts_sum_df = nav_impacts_positions_df.groupby(['TradeGroup', 'FundCode', 'RiskLimit']).agg(
-        {'BASE_CASE_NAV_IMPACT': 'sum', 'OUTLIER_NAV_IMPACT': 'sum'})
-
-    nav_impacts_sum_df = pd.pivot_table(nav_impacts_sum_df, index=['TradeGroup', 'RiskLimit'], columns='FundCode',
-                                        aggfunc=np.sum,
-                                        fill_value='')
-
-
-    # Get last updated values for the tradegroup
-
-    #nav_impacts_sum_df['LastUpdate']
-
-    nav_impacts_sum_df.columns = ["_".join((i, j)) for i, j in nav_impacts_sum_df.columns]
-    nav_impacts_sum_df.reset_index(inplace=True)
-
-    settings.SQLALCHEMY_CONNECTION.execute('TRUNCATE TABLE test_wic_db.risk_reporting_dailynavimpacts')
-
-    nav_impacts_sum_df.to_sql(con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
-                              schema='test_wic_db')
-
-    impacts = DailyNAVImpacts.objects.all()
-    impacts_df = pd.DataFrame.from_records(impacts.values())
-
+    impacts_df = pd.DataFrame.from_records(DailyNAVImpacts.objects.all().values())
     def get_last_update_downside(row):
         return forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']]['LastUpdate'].max()
-
     impacts_df['LastUpdate'] = impacts_df.apply(get_last_update_downside, axis=1)
-
-    # NAV Impacts @ Position Level
-
-    nav_impacts_positions_df = nav_impacts_positions_df.groupby(['FundCode', 'TradeGroup', 'Ticker','PM_BASE_CASE', 'Outlier']).agg({'BASE_CASE_NAV_IMPACT':'sum', 'OUTLIER_NAV_IMPACT':'sum',
-                                                               })
-
-    nav_impacts_positions_df = pd.pivot_table(nav_impacts_positions_df, index=['TradeGroup', 'Ticker','PM_BASE_CASE', 'Outlier'], columns=['FundCode'],
-                                        aggfunc=np.sum,
-                                        fill_value='')
-
-    nav_impacts_positions_df.columns = ["_".join((i, j)) for i, j in nav_impacts_positions_df.columns]
-    nav_impacts_positions_df.reset_index(inplace=True)
+    nav_impacts_positions_df = pd.DataFrame.from_records(PositionLevelNAVImpacts.objects.all().values())
     if request.is_ajax():
-        return_data = {'data': impacts_df.to_json(orient='records'), 'positions':nav_impacts_positions_df.to_json(orient='records')}
+        return_data = {'data': impacts_df.to_json(orient='records'),
+                       'positions':nav_impacts_positions_df.to_json(orient='records')}
         return HttpResponse(json.dumps(return_data), content_type='application/json')
 
-    return render(request, 'risk_attributes.html', context={'negative_pnl_accounted':negative_pnl_accounted})
+    return render(request, 'risk_attributes.html', context={'negative_pnl_accounted':negative_pnl_accounted,
+                                                            'last_calculated_on':last_calculated_on})
 
 # The following should run in a scheduled job. Over here just get values from DB and render to the Front end...
 
@@ -318,7 +239,7 @@ def merger_arb_nav_impacts(request):
     nav_impacts_sum_df.columns = ["_".join((i, j)) for i, j in nav_impacts_sum_df.columns]
     nav_impacts_sum_df.reset_index(inplace=True)
 
-    nav_impacts_sum_df.to_sql(con=connection, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
+    nav_impacts_sum_df.to_sql(con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
                               schema='test_wic_db')
     return render(request, 'merger_arb_nav_impacts.html', context={'impacts':
                                                                    nav_impacts_sum_df.to_json(orient='index')})
