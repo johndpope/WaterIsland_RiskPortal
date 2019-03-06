@@ -22,6 +22,13 @@ environ.Env.read_env()  # Read the .env File
 engine = create_engine("mysql://" + env('WICFUNDS_DATABASE_USER') + ":" + env('WICFUNDS_DATABASE_PASSWORD')
                        + "@" + env('WICFUNDS_DATABASE_HOST') + "/" + env('WICFUNDS_DATABASE_NAME')
                        )
+
+
+WICFUNDS_DATABASE_USER = env('WICFUNDS_DATABASE_USER')
+WICFUNDS_DATABASE_PASSWORD = env('WICFUNDS_DATABASE_PASSWORD')
+WICFUNDS_DATABASE_HOST = env('WICFUNDS_DATABASE_HOST')
+WICFUNDS_DATABASE_NAME = env('WICFUNDS_DATABASE_NAME')
+
 con = engine.connect()
 
 SQLALCHEMY_CONNECTION = con
