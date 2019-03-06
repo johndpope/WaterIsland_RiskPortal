@@ -67,12 +67,92 @@ def calculate_outlier_nav_impact(row):
 
 
 # Create your views here.
+def deal_info_download(request):
+    # DealInfo.csv @ the Deal Level
+    deal_level = pd.DataFrame.from_records(FormulaeBasedDownsides.objects.filter(IsExcluded__contains='No',
+                                                                                 RiskLimit__isnull=False)
+                                           .values('TradeGroup', 'RiskLimit').distinct())
+
+    deal_level.rename(columns={'RiskLimit': 'Risk Limit', 'TradeGroup': 'Deal'}, inplace=True)
+    # Add extra columns
+    deal_level['Analyst'] = ''
+    deal_level['BBG Event ID'] = ''
+    deal_level['Catalyst Rating'] = ''
+    deal_level['Closing Date'] = ''
+    deal_level['Deal Cash Terms'] = ''
+    deal_level['Deal Downside'] = ''
+    deal_level['Deal Stock Terms'] = ''
+    deal_level['Deal Upside'] = ''
+    deal_level['Expected Acquirer Dividends'] = ''
+    deal_level['Expected Target Dividends'] = ''
+    deal_level['Number of Acquirer Dividends'] = ''
+    deal_level['Number of Target Dividends'] = ''
+    deal_level['Strategy Type'] = ''
+    deal_level['Tradegroup Bucket'] = ''
+    deal_level['AED Weight'] = ''
+    deal_level['ARB Weight'] = ''
+    deal_level['CAM Weight'] = ''
+    deal_level['LEV Weight'] = ''
+    deal_level['LG Weight'] = ''
+    deal_level['TACO Weight'] = ''
+    deal_level['TAQ Weight'] = ''
+    deal_level['WED Weight'] = ''
+    deal_level['WIC Weight'] = ''
+    deal_level['MACO Weight'] = ''
+    deal_level['MALT Weight'] = ''
+    deal_level['Catalyst Type'] = ''
+
+    deal_level = deal_level[['Deal', 'Analyst', 'BBG Event ID', 'Catalyst Rating', 'Closing Date', 'Deal Cash Terms',
+                            'Deal Downside', 'Deal Stock Terms', 'Deal Upside', 'Expected Acquirer Dividends',
+                            'Expected Target Dividends', 'Number of Acquirer Dividends', 'Number of Target Dividends',
+                            'Risk Limit','Strategy Type', 'Tradegroup Bucket', 'AED Weight', 'ARB Weight', 'CAM Weight',
+                            'LEV Weight', 'LG Weight', 'TACO Weight', 'TAQ Weight', 'WED Weight', 'WIC Weight',
+                            'MACO Weight', 'MALT Weight', 'Catalyst Type']]
+
+    # Add % sign to Risk Limit
+    deal_level['Risk Limit'] = deal_level['Risk Limit'].apply(lambda x: str(x)+"%")
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=DealInfo.csv'
+    deal_level.to_csv(path_or_buf=response, index=False)
+
+    return response
+
+
+def security_info_download(request):
+
+    # Get the Deal Level and Security Level files in the required format.
+    position_level = pd.DataFrame.from_records(FormulaeBasedDownsides.objects.filter(IsExcluded__contains='No', base_case__isnull=False, outlier__isnull=False).
+                                               values('TradeGroup', 'Underlying', 'outlier', 'base_case'))
+    # Rename columns
+    position_level.rename(columns={'TradeGroup':'Deal', 'Underlying': 'Security', 'outlier':'Outliers',
+                                   'base_case': 'PM Base Case'}, inplace=True)
+
+    position_level['Security'] = position_level['Security'].apply(lambda x: ' '.join(x.split(' ')[0:2]))
+    # Add the other required columns
+    position_level['Alternate Ticker'] = ''
+    position_level['Rebate Rate'] = ''
+    position_level['Price'] = ''
+    position_level['Adj_CR_01'] = ''
+    position_level['CR_01'] = ''
+    position_level['DV01'] = ''
+    position_level['Beta'] = ''
+
+    # Rearrange columns
+    position_level = position_level[['Deal', 'Security', 'Alternate Ticker', 'Outliers', 'PM Base Case', 'Rebate Rate',
+                              'Price', 'Adj_CR_01', 'CR_01', 'DV01', 'Beta']]
+    # This should be named SecurityInfo.csv
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=SecurityInfo.csv'
+    position_level.to_csv(path_or_buf=response, index=False)
+    return response
+
+
 def merger_arb_risk_attributes(request):
     """ View to Populate the Risk attributes for the Arbitrage Fund """
 
     # Populate all the deals
     nav_impacts_positions_df = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=connection)
-    ytd_performances = pd.read_sql_query('SELECT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance', con=connection)
+    ytd_performances = pd.read_sql_query('SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance', con=connection)
     ytd_performances.columns = ['TradeGroup', 'FundCode', 'PnL_BPS']
     # Convert Underlying Ticker to format Ticker Equity
     nav_impacts_positions_df['Underlying'] = nav_impacts_positions_df['Underlying'].apply(lambda x: x + " EQUITY" if "EQUITY" not in x else x)
@@ -111,7 +191,7 @@ def merger_arb_risk_attributes(request):
     nav_impacts_positions_df['OUTLIER_PL'] = nav_impacts_positions_df.apply(calculate_outlier_pl, axis=1)
     nav_impacts_positions_df['OUTLIER_NAV_IMPACT'] = nav_impacts_positions_df.apply(calculate_outlier_nav_impact,
                                                                                      axis=1)
-
+    #nav_impacts_positions_df.to_csv('CHECKTHIS.csv')
     def adjust_with_ytd_performance(row, compare_to):
         if row['PnL_BPS'] < 0:
             return row[compare_to] + row['PnL_BPS']
@@ -121,7 +201,7 @@ def merger_arb_risk_attributes(request):
                                                                                       adjust_with_ytd_performance
                                                                                       (x,compare_to=
                                                                                       'BASE_CASE_NAV_IMPACT'), axis=1)
-    nav_impacts_positions_df['OUTLIER_NAV_IMPACT'] =  nav_impacts_positions_df.apply(lambda x:
+    nav_impacts_positions_df['OUTLIER_NAV_IMPACT'] = nav_impacts_positions_df.apply(lambda x:
                                                                                      adjust_with_ytd_performance
                                                                                      (x,compare_to=
                                                                                      'OUTLIER_NAV_IMPACT'), axis=1)
@@ -172,7 +252,6 @@ def merger_arb_risk_attributes(request):
         return_data = {'data': impacts_df.to_json(orient='records'), 'positions':nav_impacts_positions_df.to_json(orient='records')}
         return HttpResponse(json.dumps(return_data), content_type='application/json')
 
-    print(negative_pnl_accounted)
     return render(request, 'risk_attributes.html', context={'negative_pnl_accounted':negative_pnl_accounted})
 
 # The following should run in a scheduled job. Over here just get values from DB and render to the Front end...

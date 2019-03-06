@@ -12,13 +12,23 @@ import numpy as np
 from tabulate import tabulate
 api_host = bbgclient.get_next_available_host()
 from django.conf import settings
+from sqlalchemy.exc import OperationalError
 import time
 @shared_task
 def refresh_base_case_and_outlier_downsides():
     ''' Refreshes the base case and outlier downsides every 20 minutes for dynamically linked downsides '''
     import pandas as pd
     import bbgclient
+
     con = settings.SQLALCHEMY_CONNECTION
+    try:
+        con.execute('Select 1 as is_alive')  # Check to see if Database is alive
+    except OperationalError as oe:
+        print(oe)
+        print('Reestablishing connection...')
+        con = settings.engine.connect()
+        print('Connection Established!')
+
 
     formulae_based_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
                                                  con=con)

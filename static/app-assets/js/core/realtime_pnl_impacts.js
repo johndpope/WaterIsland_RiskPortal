@@ -2,6 +2,47 @@ $(document).ready(function () {
     let data = $('#realtime_pnl_impacts').val();
 
     var realtime_pnl_table = $('#realtime_pnl_table').DataTable({
+        dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
+            '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
+            '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+        fixedHeader: {
+            header: true
+        },
+        buttons: {
+            buttons: [{
+                extend: 'print',
+                text: '<i class="fa fa-print"></i> Print',
+                title:'Realtime P&L',
+                customize: function ( win ) {
+                    $(win.document.body)
+                        .css( 'font-size', '10pt' )
+                        .prepend(
+                            '<p> Water Island Capital, Risk Portal</p>'
+                        );
+
+                    $(win.document.body).find( 'table' )
+                        .addClass( 'compact' )
+                        .css( 'font-size', 'inherit' );
+                },
+                autoPrint: true,
+            }, {
+                extend: 'copy',
+                text: '<i class="fa fa-copy"></i> Copy',
+
+            }, {
+                extend: 'csv',
+                text: '<i class="fa fa-book"></i> CSV',
+
+            }],
+            dom: {
+                container: {
+                    className: 'dt-buttons'
+                },
+                button: {
+                    className: 'btn btn-default'
+                }
+            }
+        },
         "lengthChange": false,
         "paging": false,
         "language": {

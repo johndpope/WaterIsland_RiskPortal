@@ -163,6 +163,8 @@
                             <input type="hidden" id="merger_arb_nav_impacts_table" value="{{ marb_positionws }}">
                             <div class="card-content">
                                 <div class="table-responsive">
+                                <a class="btn btn-sm btn-indigo" href="{% url 'risk_reporting:security_info_download' %}" target="_blank">Download SecurityInfo.csv</a>
+                                <a class="btn btn-sm btn-indigo" href="{% url 'risk_reporting:deal_info_download' %}" target="_blank">Download DealInfo.csv</a>
                                     <!-- Task List table -->
                                     <table class="table table-bordered" id='downside_formulae_table'
                                            style="font-size:12px;">

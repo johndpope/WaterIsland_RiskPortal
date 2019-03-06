@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 # Create your views here.
 
 
@@ -12,3 +12,4 @@ def handler404(request):
 
 def handler500(request):
     return render(request, 'error.html', status=500)
+

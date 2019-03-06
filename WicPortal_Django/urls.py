@@ -34,6 +34,7 @@ urlpatterns = [
     url('tweets/', include('tweets.urls')),
     url('breakfast/', include('breakfast.urls')),
     url('risk/', include('risk.urls')),
+    url('portal/', include('portal.urls')),
     url('statpro/', include('statpro.urls')),
     url('notes/', include('notes.urls')),
     url('equity_fixedincome_risk_reward/', include('equity_fixedincome_risk_reward.urls')),

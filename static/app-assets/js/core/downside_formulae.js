@@ -235,10 +235,27 @@ $('#downsides_formulae_save_new_deal').on('click', function(){
        error: function(err){
            console.log(err);
        }
-   })
-
+   });
 
 
 
 
 });
+
+ // $('#upload_to_eze').on('click', function () {
+ //
+ //        console.log('CLICKEDDD');
+ //      $.ajax({
+ //          url: '../risk_reporting/upload_to_eze',
+ //          type: 'POST',
+ //          success:function (response) {
+ //              var dowloadlink = document.createElement("a");
+ //                    dowloadlink.download = "test";
+ //                    dowloadlink.href = response;
+ //                    dowloadlink.click();
+ //          },
+ //          error: function(err){
+ //              console.log(err);
+ //          }
+ //      })
+ //    })

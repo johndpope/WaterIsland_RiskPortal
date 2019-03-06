@@ -1,3 +1,4 @@
+
 $(document).ready(function () {
 
     //Initialize summernote
@@ -35,7 +36,9 @@ $(document).ready(function () {
         showWeekNumbers: true,
     });
 
-    let analyst_comments = $('#mna_idea_analyst_comments').summernote({'height': '400px'});
+    let analyst_comments = $('#mna_idea_analyst_comments').summernote({
+        'height': '400px',
+    });
     let downside_comments = $('#mna_idea_weekly_downside_estimate_comment').summernote({'height': '300px'});
     var ebitda_charts = null;
     var ev_sales_charts = null;
@@ -437,7 +440,7 @@ $(document).ready(function () {
                     });
                 }
             },
-            error:function(e){
+            error: function (e) {
                 swal("Error!", "Something went wrong - ", "error");
             }
         });
@@ -682,7 +685,6 @@ $(document).ready(function () {
         createDataset(ev_sales_chart_2bf, 'ev_sales_value', '(2BF)');
 
 
-
         ev_sales_charts = createMultipleLineChart('mna_idea_ev_sales_chart', ev_sales_ltm_valuation_multiple_datasets, 'EV/Sales', 'ev_sales_value');
         valuationMultipleDatasets = []; //Reset Global Dataset
 
@@ -760,7 +762,7 @@ $(document).ready(function () {
                     "compared": true,
                 });
             }
-            else  if (override === '(2BF)' && valueField === 'ev_ebitda_value') {
+            else if (override === '(2BF)' && valueField === 'ev_ebitda_value') {
                 //Push into 2 bf
                 ev_ebitda_twobf_valuation_multiple_datasets.push({
                     "title": k + override,
@@ -776,7 +778,7 @@ $(document).ready(function () {
             }
 
 
-            else  if (override === '(1BF)' && valueField === 'ev_sales_value') {
+            else if (override === '(1BF)' && valueField === 'ev_sales_value') {
                 //Push into 2 bf
                 ev_sales_onebf_valuation_multiple_datasets.push({
                     "title": k + override,
@@ -791,7 +793,7 @@ $(document).ready(function () {
                 });
             }
 
-            else  if (override === '(2BF)' && valueField === 'ev_sales_value') {
+            else if (override === '(2BF)' && valueField === 'ev_sales_value') {
                 //Push into 2 bf
                 ev_sales_twobf_valuation_multiple_datasets.push({
                     "title": k + override,
@@ -806,7 +808,7 @@ $(document).ready(function () {
                 });
             }
 
-            else  if (override === '(LTM)' && valueField === 'pe_ratio') {
+            else if (override === '(LTM)' && valueField === 'pe_ratio') {
                 //Push into 2 bf
                 pe_ratio_ltm_valuation_multiple_datasets.push({
                     "title": k + override,
@@ -820,7 +822,7 @@ $(document).ready(function () {
                     "compared": true,
                 });
             }
-            else  if (override === '(1BF)' && valueField === 'pe_ratio') {
+            else if (override === '(1BF)' && valueField === 'pe_ratio') {
                 //Push into 2 bf
                 pe_ratio_onebf_valuation_multiple_datasets.push({
                     "title": k + override,
@@ -834,7 +836,7 @@ $(document).ready(function () {
                     "compared": true,
                 });
             }
-            else  if (override === '(2BF)' && valueField === 'pe_ratio') {
+            else if (override === '(2BF)' && valueField === 'pe_ratio') {
                 //Push into 2 bf
                 pe_ratio_twobf_valuation_multiple_datasets.push({
                     "title": k + override,
@@ -848,7 +850,7 @@ $(document).ready(function () {
                     "compared": true,
                 });
             }
-            else if (valueField === 'p_fcf_value'){
+            else if (valueField === 'p_fcf_value') {
                 //Only FCF Yield
                 valuationMultipleDatasets.push({
                     "title": k + override,
@@ -1286,13 +1288,12 @@ $(document).ready(function () {
     });
 
 
-
     /* Button Click to change Datasets to 1BF, 2BF, LTM (Peer multiples) */
-    $('.show_ltm_dataset').on('click', function(){
+    $('.show_ltm_dataset').on('click', function () {
         ebitda_charts.dataSets = [];
         pe_ratio_charts.dataSets = [];
         ev_sales_charts.dataSets = [];
-        for(var i=0;i<ev_ebitda_ltm_valuation_multiple_datasets.length;i++){
+        for (var i = 0; i < ev_ebitda_ltm_valuation_multiple_datasets.length; i++) {
             ebitda_charts.dataSets.push(ev_ebitda_ltm_valuation_multiple_datasets[i]);
             ebitda_charts.mainDataSet = ev_ebitda_ltm_valuation_multiple_datasets[i];
             ev_sales_charts.dataSets.push(ev_sales_ltm_valuation_multiple_datasets[i]);
@@ -1300,23 +1301,23 @@ $(document).ready(function () {
             pe_ratio_charts.dataSets.push(pe_ratio_ltm_valuation_multiple_datasets[i]);
             pe_ratio_charts.mainDataSet = pe_ratio_ltm_valuation_multiple_datasets[i];
         }
-       ebitda_charts.validateData();
-       ev_sales_charts.validateData();
-       pe_ratio_charts.validateData();
-       ebitda_charts.validateNow();
-       pe_ratio_charts.validateNow();
-       ev_sales_charts.validateNow();
+        ebitda_charts.validateData();
+        ev_sales_charts.validateData();
+        pe_ratio_charts.validateData();
+        ebitda_charts.validateNow();
+        pe_ratio_charts.validateNow();
+        ev_sales_charts.validateNow();
 
 
     });
 
-    $('.show_1bf_dataset').on('click', function(){
+    $('.show_1bf_dataset').on('click', function () {
 
         ebitda_charts.dataSets = [];
         pe_ratio_charts.dataSets = [];
         ev_sales_charts.dataSets = [];
 
-        for(var i=0;i<ev_ebitda_onebf_valuation_multiple_datasets.length;i++){
+        for (var i = 0; i < ev_ebitda_onebf_valuation_multiple_datasets.length; i++) {
             ebitda_charts.dataSets.push(ev_ebitda_onebf_valuation_multiple_datasets[i]);
             ebitda_charts.mainDataSet = ev_ebitda_onebf_valuation_multiple_datasets[i];
             ev_sales_charts.dataSets.push(ev_sales_onebf_valuation_multiple_datasets[i]);
@@ -1324,21 +1325,21 @@ $(document).ready(function () {
             pe_ratio_charts.dataSets.push(pe_ratio_onebf_valuation_multiple_datasets[i]);
             pe_ratio_charts.mainDataSet = pe_ratio_onebf_valuation_multiple_datasets[i];
         }
-       ebitda_charts.validateData();
-       ev_sales_charts.validateData();
-       pe_ratio_charts.validateData();
-       ebitda_charts.validateNow();
-       pe_ratio_charts.validateNow();
-       ev_sales_charts.validateNow();
+        ebitda_charts.validateData();
+        ev_sales_charts.validateData();
+        pe_ratio_charts.validateData();
+        ebitda_charts.validateNow();
+        pe_ratio_charts.validateNow();
+        ev_sales_charts.validateNow();
 
     });
 
-    $('.show_2bf_dataset').on('click', function(){
+    $('.show_2bf_dataset').on('click', function () {
         ebitda_charts.dataSets = [];
         ev_sales_charts.dataSets = [];
         pe_ratio_charts.dataSets = [];
 
-        for(var i=0;i<ev_ebitda_twobf_valuation_multiple_datasets.length;i++){
+        for (var i = 0; i < ev_ebitda_twobf_valuation_multiple_datasets.length; i++) {
             ebitda_charts.dataSets.push(ev_ebitda_twobf_valuation_multiple_datasets[i]);
             ebitda_charts.mainDataSet = ev_ebitda_twobf_valuation_multiple_datasets[i];
             ev_sales_charts.dataSets.push(ev_sales_twobf_valuation_multiple_datasets[i]);
@@ -1346,19 +1347,17 @@ $(document).ready(function () {
             pe_ratio_charts.dataSets.push(pe_ratio_twobf_valuation_multiple_datasets[i]);
             pe_ratio_charts.mainDataSet = pe_ratio_twobf_valuation_multiple_datasets[i];
         }
-       ebitda_charts.validateData();
-       ev_sales_charts.validateData();
-       pe_ratio_charts.validateData();
-       ebitda_charts.validateNow();
-       pe_ratio_charts.validateNow();
-       ev_sales_charts.validateNow();
+        ebitda_charts.validateData();
+        ev_sales_charts.validateData();
+        pe_ratio_charts.validateData();
+        ebitda_charts.validateNow();
+        pe_ratio_charts.validateNow();
+        ev_sales_charts.validateNow();
 
     });
 
 
-$('.show_1bf_dataset').trigger('click'); // Show 1BF dataset by Default..
-
-
+    $('.show_1bf_dataset').trigger('click'); // Show 1BF dataset by Default..
 
 
 });
