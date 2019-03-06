@@ -57,6 +57,10 @@ CELERYBEAT_SCHEDULE = {
     'DYNAMIC_DOWNSIDE_UPDATE': {
         'task': 'risk_reporting.tasks.refresh_base_case_and_outlier_downsides',
         'schedule': crontab(minute="*/20", hour='9-16', day_of_week='mon-fri'),  # Execute 20 min
+    },
+    'SQLALCHEMY_KEEPALIVE_PINGS': {
+        'task': 'portal.tasks.sqlalchemy_connection_pinging',
+        'schedule': crontab(minute="*/60"),  # Execute 1 hour
     }
 
 }
