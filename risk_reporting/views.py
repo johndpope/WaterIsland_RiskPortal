@@ -156,6 +156,10 @@ def merger_arb_risk_attributes(request):
 
     forumale_linked_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
                                                   con=connection)
+
+    forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'base_case', 'outlier',
+                                                               'LastUpdate', 'LastPrice']]
+
     negative_pnl_accounted = True
     if len(ytd_performances) == 0:
         negative_pnl_accounted = False
@@ -163,6 +167,7 @@ def merger_arb_risk_attributes(request):
     last_calculated_on = PositionLevelNAVImpacts.objects.latest('CALCULATED_ON').CALCULATED_ON
 
     impacts_df = pd.DataFrame.from_records(DailyNAVImpacts.objects.all().values())
+    impacts_df['LastUpdate'] = None
     def get_last_update_downside(row):
         return forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']]['LastUpdate'].max()
     impacts_df['LastUpdate'] = impacts_df.apply(get_last_update_downside, axis=1)

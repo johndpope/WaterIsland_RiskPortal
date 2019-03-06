@@ -183,7 +183,7 @@ $(document).ready(function () {
     setInterval(function () {
         nav_impacts_table.ajax.reload(null, true);
         console.log('Requesting Updated P&L..');
-    }, 3600000); // Every Hour
+    }, 1200000); // Every 20 Minutes
 
     $('#arb_risk_attributes_table tbody').on('click', 'td.details-control', function () {
         var tr = $(this).closest('tr');
