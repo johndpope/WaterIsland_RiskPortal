@@ -8,7 +8,7 @@ from django.conf import settings
 class Wic():
     @staticmethod
     def get_live_pnl_fx_rates_df():
-        query = " SELECT `Timestamp`, `FX_SYMBOL`,`RATE` FROM " + settings.DATABASES['waterislandproduction']['NAME']\
+        query = " SELECT `Timestamp`, `FX_SYMBOL`,`RATE` FROM " + settings.DATABASES['default']['NAME']\
                 + ".live_pnl_fx_rates "
         cols = ['Timestamp', 'FX_SYMBOL', 'FX_RATE']
         try:
@@ -25,7 +25,7 @@ class Wic():
     @staticmethod
     def get_live_pnl_px_factors_df():
         query = "SELECT  `API_IDENTIFIER`, `CRNCY`,`TICKER`, `SECURITY_TYP`, `SETTLE_DT`, `FACTOR`, `FX_SYMBOL`," \
-                " `YDAY_API_IDENTIFIER`, `DATA_TIMESTAMP` FROM " + settings.DATABASES['waterislandproduction']['NAME'] \
+                " `YDAY_API_IDENTIFIER`, `DATA_TIMESTAMP` FROM " + settings.DATABASES['default']['NAME'] \
                 + ".live_pnl_px_factors "
 
         cols = ['API_IDENTIFIER', 'CRNCY', 'TICKER', 'SECURITY_TYP', 'SETTLE_DT', 'FACTOR', 'FX_SYMBOL',
@@ -46,7 +46,7 @@ class Wic():
     @staticmethod
     def get_live_pnl_df():
         query = " SELECT `Timestamp`, `API_IDENTIFIER`,`PX_LAST` FROM " +  \
-                settings.DATABASES['waterislandproduction']['NAME'] + ".live_pnl "
+                settings.DATABASES['default']['NAME'] + ".live_pnl "
         cols = ['Timestamp', 'API_IDENTIFIER', 'PX_LAST']
         try:
             res = pd.read_sql_query(query, connection)
@@ -65,7 +65,7 @@ class Wic():
                 "`Sleeve`, `Bucket`, `AlphaHedge`, `LongShort`, " \
                 "`CatalystName`, `Analyst`, `Northpont_SecType`, `Capital($)`, `Capital(%)`, " \
                 "`BaseCaseNavImpact`, `OutlierNavImpact`, " \
-                "`Desc`, `Group` FROM " + settings.DATABASES['waterislandproduction']['NAME'] \
+                "`Desc`, `Group` FROM " + settings.DATABASES['default']['NAME'] \
                 + ".live_pnl_monitored_portfolios "
         where_clauses = []
         if len(portfolio_names) > 0: where_clauses.append(
@@ -94,7 +94,7 @@ class Wic():
         # region query
         query = "SELECT Fund, Sleeve, TradeGroup, Analyst, LongShort, InceptionDate, EndDate, Status," \
                 "`Metrics in Bet JSON`,`Metrics in Bet notes JSON`,`Metrics in NAV JSON`,`Metrics in NAV notes JSON` " \
-                "FROM `" + settings.DATABASES['waterislandproduction']['NAME'] + "`.tradegroups_snapshot2 "
+                "FROM `" + settings.DATABASES['default']['NAME'] + "`.tradegroups_snapshot2 "
         # endregion
 
         res = pd.read_sql_query(query, connection)
