@@ -24,15 +24,6 @@ def refresh_base_case_and_outlier_downsides():
     import bbgclient
 
     con = settings.SQLALCHEMY_CONNECTION
-    try:
-        con.execute('Select 1 as is_alive')  # Check to see if Database is alive
-    except OperationalError as oe:
-        print(oe)
-        print('Reestablishing connection...')
-        con = settings.engine.connect()
-        print('Connection Established!')
-
-
     formulae_based_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
                                                  con=con)
 
@@ -149,60 +140,9 @@ def refresh_base_case_and_outlier_downsides():
         print('Restored Downside formulae state to previous...!')
 
     # Post to Slack
-    slack_message('navinspector.slack', {'impacts': 'Base Case and Outlier Downsides refreshed...'})
-
-
-
-# Following NAV Impacts Utilities
-def calculate_pl_base_case(row):
-    if row['SecType'] != 'EXCHOPT':
-        return (row['PM_BASE_CASE'] * row['FxFactor'] * row['QTY']) - (row['CurrMktVal'])
-    else:
-        if row['PutCall'] == 'CALL':
-            if row['StrikePrice'] <= row['PM_BASE_CASE']:
-                x = (row['PM_BASE_CASE'] - row['StrikePrice']) * (row['QTY']) * row['FxFactor']
-            else:
-                x = 0
-        elif row['PutCall'] == 'PUT':
-            if row['StrikePrice'] >= row['PM_BASE_CASE']:
-                x = (row['StrikePrice'] - row['PM_BASE_CASE']) * (row['QTY']) * row['FxFactor']
-            else:
-                x = 0
-        return -row['CurrMktVal'] + x
-
-
-def calculate_base_case_nav_impact(row):
-    return ((row['PL_BASE_CASE'] / row['NAV']) * 100)
-
-
-def calculate_outlier_pl(row):
-    if row['SecType'] != 'EXCHOPT':
-        return (row['Outlier'] * row['FxFactor'] * row['QTY']) - (row['CurrMktVal'])
-    else:
-        if row['PutCall'] == 'CALL':
-            if row['StrikePrice'] <= row['Outlier']:
-                x = (row['Outlier'] - row['StrikePrice']) * (row['QTY']) * row['FxFactor']
-            else:
-                x = 0
-        elif row['PutCall'] == 'PUT':
-            if row['StrikePrice'] >= row['Outlier']:
-                x = (row['StrikePrice'] - row['Outlier']) * row['QTY'] * row['FxFactor']
-            else:
-                x = 0
-
-        return -row['CurrMktVal'] + x
-
-
-def calculate_outlier_nav_impact(row):
-    return ((row['OUTLIER_PL'] / row['NAV']) * 100)
-
-
-
-@shared_task
-def refresh_nav_impacts():
-    """ This Task should run every 20 minutes to show the updated NAV Impacts... """
+    slack_message('navinspector.slack', {'impacts': 'Base Case and Outlier Downsides refreshed...Working on NAV Impacts'})
     try:
-        api_host = bbgclient.get_next_available_host()
+        api_host = bbgclient.bbgclient.get_next_available_host()
         # Populate all the deals
         nav_impacts_positions_df = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=connection)
         # Drop the Last Price
@@ -225,7 +165,7 @@ def refresh_nav_impacts():
         options_df = nav_impacts_positions_df[nav_impacts_positions_df['SecType'] == 'EXCHOPT']
         all_unique_tickers = options_df['Ticker'].apply(lambda x: x+ " EQUITY").unique()
 
-        options_live_price_df = pd.DataFrame.from_dict(bbgclient.get_secid2field(all_unique_tickers, 'tickers', ['PX_LAST'], req_type='refdata',api_host=api_host), orient='index').reset_index()
+        options_live_price_df = pd.DataFrame.from_dict(bbgclient.bbgclient.get_secid2field(all_unique_tickers, 'tickers', ['PX_LAST'], req_type='refdata',api_host=api_host), orient='index').reset_index()
         options_live_price_df['PX_LAST'] = options_live_price_df['PX_LAST'].apply(lambda x: x[0])
         options_live_price_df.columns = ['Ticker', 'OptionLastPrice']
 
@@ -296,6 +236,7 @@ def refresh_nav_impacts():
         nav_impacts_sum_df.reset_index(inplace=True)
 
         DailyNAVImpacts.objects.all().delete()
+        time.sleep(4)
 
         nav_impacts_sum_df.to_sql(con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
                                   schema='test_wic_db')
@@ -324,7 +265,7 @@ def refresh_nav_impacts():
         nav_impacts_positions_df.reset_index(inplace=True)
         nav_impacts_positions_df['CALCULATED_ON'] = datetime.datetime.now()
         PositionLevelNAVImpacts.objects.all().delete()
-
+        time.sleep(4)
         nav_impacts_positions_df.to_sql(name='risk_reporting_positionlevelnavimpacts', con=settings.SQLALCHEMY_CONNECTION,
                                         if_exists='append', index=False, schema='test_wic_db')
 
@@ -338,3 +279,48 @@ def refresh_nav_impacts():
                           channel='realtimenavimpacts',
                           token=settings.SLACK_TOKEN,
                           name='ESS_IDEA_DB_ERROR_INSPECTOR')
+
+
+
+# Following NAV Impacts Utilities
+def calculate_pl_base_case(row):
+    if row['SecType'] != 'EXCHOPT':
+        return (row['PM_BASE_CASE'] * row['FxFactor'] * row['QTY']) - (row['CurrMktVal'])
+    else:
+        if row['PutCall'] == 'CALL':
+            if row['StrikePrice'] <= row['PM_BASE_CASE']:
+                x = (row['PM_BASE_CASE'] - row['StrikePrice']) * (row['QTY']) * row['FxFactor']
+            else:
+                x = 0
+        elif row['PutCall'] == 'PUT':
+            if row['StrikePrice'] >= row['PM_BASE_CASE']:
+                x = (row['StrikePrice'] - row['PM_BASE_CASE']) * (row['QTY']) * row['FxFactor']
+            else:
+                x = 0
+        return -row['CurrMktVal'] + x
+
+
+def calculate_base_case_nav_impact(row):
+    return ((row['PL_BASE_CASE'] / row['NAV']) * 100)
+
+
+def calculate_outlier_pl(row):
+    if row['SecType'] != 'EXCHOPT':
+        return (row['Outlier'] * row['FxFactor'] * row['QTY']) - (row['CurrMktVal'])
+    else:
+        if row['PutCall'] == 'CALL':
+            if row['StrikePrice'] <= row['Outlier']:
+                x = (row['Outlier'] - row['StrikePrice']) * (row['QTY']) * row['FxFactor']
+            else:
+                x = 0
+        elif row['PutCall'] == 'PUT':
+            if row['StrikePrice'] >= row['Outlier']:
+                x = (row['StrikePrice'] - row['Outlier']) * row['QTY'] * row['FxFactor']
+            else:
+                x = 0
+
+        return -row['CurrMktVal'] + x
+
+
+def calculate_outlier_nav_impact(row):
+    return ((row['OUTLIER_PL'] / row['NAV']) * 100)
