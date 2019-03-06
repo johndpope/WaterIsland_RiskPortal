@@ -3,7 +3,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 import django
 django.setup()
 from celery import shared_task
-from django.db import connection
 import pandas as pd
 from risk_reporting.models import ArbNAVImpacts, DailyNAVImpacts, PositionLevelNAVImpacts
 from bbgclient import bbgclient
@@ -12,7 +11,7 @@ import numpy as np
 from tabulate import tabulate
 api_host = bbgclient.get_next_available_host()
 from django.conf import settings
-from sqlalchemy.exc import OperationalError
+from sqlalchemy import create_engine
 import time
 import datetime
 
@@ -20,10 +19,13 @@ import datetime
 @shared_task
 def refresh_base_case_and_outlier_downsides():
     ''' Refreshes the base case and outlier downsides every 20 minutes for dynamically linked downsides '''
-    import pandas as pd
     import bbgclient
+    # Create new Engine and Close Connections here
+    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD
+                       + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
 
-    con = settings.SQLALCHEMY_CONNECTION
+    con = engine.connect()
+
     formulae_based_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
                                                  con=con)
 
@@ -144,18 +146,18 @@ def refresh_base_case_and_outlier_downsides():
     try:
         api_host = bbgclient.bbgclient.get_next_available_host()
         # Populate all the deals
-        nav_impacts_positions_df = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=connection)
+        nav_impacts_positions_df = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=con)
         # Drop the Last Price
         time.sleep(2)
         nav_impacts_positions_df.drop(columns=['LastPrice'], inplace=True)
 
-        ytd_performances = pd.read_sql_query('SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance', con=connection)
+        ytd_performances = pd.read_sql_query('SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance', con=con)
         time.sleep(1)
         ytd_performances.columns = ['TradeGroup', 'FundCode', 'PnL_BPS']
         # Convert Underlying Ticker to format Ticker Equity
         nav_impacts_positions_df['Underlying'] = nav_impacts_positions_df['Underlying'].apply(lambda x: x + " EQUITY" if "EQUITY" not in x else x)
         forumale_linked_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
-                                                      con=connection)
+                                                      con=con)
         time.sleep(2)
         forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'base_case', 'outlier',
                                                                'LastUpdate', 'LastPrice']]
@@ -238,7 +240,7 @@ def refresh_base_case_and_outlier_downsides():
         DailyNAVImpacts.objects.all().delete()
         time.sleep(4)
 
-        nav_impacts_sum_df.to_sql(con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
+        nav_impacts_sum_df.to_sql(con=con, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
                                   schema='test_wic_db')
 
         impacts = DailyNAVImpacts.objects.all()
@@ -266,7 +268,7 @@ def refresh_base_case_and_outlier_downsides():
         nav_impacts_positions_df['CALCULATED_ON'] = datetime.datetime.now()
         PositionLevelNAVImpacts.objects.all().delete()
         time.sleep(4)
-        nav_impacts_positions_df.to_sql(name='risk_reporting_positionlevelnavimpacts', con=settings.SQLALCHEMY_CONNECTION,
+        nav_impacts_positions_df.to_sql(name='risk_reporting_positionlevelnavimpacts', con=con,
                                         if_exists='append', index=False, schema='test_wic_db')
 
         slack_message('generic.slack', {'message': 'NAV Impacts refreshed with Latest Prices'},
@@ -280,6 +282,7 @@ def refresh_base_case_and_outlier_downsides():
                           token=settings.SLACK_TOKEN,
                           name='ESS_IDEA_DB_ERROR_INSPECTOR')
 
+    con.close()
 
 
 # Following NAV Impacts Utilities
