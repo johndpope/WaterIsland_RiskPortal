@@ -59,10 +59,6 @@ CELERYBEAT_SCHEDULE = {
         'task': 'risk_reporting.tasks.refresh_base_case_and_outlier_downsides',
         'schedule': crontab(minute="*/11", hour='9-16', day_of_week='mon-fri'),  # Execute 20 min
     },
-    'ARB_NAV_IMPACTS_REFRESH': {
-        'task': 'risk_reporting.tasks.refresh_nav_impacts',
-        'schedule': crontab(minute="*/13", hour='9-16', day_of_week='mon-fri'),
-    }
 
 }
 
