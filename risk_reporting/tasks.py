@@ -46,6 +46,24 @@ def refresh_base_case_and_outlier_downsides():
         return row['PX_LAST']
 
     live_price_df['PX_LAST'] = live_price_df.apply(adjust_for_london_stock, axis=1)
+
+    def fill_null_prices(row):
+        # Fill Null prices from Flat File Database
+        if row['PX_LAST'] == 'None' or pd.isnull(row['PX_LAST']):
+            ticker = ' '.join(row['Underlying'].split(' ')[0:2])  # remove 'Equity' part for flat file matching
+            # retrieve Last price from db
+            query = 'SELECT Price FROM wic.daily_flat_file_db where Flat_file_as_of = (select max(flat_file_as_of) ' \
+                    'from wic.daily_flat_file_db) and Ticker like "'+ticker+'" LIMIT 1;'
+            rs = con.execute(query)
+            last_price = 0
+            for price in rs:
+                last_price = price[0]
+
+            return last_price
+
+        return row['PX_LAST']
+
+    live_price_df['PX_LAST'] = live_price_df.apply(fill_null_prices, axis=1)
     # Merge Live Price Df
     formulae_based_downsides = pd.merge(formulae_based_downsides, live_price_df, how='left', on=['Underlying'])
 
@@ -208,6 +226,7 @@ def refresh_base_case_and_outlier_downsides():
         nav_impacts_positions_df['OUTLIER_PL'] = nav_impacts_positions_df.apply(calculate_outlier_pl, axis=1)
         nav_impacts_positions_df['OUTLIER_NAV_IMPACT'] = nav_impacts_positions_df.apply(calculate_outlier_nav_impact,
                                                                                          axis=1)
+
         def adjust_with_ytd_performance(row, compare_to):
             if row['PnL_BPS'] < 0:
                 return row[compare_to] + row['PnL_BPS']
@@ -288,7 +307,7 @@ def refresh_base_case_and_outlier_downsides():
 # Following NAV Impacts Utilities
 def calculate_pl_base_case(row):
     if row['SecType'] != 'EXCHOPT':
-        return (row['PM_BASE_CASE'] * row['FxFactor'] * row['QTY']) - (row['CurrMktVal'])
+        return (row['PM_BASE_CASE'] * row['FxFactor'] * row['QTY']) - (row['CurrMktVal'] * row['FxFactor'])
     else:
         if row['PutCall'] == 'CALL':
             if row['StrikePrice'] <= row['PM_BASE_CASE']:
@@ -309,7 +328,7 @@ def calculate_base_case_nav_impact(row):
 
 def calculate_outlier_pl(row):
     if row['SecType'] != 'EXCHOPT':
-        return (row['Outlier'] * row['FxFactor'] * row['QTY']) - (row['CurrMktVal'])
+        return (row['Outlier'] * row['FxFactor'] * row['QTY']) - (row['CurrMktVal']* row['FxFactor'])
     else:
         if row['PutCall'] == 'CALL':
             if row['StrikePrice'] <= row['Outlier']:
