@@ -13,12 +13,21 @@ $(document).ready(function () {
             buttons: [{
                 extend: 'print',
                 text: '<i class="fa fa-print"></i> Print',
-                title: '',
+                title:'NAV Impacts (Synced on): ' + $('#sync').val(),
+                customize: function ( win ) {
+                    $(win.document.body)
+                        .css( 'font-size', '10pt' )
+                        .prepend(
+                            '<p> Water Island Capital, Risk Portal</p>'
+                        );
+
+                    $(win.document.body).find( 'table' )
+                        .addClass( 'compact' )
+                        .css( 'font-size', 'inherit' );
+                    var medias = win.document.querySelectorAll('[media="screen"]');
+                    for(var i=0; i < medias.length;i++){ medias.item(i).media="all" };
+                },
                 autoPrint: true,
-                exportOptions: {
-                    columns: ':visible',
-                    stripHtml: false
-                }
             }, {
                 extend: 'copy',
                 text: '<i class="fa fa-copy"></i> Copy',
