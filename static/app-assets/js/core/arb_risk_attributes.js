@@ -13,19 +13,20 @@ $(document).ready(function () {
             buttons: [{
                 extend: 'print',
                 text: '<i class="fa fa-print"></i> Print',
-                title:'NAV Impacts (Synced on): ' + $('#sync').val(),
-                customize: function ( win ) {
+                title: 'NAV Impacts (Synced on): ' + $('#sync').val(),
+                exportOptions: {
+                    stripHtml: false
+                },
+                customize: function (win) {
                     $(win.document.body)
-                        .css( 'font-size', '10pt' )
+                        .css('font-size', '10pt')
                         .prepend(
                             '<p> Water Island Capital, Risk Portal</p>'
                         );
 
-                    $(win.document.body).find( 'table' )
-                        .addClass( 'compact' )
-                        .css( 'font-size', 'inherit' );
-                    var medias = win.document.querySelectorAll('[media="screen"]');
-                    for(var i=0; i < medias.length;i++){ medias.item(i).media="all" };
+                    $(win.document.body).find('table')
+                        .addClass('compact')
+                        .css('font-size', 'inherit');
                 },
                 autoPrint: true,
             }, {
@@ -181,17 +182,16 @@ $(document).ready(function () {
             '<th>Strategy</th>' + '<th>Ticker</th>' + '<th>BaseCase</th>' + '<th>Outlier</th>' + '<th>ARB(BCase)</th>' +
             '<th>MACO(Bcase)</th>' + '<th>MALT(BCase)</th>' + '<th>AED(BCase)</th>' + '<th>CAM(BCase)</th>' + '<th>LG(BCase)</th>' + '<th>LEV(BCase)</th>'
             + '<th>ARB(Outlier)</th>' +
-            '<th>MACO(Outlier)</th>' + '<th>MALT(Outlier)</th>' + '<th>AED(Outlier)</th>' + '<th>CAM(Outlier)</th>' + '<th>LG(Outlier)</th>' +  '<th>LEV(Outlier)</th>' +
+            '<th>MACO(Outlier)</th>' + '<th>MALT(Outlier)</th>' + '<th>AED(Outlier)</th>' + '<th>CAM(Outlier)</th>' + '<th>LG(Outlier)</th>' + '<th>LEV(Outlier)</th>' +
             '</tr>' +
-            '</thead>'+'<tbody>' + return_rows +
-            '</tbody>'+
+            '</thead>' + '<tbody>' + return_rows +
+            '</tbody>' +
 
-        '</table></div>';
+            '</table></div>';
     }
 
     setInterval(function () {
-        nav_impacts_table.ajax.reload(null, true);
-        console.log('Requesting Updated P&L..');
+        window.location.reload();
     }, 1200000); // Every 20 Minutes
 
     $('#arb_risk_attributes_table tbody').on('click', 'td.details-control', function () {

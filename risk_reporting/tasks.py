@@ -4,7 +4,7 @@ import django
 django.setup()
 from celery import shared_task
 import pandas as pd
-from risk_reporting.models import ArbNAVImpacts, DailyNAVImpacts, PositionLevelNAVImpacts
+from risk_reporting.models import ArbNAVImpacts, DailyNAVImpacts, PositionLevelNAVImpacts, FormulaeBasedDownsides
 from bbgclient import bbgclient
 from django_slack import slack_message
 import numpy as np
@@ -147,8 +147,8 @@ def refresh_base_case_and_outlier_downsides():
     old_formulaes = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides', con=con)
     # Base Case and Outliers are now updated! Delete the old table and insert new ones
     try:
-        con.execute('TRUNCATE TABLE test_wic_db.risk_reporting_formulaebaseddownsides')
-        time.sleep(1)
+        FormulaeBasedDownsides.objects.all().delete()
+        time.sleep(2)
         formulae_based_downsides.to_sql(name='risk_reporting_formulaebaseddownsides', con=con, if_exists='append',
                                         index=False, schema='test_wic_db')
         print('Refreshed Base Case and Outlier Downsides successfully...')
