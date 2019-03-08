@@ -14,8 +14,9 @@ from django.conf import settings
 from django_slack import slack_message
 from django.db.models import Max
 import bbgclient
-# Following NAV Impacts Utilities
 
+
+# Following NAV Impacts Utilities
 
 
 def calculate_pl_base_case(row):
@@ -104,14 +105,15 @@ def deal_info_download(request):
     deal_level['Catalyst Type'] = ''
 
     deal_level = deal_level[['Deal', 'Analyst', 'BBG Event ID', 'Catalyst Rating', 'Closing Date', 'Deal Cash Terms',
-                            'Deal Downside', 'Deal Stock Terms', 'Deal Upside', 'Expected Acquirer Dividends',
-                            'Expected Target Dividends', 'Number of Acquirer Dividends', 'Number of Target Dividends',
-                            'Risk Limit','Strategy Type', 'Tradegroup Bucket', 'AED Weight', 'ARB Weight', 'CAM Weight',
-                            'LEV Weight', 'LG Weight', 'TACO Weight', 'TAQ Weight', 'WED Weight', 'WIC Weight',
-                            'MACO Weight', 'MALT Weight', 'Catalyst Type']]
+                             'Deal Downside', 'Deal Stock Terms', 'Deal Upside', 'Expected Acquirer Dividends',
+                             'Expected Target Dividends', 'Number of Acquirer Dividends', 'Number of Target Dividends',
+                             'Risk Limit', 'Strategy Type', 'Tradegroup Bucket', 'AED Weight', 'ARB Weight',
+                             'CAM Weight',
+                             'LEV Weight', 'LG Weight', 'TACO Weight', 'TAQ Weight', 'WED Weight', 'WIC Weight',
+                             'MACO Weight', 'MALT Weight', 'Catalyst Type']]
 
     # Add % sign to Risk Limit
-    deal_level['Risk Limit'] = deal_level['Risk Limit'].apply(lambda x: str(x)+"%")
+    deal_level['Risk Limit'] = deal_level['Risk Limit'].apply(lambda x: str(x) + "%")
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename=DealInfo.csv'
     deal_level.to_csv(path_or_buf=response, index=False)
@@ -120,12 +122,13 @@ def deal_info_download(request):
 
 
 def security_info_download(request):
-
     # Get the Deal Level and Security Level files in the required format.
-    position_level = pd.DataFrame.from_records(FormulaeBasedDownsides.objects.filter(IsExcluded__contains='No', base_case__isnull=False, outlier__isnull=False).
-                                               values('TradeGroup', 'Underlying', 'outlier', 'base_case'))
+    position_level = pd.DataFrame.from_records(
+        FormulaeBasedDownsides.objects.filter(IsExcluded__contains='No', base_case__isnull=False,
+                                              outlier__isnull=False).
+        values('TradeGroup', 'Underlying', 'outlier', 'base_case'))
     # Rename columns
-    position_level.rename(columns={'TradeGroup':'Deal', 'Underlying': 'Security', 'outlier':'Outliers',
+    position_level.rename(columns={'TradeGroup': 'Deal', 'Underlying': 'Security', 'outlier': 'Outliers',
                                    'base_case': 'PM Base Case'}, inplace=True)
 
     position_level['Security'] = position_level['Security'].apply(lambda x: ' '.join(x.split(' ')[0:2]))
@@ -140,7 +143,7 @@ def security_info_download(request):
 
     # Rearrange columns
     position_level = position_level[['Deal', 'Security', 'Alternate Ticker', 'Outliers', 'PM Base Case', 'Rebate Rate',
-                              'Price', 'Adj_CR_01', 'CR_01', 'DV01', 'Beta']]
+                                     'Price', 'Adj_CR_01', 'CR_01', 'DV01', 'Beta']]
     # This should be named SecurityInfo.csv
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename=SecurityInfo.csv'
@@ -151,14 +154,16 @@ def security_info_download(request):
 def merger_arb_risk_attributes(request):
     """ View to Populate the Risk attributes for the Arbitrage Fund """
 
-    ytd_performances = pd.read_sql_query('SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance', con=connection)
+    ytd_performances = pd.read_sql_query(
+        'SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance',
+        con=connection)
     ytd_performances.columns = ['TradeGroup', 'FundCode', 'PnL_BPS']
 
     forumale_linked_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
                                                   con=connection)
 
     forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'base_case', 'outlier',
-                                                               'LastUpdate', 'LastPrice']]
+                                                           'LastUpdate', 'LastPrice']]
 
     negative_pnl_accounted = True
     if len(ytd_performances) == 0:
@@ -168,17 +173,35 @@ def merger_arb_risk_attributes(request):
 
     impacts_df = pd.DataFrame.from_records(DailyNAVImpacts.objects.all().values())
     impacts_df['LastUpdate'] = None
+
     def get_last_update_downside(row):
-        return forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']]['LastUpdate'].max()
+        return forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']][
+            'LastUpdate'].max()
+
     impacts_df['LastUpdate'] = impacts_df.apply(get_last_update_downside, axis=1)
+
     nav_impacts_positions_df = pd.DataFrame.from_records(PositionLevelNAVImpacts.objects.all().values())
+
+    ytd_performances = pd.pivot_table(ytd_performances, index=['TradeGroup'], columns=['FundCode'],
+                                      aggfunc=np.sum,
+                                      fill_value='')
+
+    ytd_performances.columns = ["_".join((i, j)) for i, j in ytd_performances.columns]
+    ytd_performances.reset_index(inplace=True)
+    floats = ['TradeGroup', 'PnL_BPS_ARB', 'PnL_BPS_MACO', 'PnL_BPS_MALT', 'PnL_BPS_AED',
+                                         'PnL_BPS_CAM', 'PnL_BPS_LG', 'PnL_BPS_LEV']
+    ytd_performances = ytd_performances[floats].fillna(0)
+    ytd_performances = ytd_performances.applymap(lambda x: round(x, 2) if isinstance(x, (int, float)) else x)
+
     if request.is_ajax():
         return_data = {'data': impacts_df.to_json(orient='records'),
-                       'positions':nav_impacts_positions_df.to_json(orient='records')}
+                       'positions': nav_impacts_positions_df.to_json(orient='records'),
+                       'ytd_pnl': ytd_performances.to_json(orient='records')}
         return HttpResponse(json.dumps(return_data), content_type='application/json')
 
-    return render(request, 'risk_attributes.html', context={'negative_pnl_accounted':negative_pnl_accounted,
-                                                            'last_calculated_on':last_calculated_on})
+    return render(request, 'risk_attributes.html', context={'negative_pnl_accounted': negative_pnl_accounted,
+                                                            'last_calculated_on': last_calculated_on})
+
 
 # The following should run in a scheduled job. Over here just get values from DB and render to the Front end...
 
@@ -232,7 +255,7 @@ def merger_arb_nav_impacts(request):
     nav_impacts_positions_df['OUTLIER_PL'] = nav_impacts_positions_df.apply(calculate_outlier_pl, axis=1)
     nav_impacts_positions_df['OUTLIER_NAV_IMPACT'] = nav_impacts_positions_df.apply(calculate_outlier_nav_impact,
                                                                                     axis=1)
-    nav_impacts_positions_df.rename(columns={'TG': 'TradeGroup'}, inplace=True) # Rename to TradeGroup
+    nav_impacts_positions_df.rename(columns={'TG': 'TradeGroup'}, inplace=True)  # Rename to TradeGroup
     # Sum Impacts of Individual Securities for Impacts @ TradeGroup level...
     nav_impacts_positions_df = nav_impacts_positions_df.round({'BASE_CASE_NAV_IMPACT': 2, 'OUTLIER_NAV_IMPACT': 2})
     nav_impacts_sum_df = nav_impacts_positions_df.groupby(['TradeGroup', 'FundCode', 'PM_BASE_CASE', 'RiskLimit']).agg(
@@ -244,10 +267,11 @@ def merger_arb_nav_impacts(request):
     nav_impacts_sum_df.columns = ["_".join((i, j)) for i, j in nav_impacts_sum_df.columns]
     nav_impacts_sum_df.reset_index(inplace=True)
 
-    nav_impacts_sum_df.to_sql(con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
+    nav_impacts_sum_df.to_sql(con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False,
+                              name='risk_reporting_dailynavimpacts',
                               schema='test_wic_db')
     return render(request, 'merger_arb_nav_impacts.html', context={'impacts':
-                                                                   nav_impacts_sum_df.to_json(orient='index')})
+                                                                       nav_impacts_sum_df.to_json(orient='index')})
 
 
 def formula_based_downsides(request):
@@ -287,6 +311,7 @@ def update_downside_formulae(request):
             obj = FormulaeBasedDownsides.objects.get(id=id)
             old_base_case_downside = obj.base_case
             old_outlier = obj.outlier
+            old_risk_limit = obj.RiskLimit
             obj.IsExcluded = is_excluded
             obj.RiskLimit = risk_limit
             obj.BaseCaseDownsideType = base_case_downside_type
@@ -315,11 +340,12 @@ def update_downside_formulae(request):
                 ip_addr = client_ip
 
             slack_message('portal_downsides.slack',
-                          {'downsides': 'Downside Updated for '+str(obj.TradeGroup)+' Underlying:'+obj.Underlying+
-                                        ' Old Base Case->' + str(old_base_case_downside)+' Updated to ->' +
-                                        str(obj.base_case)+' Old Outlier->' + str(old_outlier)+ ' Updated to ->' +
-                                        str(obj.outlier),
-                           'IP':str(ip_addr)},
+                          {'updated_deal': str(obj.TradeGroup),
+                           'underlying_security': obj.Underlying,
+                           'risk_limit': str(old_risk_limit) + " -> " + str(obj.RiskLimit),
+                           'base_case': str(old_base_case_downside) + " -> " + str(obj.base_case),
+                           'outlier': str(old_outlier) + " -> " + str(obj.outlier),
+                           'IP': str(ip_addr)},
                           channel='portal_downsides',
                           token=settings.SLACK_TOKEN,
                           name='PORTAL DOWNSIDE UPDATE AGENT')

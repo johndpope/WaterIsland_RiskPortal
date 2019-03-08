@@ -20,6 +20,7 @@
     <input type="hidden" value="{{ upside_downside_records_df }}" id="upside_downside_records_df">
     {#            Balance Sheet Modal        #}
     <!-- Modal -->
+    {% csrf_token %}
     <div class="modal modal-xl fade" id="balance_sheet_modal" tabindex="-1" role="dialog"
          aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
         <div class="modal-xl modal-dialog modal-dialog-centered " role="document">
