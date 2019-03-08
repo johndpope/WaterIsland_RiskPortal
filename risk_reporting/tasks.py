@@ -1,4 +1,5 @@
 import os
+import sys
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 import django
 django.setup()
@@ -30,6 +31,7 @@ def refresh_base_case_and_outlier_downsides():
                                                  con=con)
 
     time.sleep(3)
+
     # Update the Last Prices of Each Deal
     api_host = bbgclient.bbgclient.get_next_available_host()
     # formulae_based_downsides['Underlying'] = formulae_based_downsides['Underlying'].apply(lambda x: ' '.join(x.split(' ')[:2]))
@@ -177,6 +179,8 @@ def refresh_base_case_and_outlier_downsides():
         forumale_linked_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
                                                       con=con)
         time.sleep(2)
+        # Filter IsExcluded ones
+        forumale_linked_downsides = forumale_linked_downsides[forumale_linked_downsides['IsExcluded'] == 'No']
         forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'base_case', 'outlier',
                                                                'LastUpdate', 'LastPrice']]
 
@@ -296,7 +300,8 @@ def refresh_base_case_and_outlier_downsides():
                           name='ESS_IDEA_DB_ERROR_INSPECTOR')
     except Exception as e:
         print(e)
-        slack_message('generic.slack', {'message': 'ERROR: ' + str(e)},
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        slack_message('generic.slack', {'message': 'ERROR: ' + str(e)+' : ' + str(exc_type)+' : ' + str(exc_tb.tb_lineno)},
                           channel='realtimenavimpacts',
                           token=settings.SLACK_TOKEN,
                           name='ESS_IDEA_DB_ERROR_INSPECTOR')
