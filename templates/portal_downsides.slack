@@ -2,5 +2,9 @@
 
 {% block text %}
     FROM IP: {{ IP }}
-   {{ downsides }}
+    Downside Updated for  {{ updated_deal }}
+    Underlying Security: {{ underlying_security }}
+    Risk Limit: {{ risk_limit }}
+    Base Case: {{ base_case }}
+    Outlier: {{ outlier }}
 {% endblock %}

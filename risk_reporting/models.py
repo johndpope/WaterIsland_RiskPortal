@@ -116,6 +116,7 @@ class PositionLevelNAVImpacts(models.Model):
     Ticker = models.CharField(max_length=200)
     PM_BASE_CASE = models.FloatField(null=True)
     Outlier = models.FloatField(null=True)
+    LastPrice = models.FloatField(null=True)
     BASE_CASE_NAV_IMPACT_AED = models.FloatField(null=True)
     BASE_CASE_NAV_IMPACT_ARB = models.FloatField(null=True)
     BASE_CASE_NAV_IMPACT_CAM = models.FloatField(null=True)

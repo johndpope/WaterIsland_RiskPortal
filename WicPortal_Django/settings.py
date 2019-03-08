@@ -66,7 +66,14 @@ CELERYBEAT_SCHEDULE = {
         'task': 'risk_reporting.tasks.refresh_base_case_and_outlier_downsides',
         'schedule': crontab(minute="*/11", hour='9-16', day_of_week='mon-fri'),  # Execute 20 min
     },
-
+    'EMAIL_NAV_IMPACTS_REPORT': {
+        'task': 'risk_reporting.tasks.email_nav_impacts_report',
+        'schedule': crontab(minute="45", hour='6', day_of_week='mon-fri'),  # Execute weekdays morning at 6.40am
+    },
+    'EMAIL_DAILY_FORMULAE_LINKED_DOWNSIDES': {
+        'task': 'risk_reporting.tasks.email_daily_formulae_linked_downsides',
+        'schedule': crontab(minute="45", hour='17', day_of_week='mon-fri'),  # Execute weekdays morning at 6.40am
+    }
 }
 
 BROKER_POOL_LIMIT = 0

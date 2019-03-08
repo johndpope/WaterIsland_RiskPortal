@@ -1,5 +1,6 @@
 $(document).ready(function () {
     let position_level_impacts = null;
+    let ytd_performances = null;
     let nav_impacts_table = $('#arb_risk_attributes_table').DataTable({
         "language": {
             "processing": "Getting Real-time NAV Impacts"
@@ -15,7 +16,8 @@ $(document).ready(function () {
                 text: '<i class="fa fa-print"></i> Print',
                 title: 'NAV Impacts (Synced on): ' + $('#sync').val(),
                 exportOptions: {
-                    stripHtml: false
+                    stripHtml: false,
+                    columns: [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 ]
                 },
                 customize: function (win) {
                     $(win.document.body)
@@ -27,6 +29,22 @@ $(document).ready(function () {
                     $(win.document.body).find('table')
                         .addClass('compact')
                         .css('font-size', 'inherit');
+
+                    var css = '@page { size: landscape; }',
+                        head = win.document.head || win.document.getElementsByTagName('head')[0],
+                        style = win.document.createElement('style');
+
+                    style.type = 'text/css';
+                    style.media = 'print';
+
+                    if (style.styleSheet) {
+                        style.styleSheet.cssText = css;
+                    }
+                    else {
+                        style.appendChild(win.document.createTextNode(css));
+                    }
+
+                    head.appendChild(style);
                 },
                 autoPrint: true,
             }, {
@@ -57,6 +75,7 @@ $(document).ready(function () {
             dataSrc: function (json) {
                 let obj = JSON.parse(json["data"]);
                 position_level_impacts = JSON.parse(json["positions"]);
+                ytd_performances = JSON.parse(json["ytd_pnl"]);
                 return obj;
             }
         },
@@ -154,6 +173,7 @@ $(document).ready(function () {
                 return_rows += '<tr>' +
                     '<td>' + position_level_impacts[i]['TradeGroup'] + '</td>' +
                     '<td>' + position_level_impacts[i]['Ticker'] + '</td>' +
+                    '<td>' + position_level_impacts[i]['LastPrice'] + '</td>' +
                     '<td>' + position_level_impacts[i]['PM_BASE_CASE'] + '</td>' +
                     '<td>' + position_level_impacts[i]['Outlier'] + '</td>' +
                     '<td>' + position_level_impacts[i]['BASE_CASE_NAV_IMPACT_ARB'] + '</td>' +
@@ -174,12 +194,39 @@ $(document).ready(function () {
             }
         }
 
+        for (var j=0;j<ytd_performances.length;j++){
+            if (ytd_performances[j]['TradeGroup'] === tradegroup) {
+                // Return corresponding rows
+                return_rows += '<tr>' +
+                    '<td class="bg-warning">' + ytd_performances[j]['TradeGroup'] + '</td>' +
+                    '<td class="bg-warning">YTD P&L -></td>' +
+                    '<td>-</td>' +
+                    '<td>-</td>' +
+                    '<td>-</td>' +
+                    '<td>' + ytd_performances[j]['PnL_BPS_ARB'] + '</td>' +
+                    '<td>' + ytd_performances[j]['PnL_BPS_MACO'] + '</td>' +
+                    '<td>' + ytd_performances[j]['PnL_BPS_MALT'] + '</td>' +
+                    '<td>' + ytd_performances[j]['PnL_BPS_AED'] + '</td>' +
+                    '<td>' + ytd_performances[j]['PnL_BPS_CAM'] + '</td>' +
+                    '<td>' + ytd_performances[j]['PnL_BPS_LG'] + '</td>' +
+                    '<td>' + ytd_performances[j]['PnL_BPS_LEV'] + '</td>' +
+                    '<td>-</td>' +
+                    '<td>-</td>' +
+                    '<td>-</td>' +
+                    '<td>-</td>' +
+                    '<td>-</td>' +
+                    '<td>-</td>' +
+                    '<td>-</td>' +
+                    '</tr>'
+            }
+        }
+
 
         // `d` is the original data object for the row
         return '<div class="table-responsive" style="padding-left:6%"> <table class="table table-striped table-bordered" border="0">' +
             '<thead>' +
             '<tr>' +
-            '<th>Strategy</th>' + '<th>Ticker</th>' + '<th>BaseCase</th>' + '<th>Outlier</th>' + '<th>ARB(BCase)</th>' +
+            '<th>Strategy</th>' + '<th>Ticker</th>' + '<th>Last Price</th>' + '<th>BaseCase</th>' + '<th>Outlier</th>' + '<th>ARB(BCase)</th>' +
             '<th>MACO(Bcase)</th>' + '<th>MALT(BCase)</th>' + '<th>AED(BCase)</th>' + '<th>CAM(BCase)</th>' + '<th>LG(BCase)</th>' + '<th>LEV(BCase)</th>'
             + '<th>ARB(Outlier)</th>' +
             '<th>MACO(Outlier)</th>' + '<th>MALT(Outlier)</th>' + '<th>AED(Outlier)</th>' + '<th>CAM(Outlier)</th>' + '<th>LG(Outlier)</th>' + '<th>LEV(Outlier)</th>' +
