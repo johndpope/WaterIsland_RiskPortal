@@ -22,7 +22,7 @@ def send_email(from_addr, pswd, recipients, subject, from_email, html='', EXPORT
     msg = MIMEMultipart()
     msg['Subject'] = subject
     msg['From'] = from_email
-
+    msg['To'] = ', '.join(recipients)
     part1 = MIMEText(html, 'html')
     msg.attach(part1)
 
