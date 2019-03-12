@@ -5,6 +5,7 @@ import pandas as pd
 import json
 import numpy as np
 import statsmodels.formula.api as sm
+import ast
 
 
 def multiple_underlying_df(ticker, end_date_yyyymmdd, api_host, fperiod="1BF"):
@@ -13,10 +14,31 @@ def multiple_underlying_df(ticker, end_date_yyyymmdd, api_host, fperiod="1BF"):
     if type(end_date_yyyymmdd) == str:
         end_date_yyyymmdd = datetime.datetime.strptime(end_date_yyyymmdd, '%Y%m%d')
 
+    # def last_elem_or_null2(secid2mnemonic):
+    # try:
+    # secid = secid2mnemonic.keys()[0]
+    # mnemonic2value = secid2mnemonic[secid]
+    # mnemonic = mnemonic2value.keys()[0]
+    # values = mnemonic2value[mnemonic]
+    # return float(values[-1])
+    # except:
+    #   return None
     def last_elem_or_null(ts):
         if ts is None: return None
         if len(ts) == 0: return None
         return ts.iloc[-1]
+
+    # px = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['PX_LAST'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
+    # mkt_cap = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['CUR_MKT_CAP'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
+    # ev_component = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['CUR_EV_COMPONENT'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
+    # eqy_sh_out = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['EQY_SH_OUT'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
+    # best_ebitda = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_EBITDA'],start_date_yyyymmdd,end_date_yyyymmdd,{'BEST_FPERIOD_OVERRIDE':fperiod}, api_host=api_host))
+    # best_sales = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_SALES'],start_date_yyyymmdd,end_date_yyyymmdd,{'BEST_FPERIOD_OVERRIDE':fperiod}, api_host=api_host))
+    # best_eps = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_EPS'],start_date_yyyymmdd,end_date_yyyymmdd,{'BEST_FPERIOD_OVERRIDE':fperiod}, api_host=api_host))
+    # div_ind_yield = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['DIVIDEND_INDICATED_YIELD'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
+    # best_opp = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_OPP'],start_date_yyyymmdd,end_date_yyyymmdd, api_host=api_host))
+    # best_ni = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_NET_INCOME'],start_date_yyyymmdd,end_date_yyyymmdd,overrides_dict={'BEST_FPERIOD_OVERRIDE':fperiod},api_host=api_host))
+    # best_capex = last_elem_or_null2(bbgclient.bbgclient.get_secid2field([ticker],'tickers',['BEST_CAPEX'],start_date_yyyymmdd,end_date_yyyymmdd,api_host=api_host))
 
     px = last_elem_or_null(bbgclient.bbgclient.get_timeseries(ticker, 'PX_LAST', slicer.prev_n_business_days(100,
                                                                                                              end_date_yyyymmdd).strftime(
@@ -290,8 +312,13 @@ def metric2implied_px(alpha_ticker, peer_tickers, dt, metrics, api_host, metric2
             alpha_balance_sheet_df = alpha_mult_underlying_df[
                 alpha_mult_underlying_df['Date'] == dt.strftime('%Y-%m-%d')]
         else:
-            adjustments_df1 = adjustments_df.drop(columns='Date')
-            alpha_balance_sheet_df = alpha_mult_underlying_df.add(adjustments_df1, axis='columns')
+            adjustments = ast.literal_eval(adjustments_df)[0]
+            adjustments_df_new = pd.DataFrame.from_dict(adjustments, orient='index')
+            adjustments_df_new = adjustments_df_new.T
+            adjustments_df_new = adjustments_df_new.drop(columns='Date')
+            cols = adjustments_df_new.columns
+            adjustments_df_new[cols] = adjustments_df_new[cols].apply(pd.to_numeric)
+            alpha_balance_sheet_df = alpha_mult_underlying_df.add(adjustments_df_new, axis='columns')
         peer2mult = {p: peer2mult_df[p][metric].iloc[-1] for p in peer_tickers}
 
         stat_rel = metric2stat_rel[metric]
@@ -383,7 +410,13 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_ptd) for (m, mult) in
             zip(df['Metric'], df['Alpha Implied Multiple @ Price Target Date'])]
     else:
-        adjustments_df2 = adjustments_df_ptd.drop(columns='Date')
+        print(adjustments_df_ptd)
+        adjustments2 = ast.literal_eval(adjustments_df_ptd)[0]
+        adjustments_df2 = pd.DataFrame.from_dict(adjustments2, orient='index')
+        adjustments_df2 = adjustments_df2.T
+        adjustments_df2 = adjustments_df2.drop(columns='Date')
+        cols = adjustments_df2.columns
+        adjustments_df2[cols] = adjustments_df2[cols].apply(pd.to_numeric)
         alpha_balance_sheet_df_ptd_adj = alpha_balance_sheet_df_ptd.add(adjustments_df2, axis='columns')
         df['Alpha Balance Sheet DataFrame @ Price Target Date'] = [alpha_balance_sheet_df_ptd_adj] * len(df)
         df['Alpha Unaffected PX @ Price Target Date'] = [
@@ -403,7 +436,12 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
         df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_now) for
                                            (m, mult) in zip(df['Metric'], df['Alpha Implied Multiple @ Now'])]
     else:
-        adjustments_df1 = adjustments_df_now.drop(columns='Date')
+        adjustments1 = ast.literal_eval(adjustments_df_now)[0]
+        adjustments_df1 = pd.DataFrame.from_dict(adjustments1, orient='index')
+        adjustments_df1 = adjustments_df1.T
+        adjustments_df1 = adjustments_df1.drop(columns='Date')
+        cols = adjustments_df1.columns
+        adjustments_df1[cols] = adjustments_df1[cols].apply(pd.to_numeric)
         alpha_balance_sheet_df_now_adj = alpha_balance_sheet_df_now.add(adjustments_df1, axis='columns')
         df['Alpha Balance Sheet DataFrame @ Now'] = [alpha_balance_sheet_df_now_adj] * len(df)
         df['Alpha Unaffected PX @ Now'] = [compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_now_adj)
@@ -545,4 +583,3 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
     # df['Alpha Current Multiple'] = df['Metric'].apply(lambda m: metric2implied_now[m]['Alpha observed multiple'])
 
     return df
-

@@ -500,6 +500,7 @@ def email_nav_impacts_report():
         print('Error Occured....')
         print(e)
 
+
 @shared_task
 def email_daily_formulae_linked_downsides():
     """ Daily Formulae Reports run at 7pm """

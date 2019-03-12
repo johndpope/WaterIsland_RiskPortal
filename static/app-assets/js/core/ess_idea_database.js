@@ -38,8 +38,8 @@ $(document).ready(function () {
             targets: [9, 10], render: function (data) {
                 return moment(data).format('YYYY-MM-DD');
             }
-        },{
-            targets: [6,7,8], render: function (data) {
+        }, {
+            targets: [6, 7, 8], render: function (data) {
                 return parseFloat(data).toFixed(2);
             }
         }
@@ -395,36 +395,52 @@ $(document).ready(function () {
             processData: false,
             contentType: false,
             success: function (response) {
-                //Response will contain the Celery Task ID
-                toastr.success('All deal parameters are being calculated. Task delegated to Celery. Estimated time to complete: ' + (Math.random() * (2.50 - 3.50) + 2.50).toFixed(2) + "mins.", 'Deal is being saved!', {
-                    "showMethod": "slideDown",
-                    "hideMethod": "slideUp",
-                    timeOut: 7500,
-                    "positionClass": 'toast-top-full-width',
-                    "containerId": 'toast-top-full-width'
+                var block_ele = $('.content-body');
+                $(block_ele).block({
+                    message: '<div class="semibold"><span class="ft-refresh-cw icon-spin text-left"></span>&nbsp;Please wait while your deal calculation completes...Do not hit Refresh or press the Back button!!!</div>',
+                    fadeIn: 1000,
+                    fadeOut: 1000,
+                    timeout: 180000, //unblock after 3 minutes
+                    overlayCSS: {
+                        backgroundColor: '#fff',
+                        opacity: 0.8,
+                        cursor: 'wait'
+                    },
+                    css: {
+                        border: 0,
+                        padding: '10px 15px',
+                        color: '#fff',
+                        width: 'auto',
+                        backgroundColor: '#333'
+                    }
                 });
+
                 $('#ess_idea_new_deal_modal').modal('hide');
                 $('body').removeClass('modal-open');
                 $('.modal-backdrop').remove();
-                // Reset the News Submission Form
-                //$('#ess_new_deal_form')[0].reset();
 
-                // Reset the SummerNote
-                // $('#ess_bull_thesis').summernote('code', '');
-                // $('#ess_our_thesis').summernote('code', '');
-                // $('#ess_bear_thesis').summernote('code', '');
+                let task_id = response['task_id'];
+                let progress_url = "../../celeryprogressmonitor/get_celery_task_progress?task_id=" + task_id.toString();
+
+                function reload_page() {
+                    $(block_ele).unblock(); // Release the Lock
+                    swal("Success! The IDEA has been added. Please hit refresh!", {icon: "success"});
+                }
+
+                function display_error_message() {
+                    $(block_ele).unblock(); // Release the Lock
+                    swal("Error!", "Adding Deal Failed!. Please check the inputs", "error");
+                }
 
 
-                //Call Function after 90 seconds to check the status of the Task
-                celery_task_id = response;
-                var startTime = new Date().getTime();
-                var poll_interval = setTimeout(function () {
-                    if (new Date().getTime() - startTime > 120000) {
-                        clearInterval(poll_interval);
-                        return;
-                    }
-                    get_celery_status(celery_task_id);
-                }, 25000);
+                $(function () {
+                    CeleryProgressBar.initProgressBar(progress_url, {
+                        onSuccess: reload_page,
+                        onError: display_error_message,
+                        pollInterval:2000,
+
+                    })
+                });
             },
 
             error: function (response) {
@@ -499,7 +515,8 @@ $(document).ready(function () {
                     let bull_thesis_files = response['bull_thesis_files'];
                     let our_thesis_files = response['our_thesis_files'];
                     let bear_thesis_files = response['bear_thesis_files'];
-
+                    // clear the Ticker Hedge Table
+                    $('#ess_new_deal_form').trigger('reset');
                     console.log(deal_object);
                     let related_peers_length = response['related_peers'].length;
                     // Get all Required Fields

@@ -13,7 +13,8 @@ urlpatterns = [
     url('ess_idea_download_handler$', views.ess_idea_download_handler, name='ess_idea_download_handler'),
     url('get_ess_idea_celery_status$', views.get_celery_status, name='get_ess_idea_celery_status'),
     url('show_risk_factors(?P<deal_id>\w+)$', views.show_risk_factors,name='show_risk_factors'),
-    url('update_or_create_arb_risk_factors$', views.update_or_create_arb_risk_factors,name='update_or_create_arb_risk_factors'),
+    url('update_or_create_arb_risk_factors$', views.update_or_create_arb_risk_factors,
+        name='update_or_create_arb_risk_factors'),
     url('show_mna_idea$',views.show_mna_idea,name='show_mna_idea'),
     url('mna_idea_run_scenario_analysis$',views.mna_idea_run_scenario_analysis,name='mna_idea_run_scenario_analysis'),
     url('update_comments$',views.update_comments,name='update_comments'),
@@ -25,8 +26,10 @@ urlpatterns = [
     url('add_new_mna_idea_lawyer_report$',views.add_new_mna_idea_lawyer_report,name='add_new_mna_idea_lawyer_report'),
     url('update_mna_idea_lawyer_report$',views.update_mna_idea_lawyer_report,name='update_mna_idea_lawyer_report'),
     url('delete_mna_idea_lawyer_report$',views.delete_mna_idea_lawyer_report,name='delete_mna_idea_lawyer_report'),
-    url('add_or_update_mna_idea_weekly_downside_estimates$',views.add_or_update_mna_idea_weekly_downside_estimates,name='add_or_update_mna_idea_weekly_downside_estimates'),
-    url('mna_idea_historical_downside_estimate$',views.mna_idea_historical_downside_estimate,name = 'mna_idea_historical_downside_estimate'),
+    url('add_or_update_mna_idea_weekly_downside_estimates$',views.add_or_update_mna_idea_weekly_downside_estimates,
+        name='add_or_update_mna_idea_weekly_downside_estimates'),
+    url('mna_idea_historical_downside_estimate$',views.mna_idea_historical_downside_estimate,
+        name = 'mna_idea_historical_downside_estimate'),
     url('ess_idea_premium_analysis$',views.ess_idea_premium_analysis,name = 'ess_idea_premium_analysis'),
     url('calculate_mna_idea_deal_value$',views.calculate_mna_idea_deal_value,name = 'calculate_mna_idea_deal_value'),
     url('delete_mna_idea$',views.delete_mna_idea,name = 'delete_mna_idea'),
@@ -39,8 +42,8 @@ urlpatterns = [
     url('show_all_credit_deals$',views.show_all_credit_deals,name = 'show_all_credit_deals'),
     url('ess_idea_view_balance_sheet$',views.ess_idea_view_balance_sheet,name = 'ess_idea_view_balance_sheet'),
     url('ess_idea_save_balance_sheet$',views.ess_idea_save_balance_sheet,name = 'ess_idea_save_balance_sheet'),
-
-
+    url('get_premium_analysis_results_from_worker$',views.get_premium_analysis_results_from_worker,
+        name='get_premium_analysis_results_from_worker'),
 
 ]
 

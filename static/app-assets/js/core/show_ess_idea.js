@@ -489,9 +489,9 @@ $(document).ready(function () {
                     "g1"
             }
         ,
-        "categoryAxesSettings":{
-            "minPeriod":"DD",
-            "maxSeries":0
+        "categoryAxesSettings": {
+            "minPeriod": "DD",
+            "maxSeries": 0
         },
         "chartCursorSettings":
             {
@@ -607,9 +607,9 @@ $(document).ready(function () {
             "useGraphSettings": true,
             "valueText": ""
         },
-        "categoryAxesSettings":{
-            "minPeriod":"DD",
-            "maxSeries":0
+        "categoryAxesSettings": {
+            "minPeriod": "DD",
+            "maxSeries": 0
         },
         "export": {
             "enabled": true,
@@ -784,9 +784,9 @@ $(document).ready(function () {
             "useGraphSettings": true,
             "valueText": ""
         },
-        "categoryAxesSettings":{
-            "minPeriod":"DD",
-            "maxSeries":0
+        "categoryAxesSettings": {
+            "minPeriod": "DD",
+            "maxSeries": 0
         },
         "export": {
             "enabled": true,
@@ -872,20 +872,46 @@ $('#show_premium_analysis').on('click', function (e) {
         'type': 'POST',
         'data': {'deal_id': deal_id},
         'success': function (response) {
-            let dynamic_upside_downside = $.parseJSON(response);
-            $('#show_premium_analysis').prop('disabled', false);
-            //Show the table
-            $('.premium-analysis').show();
-            $('.cix_down_price').html(dynamic_upside_downside['cix_down_price']);
-            $('.cix_up_price').html(dynamic_upside_downside['cix_up_price']);
-            $('.regression_down_price').html(dynamic_upside_downside['regression_down_price']);
-            $('.regression_up_price').html(dynamic_upside_downside['regression_up_price']);
+            let task_id = response['task_id'];
+            let success_url = "../risk/get_premium_analysis_results_from_worker";
+            let progress_url = "../../celeryprogressmonitor/get_celery_task_progress?task_id=" + task_id.toString();
+
+            function get_premium_analysis_results() {
+                $.ajax({
+                    'url': success_url,
+                    'type': 'POST',
+                    'data': {'task_id': task_id},
+                    'success': function (response) {
+                            let dynamic_upside_downside = response;
+                            $('#show_premium_analysis').prop('disabled', false);
+                            //Show the table
+                            $('.premium-analysis').show();
+                            $('.cix_down_price').html(dynamic_upside_downside['cix_down_price']);
+                            $('.cix_up_price').html(dynamic_upside_downside['cix_up_price']);
+                            $('.regression_down_price').html(dynamic_upside_downside['regression_down_price']);
+                            $('.regression_up_price').html(dynamic_upside_downside['regression_up_price']);
+                    },
+                    'error': function (err) {
+                        console.log(err);
+                    }
+
+                });
+            }
+
+            $(function () {
+                CeleryProgressBar.initProgressBar(progress_url, {
+                    onSuccess: get_premium_analysis_results,
+                    pollInterval:2000,
+
+                })
+            });
+
+
+
 
 
         },
-        'error': function (error) {
-            console.log(error);
-        }
+
     });
 
 });

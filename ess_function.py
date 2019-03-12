@@ -10,20 +10,27 @@ import pandas as pd
 # The output of this function is the rsults of each model as dataframes
 def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, analyst_upside, analyst_downside,
                              analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_now=None,
-                             adjustments_df_ptd=None, premium_as_percent=None, f_period='1BF'):
+                             adjustments_df_ptd=None, premium_as_percent=None, f_period='1BF', progress_recorder=None):
     slicer = dfutils.df_slicer()
     start_date = slicer.prev_n_business_days(120, unaffectedDt)  # lookback is 120 days (6 months)
     metrics = {k: v for k, v in metric2weight.items() if v != 0}
     peers_list = list(peers2weight.keys())
     metric_list = list(metrics.keys())
-
+    if progress_recorder is not None:
+        progress_recorder.set_progress(65, 100)
     calib_data = ess_premium_analysis.calibration_data(alpha_ticker, peers2weight, start_date, unaffectedDt,
                                                        metric_list, api_host, f_period)
+
+    if progress_recorder is not None:
+        progress_recorder.set_progress(75, 100)
 
     OLS_results = ess_premium_analysis.premium_analysis_df_OLS(alpha_ticker, peers_list, calib_data, analyst_upside,
                                                                analyst_downside, analyst_pt_wic, as_of_dt, tgtDate,
                                                                metric_list, metric2weight, api_host, adjustments_df_now,
                                                                adjustments_df_ptd, premium_as_percent)
+
+    if progress_recorder is not None:
+        progress_recorder.set_progress(80, 100)
     premium_analysis_results = ess_premium_analysis.premium_analysis_df(alpha_ticker, peers_list, as_of_dt, tgtDate,
                                                                         analyst_upside, analyst_downside,
                                                                         analyst_pt_wic, metric_list, metric2weight,
@@ -36,7 +43,7 @@ def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, anal
 
 def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, analyst_upside, analyst_downside,
              analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_now=None, adjustments_df_ptd=None,
-             premium_as_percent=None, f_period="1BF"):
+             premium_as_percent=None, f_period="1BF", progress_recorder=None):
     slicer = dfutils.df_slicer()
     as_of_dt = datetime.datetime.today()
     unaff_dt = datetime.datetime.strptime(unaffectedDt, '%Y-%m-%d')
@@ -48,6 +55,8 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
     df["Unaffected Date"] = unaff_dt.strftime("%Y-%m-%d")
     df["CIX"] = cix_index
     df["Expected Close Date"] = exp_close_dt.strftime('%Y-%m-%d')
+    if progress_recorder is not None:
+        progress_recorder.set_progress(55, 100)
 
     df["Alpha Downside"] = analyst_downside
     df["Alpha PT (WIC)"] = analyst_pt_wic
@@ -81,7 +90,7 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
     model1, model2 = run_ess_premium_analysis(alpha_ticker, unaff_dt, tgt_dt, as_of_dt, analyst_upside,
                                               analyst_downside, analyst_pt_wic, peers2weight, metric2weight, api_host,
                                               adjustments_df_now, adjustments_df_ptd, premium_as_percent,
-                                              f_period="1BF")
+                                              f_period, progress_recorder)
     # except Exception as e:
     # print('failed running WIC and Regression models: ' + str(e.args))
 

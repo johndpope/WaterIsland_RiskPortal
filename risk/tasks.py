@@ -2,6 +2,7 @@ import sys
 import os
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 import django
+
 django.setup()
 from celery import shared_task
 from dateutil import parser
@@ -21,8 +22,8 @@ from django_slack import slack_message
 from django.core.mail import EmailMessage
 api_host = bbgclient.bbgclient.get_next_available_host()
 import ess_function
-from django import db
 from django.core.exceptions import ObjectDoesNotExist
+from celery_progress.backend import ProgressRecorder
 
 
 @shared_task
@@ -43,7 +44,6 @@ def premium_analysis_flagger():
         try:
             deal_change_dict = {}
             deal_object = ESS_Idea.objects.filter(alpha_ticker__exact=each_deal).order_by('-version_number').first()
-
             # Reset Downside Attention
             deal_object.needs_downside_attention = 0
 
@@ -57,12 +57,12 @@ def premium_analysis_flagger():
                 peers_weights_dictionary[eachPeer.ticker] = eachPeer.hedge_weight / 100
 
             premium_as_percent = None
-            if deal_object.premium_format == 'percentage':   # Adjust with Percentage
+            if deal_object.premium_format == 'percentage':  # Adjust with Percentage
                 premium_as_percent = 'percentage'
 
             # Process only if Requested
 
-            if deal_object.pt_down_check == 'Yes' or deal_object.pt_wic_check == 'Yes' or deal_object.pt_up_check== 'Yes':
+            if deal_object.pt_down_check == 'Yes' or deal_object.pt_wic_check == 'Yes' or deal_object.pt_up_check == 'Yes':
 
                 df = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker, cix_index=deal_object.cix_index,
                                            unaffectedDt=str(deal_object.unaffected_date),
@@ -84,14 +84,16 @@ def premium_analysis_flagger():
                 pt_wic_price_cix = df['PT WIC Price (CIX)']
                 pt_wic_price_regression = df['PT WIC Price (Regression)']
 
-                percentage_change_cix_up = ((cix_up_price - deal_object.pt_up)/cix_up_price) * 100
+                percentage_change_cix_up = ((cix_up_price - deal_object.pt_up) / cix_up_price) * 100
                 percentage_change_cix_down = ((cix_down_price - deal_object.pt_down) / cix_down_price) * 100
 
                 percentage_change_reg_up = ((regression_up_price - deal_object.pt_up) / regression_up_price) * 100
-                percentage_change_reg_down = ((regression_down_price - deal_object.pt_down) / regression_down_price) * 100
+                percentage_change_reg_down = ((
+                                                          regression_down_price - deal_object.pt_down) / regression_down_price) * 100
 
                 percentage_change_pt_wic_cix = ((pt_wic_price_cix - deal_object.pt_wic) / pt_wic_price_cix) * 100
-                percentage_change_pt_wic_reg = ((pt_wic_price_regression - deal_object.pt_wic) / pt_wic_price_regression) * 100
+                percentage_change_pt_wic_reg = ((
+                                                            pt_wic_price_regression - deal_object.pt_wic) / pt_wic_price_regression) * 100
 
                 if deal_object.pt_wic_check == 'Yes':
                     # Adjust the PT Wic and Record the change
@@ -150,9 +152,12 @@ def premium_analysis_flagger():
                 print('No Adjustments requested for : ' + str(deal_object.alpha_ticker))
         except Exception as e:
             print(e)
-            print('Failed Calculating Premium Analysis for : '+str(deal_object.alpha_ticker))
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
+            print('Failed Calculating Premium Analysis for : ' + str(deal_object.alpha_ticker))
             continue
-    # Todo Email the Dataframe to the ESS Team
+
     from tabulate import tabulate
     email = EmailMessage('(Risk Automation) ESS IDEA Database Adjustments', body=tabulate(deal_change_log,
                                                                           headers=deal_change_log.columns,
@@ -164,8 +169,8 @@ def premium_analysis_flagger():
     email.send()
 
 
-@shared_task
-def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id, ticker,
+@shared_task(bind=True)
+def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id, ticker,
                  situation_overview, company_overview, bull_thesis,
                  our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close, m_value, o_value,
                  s_value, a_value, i_value,
@@ -173,10 +178,12 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                  ticker_hedge_mappings, cix_index, price_target_date, multiples, category, catalyst, deal_type,
                  catalyst_tier, hedges, gics_sector, lead_analyst, status, pt_up_check, pt_down_check, pt_wic_check,
                  adjust_based_off, premium_format):
-
     for name, info in django.db.connections.databases.items():  # Close old DB connections
         django.db.connection.close()
         print('Closing connection: ' + str(name))
+
+    progress_recorder = ProgressRecorder(self)
+    progress_recorder.set_progress(10, 100)
 
     try:
         multiples_mappings = json.loads(multiples)
@@ -210,7 +217,6 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                                      "override": "", "start_date": start_date, "end_date": end_date},
                              timeout=15)  # Set a 15 secs Timeout
 
-            print(r.json()['results'])
             ticker_counter = 0
             for every_row in r.json()['results']:
                 if ticker in every_row:
@@ -219,6 +225,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                 ticker_counter += 1
 
             alpha_chart = []
+            progress_recorder.set_progress(20, 100)
 
             print('Creating Alpha Chart...')
             for price, date in zip(alpha_prices, dates_array):
@@ -235,6 +242,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
             alpha_p_fcf_chart = []
 
             # alpha_prices_dataframe = pd.DataFrame({'Date':dates_array, 'PX_LAST':alpha_prices})
+            progress_recorder.set_progress(30, 100)
 
             price = float(alpha_prices[-1])  # Get most Recent Price
             alpha_ev_ebitda_1bf = bbgclient.bbgclient.get_timeseries(ticker, 'BEST_CUR_EV_TO_EBITDA', (
@@ -313,6 +321,8 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                     "p_fcf_value": p_fcf_value
                 })
 
+            progress_recorder.set_progress(40, 100)
+
             gross_percentage = (pt_wic / price) - 1
 
             difference_in_days = (
@@ -345,7 +355,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
             # Just save Alpha if No Hedges...
             # Get latest Deal Key
             latest_deal_key = ESS_Idea.objects.latest('deal_key') + 1
-
+            progress_recorder.set_progress(50, 100)
             new_deal = ESS_Idea(alpha_ticker=ticker, price=price, pt_up=pt_up, pt_down=pt_down, pt_wic=pt_wic,
                                 unaffected_date=unaffected_date, expected_close=expected_close,
                                 gross_percentage=gross_percentage, ann_percentage=ann_percentage,
@@ -395,14 +405,10 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                     ESS_Idea_BearFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
                                              bear_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
 
-
-
-
-
             return 'Task done'
 
         # -------------- REGION FOR ONLY ALPHA CALCULATION --------------------------------------------------------
-
+        progress_recorder.set_progress(55, 100)
         # Stored the Peers and Tickers. Query Bloomberg for the Prices
         end_date = datetime.datetime.strptime(unaffected_date, '%Y-%m-%d')
         start_date = end_date - relativedelta(months=3)
@@ -439,7 +445,6 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
 
         peers_data = []  # Array of dictionaries containing Peer name, its historical prices and hedge weight
 
-
         for peer_ticker, hedge in zip(peer_tickers, peer_hedge_weights):
             def get_px(peer_ticker):
                 historical_prices = []
@@ -453,7 +458,6 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
 
             peers_data.append({'peer': peer_ticker, 'historical_prices': get_px(peer_ticker)
                                   , 'hedge_weight': float(hedge)})
-
 
         # Peers data Obtained
         # Calculate peer ratios
@@ -477,17 +481,18 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
         index_of_unaffected_date = 0
 
         for each_date in dates_array:
-            if datetime.datetime.strptime(each_date, '%Y-%m-%d') >= datetime.datetime.strptime(unaffected_date, '%Y-%m-%d'):
+            if datetime.datetime.strptime(each_date, '%Y-%m-%d') >= datetime.datetime.strptime(unaffected_date,
+                                                                                               '%Y-%m-%d'):
                 break
             index_of_unaffected_date += 1
 
         # 2 counters for hedge index changes. Upto Unaffacted Date and one after that
-
-        print('Index of Unaffected Date is: '+ str(index_of_unaffected_date))
+        progress_recorder.set_progress(60, 100)
+        print('Index of Unaffected Date is: ' + str(index_of_unaffected_date))
 
         for i in range(0, index_of_unaffected_date):
             changes = []
-            while counter < len(ratios) and i<len(peers_data[counter]['historical_prices']):
+            while counter < len(ratios) and i < len(peers_data[counter]['historical_prices']):
                 if not len(peers_data[counter]['historical_prices']) < historical_prices_length:
                     changes.append(np.multiply(float(peers_data[counter]['historical_prices'][i]), ratios[counter]))
 
@@ -500,14 +505,11 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
             counter = 0
             hedge_index_change.append(np.sum(changes))
 
-
         counter = 0
-
 
         hedge_index_change.append(
             float(alpha_prices[
                       index_of_unaffected_date]))  # First day will be the same as alpha price (Consider first day Index) #As of the Unaffected Date
-
 
         percent_daily_change.append(0)  # first day's change is 0
 
@@ -528,9 +530,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
             # Subtract Changes from Next Price
             # percent_daily_change.append((next_price - np.sum(changes))/100)
             hedge_index_change.append(np.sum(changes))
-
-
-
+        progress_recorder.set_progress(70, 100)
         # Toc calculate Hedge Volatility, we take the hedge index changes
         for i in range(1, len(hedge_index_change)):
             yesterdays_price = float(hedge_index_change[i - 1])
@@ -577,22 +577,23 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                                                                  datetime.datetime.now().strftime('%Y%m%d'), {},
                                                                  api_host)
 
+        progress_recorder.set_progress(75, 100)
         alpha_ev_sales_chart_1bf = []
         alpha_ev_sales_chart_2bf = []
         alpha_ev_sales_chart_ltm = []
 
         alpha_ev_sales_1bf = bbgclient.bbgclient.get_timeseries(ticker, 'BEST_CURRENT_EV_BEST_SALES', (
                 datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
-                                                                 datetime.datetime.now().strftime('%Y%m%d'),
-                                                                 {'BEST_FPERIOD_OVERRIDE': '1BF'}, api_host)
+                                                                datetime.datetime.now().strftime('%Y%m%d'),
+                                                                {'BEST_FPERIOD_OVERRIDE': '1BF'}, api_host)
         alpha_ev_sales_2bf = bbgclient.bbgclient.get_timeseries(ticker, 'BEST_CURRENT_EV_BEST_SALES', (
                 datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
-                                                                 datetime.datetime.now().strftime('%Y%m%d'),
-                                                                 {'BEST_FPERIOD_OVERRIDE': '2BF'}, api_host)
+                                                                datetime.datetime.now().strftime('%Y%m%d'),
+                                                                {'BEST_FPERIOD_OVERRIDE': '2BF'}, api_host)
         alpha_ev_sales_ltm = bbgclient.bbgclient.get_timeseries(ticker, 'CURRENT_EV_TO_12M_SALES', (
                 datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
-                                                                 datetime.datetime.now().strftime('%Y%m%d'), {},
-                                                                 api_host)
+                                                                datetime.datetime.now().strftime('%Y%m%d'), {},
+                                                                api_host)
 
         for j in range(0, len(alpha_ev_ebitda_1bf)):
             alpha_ev_ebitda_chart_1bf.append({
@@ -632,10 +633,11 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                 "ev_sales_value": alpha_ev_sales_ltm[j]
             })
 
-
         alpha_p_eps_chart_ltm = []
         alpha_p_eps_chart_1bf = []
         alpha_p_eps_chart_2bf = []
+
+        progress_recorder.set_progress(80, 100)
 
         alpha_pe_ratio_ltm = bbgclient.bbgclient.get_timeseries(ticker, 'T12M_DIL_PE_CONT_OPS', (
                 datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
@@ -669,7 +671,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
             })
 
         alpha_px_to_fcf = get_fcf_yield(ticker=ticker, start_date_yyyymmdd=(
-                    datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
+                datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
                                         end_date_yyyymmdd=datetime.datetime.now().strftime('%Y%m%d'),
                                         fperiod='1BF', api_host=api_host)
         for date, p_fcf_value in zip(alpha_px_to_fcf['Date'], alpha_px_to_fcf['FCF yield']):
@@ -679,7 +681,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
             })
 
             # ---------------------------------------------------------------------------------------------------
-
+        progress_recorder.set_progress(82, 100)
         hedged_volatility = np.std(percent_daily_change) / np.sqrt(252)
         gross_percentage = (pt_wic / price) - 1
 
@@ -710,6 +712,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
         theoretical_sharpe = str(round(theoretical_sharpe, 2))
 
         # Valuation Metrics
+        progress_recorder.set_progress(82, 100)
 
         if update_id == 'false':
             try:
@@ -718,9 +721,10 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                 print('Database seems to be empty..')
                 latest_deal_key = 0
 
-            #No Update ID means its a New deal to be added....Start with Version Number = 0
+            # No Update ID means its a New deal to be added....Start with Version Number = 0
             version_number = 0
-            new_deal = ESS_Idea(deal_key=latest_deal_key,alpha_ticker=ticker, price=price, pt_up=pt_up, pt_down=pt_down, pt_wic=pt_wic,
+            new_deal = ESS_Idea(deal_key=latest_deal_key, alpha_ticker=ticker, price=price, pt_up=pt_up,
+                                pt_down=pt_down, pt_wic=pt_wic,
                                 unaffected_date=unaffected_date, expected_close=expected_close,
                                 gross_percentage=gross_percentage, ann_percentage=ann_percentage,
                                 hedged_volatility=hedged_volatility, theoretical_sharpe=theoretical_sharpe,
@@ -847,7 +851,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
             #     "event_premium": float((float(alpha_price) - pt_down) / pt_down)
             # })
 
-            #Save as a new version
+            # Save as a new version
 
             version_number = int(ESS_Idea.objects.get(id=update_id).version_number) + 1
             latest_deal_key = ESS_Idea.objects.get(id=update_id).deal_key
@@ -857,10 +861,11 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                                                     date_updated=datetime.datetime.now().date()
                                                     .strftime('%Y-%m-%d')).save()
 
-            print('Printing Version number & Deal Key of current deal..'+str(version_number)
-                  + " ->" +str(latest_deal_key))
+            print('Printing Version number & Deal Key of current deal..' + str(version_number)
+                  + " ->" + str(latest_deal_key))
 
-            new_deal = ESS_Idea(deal_key=latest_deal_key,alpha_ticker=ticker, price=price, pt_up=pt_up, pt_down=pt_down,
+            new_deal = ESS_Idea(deal_key=latest_deal_key, alpha_ticker=ticker, price=price, pt_up=pt_up,
+                                pt_down=pt_down,
                                 pt_wic=pt_wic, unaffected_date=unaffected_date, expected_close=expected_close,
                                 gross_percentage=gross_percentage, ann_percentage=ann_percentage,
                                 hedged_volatility=hedged_volatility, theoretical_sharpe=theoretical_sharpe,
@@ -888,7 +893,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                                 price_target_date=price_target_date, category=category, catalyst=catalyst,
                                 deal_type=deal_type, catalyst_tier=catalyst_tier,
                                 hedges=hedges, gics_sector=gics_sector, lead_analyst=lead_analyst, status=status,
-                                version_number=version_number,  pt_up_check=pt_up_check, pt_down_check=pt_down_check,
+                                version_number=version_number, pt_up_check=pt_up_check, pt_down_check=pt_down_check,
                                 pt_wic_check=pt_wic_check, how_to_adjust=adjust_based_off,
                                 premium_format=premium_format)
 
@@ -914,8 +919,10 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
 
         # Associate the Deal with each of its Peers
         # First delete existing Peers
-
+        peer_progress = 83
         for i in range(len(peers_data)):
+            progress_recorder.set_progress(peer_progress, 100)
+            peer_progress += 1
             ev_ebitda_1bf = bbgclient.bbgclient.get_timeseries(peers_data[i]['peer'], 'BEST_CUR_EV_TO_EBITDA', (
                     datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
                                                                datetime.datetime.now().strftime('%Y%m%d'),
@@ -949,20 +956,19 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                     "ev_ebitda_value": ev_ebitda_ltm[j]
                 })
 
-
             # -- Process for EV/Sales Multiple
 
             ev_sales_1bf = bbgclient.bbgclient.get_timeseries(peers_data[i]['peer'], 'BEST_CURRENT_EV_BEST_SALES', (
                     datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
-                                                               datetime.datetime.now().strftime('%Y%m%d'),
-                                                               {'BEST_FPERIOD_OVERRIDE': '1BF'}, api_host)
+                                                              datetime.datetime.now().strftime('%Y%m%d'),
+                                                              {'BEST_FPERIOD_OVERRIDE': '1BF'}, api_host)
             ev_sales_2bf = bbgclient.bbgclient.get_timeseries(peers_data[i]['peer'], 'BEST_CURRENT_EV_BEST_SALES', (
                     datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
-                                                               datetime.datetime.now().strftime('%Y%m%d'),
-                                                               {'BEST_FPERIOD_OVERRIDE': '2BF'}, api_host)
+                                                              datetime.datetime.now().strftime('%Y%m%d'),
+                                                              {'BEST_FPERIOD_OVERRIDE': '2BF'}, api_host)
             ev_sales_ltm = bbgclient.bbgclient.get_timeseries(peers_data[i]['peer'], 'CURRENT_EV_TO_12M_SALES', (
                     datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
-                                                               datetime.datetime.now().strftime('%Y%m%d'), {}, api_host)
+                                                              datetime.datetime.now().strftime('%Y%m%d'), {}, api_host)
             ev_sales_chart_1bf = []
             ev_sales_chart_2bf = []
             ev_sales_chart_ltm = []
@@ -1064,7 +1070,6 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
             peer_cur_market_cap = name_ev_mkt[peers_data[i]['peer']]['CUR_MKT_CAP'].pop() if \
                 name_ev_mkt[peers_data[i]['peer']]['CUR_MKT_CAP'][0] is not None else 'N/A'
 
-
             peer_ev_sales_bf1 = blended_forward_1[peers_data[i]['peer']]['BEST_CURRENT_EV_BEST_SALES'].pop() if \
                 blended_forward_1[peers_data[i]['peer']]['BEST_CURRENT_EV_BEST_SALES'][0] is not None else 'N/A'
             peer_ev_ebitda_bf1 = blended_forward_1[peers_data[i]['peer']]['BEST_CUR_EV_TO_EBITDA'].pop() if \
@@ -1077,7 +1082,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                                                          end_date_yyyymmdd=datetime.datetime.today().strftime("%Y%m%d"),
                                                          api_host=api_host, fperiod='1BF')
 
-            peer_ev_sales_bf2 =  blended_forward_2[peers_data[i]['peer']]['BEST_CURRENT_EV_BEST_SALES'].pop() if \
+            peer_ev_sales_bf2 = blended_forward_2[peers_data[i]['peer']]['BEST_CURRENT_EV_BEST_SALES'].pop() if \
                 blended_forward_2[peers_data[i]['peer']]['BEST_CURRENT_EV_BEST_SALES'][0] is not None else 'N/A'
 
             peer_ev_ebitda_bf2 = blended_forward_2[peers_data[i]['peer']]['BEST_CUR_EV_TO_EBITDA'].pop() if \
@@ -1116,6 +1121,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                              ess_idea_id_id=new_deal.id)
             peer.save()
             print('Added Peer')
+        progress_recorder.set_progress(100, 100)
 
     except Exception as e:
         print(e)
@@ -1125,7 +1131,7 @@ def add_new_idea(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
         raise Exception
 
     slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
-                  {'errors':'No Errors Detected...Your IDEA Was successfully added (alpha ticker)'+str(ticker)},
+                  {'errors': 'No Errors Detected...Your IDEA Was successfully added (alpha ticker)' + str(ticker)},
                   channel='ess_idea_db_errors',
                   token=settings.SLACK_TOKEN,
                   name='ESS_IDEA_DB_ERROR_INSPECTOR')
@@ -1147,7 +1153,7 @@ def ess_idea_daily_update():
 
         unique_deals = set(ESS_Idea.objects.all().values_list('alpha_ticker', flat=True))
         for eachDealObject in unique_deals:
-            eachDealObject = ESS_Idea.objects.filter(alpha_ticker__exact=eachDealObject).order_by('-version_number')\
+            eachDealObject = ESS_Idea.objects.filter(alpha_ticker__exact=eachDealObject).order_by('-version_number') \
                 .first()
 
             id = eachDealObject.id
@@ -1172,7 +1178,7 @@ def ess_idea_daily_update():
 
             # < QuerySet[(300, 'IBM US EQUITY', 30.0), (301, 'AAPL US EQUITY', 10.0), (302, 'QCOM US EQUITY', 10.0), (
             # 303, 'NFLX US EQUITY', 50.0)] >
-            print('Processing Daily Update for Deal: '+ str(ticker))
+            print('Processing Daily Update for Deal: ' + str(ticker))
             peer_weights = []
 
             for i in range(len(related_peers)):
@@ -1214,7 +1220,6 @@ def ess_idea_daily_update():
                         'hedge_weight': hedge_weight_dictionary[key]
                     })
 
-
             # Recalculalte Alpha Chart, Hedge Chart & Market Netural Charts Each day. Only Append to Event Premium and Implied Probability
 
             price = float(alpha_prices[-1])  # Get most Recent Price
@@ -1240,10 +1245,10 @@ def ess_idea_daily_update():
 
             percent_daily_change.append(0)  # first day's change is 0
 
-            #Todo What happens if Peers Data Prices length is > alpha or vice versa?. ALpha opened today but peers 2mbck
+            # Todo What happens if Peers Data Prices length is > alpha or vice versa?. ALpha opened today but peers 2mbck
             for i in range(1, historical_prices_length):
                 next_price = 0
-                if i<len(alpha_prices):
+                if i < len(alpha_prices):
                     next_price = float(alpha_prices[i])
                 changes = []
 
@@ -1345,7 +1350,7 @@ def ess_idea_daily_update():
                 })
 
             alpha_px_to_fcf = get_fcf_yield(ticker=ticker, start_date_yyyymmdd=(
-                        datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
+                    datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
                                             end_date_yyyymmdd=datetime.datetime.now().strftime('%Y%m%d'),
                                             fperiod='1BF', api_host=api_host)
             for date, p_fcf_value in zip(alpha_px_to_fcf['Date'], alpha_px_to_fcf['FCF yield']):
@@ -1552,7 +1557,7 @@ def ess_idea_daily_update():
 
                 p_fcf_chart = []
                 px_to_fcf = get_fcf_yield(ticker=every_peer.ticker, start_date_yyyymmdd=(
-                            datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
+                        datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
                                           end_date_yyyymmdd=datetime.datetime.now().strftime('%Y%m%d'), fperiod='1BF',
                                           api_host=api_host)
                 for date, p_fcf_value in zip(px_to_fcf['Date'], px_to_fcf['FCF yield']):
@@ -1663,15 +1668,67 @@ def get_fcf_yield(ticker, api_host, start_date_yyyymmdd, end_date_yyyymmdd, fper
                                              {'BEST_FPERIOD_OVERRIDE': fperiod}, api_host).reset_index().rename(
         columns={'index': 'Date', 0: 'EPS'})
 
-
     fcf = pd.merge(px, best_estimate_fcf, how='left', on=['Date']).ffill().bfill()
     fcf = pd.merge(fcf, ni, how='left', on=['Date']).ffill().bfill()
     fcf = pd.merge(fcf, eps, how='left', on=['Date']).ffill().bfill()
 
     fcf['FCF'] = (fcf['BEST_ESTIMATE_FCF']) / (fcf['NI'] / fcf['EPS'])
     if 'LN EQUITY' in ticker.upper() or 'SJ EQUITY' in ticker.upper():
-        #Money in Pence for UK stock...Divide by 100
-        fcf['PX'] = fcf['PX']/100
+        # Money in Pence for UK stock...Divide by 100
+        fcf['PX'] = fcf['PX'] / 100
     fcf['FCF yield'] = fcf['FCF'] / fcf['PX']
 
     return fcf[['Date', 'FCF yield']]
+
+
+@shared_task(bind=True)
+def run_ess_premium_analysis_task(self, deal_id, latest_version):
+
+    cix_down_price, cix_up_price, regression_up_price, regression_down_price = 0, 0, 0, 0
+    try:
+        progress_recorder = ProgressRecorder(self)
+        deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
+        multiples_dictionary_list = ast.literal_eval(deal_object.multiples_dictionary)
+        progress_recorder.set_progress(10, 100)
+        multiples_dictionary = {}
+        for multiple in multiples_dictionary_list:
+            for key, value in multiple.items():
+                multiples_dictionary[key] = float(value)
+
+        progress_recorder.set_progress(20, 100)
+        related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=deal_object.id,
+                                                                  version_number=latest_version)
+        peers_weights_dictionary = {}
+
+        for each_peer in related_peers:
+            peers_weights_dictionary[each_peer.ticker] = each_peer.hedge_weight / 100
+
+        progress_recorder.set_progress(40, 100)
+        balance_sheet = deal_object.idea_balance_sheet
+        on_pt_balance_sheet = deal_object.on_pt_balance_sheet
+        progress_recorder.set_progress(50, 100)
+        df = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker, cix_index=deal_object.cix_index,
+                                   unaffectedDt=str(deal_object.unaffected_date),
+                                   expected_close=str(deal_object.expected_close),
+                                   tgtDate=str(deal_object.price_target_date),
+                                   analyst_upside=deal_object.pt_up,
+                                   analyst_downside=deal_object.pt_down,
+                                   analyst_pt_wic=deal_object.pt_wic,
+                                   peers2weight=peers_weights_dictionary,
+                                   metric2weight=multiples_dictionary,
+                                   api_host=api_host, adjustments_df_now=balance_sheet,
+                                   adjustments_df_ptd=on_pt_balance_sheet, premium_as_percent=None,
+                                   f_period="1BF", progress_recorder=progress_recorder,)
+
+        progress_recorder.set_progress(90, 100)
+        cix_down_price = np.round(df['Down Price (CIX)'], decimals=2)
+        cix_up_price = np.round(df['Up Price (CIX)'], decimals=2)
+        regression_up_price = np.round(df['Up Price (Regression)'], decimals=2)
+        regression_down_price = np.round(df['Down Price (Regression)'], decimals=2)
+
+        progress_recorder.set_progress(100, 100)
+
+    except Exception as e:
+        print(e)
+
+    return cix_down_price, cix_up_price, regression_up_price, regression_down_price
