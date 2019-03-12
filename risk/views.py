@@ -1148,6 +1148,7 @@ def show_ess_idea(request):
 
     # Repeat for EV/Sales Multiple
 
+
     for i in range(len(ev_sales_chart_ltm)):
         if i == 0:
             # assign first dataframe
