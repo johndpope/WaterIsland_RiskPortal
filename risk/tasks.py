@@ -269,16 +269,16 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
 
     except Exception as e:
         print(e)
-        # slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
-        #               token=settings.SLACK_TOKEN,
-        #               name='ESS_IDEA_DB_ERROR_INSPECTOR')
+        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
+                      token=settings.SLACK_TOKEN,
+                      name='ESS_IDEA_DB_ERROR_INSPECTOR')
         raise Exception
 
-    # slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
-    #               {'errors': 'No Errors Detected...Your IDEA Was successfully added (alpha ticker)' + str(ticker)},
-    #               channel='ess_idea_db_errors',
-    #               token=settings.SLACK_TOKEN,
-    #               name='ESS_IDEA_DB_ERROR_INSPECTOR')
+    slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
+                  {'errors': 'No Errors Detected...Your IDEA Was successfully added (alpha ticker)' + str(ticker)},
+                  channel='ess_idea_db_errors',
+                  token=settings.SLACK_TOKEN,
+                  name='ESS_IDEA_DB_ERROR_INSPECTOR')
     return 'Task Done'
 
 
@@ -785,8 +785,8 @@ def ess_idea_daily_update():
             print('Peers Updated....')
 
     except Exception as e:
-        # slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
-        #               token=settings.SLACK_TOKEN)
+        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
+                      token=settings.SLACK_TOKEN)
         print('Exception in Celery Task' + str(e))
         print(e)
         exc_type, exc_obj, exc_tb = sys.exc_info()
