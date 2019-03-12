@@ -301,7 +301,8 @@
                                 </div>
                                 <div class="col-lg-1">
                                     <small class="badge badge-default badge-success">DIVIDEND_INDICATED_YIELD</small>
-                                    <input type="text" class="form-control" id="on_pt_balance_sheet_dvd_indicated_yield"/>
+                                    <input type="text" class="form-control"
+                                           id="on_pt_balance_sheet_dvd_indicated_yield"/>
                                 </div>
 
                                 <div class="col-lg-1">
@@ -330,7 +331,8 @@
 
                                 <div class="col-lg-1">
                                     <small class="badge badge-default badge-success">PX</small>
-                                    <input type="text" class="form-control" id="on_pt_adjustment_balance_sheet_px" value="0"/>
+                                    <input type="text" class="form-control" id="on_pt_adjustment_balance_sheet_px"
+                                           value="0"/>
                                 </div>
 
 
@@ -354,7 +356,8 @@
 
                                 <div class="col-lg-1">
                                     <small class="badge badge-default badge-success">BEST_SALES</small>
-                                    <input type="text" class="form-control" id="on_pt_adjustment_balance_sheet_best_sales"
+                                    <input type="text" class="form-control"
+                                           id="on_pt_adjustment_balance_sheet_best_sales"
                                            value="0"/>
                                 </div>
 
@@ -366,7 +369,8 @@
 
                                 <div class="col-lg-1">
                                     <small class="badge badge-default badge-success">CUR_MKT_CAP</small>
-                                    <input type="text" class="form-control" id="on_pt_adjustment_balance_sheet_cur_mkt_cap"
+                                    <input type="text" class="form-control"
+                                           id="on_pt_adjustment_balance_sheet_cur_mkt_cap"
                                            value="0"/>
                                 </div>
                                 <div class="col-lg-1">
@@ -377,19 +381,22 @@
 
                                 <div class="col-lg-1">
                                     <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                                    <input type="text" class="form-control" id="on_pt_adjustment_balance_sheet_best_capex"
+                                    <input type="text" class="form-control"
+                                           id="on_pt_adjustment_balance_sheet_best_capex"
                                            value="0"/>
                                 </div>
 
                                 <div class="col-lg-1">
                                     <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                                    <input type="text" class="form-control" id="on_pt_adjustment_balance_sheet_best_ebitda"
+                                    <input type="text" class="form-control"
+                                           id="on_pt_adjustment_balance_sheet_best_ebitda"
                                            value="0"/>
                                 </div>
 
                                 <div class="col-lg-1">
                                     <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                                    <input type="text" class="form-control" id="on_pt_adjustment_balance_sheet_eqy_sh_out"
+                                    <input type="text" class="form-control"
+                                           id="on_pt_adjustment_balance_sheet_eqy_sh_out"
                                            value="0"/>
                                 </div>
 
@@ -417,7 +424,8 @@
 
                                 <div class="col-lg-1">
                                     <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                                    <input type="text" class="form-control" id="on_pt_final_balance_sheet_best_net_income"/>
+                                    <input type="text" class="form-control"
+                                           id="on_pt_final_balance_sheet_best_net_income"/>
                                 </div>
 
                                 <div class="col-lg-1">
@@ -432,7 +440,8 @@
 
                                 <div class="col-lg-1">
                                     <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                                    <input type="text" class="form-control" id="on_pt_final_balance_sheet_cur_ev_component"/>
+                                    <input type="text" class="form-control"
+                                           id="on_pt_final_balance_sheet_cur_ev_component"/>
                                 </div>
 
                                 <div class="col-lg-1">
@@ -785,9 +794,7 @@
 
                         <div class="card-head">
                             <div class="card-header card-head-inverse bg-dark">
-                                <h4 class="card-title text-light text-center">Deal Overview: Up PT:
-                                    ${{ ess_idea_object.pt_up }} Down PT:
-                                    ${{ ess_idea_object.pt_down }}
+                                <h4 class="card-title text-light text-center">Deal Overview:
                                     Prob%: {{ ess_idea_object.implied_probability }} MOSAIC: {{ mosaic_sum }}</h4>
                                 <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
                             </div>
@@ -825,35 +832,49 @@
                             <div class="row">
                                 <div class="col-lg-4 text-center">
                                     <small class="badge badge-lg badge-default badge-danger">Bull Thesis</small>
+                                    <br>
+                                    <small class="badge badge-secondary">Upside: {{ ess_idea_object.pt_up|floatformat:"2" }}</small>
                                     <br><br>
                                     <div class="container" id="ess_bull_thesis">
                                     </div>
                                     <br>
                                     {% for file in bull_thesis_files %}
-                                        <li><a href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.bull_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a> --> Uploaded on: {{ file.uploaded_at }}</li>
+                                        <li>
+                                            <a href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.bull_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a>
+                                            --> Uploaded on: {{ file.uploaded_at }}</li>
                                     {% endfor %}
-                                    <a href="{% url 'risk:ess_idea_download_handler' %}?path={{ bull_thesis_model.path|default_if_none:'#' }}"
-                                       id='bull_thesis_model' target="_blank" class="btn btn-primary">Model</a>
+
                                 </div>
 
                                 <div class="col-lg-4 text-center">
                                     <small class="badge badge-lg badge-default badge-danger">Our Thesis</small>
+                                    <br>
+                                    <small class="badge badge-secondary">PT WIC: {{ ess_idea_object.pt_wic|floatformat:"2" }}</small>
                                     <br><br>
                                     <div class="container" id="ess_our_thesis">
                                     </div>
                                     <br>
-                                    <a href="{% url 'risk:ess_idea_download_handler' %}?path={{ our_thesis_model.path|default_if_none:'#' }}"
-                                       id='our_thesis_model' target="_blank" class="btn btn-primary">Model</a>
+                                    {% for file in our_thesis_files %}
+                                        <li>
+                                            <a href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.our_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a>
+                                            --> Uploaded on: {{ file.uploaded_at }}</li>
+                                    {% endfor %}
                                 </div>
 
                                 <div class="col-lg-4 text-center">
                                     <small class="badge badge-lg badge-default badge-danger">Bear Thesis</small>
+                                    <br>
+                                    <small class="badge badge-secondary">Downside: {{ ess_idea_object.pt_down|floatformat:"2" }}</small>
                                     <br><br>
                                     <div class="container" id="ess_bear_thesis">
                                     </div>
                                     <br>
-                                    <a href="{% url 'risk:ess_idea_download_handler' %}?path={{ bear_thesis_model.path|default_if_none:'#' }}"
-                                       id='bear_thesis_model' target="_blank" class="btn btn-primary">Model</a>
+                                    {% for file in bear_thesis_files %}
+                                        <li>
+                                            <a href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.bear_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a>
+                                            --> Uploaded on: {{ file.uploaded_at }}</li>
+                                    {% endfor %}
+
                                 </div>
 
                             </div>
@@ -956,6 +977,14 @@
                                     class="ft-plus white"></i>View Balance Sheet
                             </button>
                         </div>
+                    </div>
+
+                    <div class='progress-wrapper'>
+
+                        <div id='progress-bar' class='progress-bar progress-bar-striped progress-bar-animated bg-success' style="background-color: #68a9ef; width: 0%;">
+                            &nbsp;
+                        </div>
+                        <div id="progress-bar-message"></div>
                     </div>
                     <div class="card-content premium-analysis">
                         <div class="table-responsive table-hover">

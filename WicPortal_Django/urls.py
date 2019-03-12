@@ -42,7 +42,8 @@ urlpatterns = [
     url('portfolio_analytics/', include('portfolio_analytics.urls')),
     url('realtime_pnl_impacts/', include('realtime_pnl_impacts.urls')),
     url('securities/', include('securities.urls')),
-    url('exposures/', include('exposures.urls'))
+    url('exposures/', include('exposures.urls')),
+    url(r'^celeryprogressmonitor/', include('celeryprogressmonitor.urls')),
 ]
 
 

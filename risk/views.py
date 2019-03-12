@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from celery.result import AsyncResult
 from risk.chart_utils import *
 from notes.models import NotesMaster
-from .tasks import add_new_idea
+from .tasks import add_new_idea, run_ess_premium_analysis_task
 from .models import *
 
 api_host = bbgclient.bbgclient.get_next_available_host()
@@ -1284,6 +1284,21 @@ def show_ess_idea(request):
 
     # Free Cash Flow Yield - Trim values and show in Percentages
     p_fcf_chart_df['p_fcf_value'] = p_fcf_chart_df['p_fcf_value'].apply(lambda x: round(x * 100, 2))
+    # Sort all charts by Date
+    ev_ebitda_chart_1bf_df = ev_ebitda_chart_1bf_df.sort_values(by=['date'])
+    ev_ebitda_chart_2bf_df = ev_ebitda_chart_2bf_df.sort_values(by=['date'])
+    ev_ebitda_chart_ltm_df = ev_ebitda_chart_ltm_df.sort_values(by=['date'])
+
+    ev_sales_chart_1bf_df = ev_sales_chart_1bf_df.sort_values(by=['date'])
+    ev_sales_chart_ltm_df = ev_sales_chart_ltm_df.sort_values(by=['date'])
+    ev_sales_chart_2bf_df = ev_sales_chart_2bf_df.sort_values(by=['date'])
+
+    p_eps_chart_1bf_df = p_eps_chart_1bf_df.sort_values(by=['date'])
+    p_eps_chart_ltm_df = p_eps_chart_ltm_df.sort_values(by=['date'])
+    p_eps_chart_2bf_df = p_eps_chart_2bf_df.sort_values(by=['date'])
+
+    p_fcf_chart_df = p_fcf_chart_df.sort_values(by=['date'])
+
 
     for i in range(1, len(ev_ebitda_chart_ltm_df.columns.values)):
         ev_sales_chart_ltm.append(str(ev_sales_chart_ltm_df.iloc[:, [0, i]].to_dict('records'))
@@ -1536,54 +1551,21 @@ def ess_idea_premium_analysis(request):
             'version_number'
         ).version_number
 
-        deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
+        # Delegate this to Celery task
+        result = run_ess_premium_analysis_task.delay(deal_id, latest_version)
+        return JsonResponse({'task_id': result.task_id})
 
-        multiples_dictionary_list = ast.literal_eval(deal_object.multiples_dictionary)
 
-        multiples_dictionary = {}
-        for multiple in multiples_dictionary_list:
-            for key, value in multiple.items():
-                multiples_dictionary[key] = float(value)
+def get_premium_analysis_results_from_worker(request):
+    cix_down_price, cix_up_price, regression_up_price, regression_down_price = 0,0,0,0
+    if request.method == 'POST':
+        task_id = request.POST['task_id']
+        cix_down_price, cix_up_price, regression_up_price, regression_down_price = \
+            AsyncResult(task_id, app=run_ess_premium_analysis_task).get()
 
-        related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=deal_object.id,
-                                                                  version_number=latest_version)
-        peers_weights_dictionary = {}
-
-        for each_peer in related_peers:
-            peers_weights_dictionary[each_peer.ticker] = each_peer.hedge_weight / 100
-
-        balance_sheet = deal_object.idea_balance_sheet
-        on_pt_balance_sheet = deal_object.on_pt_balance_sheet
-        adjustments_df = None
-        on_pt_adjustments_df = None
-
-        if balance_sheet is not None:
-            adjustments_df = pd.read_json(balance_sheet, orient='records')
-
-        if on_pt_balance_sheet is not None:
-            on_pt_adjustments_df = pd.read_json(on_pt_balance_sheet, orient='records')
-
-        df = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker, cix_index=deal_object.cix_index,
-                                   unaffectedDt=str(deal_object.unaffected_date),
-                                   expected_close=str(deal_object.expected_close),
-                                   tgtDate=str(deal_object.price_target_date),
-                                   analyst_upside=deal_object.pt_up,
-                                   analyst_downside=deal_object.pt_down,
-                                   analyst_pt_wic=deal_object.pt_wic,
-                                   peers2weight=peers_weights_dictionary,
-                                   metric2weight=multiples_dictionary,
-                                   api_host=api_host, adjustments_df_now=adjustments_df,
-                                   adjustments_df_ptd=on_pt_adjustments_df, premium_as_percent=None,
-                                   f_period="1BF")
-
-        cix_down_price = np.round(df['Down Price (CIX)'], decimals=2)
-        cix_up_price = np.round(df['Up Price (CIX)'], decimals=2)
-        regression_up_price = np.round(df['Up Price (Regression)'], decimals=2)
-        regression_down_price = np.round(df['Down Price (Regression)'], decimals=2)
-
-    return HttpResponse(JsonResponse(
+    return JsonResponse(
         {'cix_down_price': cix_down_price, 'cix_up_price': cix_up_price, 'regression_up_price': regression_up_price,
-         'regression_down_price': regression_down_price}))
+         'regression_down_price': regression_down_price})
 
 
 @csrf_exempt
@@ -1656,11 +1638,13 @@ def add_new_ess_idea_deal(request):
                                       hedges, gics_sector, lead_analyst, status, pt_up_check, pt_down_check,
                                       pt_wic_check, adjust_based_off, premium_format)
 
+            task_id = task.task_id
+
         except Exception as exception:
             print(exception)
-            return HttpResponse('Error')
+            task_id = 'Error'
 
-    return HttpResponse(task.id)
+    return JsonResponse({'task_id': task_id})
 
 
 def delete_ess_idea(request):
