@@ -255,7 +255,7 @@ else:
     DEBUG = False
 
 # DEBUG = False
-#STATICFILES_LOCATION = 'static'
+# STATICFILES_LOCATION = 'static'
 if not DEBUG:
     STATICFILES_LOCATION = 'static'
     STATICFILES_STORAGE = 'custom_storages.StaticStorage'

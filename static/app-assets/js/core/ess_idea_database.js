@@ -415,11 +415,16 @@ $(document).ready(function () {
                     }
                 });
 
-                $('#ess_idea_new_deal_modal').modal('hide');
-                $('body').removeClass('modal-open');
-                $('.modal-backdrop').remove();
-
                 let task_id = response['task_id'];
+                if (task_id === 'Error') {
+                    display_error_message()
+                }
+                else {
+                    $('#ess_idea_new_deal_modal').modal('hide');
+                    $('body').removeClass('modal-open');
+                    $('.modal-backdrop').remove();
+                }
+
                 let progress_url = "../../celeryprogressmonitor/get_celery_task_progress?task_id=" + task_id.toString();
 
                 function reload_page() {
@@ -437,7 +442,7 @@ $(document).ready(function () {
                     CeleryProgressBar.initProgressBar(progress_url, {
                         onSuccess: reload_page,
                         onError: display_error_message,
-                        pollInterval:2000,
+                        pollInterval: 2000,
 
                     })
                 });

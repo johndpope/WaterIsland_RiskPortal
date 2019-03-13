@@ -1585,7 +1585,7 @@ def add_new_ess_idea_deal(request):
             bull_thesis_model_files = request.FILES.getlist('filesBullThesis[]')
             our_thesis_model_files = request.FILES.getlist('filesOurThesis[]')
             bear_thesis_model_files = request.FILES.getlist('filesBearThesis[]')
-
+            print(bull_thesis_model_files)
             update_id = request.POST.get('update_id')
             ticker = request.POST.get('ticker')
             situation_overview = request.POST.get('situation_overview')
@@ -1628,16 +1628,23 @@ def add_new_ess_idea_deal(request):
             adjust_based_off = request.POST.get('adjust_based_off')
             premium_format = request.POST.get('premium_format')
 
-            task = add_new_idea.delay(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files,
-                                      update_id,
-                                      ticker, situation_overview, company_overview, bull_thesis,
-                                      our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close,
-                                      m_value, o_value, s_value, a_value, i_value,
-                                      c_value, m_overview, o_overview, s_overview, a_overview, i_overview, c_overview,
-                                      ticker_hedge_length, request.POST.get('ticker_hedge'), cix_index,
-                                      price_target_date, multiples, category, catalyst, deal_type, catalyst_tier,
-                                      hedges, gics_sector, lead_analyst, status, pt_up_check, pt_down_check,
-                                      pt_wic_check, adjust_based_off, premium_format)
+            task = add_new_idea.delay(bull_thesis_model_files=bull_thesis_model_files,
+                                      our_thesis_model_files=our_thesis_model_files,
+                                      bear_thesis_model_files=bear_thesis_model_files,
+                                      update_id=update_id, ticker=ticker, situation_overview=situation_overview,
+                                      company_overview=company_overview, bull_thesis=bull_thesis,
+                                      our_thesis=our_thesis, bear_thesis=bear_thesis, pt_up=pt_up, pt_wic=pt_wic,
+                                      pt_down=pt_down, unaffected_date=unaffected_date, expected_close=expected_close,
+                                      m_value=m_value, o_value=o_value, s_value=s_value, a_value=a_value,
+                                      i_value=i_value, c_value=c_value, m_overview=m_overview, o_overview=o_overview,
+                                      s_overview=s_overview, a_overview=a_overview, i_overview=i_overview,
+                                      c_overview=c_overview, ticker_hedge_length=ticker_hedge_length,
+                                      ticker_hedge_mappings=request.POST.get('ticker_hedge'), cix_index=cix_index,
+                                      price_target_date=price_target_date, multiples=multiples, category=category,
+                                      catalyst=catalyst, deal_type=deal_type, catalyst_tier=catalyst_tier,
+                                      hedges=hedges, gics_sector=gics_sector, lead_analyst=lead_analyst, status=status,
+                                      pt_up_check=pt_up_check, pt_down_check=pt_down_check, pt_wic_check=pt_wic_check,
+                                      adjust_based_off=adjust_based_off, premium_format=premium_format)
 
             task_id = task.task_id
 
