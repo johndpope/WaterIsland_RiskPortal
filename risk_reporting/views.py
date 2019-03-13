@@ -14,7 +14,7 @@ from django.conf import settings
 from django_slack import slack_message
 from django.db.models import Max
 import bbgclient
-
+from django.db import close_old_connections
 
 # Following NAV Impacts Utilities
 
@@ -153,7 +153,7 @@ def security_info_download(request):
 
 def merger_arb_risk_attributes(request):
     """ View to Populate the Risk attributes for the Arbitrage Fund """
-
+    close_old_connections()
     ytd_performances = pd.read_sql_query(
         'SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance',
         con=connection)

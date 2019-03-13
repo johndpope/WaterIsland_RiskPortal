@@ -31,8 +31,8 @@ $(document).ready(function () {
                         .css('font-size', 'inherit');
 
                     var css = '@page { size: landscape; }',
-                        head = win.document.head || win.document.getElementsByTagName('head')[0],
-                        style = win.document.createElement('style');
+                    head = win.document.head || win.document.getElementsByTagName('head')[0],
+                    style = win.document.createElement('style');
 
                     style.type = 'text/css';
                     style.media = 'print';
