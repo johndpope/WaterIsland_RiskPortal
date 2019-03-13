@@ -407,7 +407,7 @@ def email_nav_impacts_report():
 
         def round_df(val):
             try:
-                return np.round(float(val), decimals=2)
+                return np.round(float(val), decimals=2) if val is not None else val
             except ValueError:
                 return val
 
@@ -429,6 +429,9 @@ def email_nav_impacts_report():
         df = pd.merge(df, downsides_df, on='TradeGroup')
         df.columns = ['TradeGroup', 'RiskLimit', 'NAV Impact', 'Downside Base Case', 'Last Update']
         df['NAV Impact'] = df['NAV Impact'].apply(lambda x: np.round(float(x), decimals=2))
+        downsides_not_updated = df[pd.isna(df['Downside Base Case'])]['TradeGroup'].tolist()
+        extra_message = '' if len(downsides_not_updated) == 0 else '<br><br> Please update downsides for these Tradegroups: ' + ', '.join(downsides_not_updated)
+        df = df[~(pd.isna(df['Downside Base Case']))]
         df['Downside Base Case'] = df['Downside Base Case'].apply(lambda x: np.round(float(x), decimals=2))
 
         def get_impact_over_limit(row):
@@ -481,11 +484,11 @@ def email_nav_impacts_report():
                   </head>
                   <body>
                     <a href="http://192.168.0.16:8000/risk_reporting/merger_arb_risk_attributes">
-                    Click to visit Realtime NAV Impacts Page</a><br><br> 
-                    {0}
+                    Click to visit Realtime NAV Impacts Page</a>{0}<br><br>
+                    {1}
                   </body>
                 </html>
-        """.format(df.hide_index().render(index=False))
+        """.format(extra_message, df.hide_index().render(index=False))
 
         EXPORTERS = {'Merger Arb NAV Impacts (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
                          export_excel}
