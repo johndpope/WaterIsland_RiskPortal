@@ -3,40 +3,34 @@ import sys
 import time
 import datetime
 import io
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
-import django
-
-django.setup()
 from celery import shared_task
 import pandas as pd
-from risk_reporting.models import ArbNAVImpacts, DailyNAVImpacts, PositionLevelNAVImpacts, FormulaeBasedDownsides
-from bbgclient import bbgclient
+from risk_reporting.models import DailyNAVImpacts, PositionLevelNAVImpacts, FormulaeBasedDownsides
 from django_slack import slack_message
 import numpy as np
-
-api_host = bbgclient.get_next_available_host()
 from django.conf import settings
 from sqlalchemy import create_engine
 from email_utilities import send_email
+import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
+django.setup()
+
 
 @shared_task
 def refresh_base_case_and_outlier_downsides():
-    ''' Refreshes the base case and outlier downsides every 20 minutes for dynamically linked downsides '''
+    """ Refreshes the base case and outlier downsides every 20 minutes for dynamically linked downsides """
     import bbgclient
     # Create new Engine and Close Connections here
     engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD
                            + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
 
     con = engine.connect()
-
     formulae_based_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
                                                  con=con)
-
     time.sleep(3)
-
     # Update the Last Prices of Each Deal
     api_host = bbgclient.bbgclient.get_next_available_host()
-    # formulae_based_downsides['Underlying'] = formulae_based_downsides['Underlying'].apply(lambda x: ' '.join(x.split(' ')[:2]))
+
     all_unique_tickers = list(formulae_based_downsides['Underlying'].unique())
     live_price_df = pd.DataFrame.from_dict(
         bbgclient.bbgclient.get_secid2field(all_unique_tickers, 'tickers', ['PX_LAST'], req_type='refdata',
@@ -88,13 +82,13 @@ def refresh_base_case_and_outlier_downsides():
     def update_base_case_reference_price(row):
         if row['BaseCaseDownsideType'] == 'Break Spread':
             return row['DealValue']  # Reference Price should be the deal value
-        elif row['BaseCaseDownsideType'] == 'Last Price':
+        if row['BaseCaseDownsideType'] == 'Last Price':
             return row['LastPrice']  # Reference Price is refreshed Last price...
 
-        elif row['BaseCaseDownsideType'] == 'Premium/Discount':
+        if row['BaseCaseDownsideType'] == 'Premium/Discount':
             return row['LastPrice']  # Reference Price is refreshed Last price...
 
-        elif row['BaseCaseDownsideType'] == 'Reference Security':
+        if row['BaseCaseDownsideType'] == 'Reference Security':
             return float(
                 live_price_df[live_price_df['Underlying'] == row['BaseCaseReferenceDataPoint']]['PX_LAST'].iloc[0])
 
@@ -104,13 +98,13 @@ def refresh_base_case_and_outlier_downsides():
     def update_outlier_reference_price(row):
         if row['OutlierDownsideType'] == 'Break Spread':
             return row['DealValue']  # Reference Price should be the deal value
-        elif row['OutlierDownsideType'] == 'Last Price':
+        if row['OutlierDownsideType'] == 'Last Price':
             return row['LastPrice']  # Reference Price is refreshed Last price...
 
-        elif row['OutlierDownsideType'] == 'Premium/Discount':
+        if row['OutlierDownsideType'] == 'Premium/Discount':
             return row['LastPrice']  # Reference Price is refreshed Last price...
 
-        elif row['OutlierDownsideType'] == 'Reference Security':
+        if row['OutlierDownsideType'] == 'Reference Security':
             return float(
                 live_price_df[live_price_df['Underlying'] == row['OutlierReferenceDataPoint']]['PX_LAST'].iloc[0])
 
@@ -279,9 +273,9 @@ def refresh_base_case_and_outlier_downsides():
 
         def get_last_update_downside(row):
             try:
-                last_update = forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']][
-                'LastUpdate'].max()
-            except:
+                last_update = forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] ==
+                                                        row['TradeGroup']]['LastUpdate'].max()
+            except Exception:
                 last_update = None
             return last_update
 
@@ -291,9 +285,11 @@ def refresh_base_case_and_outlier_downsides():
 
         nav_impacts_positions_df = nav_impacts_positions_df.groupby(['FundCode', 'TradeGroup', 'Ticker', 'PM_BASE_CASE',
                                                                      'Outlier', 'LastPrice']).agg({
-                                                                                      'BASE_CASE_NAV_IMPACT': 'sum',
-                                                                                      'OUTLIER_NAV_IMPACT': 'sum',
-                                                                                      })
+                                                                                                  'BASE_CASE_NAV_IMPACT'
+                                                                                                  : 'sum',
+                                                                                                  'OUTLIER_NAV_IMPACT'
+                                                                                                  : 'sum',
+                                                                                                  })
 
         nav_impacts_positions_df = pd.pivot_table(nav_impacts_positions_df,
                                                   index=['TradeGroup', 'Ticker', 'PM_BASE_CASE',
@@ -329,44 +325,44 @@ def refresh_base_case_and_outlier_downsides():
 def calculate_pl_base_case(row):
     if row['SecType'] != 'EXCHOPT':
         return (row['PM_BASE_CASE'] * row['FxFactor'] * row['QTY']) - (row['CurrMktVal'] * row['FxFactor'])
-    else:
-        if row['PutCall'] == 'CALL':
-            if row['StrikePrice'] <= row['PM_BASE_CASE']:
-                x = (row['PM_BASE_CASE'] - row['StrikePrice']) * (row['QTY']) * row['FxFactor']
-            else:
-                x = 0
-        elif row['PutCall'] == 'PUT':
-            if row['StrikePrice'] >= row['PM_BASE_CASE']:
-                x = (row['StrikePrice'] - row['PM_BASE_CASE']) * (row['QTY']) * row['FxFactor']
-            else:
-                x = 0
-        return -row['CurrMktVal'] + x
+
+    if row['PutCall'] == 'CALL':
+        if row['StrikePrice'] <= row['PM_BASE_CASE']:
+            x = (row['PM_BASE_CASE'] - row['StrikePrice']) * (row['QTY']) * row['FxFactor']
+        else:
+            x = 0
+    elif row['PutCall'] == 'PUT':
+        if row['StrikePrice'] >= row['PM_BASE_CASE']:
+            x = (row['StrikePrice'] - row['PM_BASE_CASE']) * (row['QTY']) * row['FxFactor']
+        else:
+            x = 0
+    return -row['CurrMktVal'] + x
 
 
 def calculate_base_case_nav_impact(row):
-    return ((row['PL_BASE_CASE'] / row['NAV']) * 100)
+    return (row['PL_BASE_CASE'] / row['NAV']) * 100
 
 
 def calculate_outlier_pl(row):
     if row['SecType'] != 'EXCHOPT':
         return (row['Outlier'] * row['FxFactor'] * row['QTY']) - (row['CurrMktVal'] * row['FxFactor'])
-    else:
-        if row['PutCall'] == 'CALL':
-            if row['StrikePrice'] <= row['Outlier']:
-                x = (row['Outlier'] - row['StrikePrice']) * (row['QTY']) * row['FxFactor']
-            else:
-                x = 0
-        elif row['PutCall'] == 'PUT':
-            if row['StrikePrice'] >= row['Outlier']:
-                x = (row['StrikePrice'] - row['Outlier']) * row['QTY'] * row['FxFactor']
-            else:
-                x = 0
+
+    if row['PutCall'] == 'CALL':
+        if row['StrikePrice'] <= row['Outlier']:
+            x = (row['Outlier'] - row['StrikePrice']) * (row['QTY']) * row['FxFactor']
+        else:
+            x = 0
+    elif row['PutCall'] == 'PUT':
+        if row['StrikePrice'] >= row['Outlier']:
+            x = (row['StrikePrice'] - row['Outlier']) * row['QTY'] * row['FxFactor']
+        else:
+            x = 0
 
         return -row['CurrMktVal'] + x
 
 
 def calculate_outlier_nav_impact(row):
-    return ((row['OUTLIER_PL'] / row['NAV']) * 100)
+    return (row['OUTLIER_PL'] / row['NAV']) * 100
 
 
 @shared_task
@@ -380,12 +376,14 @@ def email_nav_impacts_report():
         time.sleep(3)
         downsides_df = pd.read_sql_query(
             'SELECT TradeGroup, base_case, max(LastUpdate) as LastUpdate FROM '
-            'test_wic_db.risk_reporting_formulaebaseddownsides where TargetAcquirer = \'Target\' and IsExcluded = \'No\''
-            ' group by TradeGroup', con=con)
+            'test_wic_db.risk_reporting_formulaebaseddownsides WHERE TargetAcquirer = \'Target\' '
+            'AND IsExcluded = \'No\''
+            ' GROUP BY TradeGroup', con=con)
         time.sleep(3)
         arb_ytd_pnl = pd.read_sql_query(
-            'select tradegroup, ytd_dollar from test_wic_db.realtime_pnl_impacts_arbitrageytdperformance where '
-            'fund = \'ARB\' group by tradegroup', con=con)
+            'SELECT tradegroup, ytd_dollar FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance WHERE '
+            'fund = \'ARB\' GROUP BY tradegroup', con=con)
+
         time.sleep(3)
         arb_ytd_pnl.columns = ['TradeGroup', '(ARB) YTD $ P&L']
         con.close()
@@ -434,7 +432,8 @@ def email_nav_impacts_report():
         df.columns = ['TradeGroup', 'RiskLimit', 'NAV Impact', 'Downside Base Case', 'Last Update']
         df['NAV Impact'] = df['NAV Impact'].apply(lambda x: np.round(float(x), decimals=2))
         downsides_not_updated = df[pd.isna(df['Downside Base Case'])]['TradeGroup'].tolist()
-        extra_message = '' if len(downsides_not_updated) == 0 else '<br><br> Please update downsides for these Tradegroups: ' + ', '.join(downsides_not_updated)
+        extra_message = '' if len(downsides_not_updated) == 0 else \
+            '<br><br> Please update downsides for these Tradegroups: ' + ', '.join(downsides_not_updated)
         df = df[~(pd.isna(df['Downside Base Case']))]
         df['Downside Base Case'] = df['Downside Base Case'].apply(lambda x: np.round(float(x), decimals=2))
 
@@ -494,14 +493,14 @@ def email_nav_impacts_report():
                 </html>
         """.format(extra_message, df.hide_index().render(index=False))
 
-        EXPORTERS = {'Merger Arb NAV Impacts (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
-                         export_excel}
+        exporters = {'Merger Arb NAV Impacts (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
+                     export_excel}
 
         subject = '(Risk Automation) Merger Arb NAV Impacts - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                    recipients=['risk@wicfunds.com', 'rlogan@wicfunds.com'],
                    subject=subject, from_email='dispatch@wicfunds.com', html=html,
-                   EXPORTERS=EXPORTERS, dataframe=daily_nav_impacts)
+                   EXPORTERS=exporters, dataframe=daily_nav_impacts)
 
     except Exception as e:
         print('Error Occured....')
@@ -537,13 +536,13 @@ def email_daily_formulae_linked_downsides():
                 </html>
         """
 
-        EXPORTERS = {'FormulaeLinkedDownsides (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
-                         export_excel}
+        exporters = {'FormulaeLinkedDownsides (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
+                     export_excel}
 
         subject = '(Risk Automation) FormulaeLinkedDownsides - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                    recipients=['risk@wicfunds.com'], subject=subject, from_email='dispatch@wicfunds.com', html=html,
-                   EXPORTERS=EXPORTERS, dataframe=downsides_df)
+                   EXPORTERS=exporters, dataframe=downsides_df)
 
     except Exception as e:
         print('Error Occured....')
