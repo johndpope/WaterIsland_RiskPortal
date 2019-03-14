@@ -175,8 +175,12 @@ def merger_arb_risk_attributes(request):
     impacts_df['LastUpdate'] = None
 
     def get_last_update_downside(row):
-        return forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']][
+        try:
+            last_update = forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']][
             'LastUpdate'].max()
+        except:
+            last_update = None
+        return last_update
 
     impacts_df['LastUpdate'] = impacts_df.apply(get_last_update_downside, axis=1)
 
