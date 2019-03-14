@@ -278,8 +278,12 @@ def refresh_base_case_and_outlier_downsides():
         impacts_df = pd.DataFrame.from_records(impacts.values())
 
         def get_last_update_downside(row):
-            return forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']][
+            try:
+                last_update = forumale_linked_downsides[forumale_linked_downsides['TradeGroup'] == row['TradeGroup']][
                 'LastUpdate'].max()
+            except:
+                last_update = None
+            return last_update
 
         impacts_df['LastUpdate'] = impacts_df.apply(get_last_update_downside, axis=1)
 
