@@ -174,7 +174,7 @@ def refresh_base_case_and_outlier_downsides():
             'SELECT * FROM test_wic_db.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=con)
         # Drop the Last Price
         time.sleep(2)
-        nav_impacts_positions_df.drop(columns=['LastPrice'], inplace=True)
+        nav_impacts_positions_df.drop(columns=['LastPrice', 'RiskLimit'], inplace=True)
 
         ytd_performances = pd.read_sql_query(
             'SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance',
@@ -189,8 +189,8 @@ def refresh_base_case_and_outlier_downsides():
         time.sleep(2)
         # Filter IsExcluded ones
         forumale_linked_downsides = forumale_linked_downsides[forumale_linked_downsides['IsExcluded'] == 'No']
-        forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'base_case', 'outlier',
-                                                               'LastUpdate', 'LastPrice']]
+        forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying','RiskLimit', 'base_case',
+                                                               'outlier', 'LastUpdate', 'LastPrice']]
 
         # Query Options Last Prices
         options_df = nav_impacts_positions_df[nav_impacts_positions_df['SecType'] == 'EXCHOPT']
