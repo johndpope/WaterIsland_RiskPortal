@@ -7,44 +7,6 @@ import pandas as pd
 import ast
 import statsmodels.formula.api as sm
 
-#Necessary input items from the database
-alpha = "GPS US EQUITY"
-CIX_Index = ".ESSGPS INDEX"
-unaffected_date = "2019-02-28"
-tgt_date = "2019-03-01"
-exp_close_date = "2020-12-31"
-
-analyst_upside = 37.99
-analyst_downside = 22.99
-analyst_pt_wic = 22.99
-peers_names = ["AEO US EQUITY", "EXPR US EQUITY", "URBN US EQUITY", "GES US EQUITY", "ANF US EQUITY"]
-peers_weights = [0.2,0.2,0.2,0.2,0.2]
-multiples_names = ["EV/Sales", "EV/EBITDA", "P/EPS", "DVD yield", "FCF yield"]
-multiples_weights = [0,0.75,0.25,0,0]
-
-#The functions as for the api_host and 
-api_host = bbgclient.bbgclient.get_next_available_host()
-#Create a dictionary of the peers and weights and the multiples and weights
-
-def create_dict(keys, values):
-    return dict(zip(keys, values + [None] * (len(keys) - len(values))))
-
-#Take the peers vs. weights and the multiples vs. weights and create dictionaries
-#These two factors must have type dictionary for input
-peersVSweights = create_dict(peers_names, peers_weights)
-multiplesVSweights = create_dict(multiples_names, multiples_weights)
-as_of_dt = datetime.datetime.today()
-unaff_dt = datetime.datetime.strptime(unaffected_date, '%Y-%m-%d')
-tgt_dt = datetime.datetime.strptime(tgt_date, '%Y-%m-%d')
-
-
-adjustments_df_bear = '[{"Date":"2019-03-08","PX":"0","BEST_EPS":"0","BEST_NET_INCOME":"0","BEST_OPP":"0","BEST_SALES":"0","CUR_EV_COMPONENT":"0","CUR_MKT_CAP":"0","DIVIDEND_INDICATED_YIELD":"0","BEST_CAPEX":"0","BEST_EBITDA":"0","EQY_SH_OUT":"0"}]'
-adjustments_df_bull = '[{"Date":"2019-03-08","PX":"0","BEST_EPS":"0","BEST_NET_INCOME":"0","BEST_OPP":"0","BEST_SALES":"0","CUR_EV_COMPONENT":"0","CUR_MKT_CAP":"0","DIVIDEND_INDICATED_YIELD":"0","BEST_CAPEX":"0","BEST_EBITDA":"0","EQY_SH_OUT":"0"}]'
-adjustments_df_pt = '[{"Date":"2019-03-08","PX":"0","BEST_EPS":"0","BEST_NET_INCOME":"0","BEST_OPP":"0","BEST_SALES":"0","CUR_EV_COMPONENT":"0","CUR_MKT_CAP":"0","DIVIDEND_INDICATED_YIELD":"0","BEST_CAPEX":"0","BEST_EBITDA":"0","EQY_SH_OUT":"0"}]'
-bear_flag = None
-bull_flag = None
-pt_flag = None
-
 def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, analyst_upside, analyst_downside, analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_bear = None, adjustments_df_bull = None, adjustments_df_pt = None, bear_flag = None, bull_flag = None, pt_flag = None, f_period = '1BF'):
     slicer = dfutils.df_slicer()
     start_date = slicer.prev_n_business_days(120, unaffectedDt) #lookback is 120 days (6 months)
@@ -52,10 +14,10 @@ def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, anal
     peers_list = list(peers2weight.keys())
     metric_list = list(metrics.keys())
 
-    calib_data = ess_premium_analysis_3balancesheets.calibration_data(alpha_ticker, peers2weight, start_date, unaffectedDt, metric_list, api_host, f_period)
+    calib_data = ess_premium_analysis.calibration_data(alpha_ticker, peers2weight, start_date, unaffectedDt, metric_list, api_host, f_period)
 
-    OLS_results = ess_premium_analysis_3balancesheets.premium_analysis_df_OLS(alpha_ticker, peers_list, calib_data, analyst_upside, analyst_downside, analyst_pt_wic, as_of_dt, tgtDate, metric_list, metric2weight, api_host, adjustments_df_bear, adjustments_df_bull, adjustments_df_pt, bear_flag, bull_flag, pt_flag)
-    premium_analysis_results = ess_premium_analysis_3balancesheets.premium_analysis_df(alpha_ticker, peers_list, as_of_dt, tgtDate, analyst_upside, analyst_downside, analyst_pt_wic, metric_list, metric2weight, calib_data['metric2rel'], api_host, adjustments_df_bear, adjustments_df_bull, adjustments_df_pt, bear_flag, bull_flag, pt_flag)
+    OLS_results = ess_premium_analysis.premium_analysis_df_OLS(alpha_ticker, peers_list, calib_data, analyst_upside, analyst_downside, analyst_pt_wic, as_of_dt, tgtDate, metric_list, metric2weight, api_host, adjustments_df_bear, adjustments_df_bull, adjustments_df_pt, bear_flag, bull_flag, pt_flag)
+    premium_analysis_results = ess_premium_analysis.premium_analysis_df(alpha_ticker, peers_list, as_of_dt, tgtDate, analyst_upside, analyst_downside, analyst_pt_wic, metric_list, metric2weight, calib_data['metric2rel'], api_host, adjustments_df_bear, adjustments_df_bull, adjustments_df_pt, bear_flag, bull_flag, pt_flag)
 
     return(premium_analysis_results, OLS_results)
 
@@ -205,5 +167,3 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
     return {'Final Results': df[cols2show],
             'Regression Results': regression_output
            }
-
-#final_results = final_df(alpha, CIX_Index, unaffected_date, exp_close_date, tgt_date, analyst_upside, analyst_downside, analyst_pt_wic, peersVSweights, multiplesVSweights, api_host, adjustments_df_bear = adjustments_df_bear, adjustments_df_bull = adjustments_df_bull, adjustments_df_pt = adjustments_df_pt, bear_flag = bear_flag, bull_flag = bull_flag, pt_flag = pt_flag, f_period = "1BF")
