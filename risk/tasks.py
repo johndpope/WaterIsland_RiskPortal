@@ -14,7 +14,7 @@ import requests
 from dateutil.relativedelta import relativedelta
 import numpy as np
 from risk.models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records, ESS_Idea_BearFileUploads, \
-    ESS_Idea_BullFileUploads, ESS_Idea_OurFileUploads
+    ESS_Idea_BullFileUploads, ESS_Idea_OurFileUploads, EssIdeaAdjustmentsInformation
 import bbgclient
 import json
 from django.conf import settings
@@ -45,6 +45,9 @@ def premium_analysis_flagger():
     deal_change_log = pd.DataFrame(columns=deal_change_log_columns)
     unique_deals = set(ESS_Idea.objects.all().values_list('alpha_ticker', flat=True))
 
+    # Delete all previous calculations
+    EssIdeaAdjustmentsInformation.objects.all().delete()
+
     for each_deal in unique_deals:
         try:
             deal_change_dict = {}
@@ -68,19 +71,26 @@ def premium_analysis_flagger():
             # Process only if Requested
 
             if deal_object.pt_down_check == 'Yes' or deal_object.pt_wic_check == 'Yes' or deal_object.pt_up_check == 'Yes':
+                upside_balance_sheet = deal_object.upside_balance_sheet
+                wic_balance_sheet = deal_object.wic_balance_sheet
+                downside_balance_sheet = deal_object.downside_balance_sheet
 
-                df = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker, cix_index=deal_object.cix_index,
-                                           unaffectedDt=str(deal_object.unaffected_date),
-                                           expected_close=str(deal_object.expected_close),
-                                           tgtDate=str(deal_object.price_target_date),
-                                           analyst_upside=deal_object.pt_up,
-                                           analyst_downside=deal_object.pt_down,
-                                           analyst_pt_wic=deal_object.pt_wic,
-                                           peers2weight=peers_weights_dictionary, metric2weight=multiples_dictionary,
-                                           api_host=api_host, adjustments_df_now=deal_object.idea_balance_sheet,
-                                           adjustments_df_ptd=deal_object.on_pt_balance_sheet,
-                                           premium_as_percent=premium_as_percent,
-                                           f_period="1BF")
+                result_dictionary = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker,
+                                                  cix_index=deal_object.cix_index,
+                                                  unaffectedDt=str(deal_object.unaffected_date),
+                                                  expected_close=str(deal_object.expected_close),
+                                                  tgtDate=str(deal_object.price_target_date),
+                                                  analyst_upside=deal_object.pt_up,
+                                                  analyst_downside=deal_object.pt_down,
+                                                  analyst_pt_wic=deal_object.pt_wic,
+                                                  peers2weight=peers_weights_dictionary,
+                                                  metric2weight=multiples_dictionary,
+                                                  api_host=api_host, adjustments_df_bear=upside_balance_sheet,
+                                                  adjustments_df_bull=downside_balance_sheet,
+                                                  adjustments_df_pt=wic_balance_sheet,
+                                                  f_period="1BF")
+
+                df = result_dictionary['Final Results']
 
                 cix_down_price = df['Down Price (CIX)']
                 cix_up_price = df['Up Price (CIX)']
@@ -145,6 +155,7 @@ def premium_analysis_flagger():
                 deal_change_dict['Deal Name'] = deal_object.alpha_ticker
                 deal_change_log = deal_change_log.append(deal_change_dict, ignore_index=True)
                 deal_object.save()
+
                 # Record this Upside downside change for the deal
                 ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=deal_object.id, deal_key=deal_object.deal_key,
                                                         pt_up=deal_object.pt_up,
@@ -152,7 +163,12 @@ def premium_analysis_flagger():
                                                         date_updated=datetime.datetime.now().date()
                                                         .strftime('%Y-%m-%d')).save()
 
+                EssIdeaAdjustmentsInformation(ess_idea_id_id=deal_object.id, deal_key=deal_object.deal_key,
+                                              regression_results=json.dumps(result_dictionary['Regression Results']),
+                                              calculated_on=datetime.datetime.now().date()).save()
+
                 print('Recorded Upside/Downside Adjustments for ' + str(deal_object.alpha_ticker))
+                print('Saved Daily Regression Results for '+ str(deal_object.alpha_ticker))
             else:
                 print('No Adjustments requested for : ' + str(deal_object.alpha_ticker))
         except Exception as e:

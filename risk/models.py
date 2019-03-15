@@ -231,6 +231,14 @@ class ESS_Idea_BearFileUploads(models.Model):
     def filename(self):
         return os.path.basename(self.bear_thesis_model.name)
 
+
+class EssIdeaAdjustmentsInformation(models.Model):
+    ess_idea_id = models.ForeignKey('ESS_Idea', on_delete=models.CASCADE)
+    deal_key = models.IntegerField(null=True)  # DealKey reflecting a deal
+    regression_results = models.TextField(null=True)
+    calculated_on = models.DateField(null=True)
+
+
 class ESS_Idea(models.Model):
     class Meta:
         unique_together = (('id', 'version_number'))
