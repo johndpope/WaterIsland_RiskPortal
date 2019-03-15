@@ -1,11 +1,11 @@
 $(document).ready(function () {
-
     $('#ess_idea_company_overview').summernote({'height': '250px'});
     $('#ess_idea_situation_overview').summernote({'height': '250px'});
     /***********************************************************
      *               New User - Page Visist Stats               *
      ***********************************************************/
     $('.premium-analysis').hide();
+    $('.premium-analysis-table').hide();
     $('#show_ess_idea_news_items').DataTable();
     $('#show_ess_idea_notes_table').DataTable();
     var peer_valution_table = $('#peer_valuation_table').DataTable({
@@ -81,7 +81,7 @@ $(document).ready(function () {
     var downside_changes = $('#ess_idea_downside_changes').val();
     try {
         downside_changes = $.parseJSON(downside_changes);
-        console.log(downside_changes);
+
         for (var i = 0; i < downside_changes.length; i++) {
             stockEvents.push({
                 "date": new Date(2018, 05, 05),
@@ -882,14 +882,99 @@ $('#show_premium_analysis').on('click', function (e) {
                     'type': 'POST',
                     'data': {'task_id': task_id},
                     'success': function (response) {
-                            let dynamic_upside_downside = response;
-                            $('#show_premium_analysis').prop('disabled', false);
-                            //Show the table
-                            $('.premium-analysis').show();
-                            $('.cix_down_price').html(dynamic_upside_downside['cix_down_price']);
-                            $('.cix_up_price').html(dynamic_upside_downside['cix_up_price']);
-                            $('.regression_down_price').html(dynamic_upside_downside['regression_down_price']);
-                            $('.regression_up_price').html(dynamic_upside_downside['regression_up_price']);
+                        let dynamic_upside_downside = response;
+                        let regression_results = response['regression_results'];
+                        // Create Required Modals dynamically 3 multiples
+                        let multiples = Object.keys(regression_results);
+                        for(var i=0;i<multiples.length;i++){
+                            let multiple = multiples[i];
+                            let id = '';
+                            if(multiple === 'EV/EBITDA'){
+                                id = 'ev_ebitda'
+                            }
+                            else if(multiple === 'P/E'){
+                                id = 'p_e'
+                            }
+                            else if(multiple === 'EV/Sales'){
+                                id = 'ev_sales'
+                            }
+                            else if(multiple === 'DVD Yield'){
+                                id = 'dvd_yield'
+                            }
+                            else if(multiple === 'FCF Yield'){
+                                id = 'fcf_yield'
+                            }
+                            // Append Multiple
+                            let currernt_row = '<tr>';
+                            let row_cell = currernt_row + '<td>'+ multiple + '</td>';
+
+                            let coefficients = regression_results[multiples[i]]['Coefficients'];
+                            // Iterate throught coeffieicent and create a Table
+                            let coefficients_table = '<table class=\"table table-striped\"><thead><tr><th>Peer/Intercept</th><th>Coefficients</th></tr></thead><tbody>';
+
+                            for(var peer in coefficients){
+                                coefficients_table += '<tr><td>'+peer+'</td><td>'+coefficients[peer]+
+                                        '</td></tr>'
+                            }
+                            coefficients_table += '</table>';
+                            // Create a Bootstrap Modal
+                            get_regression_analysis_modal(id+'_coefficients', coefficients_table, 'Regression Coefficients');
+
+                            row_cell += '<td>'+ get_modal_launch_button('id', id+'_coefficients', 'View Coefficients')+
+                                        '</td>';
+
+                            let peer_multiples_at_price_target_date = regression_results[multiples[i]]['Peers Multiples @ Price Target Date'];
+                            // Iterate throught Peer Multiples at PT Date
+                            let peer_multiples_at_pt_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
+
+                            for(var peer in peer_multiples_at_price_target_date){
+                                peer_multiples_at_pt_table += '<tr><td>'+peer+'</td><td>'+peer_multiples_at_price_target_date[peer]+
+                                        '</td></tr>'
+                            }
+                            peer_multiples_at_pt_table += '</table>';
+
+                            get_regression_analysis_modal(id+'_peer_multiples_at_pt', peer_multiples_at_pt_table, 'Peer Multiples at Price Target Date');
+
+                            row_cell += '<td>'+ get_modal_launch_button('id', id+'_peer_multiples_at_pt', 'Peers Multiple Drilldown')+
+                                        '</td>';
+
+                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Implied Multiple @ Price Target Date']).toFixed(2)+'</td>';
+                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bear Multiple @ Price Target Date']).toFixed(2)+'</td>';
+                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha PT WIC Multiple @ Price Target Date']).toFixed(2)+'</td>';
+                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bull Multiple @ Price Target Date']).toFixed(2)+'</td>';
+
+                            // Repeat the Above for Now Section
+                            let peer_multiples_at_now = regression_results[multiples[i]]['Peers Multiples @ Now'];
+                            // Iterate throught Peer Multiples at PT Date
+                            let peer_multiples_at_now_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
+
+                            for(var peer in peer_multiples_at_now){
+                                peer_multiples_at_now_table += '<tr><td>'+peer+'</td><td>'+peer_multiples_at_now[peer]+
+                                        '</td></tr>'
+                            }
+                            peer_multiples_at_now_table += '</table>';
+
+                            get_regression_analysis_modal(id+'_peer_multiples_at_now', peer_multiples_at_now_table, 'Peer Multiples (Now)');
+
+                            row_cell += '<td>'+ get_modal_launch_button('id', id+'_peer_multiples_at_now', 'Peers Multiple Drilldown')+
+                                        '</td>';
+
+                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Implied Multiple @ Now']).toFixed(2)+'</td>';
+                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bear Multiple @ Now']).toFixed(2)+'</td>';
+                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha PT WIC Multiple @ Now']).toFixed(2)+'</td>';
+                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bull Multiple @ Now']).toFixed(2)+'</td>';
+                            row_cell += '</tr>';
+                            $('#premium_analysis_regression_breakdown_table tbody').append(row_cell);
+                        }
+
+                        $('#show_premium_analysis').prop('disabled', false);
+                        //Show the table
+                        $('.premium-analysis').show();
+                        $('.premium-analysis-table').show();
+                        $('.cix_down_price').html(dynamic_upside_downside['cix_down_price']);
+                        $('.cix_up_price').html(dynamic_upside_downside['cix_up_price']);
+                        $('.regression_down_price').html(dynamic_upside_downside['regression_down_price']);
+                        $('.regression_up_price').html(dynamic_upside_downside['regression_up_price']);
                     },
                     'error': function (err) {
                         console.log(err);
@@ -901,13 +986,10 @@ $('#show_premium_analysis').on('click', function (e) {
             $(function () {
                 CeleryProgressBar.initProgressBar(progress_url, {
                     onSuccess: get_premium_analysis_results,
-                    pollInterval:2000,
+                    pollInterval: 2000,
 
                 })
             });
-
-
-
 
 
         },
@@ -941,83 +1023,89 @@ $('#ess_idea_view_balance_sheet').on('click', function (e) {
             //Show the modal
 
             let balance_sheet_bloomberg = $.parseJSON(response['balance_sheet']);
-            let balance_sheet_adjustments = $.parseJSON(response['balance_sheet_adjustments']);
-            let on_pt_balance_sheet_adjustments = $.parseJSON(response['on_pt_balance_sheet_adjustments']);
+            let upside_balance_sheet_adjustments = $.parseJSON(response['upside_balance_sheet_adjustments']);
+            let wic_balance_sheet_adjustments = $.parseJSON(response['wic_balance_sheet_adjustments']);
+            let downside_balance_sheet_adjustments = $.parseJSON(response['downside_balance_sheet_adjustments']);
 
+            $('#upside_balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
+            $('#upside_balance_sheet_best_eps').val(balance_sheet_bloomberg[0]['BEST_EPS']);
+            $('#upside_balance_sheet_best_net_income').val(balance_sheet_bloomberg[0]['BEST_NET_INCOME']);
+            $('#upside_balance_sheet_best_opp').val(balance_sheet_bloomberg[0]['BEST_OPP']);
+            $('#upside_balance_sheet_best_sales').val(balance_sheet_bloomberg[0]['BEST_SALES']);
+            $('#upside_balance_sheet_cur_ev_component').val(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT']);
+            $('#upside_balance_sheet_best_capex').val(balance_sheet_bloomberg[0]['BEST_CAPEX']);
+            $('#upside_balance_sheet_best_ebitda').val(balance_sheet_bloomberg[0]['BEST_EBITDA']);
+            $('#upside_balance_sheet_eqy_sh_out').val(balance_sheet_bloomberg[0]['EQY_SH_OUT']);
 
-            $('#balance_sheet_date').val(balance_sheet_bloomberg[0]['Date']);
-            $('#balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
-            $('#balance_sheet_best_eps').val(balance_sheet_bloomberg[0]['BEST_EPS']);
-            $('#balance_sheet_best_net_income').val(balance_sheet_bloomberg[0]['BEST_NET_INCOME']);
-            $('#balance_sheet_best_opp').val(balance_sheet_bloomberg[0]['BEST_OPP']);
-            $('#balance_sheet_best_sales').val(balance_sheet_bloomberg[0]['BEST_SALES']);
-            $('#balance_sheet_cur_ev_component').val(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT']);
-            $('#balance_sheet_cur_mkt_cap').val(balance_sheet_bloomberg[0]['CUR_MKT_CAP']);
-            $('#balance_sheet_dvd_indicated_yield').val(balance_sheet_bloomberg[0]['DIVIDEND_INDICATED_YIELD']);
-            $('#balance_sheet_best_capex').val(balance_sheet_bloomberg[0]['BEST_CAPEX']);
-            $('#balance_sheet_best_ebitda').val(balance_sheet_bloomberg[0]['BEST_EBITDA']);
-            $('#balance_sheet_eqy_sh_out').val(balance_sheet_bloomberg[0]['EQY_SH_OUT']);
+            // Populate for On WIC Balance Sheet
+            $('#wic_balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
+            $('#wic_balance_sheet_best_eps').val(balance_sheet_bloomberg[0]['BEST_EPS']);
+            $('#wic_balance_sheet_best_net_income').val(balance_sheet_bloomberg[0]['BEST_NET_INCOME']);
+            $('#wic_balance_sheet_best_opp').val(balance_sheet_bloomberg[0]['BEST_OPP']);
+            $('#wic_balance_sheet_best_sales').val(balance_sheet_bloomberg[0]['BEST_SALES']);
+            $('#wic_balance_sheet_cur_ev_component').val(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT']);
+            $('#wic_balance_sheet_best_capex').val(balance_sheet_bloomberg[0]['BEST_CAPEX']);
+            $('#wic_balance_sheet_best_ebitda').val(balance_sheet_bloomberg[0]['BEST_EBITDA']);
+            $('#wic_balance_sheet_eqy_sh_out').val(balance_sheet_bloomberg[0]['EQY_SH_OUT']);
 
-            // Populate for On Price Target Date
-            $('#on_pt_balance_sheet_date').val(balance_sheet_bloomberg[0]['Date']);
-            $('#on_pt_balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
-            $('#on_pt_balance_sheet_best_eps').val(balance_sheet_bloomberg[0]['BEST_EPS']);
-            $('#on_pt_balance_sheet_best_net_income').val(balance_sheet_bloomberg[0]['BEST_NET_INCOME']);
-            $('#on_pt_balance_sheet_best_opp').val(balance_sheet_bloomberg[0]['BEST_OPP']);
-            $('#on_pt_balance_sheet_best_sales').val(balance_sheet_bloomberg[0]['BEST_SALES']);
-            $('#on_pt_balance_sheet_cur_ev_component').val(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT']);
-            $('#on_pt_balance_sheet_cur_mkt_cap').val(balance_sheet_bloomberg[0]['CUR_MKT_CAP']);
-            $('#on_pt_balance_sheet_dvd_indicated_yield').val(balance_sheet_bloomberg[0]['DIVIDEND_INDICATED_YIELD']);
-            $('#on_pt_balance_sheet_best_capex').val(balance_sheet_bloomberg[0]['BEST_CAPEX']);
-            $('#on_pt_balance_sheet_best_ebitda').val(balance_sheet_bloomberg[0]['BEST_EBITDA']);
-            $('#on_pt_balance_sheet_eqy_sh_out').val(balance_sheet_bloomberg[0]['EQY_SH_OUT']);
+            // Populate for On Downside Balance Sheet
+            $('#downsides_balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
+            $('#downsides_balance_sheet_best_eps').val(balance_sheet_bloomberg[0]['BEST_EPS']);
+            $('#downsides_balance_sheet_best_net_income').val(balance_sheet_bloomberg[0]['BEST_NET_INCOME']);
+            $('#downsides_balance_sheet_best_opp').val(balance_sheet_bloomberg[0]['BEST_OPP']);
+            $('#downsides_balance_sheet_best_sales').val(balance_sheet_bloomberg[0]['BEST_SALES']);
+            $('#downsides_balance_sheet_cur_ev_component').val(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT']);
+            $('#downsides_balance_sheet_best_capex').val(balance_sheet_bloomberg[0]['BEST_CAPEX']);
+            $('#downsides_balance_sheet_best_ebitda').val(balance_sheet_bloomberg[0]['BEST_EBITDA']);
+            $('#downsides_balance_sheet_eqy_sh_out').val(balance_sheet_bloomberg[0]['EQY_SH_OUT']);
 
 
             // Populate the Adjustments balance Sheet
-            if (balance_sheet_adjustments.length > 0) {
-                $('#adjustment_balance_sheet_date').val(balance_sheet_adjustments[0]['Date']);
-                $('#adjustment_balance_sheet_px').val(balance_sheet_adjustments[0]['PX']);
-                $('#adjustment_balance_sheet_best_eps').val(balance_sheet_adjustments[0]['BEST_EPS']);
-                $('#adjustment_balance_sheet_best_net_income').val(balance_sheet_adjustments[0]['BEST_NET_INCOME']);
-                $('#adjustment_balance_sheet_best_opp').val(balance_sheet_adjustments[0]['BEST_OPP']);
-                $('#adjustment_balance_sheet_best_sales').val(balance_sheet_adjustments[0]['BEST_SALES']);
-                $('#adjustment_balance_sheet_cur_ev_component').val(balance_sheet_adjustments[0]['CUR_EV_COMPONENT']);
-                $('#adjustment_balance_sheet_cur_mkt_cap').val(balance_sheet_adjustments[0]['CUR_MKT_CAP']);
-                $('#adjustment_balance_sheet_dvd_indicated_yield').val(balance_sheet_adjustments[0]['DIVIDEND_INDICATED_YIELD']);
-                $('#adjustment_balance_sheet_best_capex').val(balance_sheet_adjustments[0]['BEST_CAPEX']);
-                $('#adjustment_balance_sheet_best_ebitda').val(balance_sheet_adjustments[0]['BEST_EBITDA']);
-                $('#adjustment_balance_sheet_eqy_sh_out').val(balance_sheet_adjustments[0]['EQY_SH_OUT']);
+            if (upside_balance_sheet_adjustments.length > 0) {
+                $('#upside_adjustment_balance_sheet_px').val(upside_balance_sheet_adjustments[0]['PX']);
+                $('#upside_adjustment_balance_sheet_best_eps').val(upside_balance_sheet_adjustments[0]['BEST_EPS']);
+                $('#upside_adjustment_balance_sheet_best_net_income').val(upside_balance_sheet_adjustments[0]['BEST_NET_INCOME']);
+                $('#upside_adjustment_balance_sheet_best_opp').val(upside_balance_sheet_adjustments[0]['BEST_OPP']);
+                $('#upside_adjustment_balance_sheet_best_sales').val(upside_balance_sheet_adjustments[0]['BEST_SALES']);
+                $('#upside_adjustment_balance_sheet_cur_ev_component').val(upside_balance_sheet_adjustments[0]['CUR_EV_COMPONENT']);
+                $('#upside_adjustment_balance_sheet_best_capex').val(upside_balance_sheet_adjustments[0]['BEST_CAPEX']);
+                $('#upside_adjustment_balance_sheet_best_ebitda').val(upside_balance_sheet_adjustments[0]['BEST_EBITDA']);
+                $('#upside_adjustment_balance_sheet_eqy_sh_out').val(upside_balance_sheet_adjustments[0]['EQY_SH_OUT']);
 
             }
-            else {
-                $('#adjustment_balance_sheet_date').val(balance_sheet_bloomberg[0]['Date']);
-            }
+            // Populate the Adjustments for WIC
 
-            // Populate the Adjustments on Price Target Date
-
-            if (on_pt_balance_sheet_adjustments.length > 0) {
-                $('#on_pt_adjustment_balance_sheet_date').val(on_pt_balance_sheet_adjustments[0]['Date']);
-                $('#on_pt_adjustment_balance_sheet_px').val(on_pt_balance_sheet_adjustments[0]['PX']);
-                $('#on_pt_adjustment_balance_sheet_best_eps').val(on_pt_balance_sheet_adjustments[0]['BEST_EPS']);
-                $('#on_pt_adjustment_balance_sheet_best_net_income').val(on_pt_balance_sheet_adjustments[0]['BEST_NET_INCOME']);
-                $('#on_pt_adjustment_balance_sheet_best_opp').val(on_pt_balance_sheet_adjustments[0]['BEST_OPP']);
-                $('#on_pt_adjustment_balance_sheet_best_sales').val(on_pt_balance_sheet_adjustments[0]['BEST_SALES']);
-                $('#on_pt_adjustment_balance_sheet_cur_ev_component').val(on_pt_balance_sheet_adjustments[0]['CUR_EV_COMPONENT']);
-                $('#on_pt_adjustment_balance_sheet_cur_mkt_cap').val(on_pt_balance_sheet_adjustments[0]['CUR_MKT_CAP']);
-                $('#on_pt_adjustment_balance_sheet_dvd_indicated_yield').val(on_pt_balance_sheet_adjustments[0]['DIVIDEND_INDICATED_YIELD']);
-                $('#on_pt_adjustment_balance_sheet_best_capex').val(on_pt_balance_sheet_adjustments[0]['BEST_CAPEX']);
-                $('#on_pt_adjustment_balance_sheet_best_ebitda').val(on_pt_balance_sheet_adjustments[0]['BEST_EBITDA']);
-                $('#on_pt_adjustment_balance_sheet_eqy_sh_out').val(on_pt_balance_sheet_adjustments[0]['EQY_SH_OUT']);
+            if (wic_balance_sheet_adjustments.length > 0) {
+                $('#wic_adjustment_balance_sheet_px').val(wic_balance_sheet_adjustments[0]['PX']);
+                $('#wic_adjustment_balance_sheet_best_eps').val(wic_balance_sheet_adjustments[0]['BEST_EPS']);
+                $('#wic_adjustment_balance_sheet_best_net_income').val(wic_balance_sheet_adjustments[0]['BEST_NET_INCOME']);
+                $('#wic_adjustment_balance_sheet_best_opp').val(wic_balance_sheet_adjustments[0]['BEST_OPP']);
+                $('#wic_adjustment_balance_sheet_best_sales').val(wic_balance_sheet_adjustments[0]['BEST_SALES']);
+                $('#wic_adjustment_balance_sheet_cur_ev_component').val(wic_balance_sheet_adjustments[0]['CUR_EV_COMPONENT']);
+                $('#wic_adjustment_balance_sheet_best_capex').val(wic_balance_sheet_adjustments[0]['BEST_CAPEX']);
+                $('#wic_adjustment_balance_sheet_best_ebitda').val(wic_balance_sheet_adjustments[0]['BEST_EBITDA']);
+                $('#wic_adjustment_balance_sheet_eqy_sh_out').val(wic_balance_sheet_adjustments[0]['EQY_SH_OUT']);
 
             }
-            else {
-                $('#on_pt_adjustment_balance_sheet_date').val(balance_sheet_bloomberg[0]['Date']);
+
+            // Populate the Adjustments for Downsides
+
+            if (downside_balance_sheet_adjustments.length > 0) {
+                $('#downsides_adjustment_balance_sheet_px').val(downside_balance_sheet_adjustments[0]['PX']);
+                $('#downsides_adjustment_balance_sheet_best_eps').val(downside_balance_sheet_adjustments[0]['BEST_EPS']);
+                $('#downsides_adjustment_balance_sheet_best_net_income').val(downside_balance_sheet_adjustments[0]['BEST_NET_INCOME']);
+                $('#downsides_adjustment_balance_sheet_best_opp').val(downside_balance_sheet_adjustments[0]['BEST_OPP']);
+                $('#downsides_adjustment_balance_sheet_best_sales').val(downside_balance_sheet_adjustments[0]['BEST_SALES']);
+                $('#downsides_adjustment_balance_sheet_cur_ev_component').val(downside_balance_sheet_adjustments[0]['CUR_EV_COMPONENT']);
+                $('#downsides_adjustment_balance_sheet_best_capex').val(downside_balance_sheet_adjustments[0]['BEST_CAPEX']);
+                $('#downsides_adjustment_balance_sheet_best_ebitda').val(downside_balance_sheet_adjustments[0]['BEST_EBITDA']);
+                $('#downsides_adjustment_balance_sheet_eqy_sh_out').val(downside_balance_sheet_adjustments[0]['EQY_SH_OUT']);
+
             }
+
 
             $('#balance_sheet_modal').modal('show');
             caclulateFinalBalanceSheet();  //Populate the Final Balance Sheet
-
-
         },
         'error': function (error) {
             console.log(error);
@@ -1035,32 +1123,39 @@ $('#save_balance_sheet').on('click', function (e) {
     $('#balance_sheet_modal').modal('hide');
     let deal_id = $('#ess_idea_deal_id').val();
     // Pass this to Views
-    var balance_sheet = {
-        'Date': $('#adjustment_balance_sheet_date').val(),
-        'PX': $('#adjustment_balance_sheet_px').val(),
-        'BEST_EPS': $('#adjustment_balance_sheet_best_eps').val(),
-        'BEST_NET_INCOME': $('#adjustment_balance_sheet_best_net_income').val(),
-        'BEST_OPP': $('#adjustment_balance_sheet_best_opp').val(),
-        'BEST_SALES': $('#adjustment_balance_sheet_best_sales').val(),
-        'CUR_EV_COMPONENT': $('#adjustment_balance_sheet_cur_ev_component').val(),
-        'CUR_MKT_CAP': $('#adjustment_balance_sheet_cur_mkt_cap').val(),
-        'DIVIDEND_INDICATED_YIELD': $('#adjustment_balance_sheet_dvd_indicated_yield').val(),
-        'BEST_CAPEX': $('#adjustment_balance_sheet_best_capex').val(),
-        'BEST_EBITDA': $('#adjustment_balance_sheet_best_ebitda').val(),
-        'EQY_SH_OUT': $('#adjustment_balance_sheet_eqy_sh_out').val()
+    let upside_balance_sheet = {
+        'PX': $('#upside_adjustment_balance_sheet_px').val(),
+        'BEST_EPS': $('#upside_adjustment_balance_sheet_best_eps').val(),
+        'BEST_NET_INCOME': $('#upside_adjustment_balance_sheet_best_net_income').val(),
+        'BEST_OPP': $('#upside_adjustment_balance_sheet_best_opp').val(),
+        'BEST_SALES': $('#upside_adjustment_balance_sheet_best_sales').val(),
+        'CUR_EV_COMPONENT': $('#upside_adjustment_balance_sheet_cur_ev_component').val(),
+        'BEST_CAPEX': $('#upside_adjustment_balance_sheet_best_capex').val(),
+        'BEST_EBITDA': $('#upside_adjustment_balance_sheet_best_ebitda').val(),
+        'EQY_SH_OUT': $('#upside_adjustment_balance_sheet_eqy_sh_out').val()
     };
+
+    let wic_balance_sheet = {
+        'PX': $('#wic_adjustment_balance_sheet_px').val(),
+        'BEST_EPS': $('#wic_adjustment_balance_sheet_best_eps').val(),
+        'BEST_NET_INCOME': $('#wic_adjustment_balance_sheet_best_net_income').val(),
+        'BEST_OPP': $('#wic_adjustment_balance_sheet_best_opp').val(),
+        'BEST_SALES': $('#wic_adjustment_balance_sheet_best_sales').val(),
+        'CUR_EV_COMPONENT': $('#wic_adjustment_balance_sheet_cur_ev_component').val(),
+        'BEST_CAPEX': $('#wic_adjustment_balance_sheet_best_capex').val(),
+        'BEST_EBITDA': $('#wic_adjustment_balance_sheet_best_ebitda').val(),
+        'EQY_SH_OUT': $('#wic_adjustment_balance_sheet_eqy_sh_out').val()
+    };
+
     // Save the PT Date Balance Sheet.
 
-    var on_pt_balance_sheet = {
-        'Date': $('#on_pt_adjustment_balance_sheet_date').val(),
-        'PX': $('#on_pt_adjustment_balance_sheet_px').val(),
-        'BEST_EPS': $('#on_pt_adjustment_balance_sheet_best_eps').val(),
-        'BEST_NET_INCOME': $('#on_pt_adjustment_balance_sheet_best_net_income').val(),
-        'BEST_OPP': $('#on_pt_adjustment_balance_sheet_best_opp').val(),
-        'BEST_SALES': $('#on_pt_adjustment_balance_sheet_best_sales').val(),
-        'CUR_EV_COMPONENT': $('#on_pt_adjustment_balance_sheet_cur_ev_component').val(),
-        'CUR_MKT_CAP': $('#on_pt_adjustment_balance_sheet_cur_mkt_cap').val(),
-        'DIVIDEND_INDICATED_YIELD': $('#on_pt_adjustment_balance_sheet_dvd_indicated_yield').val(),
+    let downside_balance_sheet = {
+        'PX': $('#downsides_adjustment_balance_sheet_px').val(),
+        'BEST_EPS': $('#downsides_adjustment_balance_sheet_best_eps').val(),
+        'BEST_NET_INCOME': $('#downsides_adjustment_balance_sheet_best_net_income').val(),
+        'BEST_OPP': $('#downsides_adjustment_balance_sheet_best_opp').val(),
+        'BEST_SALES': $('#downsides_adjustment_balance_sheet_best_sales').val(),
+        'CUR_EV_COMPONENT': $('#downsides_adjustment_balance_sheet_cur_ev_component').val(),
         'BEST_CAPEX': $('#on_pt_adjustment_balance_sheet_best_capex').val(),
         'BEST_EBITDA': $('#on_pt_adjustment_balance_sheet_best_ebitda').val(),
         'EQY_SH_OUT': $('#on_pt_adjustment_balance_sheet_eqy_sh_out').val()
@@ -1071,8 +1166,9 @@ $('#save_balance_sheet').on('click', function (e) {
         'type': 'POST',
         'data': {
             'deal_id': deal_id,
-            'balance_sheet': JSON.stringify(balance_sheet),
-            'on_pt_balance_sheet': JSON.stringify(on_pt_balance_sheet)
+            'upside_balance_sheet': JSON.stringify(upside_balance_sheet),
+            'wic_balance_sheet': JSON.stringify(wic_balance_sheet),
+            'downside_balance_sheet': JSON.stringify(downside_balance_sheet)
         },
         'success': function (response) {
             if (response === 'Success') {
@@ -1102,50 +1198,95 @@ $('#calculate_balance_sheet').on('click', function () {
 
 
 function caclulateFinalBalanceSheet() {
-    $('#final_balance_sheet_best_capex').val(eval($('#balance_sheet_best_capex').val() + "+" + $('#adjustment_balance_sheet_best_capex').val()));
-    $('#final_balance_sheet_px').val(eval($('#balance_sheet_px').val() + "+" + $('#adjustment_balance_sheet_px').val()));
-    $('#final_balance_sheet_best_eps').val(eval($('#balance_sheet_best_eps').val() + "+" + $('#adjustment_balance_sheet_best_eps').val()));
-    $('#final_balance_sheet_best_net_income').val(eval($('#balance_sheet_best_net_income').val() + "+" + $('#adjustment_balance_sheet_best_net_income').val()));
-    $('#final_balance_sheet_best_opp').val(eval($('#balance_sheet_best_opp').val() + "+" + $('#adjustment_balance_sheet_best_opp').val()));
-    $('#final_balance_sheet_best_sales').val(eval($('#balance_sheet_best_sales').val() + "+" + $('#adjustment_balance_sheet_best_sales').val()));
-    $('#final_balance_sheet_cur_ev_component').val(eval($('#balance_sheet_cur_ev_component').val() + "+" + $('#adjustment_balance_sheet_cur_ev_component').val()));
-    $('#final_balance_sheet_cur_mkt_cap').val(eval($('#balance_sheet_cur_mkt_cap').val() + "+" + $('#adjustment_balance_sheet_cur_mkt_cap').val()));
-    $('#final_balance_sheet_dvd_indicated_yield').val(eval($('#balance_sheet_dvd_indicated_yield').val() + "+" + $('#adjustment_balance_sheet_dvd_indicated_yield').val()));
-    $('#final_balance_sheet_best_ebitda').val(eval($('#balance_sheet_best_ebitda').val() + "+" + $('#adjustment_balance_sheet_best_ebitda').val()));
-    $('#final_balance_sheet_eqy_sh_out').val(eval($('#balance_sheet_eqy_sh_out').val() + "+" + $('#adjustment_balance_sheet_eqy_sh_out').val()));
-    $('#final_balance_sheet_date').val($('#balance_sheet_date').val());
+    $('#upside_final_balance_sheet_best_capex').val(eval($('#upside_balance_sheet_best_capex').val() + "+" + $('#upside_adjustment_balance_sheet_best_capex').val()));
+    $('#upside_final_balance_sheet_px').val(eval($('#upside_balance_sheet_px').val() + "+" + $('#upside_adjustment_balance_sheet_px').val()));
+    $('#upside_final_balance_sheet_best_eps').val(eval($('#upside_balance_sheet_best_eps').val() + "+" + $('#upside_adjustment_balance_sheet_best_eps').val()));
+    $('#upside_final_balance_sheet_best_net_income').val(eval($('#upside_balance_sheet_best_net_income').val() + "+" + $('#upside_adjustment_balance_sheet_best_net_income').val()));
+    $('#upside_final_balance_sheet_best_opp').val(eval($('#upside_balance_sheet_best_opp').val() + "+" + $('#upside_adjustment_balance_sheet_best_opp').val()));
+    $('#upside_final_balance_sheet_best_sales').val(eval($('#upside_balance_sheet_best_sales').val() + "+" + $('#upside_adjustment_balance_sheet_best_sales').val()));
+    $('#upside_final_balance_sheet_cur_ev_component').val(eval($('#upside_balance_sheet_cur_ev_component').val() + "+" + $('#upside_adjustment_balance_sheet_cur_ev_component').val()));
+    $('#upside_final_balance_sheet_best_ebitda').val(eval($('#upside_balance_sheet_best_ebitda').val() + "+" + $('#upside_adjustment_balance_sheet_best_ebitda').val()));
+    $('#upside_final_balance_sheet_eqy_sh_out').val(eval($('#upside_balance_sheet_eqy_sh_out').val() + "+" + $('#upside_adjustment_balance_sheet_eqy_sh_out').val()));
 
-    // Calculate Balance Sheet on Price Target Date too
-    $('#on_pt_final_balance_sheet_best_capex').val(eval($('#on_pt_balance_sheet_best_capex').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_capex').val()));
-    $('#on_pt_final_balance_sheet_px').val(eval($('#on_pt_balance_sheet_px').val() + "+" + $('#on_pt_adjustment_balance_sheet_px').val()));
-    $('#on_pt_final_balance_sheet_best_eps').val(eval($('#on_pt_balance_sheet_best_eps').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_eps').val()));
-    $('#on_pt_final_balance_sheet_best_net_income').val(eval($('#on_pt_balance_sheet_best_net_income').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_net_income').val()));
-    $('#on_pt_final_balance_sheet_best_opp').val(eval($('#on_pt_balance_sheet_best_opp').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_opp').val()));
-    $('#on_pt_final_balance_sheet_best_sales').val(eval($('#on_pt_balance_sheet_best_sales').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_sales').val()));
-    $('#on_pt_final_balance_sheet_cur_ev_component').val(eval($('#on_pt_balance_sheet_cur_ev_component').val() + "+" + $('#on_pt_adjustment_balance_sheet_cur_ev_component').val()));
-    $('#on_pt_final_balance_sheet_cur_mkt_cap').val(eval($('#on_pt_balance_sheet_cur_mkt_cap').val() + "+" + $('#on_pt_adjustment_balance_sheet_cur_mkt_cap').val()));
-    $('#on_pt_final_balance_sheet_dvd_indicated_yield').val(eval($('#on_pt_balance_sheet_dvd_indicated_yield').val() + "+" + $('#on_pt_adjustment_balance_sheet_dvd_indicated_yield').val()));
-    $('#on_pt_final_balance_sheet_best_ebitda').val(eval($('#on_pt_balance_sheet_best_ebitda').val() + "+" + $('#on_pt_adjustment_balance_sheet_best_ebitda').val()));
-    $('#on_pt_final_balance_sheet_eqy_sh_out').val(eval($('#on_pt_balance_sheet_eqy_sh_out').val() + "+" + $('#on_pt_adjustment_balance_sheet_eqy_sh_out').val()));
-    $('#on_pt_final_balance_sheet_date').val($('#on_pt_balance_sheet_date').val());
+
+    // Calculate Balance Sheet for WIC
+    $('#wic_final_balance_sheet_best_capex').val(eval($('#wic_balance_sheet_best_capex').val() + "+" + $('#wic_adjustment_balance_sheet_best_capex').val()));
+    $('#wic_final_balance_sheet_px').val(eval($('#wic_balance_sheet_px').val() + "+" + $('#wic_adjustment_balance_sheet_px').val()));
+    $('#wic_final_balance_sheet_best_eps').val(eval($('#wic_balance_sheet_best_eps').val() + "+" + $('#wic_adjustment_balance_sheet_best_eps').val()));
+    $('#wic_final_balance_sheet_best_net_income').val(eval($('#wic_balance_sheet_best_net_income').val() + "+" + $('#wic_adjustment_balance_sheet_best_net_income').val()));
+    $('#wic_final_balance_sheet_best_opp').val(eval($('#wic_balance_sheet_best_opp').val() + "+" + $('#wic_adjustment_balance_sheet_best_opp').val()));
+    $('#wic_final_balance_sheet_best_sales').val(eval($('#wic_balance_sheet_best_sales').val() + "+" + $('#wic_adjustment_balance_sheet_best_sales').val()));
+    $('#wic_final_balance_sheet_cur_ev_component').val(eval($('#wic_balance_sheet_cur_ev_component').val() + "+" + $('#wic_adjustment_balance_sheet_cur_ev_component').val()));
+    $('#wic_final_balance_sheet_best_ebitda').val(eval($('#wic_balance_sheet_best_ebitda').val() + "+" + $('#wic_adjustment_balance_sheet_best_ebitda').val()));
+    $('#wic_final_balance_sheet_eqy_sh_out').val(eval($('#wic_balance_sheet_eqy_sh_out').val() + "+" + $('#wic_adjustment_balance_sheet_eqy_sh_out').val()));
+
+
+    // Calculate Balance Sheet for Downsides
+    $('#downsides_final_balance_sheet_best_capex').val(eval($('#downsides_balance_sheet_best_capex').val() + "+" + $('#downsides_adjustment_balance_sheet_best_capex').val()));
+    $('#downsides_final_balance_sheet_px').val(eval($('#downsides_balance_sheet_px').val() + "+" + $('#downsides_adjustment_balance_sheet_px').val()));
+    $('#downsides_final_balance_sheet_best_eps').val(eval($('#downsides_balance_sheet_best_eps').val() + "+" + $('#downsides_adjustment_balance_sheet_best_eps').val()));
+    $('#downsides_final_balance_sheet_best_net_income').val(eval($('#downsides_balance_sheet_best_net_income').val() + "+" + $('#downsides_adjustment_balance_sheet_best_net_income').val()));
+    $('#downsides_final_balance_sheet_best_opp').val(eval($('#downsides_balance_sheet_best_opp').val() + "+" + $('#downsides_adjustment_balance_sheet_best_opp').val()));
+    $('#downsides_final_balance_sheet_best_sales').val(eval($('#downsides_balance_sheet_best_sales').val() + "+" + $('#downsides_adjustment_balance_sheet_best_sales').val()));
+    $('#downsides_final_balance_sheet_cur_ev_component').val(eval($('#downsides_balance_sheet_cur_ev_component').val() + "+" + $('#downsides_adjustment_balance_sheet_cur_ev_component').val()));
+    $('#downsides_final_balance_sheet_best_ebitda').val(eval($('#downsides_balance_sheet_best_ebitda').val() + "+" + $('#downsides_adjustment_balance_sheet_best_ebitda').val()));
+    $('#downsides_final_balance_sheet_eqy_sh_out').val(eval($('#downsides_balance_sheet_eqy_sh_out').val() + "+" + $('#downsides_adjustment_balance_sheet_eqy_sh_out').val()));
+
 
 }
 
 
 /* Copy Function: To Copy Current Balance Sheet Adjustments to Price Target Date Adjustments */
-$('#copy_to_pt_adjustments').on('click', function () {
-    // Set values of on_pt to same as Current Adjustments
-    $('#on_pt_adjustment_balance_sheet_best_capex').val($('#adjustment_balance_sheet_best_capex').val());
-    $('#on_pt_adjustment_balance_sheet_px').val($('#adjustment_balance_sheet_px').val());
-    $('#on_pt_adjustment_balance_sheet_best_eps').val($('#adjustment_balance_sheet_best_eps').val());
-    $('#on_pt_adjustment_balance_sheet_best_net_income').val($('#adjustment_balance_sheet_best_net_income').val());
-    $('#on_pt_adjustment_balance_sheet_best_opp').val($('#adjustment_balance_sheet_best_opp').val());
-    $('#on_pt_adjustment_balance_sheet_best_sales').val($('#adjustment_balance_sheet_best_sales').val());
-    $('#on_pt_adjustment_balance_sheet_cur_ev_component').val($('#adjustment_balance_sheet_cur_ev_component').val());
-    $('#on_pt_adjustment_balance_sheet_cur_mkt_cap').val($('#adjustment_balance_sheet_cur_mkt_cap').val());
-    $('#on_pt_adjustment_balance_sheet_dvd_indicated_yield').val($('#adjustment_balance_sheet_dvd_indicated_yield').val());
-    $('#on_pt_adjustment_balance_sheet_best_ebitda').val($('#adjustment_balance_sheet_best_ebitda').val());
-    $('#on_pt_adjustment_balance_sheet_eqy_sh_out').val($('#adjustment_balance_sheet_eqy_sh_out').val());
-    $('#on_pt_balance_sheet_date').val($('#balance_sheet_date').val());
+$('#copy_from_upside_adjustments').on('click', function () {
+    // Set Downsides and WIC from Upside Adjustments
+    $('#wic_adjustment_balance_sheet_best_capex').val($('#upside_adjustment_balance_sheet_best_capex').val());
+    $('#wic_adjustment_balance_sheet_px').val($('#upside_adjustment_balance_sheet_px').val());
+    $('#wic_adjustment_balance_sheet_best_eps').val($('#upside_adjustment_balance_sheet_best_eps').val());
+    $('#wic_adjustment_balance_sheet_best_net_income').val($('#upside_adjustment_balance_sheet_best_net_income').val());
+    $('#wic_adjustment_balance_sheet_best_opp').val($('#upside_adjustment_balance_sheet_best_opp').val());
+    $('#wic_adjustment_balance_sheet_best_sales').val($('#upside_adjustment_balance_sheet_best_sales').val());
+    $('#wic_adjustment_balance_sheet_cur_ev_component').val($('#upside_adjustment_balance_sheet_cur_ev_component').val());
+    $('#wic_adjustment_balance_sheet_best_ebitda').val($('#upside_adjustment_balance_sheet_best_ebitda').val());
+    $('#wic_adjustment_balance_sheet_eqy_sh_out').val($('#upside_adjustment_balance_sheet_eqy_sh_out').val());
+
+
+    $('#downsides_adjustment_balance_sheet_best_capex').val($('#upside_adjustment_balance_sheet_best_capex').val());
+    $('#downsides_adjustment_balance_sheet_px').val($('#upside_adjustment_balance_sheet_px').val());
+    $('#downsides_adjustment_balance_sheet_best_eps').val($('#upside_adjustment_balance_sheet_best_eps').val());
+    $('#downsides_adjustment_balance_sheet_best_net_income').val($('#upside_adjustment_balance_sheet_best_net_income').val());
+    $('#downsides_adjustment_balance_sheet_best_opp').val($('#upside_adjustment_balance_sheet_best_opp').val());
+    $('#downsides_adjustment_balance_sheet_best_sales').val($('#upside_adjustment_balance_sheet_best_sales').val());
+    $('#downsides_adjustment_balance_sheet_cur_ev_component').val($('#upside_adjustment_balance_sheet_cur_ev_component').val());
+    $('#downsides_adjustment_balance_sheet_best_ebitda').val($('#upside_adjustment_balance_sheet_best_ebitda').val());
+    $('#downsides_adjustment_balance_sheet_eqy_sh_out').val($('#upside_adjustment_balance_sheet_eqy_sh_out').val());
+
 });
 
+function get_regression_analysis_modal(id, content, modal_title) {
+    let modal = "<div class=\"modal fade\" id=\""+id+ "\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\">" +
+        "<div class=\"modal-dialog modal-dialog-centered\" role=\"document\">" +
+            "<div class=\"modal-content\">" +
+                "<div class=\"modal-header\">" +
+                    "<h5 class=\"modal-title\">"+modal_title+"</h5>" +
+                    "<button type=\"button\" class=\"close\" data-dismiss=\"modal\" aria-label=\"Close\">" +
+                        " <span aria-hidden=\"true\">&times;</span>" +
+                    "</button>" +
+                "</div>" +
+                "<div class=\"modal-body\">" +
+                content +
+                "</div>" +
+                "<div class=\"modal-footer\">" +
+                " <button type=\"button\" class=\"btn btn-secondary\" data-dismiss=\"modal\">Close</button>" +
+                "</div>" +
+                "</div>" +
+            "</div>" +
+        "</div>"
+
+    $('body').append(modal);
+}
+
+function get_modal_launch_button(id, datatarget, label){
+    return "<button type=\"button\" class=\"btn btn-info\" data-toggle=\"modal\" data-target=\"#"+datatarget+"\">"+
+           label+
+           "</button>"
+}
