@@ -429,8 +429,12 @@ def email_nav_impacts_report():
         df = df[['TradeGroup', 'RiskLimit', 'BASE_CASE_NAV_IMPACT_ARB']]
 
         df = pd.merge(df, downsides_df, on='TradeGroup')
+
         df.columns = ['TradeGroup', 'RiskLimit', 'NAV Impact', 'Downside Base Case', 'Last Update']
+
+        df = df[df['NAV Impact'] != '']
         df['NAV Impact'] = df['NAV Impact'].apply(lambda x: np.round(float(x), decimals=2))
+
         downsides_not_updated = df[pd.isna(df['Downside Base Case'])]['TradeGroup'].tolist()
         extra_message = '' if len(downsides_not_updated) == 0 else \
             '<br><br> Please update downsides for these Tradegroups: ' + ', '.join(downsides_not_updated)

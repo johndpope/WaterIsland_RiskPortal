@@ -269,16 +269,16 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
 
     except Exception as e:
         print(e)
-        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
-                      token=settings.SLACK_TOKEN,
-                      name='ESS_IDEA_DB_ERROR_INSPECTOR')
+        # slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
+        #               token=settings.SLACK_TOKEN,
+        #               name='ESS_IDEA_DB_ERROR_INSPECTOR')
         raise Exception
 
-    slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
-                  {'errors': 'No Errors Detected...Your IDEA Was successfully added (alpha ticker)' + str(ticker)},
-                  channel='ess_idea_db_errors',
-                  token=settings.SLACK_TOKEN,
-                  name='ESS_IDEA_DB_ERROR_INSPECTOR')
+    # slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
+    #               {'errors': 'No Errors Detected...Your IDEA Was successfully added (alpha ticker)' + str(ticker)},
+    #               channel='ess_idea_db_errors',
+    #               token=settings.SLACK_TOKEN,
+    #               name='ESS_IDEA_DB_ERROR_INSPECTOR')
     return 'Task Done'
 
 
@@ -828,7 +828,7 @@ def get_fcf_yield(ticker, api_host, start_date_yyyymmdd, end_date_yyyymmdd, fper
 
 @shared_task(bind=True)
 def run_ess_premium_analysis_task(self, deal_id, latest_version):
-    cix_down_price, cix_up_price, regression_up_price, regression_down_price = 0, 0, 0, 0
+    df, regression_parameters = None, None
     try:
         progress_recorder = ProgressRecorder(self)
         deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
@@ -848,31 +848,32 @@ def run_ess_premium_analysis_task(self, deal_id, latest_version):
             peers_weights_dictionary[each_peer.ticker] = each_peer.hedge_weight / 100
 
         progress_recorder.set_progress(40, 100)
-        balance_sheet = deal_object.idea_balance_sheet
-        on_pt_balance_sheet = deal_object.on_pt_balance_sheet
-        progress_recorder.set_progress(50, 100)
-        df = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker, cix_index=deal_object.cix_index,
-                                   unaffectedDt=str(deal_object.unaffected_date),
-                                   expected_close=str(deal_object.expected_close),
-                                   tgtDate=str(deal_object.price_target_date),
-                                   analyst_upside=deal_object.pt_up,
-                                   analyst_downside=deal_object.pt_down,
-                                   analyst_pt_wic=deal_object.pt_wic,
-                                   peers2weight=peers_weights_dictionary,
-                                   metric2weight=multiples_dictionary,
-                                   api_host=api_host, adjustments_df_now=balance_sheet,
-                                   adjustments_df_ptd=on_pt_balance_sheet, premium_as_percent=None,
-                                   f_period="1BF", progress_recorder=progress_recorder, )
+        upside_balance_sheet = deal_object.upside_balance_sheet
+        wic_balance_sheet = deal_object.wic_balance_sheet
+        downside_balance_sheet = deal_object.downside_balance_sheet
 
-        progress_recorder.set_progress(90, 100)
-        cix_down_price = np.round(df['Down Price (CIX)'], decimals=2)
-        cix_up_price = np.round(df['Up Price (CIX)'], decimals=2)
-        regression_up_price = np.round(df['Up Price (Regression)'], decimals=2)
-        regression_down_price = np.round(df['Down Price (Regression)'], decimals=2)
+        progress_recorder.set_progress(43, 100)
+        result_dictionary = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker,
+                                                  cix_index=deal_object.cix_index,
+                                                  unaffectedDt=str(deal_object.unaffected_date),
+                                                  expected_close=str(deal_object.expected_close),
+                                                  tgtDate=str(deal_object.price_target_date),
+                                                  analyst_upside=deal_object.pt_up,
+                                                  analyst_downside=deal_object.pt_down,
+                                                  analyst_pt_wic=deal_object.pt_wic,
+                                                  peers2weight=peers_weights_dictionary,
+                                                  metric2weight=multiples_dictionary,
+                                                  api_host=api_host, adjustments_df_bear=upside_balance_sheet,
+                                                  adjustments_df_bull=downside_balance_sheet,
+                                                  adjustments_df_pt=wic_balance_sheet,
+                                                  f_period="1BF", progress_recorder=progress_recorder)
+
+        df = result_dictionary['Final Results']
+        regression_parameters = result_dictionary['Regression Results']
 
         progress_recorder.set_progress(100, 100)
 
     except Exception as e:
         print(e)
 
-    return cix_down_price, cix_up_price, regression_up_price, regression_down_price
+    return df, regression_parameters

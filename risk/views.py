@@ -1300,7 +1300,6 @@ def show_ess_idea(request):
 
     p_fcf_chart_df = p_fcf_chart_df.sort_values(by=['date'])
 
-
     for i in range(1, len(ev_ebitda_chart_ltm_df.columns.values)):
         ev_sales_chart_ltm.append(str(ev_sales_chart_ltm_df.iloc[:, [0, i]].to_dict('records'))
                                   .replace('u\'', '\''))
@@ -1473,15 +1472,19 @@ def ess_idea_save_balance_sheet(request):
         ).version_number
 
         deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
-        balance_sheet = pd.DataFrame(pd.read_json(request.POST['balance_sheet'], orient='records', typ='series')) \
-            .transpose()
+        upside_balance_sheet = pd.DataFrame(pd.read_json(request.POST['upside_balance_sheet'], orient='records',
+                                                         typ='series')).transpose()
 
-        on_pt_balance_sheet = pd.DataFrame(pd.read_json(request.POST['on_pt_balance_sheet'], orient='records',
-                                                        typ='series')) \
-            .transpose()
+        wic_balance_sheet = pd.DataFrame(pd.read_json(request.POST['wic_balance_sheet'], orient='records',
+                                                        typ='series')).transpose()
 
-        deal_object.idea_balance_sheet = balance_sheet.to_json(orient='records')
-        deal_object.on_pt_balance_sheet = on_pt_balance_sheet.to_json(orient='records')
+        downside_balance_sheet = pd.DataFrame(pd.read_json(request.POST['downside_balance_sheet'], orient='records',
+                                                        typ='series')).transpose()
+
+        deal_object.upside_balance_sheet = upside_balance_sheet.to_json(orient='records')
+        deal_object.wic_balance_sheet = wic_balance_sheet.to_json(orient='records')
+        deal_object.downside_balance_sheet = downside_balance_sheet.to_json(orient='records')
+
         deal_object.save()
 
         response = 'Success'
@@ -1495,9 +1498,11 @@ def ess_idea_view_balance_sheet(request):
     :param request: Request object containing Deal ID
     :return: JSON Response containing the balance sheet
     """
-    balance_sheet_adjustments = None
+    upside_balance_sheet_adjustments = None
+    wic_balance_sheet_adjustments = None
+    downside_balance_sheet_adjustments = None
     balance_sheet = None
-    on_pt_balance_sheet_adjustments = None
+
 
     if request.method == 'POST':
         deal_id = request.POST.get('deal_id')
@@ -1507,36 +1512,40 @@ def ess_idea_view_balance_sheet(request):
 
         deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
 
-        balance_sheet_adjustments = deal_object.idea_balance_sheet
-        on_pt_balance_sheet_adjustments = deal_object.on_pt_balance_sheet
+        upside_balance_sheet_adjustments = deal_object.upside_balance_sheet
+        wic_balance_sheet_adjustments = deal_object.wic_balance_sheet
+        downside_balance_sheet_adjustments = deal_object.downside_balance_sheet
+
         balance_sheet = ess_premium_analysis.multiple_underlying_df(deal_object.alpha_ticker,
                                                                     datetime.datetime.now().strftime('%Y%m%d'),
                                                                     api_host)
-        if balance_sheet_adjustments is not None:
+        if upside_balance_sheet_adjustments is not None:
             # Previous Adjustments are saved for this deal. Fetch and display those in Adjustments table.
-            balance_sheet_adjustments = pd.read_json(balance_sheet_adjustments)
-            balance_sheet_adjustments['Date'] = balance_sheet_adjustments['Date'].apply(pd.to_datetime)
-            balance_sheet_adjustments['Date'] = balance_sheet_adjustments['Date'].apply(lambda x: str(x.date()))
+            upside_balance_sheet_adjustments = pd.read_json(upside_balance_sheet_adjustments)
         else:
-            balance_sheet_adjustments = pd.DataFrame()
+            upside_balance_sheet_adjustments = pd.DataFrame()
 
-        if on_pt_balance_sheet_adjustments is not None:
+        if wic_balance_sheet_adjustments is not None:
             # Previous Adjustments are saved for this deal. Fetch and display those in Adjustments table.
-            on_pt_balance_sheet_adjustments = pd.read_json(on_pt_balance_sheet_adjustments)
-            on_pt_balance_sheet_adjustments['Date'] = on_pt_balance_sheet_adjustments['Date'].apply(pd.to_datetime)
-            on_pt_balance_sheet_adjustments['Date'] = on_pt_balance_sheet_adjustments['Date'].apply(
-                lambda x: str(x.date()))
+            wic_balance_sheet_adjustments = pd.read_json(wic_balance_sheet_adjustments)
         else:
-            on_pt_balance_sheet_adjustments = pd.DataFrame()
+            wic_balance_sheet_adjustments = pd.DataFrame()
 
-        balance_sheet['Date'] = balance_sheet['Date'].apply(pd.to_datetime)
-        balance_sheet['Date'] = balance_sheet['Date'].apply(lambda x: str(x.date()))
-        balance_sheet_adjustments = balance_sheet_adjustments.to_json(orient='records')
-        on_pt_balance_sheet_adjustments = on_pt_balance_sheet_adjustments.to_json(orient='records')
+        if downside_balance_sheet_adjustments is not None:
+            # Previous Adjustments are saved for this deal. Fetch and display those in Adjustments table.
+            downside_balance_sheet_adjustments = pd.read_json(downside_balance_sheet_adjustments)
+        else:
+            downside_balance_sheet_adjustments = pd.DataFrame()
+
+        upside_balance_sheet_adjustments = upside_balance_sheet_adjustments.to_json(orient='records')
+        wic_balance_sheet_adjustments = wic_balance_sheet_adjustments.to_json(orient='records')
+        downside_balance_sheet_adjustments = downside_balance_sheet_adjustments.to_json(orient='records')
+
         balance_sheet = balance_sheet.to_json(orient='records')
 
-    return JsonResponse({'balance_sheet': balance_sheet, 'balance_sheet_adjustments': balance_sheet_adjustments,
-                         'on_pt_balance_sheet_adjustments': on_pt_balance_sheet_adjustments})
+    return JsonResponse({'balance_sheet': balance_sheet, 'upside_balance_sheet_adjustments':
+                        upside_balance_sheet_adjustments, 'wic_balance_sheet_adjustments': wic_balance_sheet_adjustments,
+                        'downside_balance_sheet_adjustments': downside_balance_sheet_adjustments})
 
 
 def ess_idea_premium_analysis(request):
@@ -1561,12 +1570,17 @@ def get_premium_analysis_results_from_worker(request):
     cix_down_price, cix_up_price, regression_up_price, regression_down_price = 0,0,0,0
     if request.method == 'POST':
         task_id = request.POST['task_id']
-        cix_down_price, cix_up_price, regression_up_price, regression_down_price = \
+        final_results, regression_results = \
             AsyncResult(task_id, app=run_ess_premium_analysis_task).get()
+
+        cix_down_price = np.round(final_results['Down Price (CIX)'], decimals=2)
+        cix_up_price = np.round(final_results['Up Price (CIX)'], decimals=2)
+        regression_up_price = np.round(final_results['Up Price (Regression)'], decimals=2)
+        regression_down_price = np.round(final_results['Down Price (Regression)'], decimals=2)
 
     return JsonResponse(
         {'cix_down_price': cix_down_price, 'cix_up_price': cix_up_price, 'regression_up_price': regression_up_price,
-         'regression_down_price': regression_down_price})
+         'regression_down_price': regression_down_price, 'regression_results': regression_results})
 
 
 @csrf_exempt

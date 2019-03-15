@@ -46,7 +46,7 @@ def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, anal
 def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, analyst_upside, analyst_downside,
              analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_bear=None,
              adjustments_df_bull=None, adjustments_df_pt=None, bear_flag=None, bull_flag=None,
-             pt_flag=None, f_period = "1BF", progress_recorder=None):
+             pt_flag=None, f_period="1BF", progress_recorder=None):
 
     slicer = dfutils.df_slicer()
     as_of_dt = datetime.datetime.today()

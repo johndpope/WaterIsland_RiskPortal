@@ -221,6 +221,7 @@ class ESS_Idea_OurFileUploads(models.Model):
     def filename(self):
         return os.path.basename(self.our_thesis_model.name)
 
+
 class ESS_Idea_BearFileUploads(models.Model):
     ess_idea_id = models.ForeignKey('ESS_Idea', on_delete=models.CASCADE)
     deal_key = models.IntegerField(null=True)  # DealKey reflecting a deal
@@ -297,13 +298,15 @@ class ESS_Idea(models.Model):
     status = models.CharField(max_length=100, null=True, default='Backlogged')
     lead_analyst = models.CharField(max_length=100, null=True, default='Unallocated')  # Analyst working on the deal
     version_number = models.IntegerField(default=0)
-    idea_balance_sheet = models.TextField(null=True)  # This field reflects the Balance Sheet Adjustments.
-    on_pt_balance_sheet = models.TextField(null=True)  # This field reflects the Adjustments on Price Target Date
+    upside_balance_sheet = models.TextField(null=True)  # This field reflects the Upside Balance Sheet Adjustments.
+    wic_balance_sheet = models.TextField(null=True)  # This field reflects the WIC Balance Sheet Adjustments.
+    downside_balance_sheet = models.TextField(null=True)  # This field reflects the Downside Balance Sheet Adjustments.
     pt_up_check = models.CharField(max_length=10, null=True)
     pt_down_check = models.CharField(max_length=10, null=True)
     pt_wic_check = models.CharField(max_length=10, null=True)
     how_to_adjust = models.CharField(max_length=10, null=True, default='cix')   # CIX or Regression
     premium_format = models.CharField(max_length=10, null=True, default='dollar')  # Dollar or Percentage
+
 
 class CreditDatabase(models.Model):
     id = models.AutoField(primary_key=True)
