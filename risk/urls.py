@@ -44,6 +44,8 @@ urlpatterns = [
     url('ess_idea_save_balance_sheet$',views.ess_idea_save_balance_sheet,name = 'ess_idea_save_balance_sheet'),
     url('get_premium_analysis_results_from_worker$',views.get_premium_analysis_results_from_worker,
         name='get_premium_analysis_results_from_worker'),
+    url('premium_analysis_get_latest_calculations$',views.premium_analysis_get_latest_calculations,
+        name = 'premium_analysis_get_latest_calculations'),
 
 ]
 

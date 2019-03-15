@@ -1353,7 +1353,33 @@ def show_ess_idea(request):
                            'bull_thesis_files': bull_thesis_files, 'bear_thesis_files': bear_thesis_files,
                            'our_thesis_files': our_thesis_files, 'mosaic_sum': mosaic_sum,
                            'version_numbers': version_numbers, 'downside_changes': downside_changes,
-                           'upside_downside_records_df': upside_downside_records_df.to_json(orient='records')})
+                           'upside_downside_records_df': upside_downside_records_df.to_json(orient='records'),
+                           })
+
+
+def premium_analysis_get_latest_calculations(request):
+    """ Show detailed Regression Results for latest calculations """
+    response = 'Failed'
+    if request.method == 'POST':
+        try:
+            regression_results = None
+            calculated_on = None
+            deal_id = request.POST['deal_id']
+            calculations = EssIdeaAdjustmentsInformation.objects.get(ess_idea_id_id=deal_id)
+            if calculations:
+                regression_results = calculations.regression_results
+                calculated_on = calculations.calculated_on
+
+            response = {'regression_results': regression_results, 'calculated_on':calculated_on}
+
+        except Exception as e:
+            print(e)
+
+    return JsonResponse(response)
+
+
+
+
 
 
 # @login_required
