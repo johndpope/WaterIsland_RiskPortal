@@ -976,6 +976,8 @@ $('#show_premium_analysis').on('click', function (e) {
                         $('.cix_up_price').html(dynamic_upside_downside['cix_up_price']);
                         $('.regression_down_price').html(dynamic_upside_downside['regression_down_price']);
                         $('.regression_up_price').html(dynamic_upside_downside['regression_up_price']);
+                        $('.wic_price_cix').html(dynamic_upside_downside['wic_cix_price']);
+                        $('.wic_price_regression').html(dynamic_upside_downside['wic_regression_price']);
                     },
                     'error': function (err) {
                         console.log(err);

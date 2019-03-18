@@ -172,8 +172,6 @@ $(document).ready(function () {
         downsides_data_dictionary['outlier_custom_input'] = outlier_custom_input;
         downsides_data_dictionary['outlier'] = outlier;
         downsides_data_dictionary['outlier_notes'] = outlier_notes;
-
-
         // Make an Ajax POST request...
 
         $.ajax({
@@ -215,15 +213,19 @@ $('#downsides_formulae_save_new_deal').on('click', function(){
    let tradegroup = $('#formulae_tradegroup').val();
    let underlying_security = $('#formulae_underlying').val();
    let analyst = $('#formulae_analyst').val();
-   let target_acquirer = $('#formulae_target').val();
    let origination_date = $('#formulae_origination_date').val();
    let deal_value = $('#formulae_deal_value').val();
+   let position_in_acquirer = $('#formulae_position_in_acquirer').val();
+   let acquirer_security = $('#formulae_acquirer_security').val();
+   let risk_limit = $('#formulae_risklimit').val();
+
 
    $.ajax({
        url: '../risk_reporting/formulae_downsides_new_deal_add',
        type:'POST',
        data: {'tradegroup':tradegroup, 'underlying_security':underlying_security,'analyst':analyst,
-       'target_acquirer':target_acquirer, 'origination_date':origination_date, 'deal_value':deal_value},
+       'origination_date':origination_date, 'deal_value':deal_value,
+       'position_in_acquirer':position_in_acquirer, 'acquirer_security':acquirer_security, 'risk_limit':risk_limit},
        success:function(response){
             if(response === 'Success'){
                 toastr.success('Refreshing Page', 'Successfully added new deal', {

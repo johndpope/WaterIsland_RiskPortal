@@ -30,7 +30,6 @@ from celery_progress.backend import ProgressRecorder
 from .ess_idea_db_utilities import add_new_deal, add_new_deal_alpha_only, add_new_deal_with_lock
 
 
-
 @shared_task
 def premium_analysis_flagger():
     """ Run this task each morning to calculate the Upside/Downside and appropriately flag the
@@ -113,7 +112,6 @@ def premium_analysis_flagger():
                 if deal_object.pt_wic_check == 'Yes':
                     # Adjust the PT Wic and Record the change
                     old_pt_wic = deal_object.pt_wic
-                    deal_object.pt_wic = pt_wic_price_cix if deal_object.how_to_adjust == 'cix' else pt_wic_price_regression
                     deal_change_dict['Old WIC PT'] = old_pt_wic
                     deal_change_dict['Adjusted WIC PT'] = deal_object.pt_wic
                     # Here check if it exceeds the 5% threshold to alert the user
@@ -127,7 +125,6 @@ def premium_analysis_flagger():
 
                 if deal_object.pt_up_check == 'Yes':
                     old_pt_up = deal_object.pt_up
-                    deal_object.pt_up = cix_up_price if deal_object.how_to_adjust == 'cix' else regression_up_price
                     deal_change_dict['Old Upside'] = old_pt_up
                     deal_change_dict['Adjusted Upside'] = deal_object.pt_up
                     if deal_object.how_to_adjust == 'cix':
@@ -140,7 +137,6 @@ def premium_analysis_flagger():
 
                 if deal_object.pt_down_check == 'Yes':
                     old_pt_down = deal_object.pt_down
-                    deal_object.pt_down = cix_down_price if deal_object.how_to_adjust == 'cix' else regression_down_price
                     deal_change_dict['Old Downside'] = old_pt_down
                     deal_change_dict['Adjusted Downside'] = deal_object.pt_down
                     if deal_object.how_to_adjust == 'cix':
