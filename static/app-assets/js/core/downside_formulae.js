@@ -17,7 +17,8 @@ $(document).ready(function () {
     });
 
 
-
+    // Keep Acquirer Security Input disabled
+    $('#formulae_acquirer_security').prop('disabled', true);
 
     // Event Handler for Datatable dropdown
     $('#downside_formulae_table tr td .BaseCaseDownsideType').on('change', function (e) {
@@ -242,20 +243,13 @@ $('#downsides_formulae_save_new_deal').on('click', function(){
 
 });
 
- // $('#upload_to_eze').on('click', function () {
- //
- //        console.log('CLICKEDDD');
- //      $.ajax({
- //          url: '../risk_reporting/upload_to_eze',
- //          type: 'POST',
- //          success:function (response) {
- //              var dowloadlink = document.createElement("a");
- //                    dowloadlink.download = "test";
- //                    dowloadlink.href = response;
- //                    dowloadlink.click();
- //          },
- //          error: function(err){
- //              console.log(err);
- //          }
- //      })
- //    })
+$('#formulae_position_in_acquirer').on('change', function(){
+   let selected_value = $(this).val();
+
+   if(selected_value === 'Yes'){
+       $('#formulae_acquirer_security').prop('disabled', false);
+   }
+   else{
+       $('#formulae_acquirer_security').prop('disabled', true);
+   }
+});

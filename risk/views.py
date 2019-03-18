@@ -1604,6 +1604,7 @@ def get_premium_analysis_results_from_worker(request):
         regression_up_price = np.round(final_results['Up Price (Regression)'], decimals=2)
         regression_down_price = np.round(final_results['Down Price (Regression)'], decimals=2)
 
+        print(regression_results)
     return JsonResponse(
         {'cix_down_price': cix_down_price, 'cix_up_price': cix_up_price, 'regression_up_price': regression_up_price,
          'regression_down_price': regression_down_price, 'regression_results': regression_results})
