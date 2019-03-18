@@ -458,6 +458,9 @@ def email_nav_impacts_report():
 
         df['(ARB) YTD $ P&L'] = df.apply(lambda x: "{:,}".format(int(x['(ARB) YTD $ P&L'])), axis=1)
 
+        # Get last Synced time
+        last_calculated_on = PositionLevelNAVImpacts.objects.latest('CALCULATED_ON').CALCULATED_ON
+
         def export_excel(df):
             with io.BytesIO() as buffer:
                 writer = pd.ExcelWriter(buffer)
@@ -490,12 +493,13 @@ def email_nav_impacts_report():
                   <head>
                   </head>
                   <body>
+                    <p>Synchronization Timestamp: {0}</p>
                     <a href="http://192.168.0.16:8000/risk_reporting/merger_arb_risk_attributes">
-                    Click to visit Realtime NAV Impacts Page</a>{0}<br><br>
-                    {1}
+                    Click to visit Realtime NAV Impacts Page</a>{1}<br><br>
+                    {2}
                   </body>
                 </html>
-        """.format(extra_message, df.hide_index().render(index=False))
+        """.format(last_calculated_on, extra_message, df.hide_index().render(index=False))
 
         exporters = {'Merger Arb NAV Impacts (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
                      export_excel}
