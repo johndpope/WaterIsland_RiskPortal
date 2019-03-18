@@ -45,7 +45,8 @@
                                 </div>
 
                             </div>
-                        </div><br>
+                        </div>
+                        <br>
 
 
                         <div class="col-lg-12">
@@ -58,7 +59,8 @@
                                            id="formulae_underlying"/>
                                 </div>
                             </div>
-                        </div><br>
+                        </div>
+                        <br>
 
 
                         <div class="col-lg-12">
@@ -71,20 +73,22 @@
                                            id="formulae_analyst"/>
                                 </div>
                             </div>
-                        </div><br>
+                        </div>
+                        <br>
 
 
                         <div class="col-lg-12">
                             <div class="row justify-content-center">
                                 <div class="col-lg-2 block-tag">
-                                    <small class="badge badge-default badge-success">Target/Acquirer?</small>
+                                    <small class="badge badge-default badge-success">Risk Limit</small>
                                 </div>
                                 <div class="col-lg-6">
                                     <input type="text" placeholder="eg. Target" class="form-control"
-                                           id="formulae_target"/>
+                                           id="formulae_risklimit"/>
                                 </div>
                             </div>
-                        </div><br>
+                        </div>
+                        <br>
 
 
                         <div class="col-lg-12">
@@ -97,7 +101,52 @@
                                            id="formulae_origination_date"/>
                                 </div>
                             </div>
-                        </div><br>
+                        </div>
+                        <br>
+
+                        <div class="col-lg-12">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-2 block-tag">
+                                    <small class="badge badge-default badge-success">Position in Acquirer</small>
+                                </div>
+                                <!-- Default unchecked -->
+                                <div class="col-lg-6">
+                                    <fieldset class="form-group">
+                                        <select id="formulae_position_in_acquirer" class="custom-select">
+                                            <option selected value="No">No</option>
+                                            <option value="Yes">Yes</option>
+                                        </select>
+                                    </fieldset>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+
+                        <div class="col-lg-12">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-2 block-tag">
+                                    <small class="badge badge-default badge-success">Acquirer Security</small>
+                                </div>
+                                <div class="col-lg-6">
+                                    <input type="text" placeholder="eg. IBM US EQUITY" class="form-control"
+                                           id="formulae_acquirer_security"/>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
+
+                        <div class="col-lg-12">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-2 block-tag">
+                                    <small class="badge badge-default badge-success">Origination Date</small>
+                                </div>
+                                <div class="col-lg-6">
+                                    <input type="date" placeholder="eg. JSO" class="form-control"
+                                           id="formulae_origination_date"/>
+                                </div>
+                            </div>
+                        </div>
+                        <br>
 
 
                         <div class="col-lg-12">
@@ -110,7 +159,8 @@
                                            id="formulae_deal_value"/>
                                 </div>
                             </div>
-                        </div><br>
+                        </div>
+                        <br>
                     </div>
 
                     <div class="modal-footer">
@@ -163,8 +213,12 @@
                             <input type="hidden" id="merger_arb_nav_impacts_table" value="{{ marb_positionws }}">
                             <div class="card-content">
                                 <div class="table-responsive">
-                                <a class="btn btn-sm btn-indigo" href="{% url 'risk_reporting:security_info_download' %}" target="_blank">Download SecurityInfo.csv</a>
-                                <a class="btn btn-sm btn-indigo" href="{% url 'risk_reporting:deal_info_download' %}" target="_blank">Download DealInfo.csv</a>
+                                    <a class="btn btn-sm btn-indigo"
+                                       href="{% url 'risk_reporting:security_info_download' %}" target="_blank">Download
+                                        SecurityInfo.csv</a>
+                                    <a class="btn btn-sm btn-indigo"
+                                       href="{% url 'risk_reporting:deal_info_download' %}" target="_blank">Download
+                                        DealInfo.csv</a>
                                     <!-- Task List table -->
                                     <table class="table table-bordered" id='downside_formulae_table'
                                            style="font-size:12px;">
@@ -209,7 +263,7 @@
                                                 {% if row.base_case == None or row.outlier == None %}
                                                     <tr class="bg-grey text-white" id="{{ row.id }}">
 
-                                                    {% else %}
+                                                        {% else %}
                                                     <tr id="{{ row.id }}">
                                                 {% endif %}
                                             {% else %}

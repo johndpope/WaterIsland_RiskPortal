@@ -1090,6 +1090,9 @@ $('#ess_idea_view_balance_sheet').on('click', function (e) {
             }
 
             // Populate the Adjustments for Downsides
+            console.log(downside_balance_sheet_adjustments);
+
+
 
             if (downside_balance_sheet_adjustments.length > 0) {
                 $('#downsides_adjustment_balance_sheet_px').val(downside_balance_sheet_adjustments[0]['PX']);
@@ -1157,9 +1160,9 @@ $('#save_balance_sheet').on('click', function (e) {
         'BEST_OPP': $('#downsides_adjustment_balance_sheet_best_opp').val(),
         'BEST_SALES': $('#downsides_adjustment_balance_sheet_best_sales').val(),
         'CUR_EV_COMPONENT': $('#downsides_adjustment_balance_sheet_cur_ev_component').val(),
-        'BEST_CAPEX': $('#on_pt_adjustment_balance_sheet_best_capex').val(),
-        'BEST_EBITDA': $('#on_pt_adjustment_balance_sheet_best_ebitda').val(),
-        'EQY_SH_OUT': $('#on_pt_adjustment_balance_sheet_eqy_sh_out').val()
+        'BEST_CAPEX': $('#downsides_adjustment_balance_sheet_best_capex').val(),
+        'BEST_EBITDA': $('#downsides_adjustment_balance_sheet_best_ebitda').val(),
+        'EQY_SH_OUT': $('#downsides_adjustment_balance_sheet_eqy_sh_out').val()
     };
 
     $.ajax({
@@ -1202,7 +1205,7 @@ $('#ess_idea_todays_calculations').on('click', function () {
             else {
                 // Process and Populate the Table...
                 let regression_results = $.parseJSON(response['regression_results']);
-                let calculated_on = response['calculated_on'];
+                //let calculated_on = response['calculated_on'];
                 let multiples = Object.keys(regression_results);
                 for (var i = 0; i < multiples.length; i++) {
                     let multiple = multiples[i];

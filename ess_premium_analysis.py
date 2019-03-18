@@ -418,7 +418,7 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_bear = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
@@ -430,7 +430,7 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_bear = adjustments_df
@@ -450,7 +450,7 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             adjustments = ast.literal_eval(adjustments_df_bull)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_bull = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
@@ -462,7 +462,7 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_bull = adjustments_df
@@ -482,7 +482,7 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             adjustments = ast.literal_eval(adjustments_df_pt)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_pt = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
@@ -494,7 +494,7 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             adjustments = ast.literal_eval(adjustments_df_pt)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_pt = adjustments_df
@@ -584,7 +584,7 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_bear = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
@@ -596,7 +596,7 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_bear = adjustments_df
@@ -616,7 +616,7 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             adjustments = ast.literal_eval(adjustments_df_bull)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_bull = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
@@ -628,7 +628,7 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_bull = adjustments_df
@@ -648,7 +648,7 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             adjustments = ast.literal_eval(adjustments_df_pt)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_pt = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
@@ -660,7 +660,7 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             adjustments = ast.literal_eval(adjustments_df_pt)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
             adjustments_df = adjustments_df.T
-            adjustments_df = adjustments_df.drop(columns='Date')
+            #adjustments_df = adjustments_df.drop(columns='Date')
             cols = adjustments_df.columns
             adjustments_df[cols] = adjustments_df[cols].apply(pd.to_numeric)
             alpha_balance_sheet_df_pt = adjustments_df
