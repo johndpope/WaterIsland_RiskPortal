@@ -219,9 +219,12 @@ def formulae_downsides_new_deal_add(request):
         tradegroup = request.POST['tradegroup']
         underlying_security = request.POST['underlying_security']
         analyst = request.POST['analyst']
-        target_acquirer = request.POST['target_acquirer']
         origination_date = request.POST['origination_date']
         deal_value = request.POST['deal_value']
+        position_in_acquirer = request.POST['position_in_acquirer']
+        acquirer_security = request.POST['acquirer_security']
+        risk_limit = request.POST['risk_limit']
+
         # Get the max ID
         try:
             max_id = int(FormulaeBasedDownsides.objects.all().aggregate(Max('id'))['id__max'])
@@ -230,11 +233,26 @@ def formulae_downsides_new_deal_add(request):
             obj.id = insert_id
             obj.TradeGroup = tradegroup
             obj.Underlying = underlying_security
-            obj.TargetAcquirer = target_acquirer
+            obj.TargetAcquirer = 'Target'
             obj.Analyst = analyst
+            obj.RiskLimit = risk_limit
             obj.OriginationDate = origination_date
             obj.DealValue = deal_value
             obj.save()
+
+            # If Position in Acquirer is Yes then create another row
+            if position_in_acquirer == 'Yes':
+                obj2 = FormulaeBasedDownsides()
+                obj2.id = insert_id + 1
+                obj2.TradeGroup = tradegroup
+                obj2.Underlying = acquirer_security
+                obj2.TargetAcquirer = 'Acquirer'
+                obj2.Analyst = analyst
+                obj2.RiskLimit = risk_limit
+                obj2.OriginationDate = origination_date
+                obj2.DealValue = deal_value
+                obj2.save()
+
             response = 'Success'
 
         except Exception as e:
