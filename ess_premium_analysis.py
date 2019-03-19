@@ -1,9 +1,10 @@
-import bbgclient
-import dfutils
 import datetime
+from collections import OrderedDict
+import ast
 import pandas as pd
 import statsmodels.formula.api as sm
-import ast
+import bbgclient
+import dfutils
 
 
 def multiple_underlying_df(ticker, end_date_yyyymmdd, api_host, fperiod="1BF"):
@@ -122,17 +123,17 @@ def multiples_df(ticker, start_date_yyyymmdd, unaffected_date_yyyymmdd, api_host
         ebitda = bbgclient.bbgclient.get_timeseries(ticker, 'BEST_EBITDA', start_date_yyyymmdd,
                                                     unaffected_date_yyyymmdd, {'BEST_FPERIOD_OVERRIDE': fperiod},
                                                     api_host).reset_index().rename(
-            columns={'index': 'Date', 0: 'EBITDA'})
+                                                        columns={'index': 'Date', 0: 'EBITDA'})
         opp = bbgclient.bbgclient.get_timeseries(ticker, 'BEST_OPP', start_date_yyyymmdd, unaffected_date_yyyymmdd,
                                                  {'BEST_FPERIOD_OVERRIDE': fperiod}, api_host).reset_index().rename(
-            columns={'index': 'Date', 0: 'OPP'})
+                                                     columns={'index': 'Date', 0: 'OPP'})
         capex = bbgclient.bbgclient.get_timeseries(ticker, 'BEST_CAPEX', start_date_yyyymmdd, unaffected_date_yyyymmdd,
                                                    {'BEST_FPERIOD_OVERRIDE': fperiod}, api_host).reset_index().rename(
-            columns={'index': 'Date', 0: 'CAPEX'})
+                                                       columns={'index': 'Date', 0: 'CAPEX'})
         eqy_sh_out = bbgclient.bbgclient.get_timeseries(ticker, 'EQY_SH_OUT', start_date_yyyymmdd,
                                                         unaffected_date_yyyymmdd,
                                                         api_host=api_host).reset_index().rename(
-            columns={'index': 'Date', 0: 'EQY_SH_OUT'})
+                                                            columns={'index': 'Date', 0: 'EQY_SH_OUT'})
         ni = bbgclient.bbgclient.get_timeseries(ticker, 'BEST_NET_INCOME', start_date_yyyymmdd,
                                                 unaffected_date_yyyymmdd, {'BEST_FPERIOD_OVERRIDE': fperiod},
                                                 api_host).reset_index().rename(columns={'index': 'Date', 0: 'NI'})
@@ -248,13 +249,207 @@ def compute_multiple_from_price(metric_name, price, mult_underlying_df):
         return None
 
 
-def calibration_data(alpha_ticker, peer2weight, start_date_yyyy_mm_dd, end_date_yyyy_mm_dd, metrics, api_host, fperiod):
+def compute_string_equations(metric_name, x, mult_underlying_dict, from_p=None):
+    #x is either price or multiple
+    try:
+        if from_p == None:
+            if metric_name == 'EV/EBITDA':
+                ebitda = mult_underlying_dict['EBITDA']
+                eqy_sh_out = mult_underlying_dict['EQY_SH_OUT']
+                ev_component = mult_underlying_dict['EV_COMP']
+                calc = '((' + x + " * " + eqy_sh_out + ') + ' + ev_component + ')/(' + ebitda + ')'
+                return calc
+
+            if metric_name == 'EV/Sales':
+                sales = mult_underlying_dict['Sales']
+                eqy_sh_out = mult_underlying_dict['EQY_SH_OUT']
+                ev_component = mult_underlying_dict['EV_COMP']
+                calc = "((" + x + " * " + eqy_sh_out + ') + ' + ev_component + ')/(' + sales + ')'
+                return calc
+
+            if metric_name == 'P/EPS':
+                eps = mult_underlying_dict['EPS']
+                calc = '(' + x + ')/(' + eps + ')'
+                return calc
+
+            if metric_name == 'DVD yield':
+                curr_dvd_yield = mult_underlying_dict['DVD']
+                curr_px = mult_underlying_dict['PX']
+                curr_dvd = '(' + curr_dvd_yield + ' * ' + curr_px + ')'
+                calc = curr_dvd + ' /(' + x + ')'
+                return calc
+
+            if metric_name == 'FCF yield':
+                ni = mult_underlying_dict['NI']
+                ebitda = mult_underlying_dict['EBITDA']
+                opp = mult_underlying_dict['OPP']
+                capex = mult_underlying_dict['CAPEX']
+                eqy_sh_out = mult_underlying_dict['EQY_SH_OUT']
+                fcf = '(' + ni + ' + ' + ebitda + ' - ' + opp + ' + ' + capex + ')/(' + eqy_sh_out + ')'
+                calc = fcf + '/(' + x + ')'
+                return calc
+        else:
+            if metric_name == 'EV/EBITDA':
+                ebitda = mult_underlying_dict['EBITDA']
+                eqy_sh_out = mult_underlying_dict['EQY_SH_OUT']
+                ev_component = mult_underlying_dict['EV_COMP']
+                calc = '((' + x + " * " + ebitda + ') - ' + ev_component + ')/(' + eqy_sh_out + ')'
+                return calc
+
+            if metric_name == 'EV/Sales':
+                sales = mult_underlying_dict['Sales']
+                eqy_sh_out = mult_underlying_dict['EQY_SH_OUT']
+                ev_component = mult_underlying_dict['EV_COMP']
+                calc = "((" + x + " * " + sales + ') - ' + ev_component + ')/(' + eqy_sh_out + ')'
+                return calc
+
+            if metric_name == 'P/EPS':
+                eps = mult_underlying_dict['EPS']
+                calc = '(' + x + ')*(' + eps + ')'
+                return calc
+
+            if metric_name == 'DVD yield':
+                curr_dvd_yield = mult_underlying_dict['DVD']
+                curr_px = mult_underlying_dict['PX']
+                curr_dvd = '(' + curr_dvd_yield + ' * ' + curr_px + ')'
+                calc = curr_dvd + ' /(' + x + ')'
+                return calc
+
+            if metric_name == 'FCF yield':
+                ni = mult_underlying_dict['NI']
+                ebitda = mult_underlying_dict['EBITDA']
+                opp = mult_underlying_dict['OPP']
+                capex = mult_underlying_dict['CAPEX']
+                eqy_sh_out = mult_underlying_dict['EQY_SH_OUT']
+                fcf = '(' + ni + ' + ' + ebitda + ' - ' + opp + ' + ' + capex + ')/(' + eqy_sh_out + ')'
+                calc = fcf + '/(' + x + ')'
+                return calc
+
+    except Exception as e:
+        print('failed calculating: ' + str(metric_name) + ' ' + str(e.args))
+        return None
+
+
+def calculations_summary(reg_results, metrics, analyst_upside, analyst_downside, analyst_pt_wic,
+                         bear_bs_dict, bull_bs_dict, pt_bs_dict):
+    overall_calculations_dict = OrderedDict()
+    up_an = str(round(analyst_upside, 2)) + ' (Upside Analyst @ PTD)'
+    down_an = str(round(analyst_downside, 2)) + ' (Downside Analyst @ PTD)'
+    pt_an = str(round(analyst_pt_wic, 2)) + ' (PT WIC Analyst @ PTD)'
+    for i in range(0, len(reg_results)):
+        calculations_dict = OrderedDict()
+        met = reg_results["Metric"][i]
+        coeff = reg_results['Coefficients'][i]
+        peers_ptd = reg_results['Peers Multiples @ Price Target Date'][i]
+        alpha_mult_ptd = reg_results['Alpha Implied Multiple @ Price Target Date'][i]
+        bear_mult_ptd = reg_results["Alpha Bear Multiple @ Price Target Date"][i]
+        bull_mult_ptd = reg_results["Alpha Bull Multiple @ Price Target Date"][i]
+        pt_mult_ptd = reg_results["Alpha PT WIC Multiple @ Price Target Date"][i]
+        premium_bear = reg_results['Premium Bear (%)'][i] 
+        premium_pt = reg_results['Premium PT WIC (%)'][i]
+        premium_bull = reg_results['Premium Bull (%)'][i]
+        peers_now = reg_results['Peers Multiples @ Now'][i]
+        alpha_mult_now = reg_results['Alpha Implied Multiple @ Now'][i] 
+        bear_mult_now = str(round(reg_results['Alpha Bear Multiple @ Now'][i], 2)) + ' (Bear Multiple @ Now)'
+        pt_mult_now = str(round(reg_results['Alpha PT WIC Multiple @ Now'][i], 2)) + ' (PT WIC Multiple @ Now)'
+        bull_mult_now = str(round(reg_results['Alpha Bull Multiple @ Now'][i], 2)) + ' (Bull Multiple @ Now)'
+        alpha_downside = reg_results['Alpha Downside'][i]
+        alpha_pt = reg_results['Alpha PT WIC'][i]
+        alpha_upside = reg_results['Alpha Upside'][i]
+        downside = reg_results['Alpha Downside (Adj,weighted)'][i]
+        pt = reg_results['Alpha PT WIC (Adj,weighted)'][i]
+        upside = reg_results['Alpha Upside (Adj,weighted)'][i]
+        calculations_dict['Alpha Implied Multiple @ PTD'] = (
+            "Intercept: " + str(round(coeff['Intercept'], 2)) + ' + ' +
+            " + ".join([m.split(" ")[0] + ": (" + str(round(coeff[m.split(" ")[0]], 2)) + "*"
+                        + str(round(peers_ptd[m], 2)) + ")" for m in peers_ptd.keys()]) +
+            " = Alpha Implied Multiple @ PTD: " + str(round(alpha_mult_ptd, 2)))
+        calculations_dict['Bear Multiple @ PTD'] = (compute_string_equations(
+            met, down_an, bear_bs_dict, from_p=None) + ' = (Bear Multiple @ PTD) ' + str(round(bear_mult_ptd, 2)))
+        calculations_dict['Bull Multiple @ PTD'] = (compute_string_equations(
+            met, up_an, bull_bs_dict, from_p=None) + ' = (Bull Multiple @ PTD) ' + str(round(bull_mult_ptd, 2)))
+        calculations_dict['PT WIC Multiple @ PTD'] = (compute_string_equations(
+            met, pt_an, pt_bs_dict, from_p=None) + ' = (PT WIC Multiple @ PTD) ' + str(round(pt_mult_ptd, 2)))
+        calculations_dict['Bear Premium @ PTD'] = (
+            '(((' + str(round(bear_mult_ptd, 2)) + ' (Bear Multiple @ PTD) / ' + str(round(alpha_mult_ptd, 2))
+            + ' (Alpha Implied Multiple @ PTD)) * 100.0) - 100.0) = (Bear Perecent Change) ' +
+            str(round(premium_bear, 2)) + ' %')
+        calculations_dict['Bull Premium @ PTD'] = (
+            '(((' + str(round(bull_mult_ptd, 2)) + ' (Bull Multiple @ PTD) / ' + str(round(alpha_mult_ptd, 2))
+            + ' (Alpha Implied Multiple @ PTD)) * 100.0) - 100.0) = (Bull Percent Change) ' +
+            str(round(premium_bull, 2)) + ' %')
+        calculations_dict['PT WIC Premium @ PTD'] = (
+            '(((' + str(round(pt_mult_ptd, 2)) + ' (PT WIC Multiple @ PTD) / ' + str(round(alpha_mult_ptd, 2))
+            + ' (Alpha Implied Multiple @ PTD)) * 100.0) - 100.0) = (PT WIC Percent Change) ' +
+            str(round(premium_pt, 2)) + ' %')
+        calculations_dict['Alpha Implied Multiple @ Now'] = (
+            "Intercept: " +str(round(coeff['Intercept'], 2)) + ' + ' +
+            " + ".join([m.split(" ")[0] + ": (" + str(round(coeff[m.split(" ")[0]], 2)) + "*" +
+                        str(round(peers_now[m], 2)) + ")" for m in peers_now.keys()]) +
+            " = Alpha Implied Multiple @ Now: " + str(round(alpha_mult_now, 2)))
+        calculations_dict['Bear Multiple @ Now'] = (
+            'Alpha Implied Multiple @ Now: ' +str(round(alpha_mult_now, 2)) + ' * (1 + (Bear Percent Change: '
+            + str(round(premium_bear, 2)) + " %) = " + bear_mult_now)
+        calculations_dict['Bull Multiple @ Now'] = (
+            'Alpha Implied Multiple @ Now: ' + str(round(alpha_mult_now, 2)) + ' * (1 + (Bull Percent Change: '
+            + str(round(premium_bull, 2)) + " %) = " + bull_mult_now)
+        calculations_dict['PT WIC Multiple @ Now'] = (
+            'Alpha Implied Multiple @ Now: ' + str(round(alpha_mult_now, 2)) + ' * (1 + (PT WIC Percent Change: '
+            + str(round(premium_pt, 2)) + " %) = " + pt_mult_now)
+        calculations_dict['Downside'] = (compute_string_equations(
+            met, bear_mult_now, bear_bs_dict, from_p='yes') + ' = (Alpha Downside) '
+                                         + str(round(alpha_downside, 2)))
+        calculations_dict['Upside'] = (compute_string_equations(
+            met, bull_mult_now, bull_bs_dict, from_p='yes') + ' = (Alpha Upside) '
+                                       + str(round(alpha_upside, 2)))
+        calculations_dict['PT WIC'] = (compute_string_equations(
+            met, pt_mult_now, pt_bs_dict, from_p='yes') + ' = (Alpha PT WIC) '
+                                       + str(round(alpha_pt, 2)))
+        calculations_dict['Downside (Adj,weighted)'] = (str(round(alpha_downside, 2)) +
+                                                        ' (Alpha Downside) * ' + str(metrics[met])
+                                                        + ' = Downside (Adj,weighted): '
+                                                        + str(round(downside, 2)))
+        calculations_dict['PT WIC (Adj,weighted)'] = (str(round(alpha_pt, 2)) + ' (Alpha PT WIC) * '
+                                                      + str(metrics[met]) + ' = PT WIC (Adj,weighted): '
+                                                      + str(round(pt, 2)))
+        calculations_dict['Upside (Adj,weighted)'] = (str(round(alpha_upside, 2)) + ' (Alpha Upside) * '
+                                                      + str(metrics[met]) + ' = Upside (Adj,weighted): '
+                                                      + str(round(upside, 2)))
+        overall_calculations_dict[met] = calculations_dict
+
+    calc = {}
+    calc['Down Price (Regression)'] = (' + '.join([list(metrics.keys())[i] + ": " +
+                                                   str(round(reg_results['Alpha Downside (Adj,weighted)'][i], 2)) +
+                                                   ' (Alpha Downside (Adj,weighted))'
+                                                   for i in range(0, len(reg_results))])
+                                       + ' = ' + str(round(reg_results["Alpha Downside (Adj,weighted)"].sum(), 2))
+                                       + ' (Down Price (Regression))')
+    calc['PT WIC Price (Regression)'] = (' + '.join([list(metrics.keys())[i] + ": " +
+                                                     str(round(reg_results['Alpha PT WIC (Adj,weighted)'][i], 2)) +
+                                                     ' (Alpha PT WIC (Adj,weighted))'
+                                                     for i in range(0, len(reg_results))])
+                                         + ' = ' + str(round(reg_results["Alpha PT WIC (Adj,weighted)"].sum(), 2))
+                                         + ' (PT WIC Price (Regression))')
+    calc['Up Price (Regression)'] = (' + '.join([list(metrics.keys())[i] + ": " +
+                                                 str(round(reg_results['Alpha Upside (Adj,weighted)'][i], 2)) +
+                                                 ' (Alpha Upside (Adj,weighted))' for i in range(0, len(reg_results))])
+                                     + ' = ' + str(round(reg_results["Alpha Upside (Adj,weighted)"].sum(), 2))
+                                     + ' (Up Price (Regression))')
+
+
+    overall_calculations_dict["Total"] = calc
+
+    return overall_calculations_dict
+
+
+def calibration_data(alpha_ticker, peer2weight, start_date_yyyy_mm_dd, end_date_yyyy_mm_dd, metrics,
+                     api_host, fperiod):
     peer_tickers = list(peer2weight.keys())
     alpha_historical_mult = multiples_df(alpha_ticker, start_date_yyyy_mm_dd.strftime('%Y%m%d'),
                                          end_date_yyyy_mm_dd.strftime('%Y%m%d'), api_host, fperiod)
     peer2historical_mult = {
-        p: multiples_df(p, start_date_yyyy_mm_dd.strftime('%Y%m%d'), end_date_yyyy_mm_dd.strftime('%Y%m%d'), api_host,
-                        fperiod, multiples_to_query=metrics) for p in peer_tickers}
+        p: multiples_df(p, start_date_yyyy_mm_dd.strftime('%Y%m%d'), end_date_yyyy_mm_dd.strftime('%Y%m%d'),
+                        api_host, fperiod, multiples_to_query=metrics) for p in peer_tickers}
 
     metric2rel = {}
     for metric in metrics:
@@ -307,8 +502,7 @@ def metric2implied_px(alpha_ticker, peer_tickers, dt, metrics, api_host, metric2
     # alpha_mult_df = multiples_df(alpha_ticker,start_date_yyyymmdd, dt.strftime('%Y%m%d'),api_host,fperiod=fperiod)
     peer2mult_df = {
         p: multiples_df(p, start_date_yyyymmdd, dt.strftime('%Y%m%d'), api_host, fperiod, multiples_to_query=metrics)
-    for p
-        in peer_tickers}
+        for p in peer_tickers}
     alpha_mult_underlying_df = multiple_underlying_df(alpha_ticker, dt.strftime('%Y%m%d'), api_host, fperiod)
 
     metric2data = {m: {} for m in metrics}
@@ -341,8 +535,8 @@ def metric2implied_px(alpha_ticker, peer_tickers, dt, metrics, api_host, metric2
         metric2data[metric]['Peers multiple'] = peers_multiple
         metric2data[metric]['Peer2Multiple'] = peer2mult
         metric2data[metric]['Alpha Unaffected PX (-2sigma)'] = compute_implied_price_from_multiple(metric,
-                                                                                                    implied_multiple_low,
-                                                                                                    alpha_balance_sheet_df)
+                                                                                                   implied_multiple_low,
+                                                                                                   alpha_balance_sheet_df)
         metric2data[metric]['Alpha Unaffected PX (avg)'] = compute_implied_price_from_multiple(metric,
                                                                                                implied_multiple_mean,
                                                                                                alpha_balance_sheet_df)
@@ -356,8 +550,9 @@ def metric2implied_px(alpha_ticker, peer_tickers, dt, metrics, api_host, metric2
 
 def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_upside, analyst_downside,
                             analyst_pt_wic, as_of_dt, price_tgt_dt, metrics, metric2weight, api_host,
-                            adjustments_df_bear, adjustments_df_bull, adjustments_df_pt, bear_flag=None, bull_flag=None,
-                            pt_flag=None):
+                            adjustments_df_bear, adjustments_df_bull, adjustments_df_pt, bear_flag=None,
+                            bull_flag=None, pt_flag=None):
+
     alpha_historical_mult_df = calib_data['alpha_historical_mult_df']
     peer2historical_mult_df = calib_data['peer2historical_mult_df']
     ticker2short_ticker = {p: p.split(' ')[0] for p in peer_ticker_list + [alpha_ticker]}
@@ -378,16 +573,16 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
         peer2coeff = {p: ols_result.params[p.split(' ')[0]] for p in peer_ticker_list}
         peer2coeff['Intercept'] = ols_result.params['Intercept']
         metric2peer2coeff[metric] = peer2coeff
-        rows.append([metric, ols_result.params.to_dict()] + [peer2coeff[p] for p in peer_ticker_list] + [
-            peer2coeff['Intercept']])
+        rows.append([metric, ols_result.params.to_dict()] + [peer2coeff[p] for p in peer_ticker_list] +
+                    [peer2coeff['Intercept']])
 
     slicer = dfutils.df_slicer()
     peer2ptd_multiple = {p: multiples_df(p, slicer.prev_n_business_days(100, price_tgt_dt).strftime('%Y%m%d'),
                                          price_tgt_dt.strftime('%Y%m%d'), api_host, fperiod='1BF',
                                          multiples_to_query=metrics) for p in peer_ticker_list}
-    peer2now_multiple = {
-        p: multiples_df(p, slicer.prev_n_business_days(100, as_of_dt).strftime('%Y%m%d'), as_of_dt.strftime('%Y%m%d'),
-                        api_host, fperiod='1BF', multiples_to_query=metrics) for p in peer_ticker_list}
+    peer2now_multiple = {p: multiples_df(p, slicer.prev_n_business_days(100, as_of_dt).strftime('%Y%m%d'),
+                                         as_of_dt.strftime('%Y%m%d'),
+                                         api_host, fperiod='1BF', multiples_to_query=metrics) for p in peer_ticker_list}
     alpha_balance_sheet_df_ptd = multiple_underlying_df(alpha_ticker, price_tgt_dt, api_host, fperiod='1BF')
     # alpha_balance_sheet_df_now = multiple_underlying_df(alpha_ticker,as_of_dt,api_host,fperiod='1BF')
 
@@ -404,15 +599,25 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
         lambda m: {p: peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peer_ticker_list})
     df['Alpha Implied Multiple @ Price Target Date'] = df['Metric'].apply(lambda m: sum(
         [metric2peer2coeff[m][p] * peer2ptd_multiple[p][m].fillna(0).iloc[-1] for p in peer_ticker_list]) +
-                                                                                    metric2peer2coeff[m]['Intercept'])
-
-
+                                                                          metric2peer2coeff[m]['Intercept'])
     if adjustments_df_bear is None:
         alpha_balance_sheet_df_bear = alpha_balance_sheet_df_ptd
         df['Alpha Balance Sheet DataFrame (Bear Case)'] = [alpha_balance_sheet_df_bear] * len(df)
         df['Alpha Bear Multiple @ Price Target Date'] = [
-            compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, price) in
+            compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, analyst_downside) in
             zip(df['Metric'], df['Alpha Downside (analyst)'])]
+        ebitda_bear = "EBITDA: (Bloomberg) " + str(round(alpha_balance_sheet_df_ptd['BEST_EBITDA'][0], 2))
+        px_bear = 'PX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['PX'][0], 2))
+        eqy_sh_out_bear = 'EQY_SH_OUT: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['EQY_SH_OUT'][0], 2))
+        sales_bear = 'Sales: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_SALES'][0], 2))
+        eps_bear = 'EPS: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_EPS'][0], 2))
+        opp_bear = 'OPP: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_OPP'][0], 2))
+        ni_bear = 'Net Income: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_NET_INCOME'][0], 2))
+        capex_bear = 'CAPEX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_CAPEX'][0], 2))
+        ev_comp_bear = ('CUR EV Component: (Bloomberg) ' + \
+                       str(round(alpha_balance_sheet_df_ptd['CUR_EV_COMPONENT'][0], 2)))
+        dvd_yield_bear = ('DVD Indicated Yield: (Bloomberg) ' +
+                          str(round(alpha_balance_sheet_df_ptd['DIVIDEND_INDICATED_YIELD'][0], 2)))
     else:
         if bear_flag is None:
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
@@ -424,8 +629,38 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             alpha_balance_sheet_df_bear = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
             df['Alpha Balance Sheet DataFrame (Bear Case)'] = [alpha_balance_sheet_df_bear] * len(df)
             df['Alpha Bear Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, price) in
-                zip(df['Metric'], df['Alpha Downside (analyst)'])]
+                compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, analyst_downside)
+                in zip(df['Metric'], df['Alpha Downside (analyst)'])]
+            ebitda_bear = ("EBITDA: (Bloomberg) " + str(round(alpha_balance_sheet_df_ptd['BEST_EBITDA'][0], 2)) +
+                           " + (Adj) " + str(round(adjustments_df['BEST_EBITDA'][0], 2)) + " = " +
+                           str(round(alpha_balance_sheet_df_bear['BEST_EBITDA'][0], 2)))
+            px_bear = ('PX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['PX'][0], 2)) + " + (Adj) "
+                       + str(round(adjustments_df['PX'][0], 2)) + " = " +
+                       str(round(alpha_balance_sheet_df_bear['PX'][0], 2)))
+            eqy_sh_out_bear = ('EQY_SH_OUT: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['EQY_SH_OUT'][0], 2))+
+                               " + (Adj) " + str(round(adjustments_df['EQY_SH_OUT'][0], 2)) + " = " +
+                               str(round(alpha_balance_sheet_df_bear['EQY_SH_OUT'][0], 2)))
+            sales_bear = ('Sales: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_SALES'][0], 2)) +
+                          " + (Adj) " + str(round(adjustments_df['BEST_SALES'][0], 2)) + " = " +
+                          str(round(alpha_balance_sheet_df_bear['BEST_SALES'][0], 2)))
+            eps_bear = ('EPS: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_EPS'][0], 2)) + " + (Adj) "
+                        + str(round(adjustments_df['BEST_EPS'][0], 2)) + " = " +
+                        str(round(alpha_balance_sheet_df_bear['BEST_EPS'][0], 2)))
+            opp_bear = ('OPP: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_OPP'][0], 2)) + " + (Adj) " +
+                        str(round(adjustments_df['BEST_OPP'][0], 2)) + " = " +
+                        str(round(alpha_balance_sheet_df_bear['BEST_OPP'][0], 2)))
+            ni_bear = ('Net Income: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_NET_INCOME'][0], 2)) +
+                       " + (Adj) " + str(round(adjustments_df['BEST_NET_INCOME'][0], 2)) + " = " +
+                       str(round(alpha_balance_sheet_df_bear['BEST_NET_INCOME'][0], 2)))
+            capex_bear = ('CAPEX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_CAPEX'][0], 2)) +
+                          " + (Adj) " + str(round(adjustments_df['BEST_CAPEX'][0], 2)) + " = " +
+                          str(round(alpha_balance_sheet_df_bear['BEST_CAPEX'][0], 2)))
+            ev_comp_bear = ('CUR EV Component: (Bloomberg) ' +
+                            str(round(alpha_balance_sheet_df_ptd['CUR_EV_COMPONENT'][0], 2))
+                            + " + (Adj) " + str(round(adjustments_df['CUR_EV_COMPONENT'][0], 2)) + " = " +
+                            str(round(alpha_balance_sheet_df_bear['CUR_EV_COMPONENT'][0], 2)))
+            dvd_yield_bear = ('DVD Indicated Yield: (Bloomberg) ' +
+                              str(round(alpha_balance_sheet_df_ptd['DIVIDEND_INDICATED_YIELD'][0], 2)))
         else:
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
@@ -436,15 +671,43 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             alpha_balance_sheet_df_bear = adjustments_df
             df['Alpha Balance Sheet DataFrame (Bear Case)'] = [alpha_balance_sheet_df_bear] * len(df)
             df['Alpha Bear Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, price) in
-                zip(df['Metric'], df['Alpha Downside (analyst)'])]
+                compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, analyst_downside)
+                in zip(df['Metric'], df['Alpha Downside (analyst)'])]
+            ebitda_bear = ("EBITDA: (Adj) " + str(round(adjustments_df['BEST_EBITDA'][0], 2)))
+            px_bear = ("PX: (Adj) " + str(round(adjustments_df['PX'][0], 2)))
+            eqy_sh_out_bear = ('EQY_SH_OUT: (Adj) ' + str(round(adjustments_df['EQY_SH_OUT'][0], 2)))
+            sales_bear = ('Sales: (Adj) ' + str(round(adjustments_df['BEST_SALES'][0], 2)))
+            eps_bear = ('EPS: (Adj) ' + str(round(adjustments_df['BEST_EPS'][0], 2)))
+            opp_bear = ('OPP: (Adj) ' + str(round(adjustments_df['BEST_OPP'][0], 2)) + " = " +
+                        str(round(alpha_balance_sheet_df_bear['BEST_OPP'][0], 2)))
+            ni_bear = ('Net Income: (Adj) ' + str(round(adjustments_df['BEST_NET_INCOME'][0], 2)))
+            capex_bear = 'CAPEX: (Adj) ' + str(round(adjustments_df['BEST_CAPEX'][0], 2))
+            ev_comp_bear = 'CUR EV Component: (Adj) ' + str(round(adjustments_df['CUR_EV_COMPONENT'][0], 2))
+            dvd_yield_bear = ('DVD Indicated Yield: (Bloomberg) ' +
+                              str(round(alpha_balance_sheet_df_ptd['DIVIDEND_INDICATED_YIELD'][0], 2)))
+
+    bear_bs_dict = {'EBITDA': ebitda_bear, 'PX': px_bear, 'EQY_SH_OUT': eqy_sh_out_bear, "Sales": sales_bear,
+                    'EPS': eps_bear, 'OPP': opp_bear, 'NI': ni_bear, 'CAPEX': capex_bear, 'EV_COMP': ev_comp_bear,
+                    'DVD': dvd_yield_bear}
 
     if adjustments_df_bull is None:
         alpha_balance_sheet_df_bull = alpha_balance_sheet_df_ptd
         df['Alpha Balance Sheet DataFrame (Bull Case)'] = [alpha_balance_sheet_df_bull] * len(df)
         df['Alpha Bull Multiple @ Price Target Date'] = [
-            compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, price) in
+            compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, analyst_upside) in
             zip(df['Metric'], df['Alpha Upside (analyst)'])]
+        ebitda_bull = "EBITDA: (Bloomberg) " + str(round(alpha_balance_sheet_df_ptd['BEST_EBITDA'][0], 2))
+        px_bull = 'PX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['PX'][0], 2))
+        eqy_sh_out_bull = 'EQY_SH_OUT: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['EQY_SH_OUT'][0], 2))
+        sales_bull = 'Sales: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_SALES'][0], 2))
+        eps_bull = 'EPS: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_EPS'][0], 2))
+        opp_bull = 'OPP: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_OPP'][0], 2))
+        ni_bull = 'Net Income: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_NET_INCOME'][0], 2))
+        capex_bull = 'CAPEX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_CAPEX'][0], 2))
+        ev_comp_bull = ('CUR EV Component: (Bloomberg) ' +\
+                       str(round(alpha_balance_sheet_df_ptd['CUR_EV_COMPONENT'][0], 2)))
+        dvd_yield_bull = ('DVD Indicated Yield: (Bloomberg) ' +
+                          str(round(alpha_balance_sheet_df_ptd['DIVIDEND_INDICATED_YIELD'][0], 2)))
     else:
         if bull_flag is None:
             adjustments = ast.literal_eval(adjustments_df_bull)[0]
@@ -456,8 +719,39 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             alpha_balance_sheet_df_bull = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
             df['Alpha Balance Sheet DataFrame (Bull Case)'] = [alpha_balance_sheet_df_bull] * len(df)
             df['Alpha Bull Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, price) in
+                compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, analyst_upside) in
                 zip(df['Metric'], df['Alpha Upside (analyst)'])]
+            ebitda_bull = ("EBITDA: (Bloomberg) " + str(round(alpha_balance_sheet_df_ptd['BEST_EBITDA'][0], 2)) +
+                           " + (Adj) " + str(round(adjustments_df['BEST_EBITDA'][0], 2)) + " = " +
+                           str(round(alpha_balance_sheet_df_bull['BEST_EBITDA'][0], 2)))
+            px_bull = ('PX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['PX'][0], 2)) + " + (Adj) "
+                       + str(round(adjustments_df['PX'][0], 2)) + " = " +
+                       str(round(alpha_balance_sheet_df_bull['PX'][0], 2)))
+            eqy_sh_out_bull = ('EQY_SH_OUT: (Bloomberg) ' +
+                               str(round(alpha_balance_sheet_df_ptd['EQY_SH_OUT'][0], 2)) +
+                               " + (Adj) " + str(round(adjustments_df['EQY_SH_OUT'][0], 2)) + " = " +
+                               str(round(alpha_balance_sheet_df_bull['EQY_SH_OUT'][0], 2)))
+            sales_bull = ('Sales: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_SALES'][0], 2)) +
+                          " + (Adj) "+ str(round(adjustments_df['BEST_SALES'][0], 2)) + " = " +
+                          str(round(alpha_balance_sheet_df_bull['BEST_SALES'][0], 2)))
+            eps_bull = ('EPS: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_EPS'][0], 2)) + " + (Adj) "
+                        + str(round(adjustments_df['BEST_EPS'][0], 2)) + " = " +
+                        str(round(alpha_balance_sheet_df_bull['BEST_EPS'][0], 2)))
+            opp_bull = ('OPP: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_OPP'][0], 2)) + " + (Adj) "
+                        + str(round(adjustments_df['BEST_OPP'][0], 2)) + " = " +
+                        str(round(alpha_balance_sheet_df_bull['BEST_OPP'][0], 2)))
+            ni_bull = ('Net Income: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_NET_INCOME'][0], 2)) +
+                       " + (Adj) " + str(round(adjustments_df['BEST_NET_INCOME'][0], 2)) + " = " +
+                       str(alpha_balance_sheet_df_bull['BEST_NET_INCOME'][0]))
+            capex_bull = ('CAPEX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_CAPEX'][0], 2)) +
+                          " + (Adj) " + str(round(adjustments_df['BEST_CAPEX'][0], 2)) + " = " +
+                          str(round(alpha_balance_sheet_df_bull['BEST_CAPEX'][0], 2)))
+            ev_comp_bull = ('CUR EV Component: (Bloomberg) ' +
+                            str(round(alpha_balance_sheet_df_ptd['CUR_EV_COMPONENT'][0], 2))
+                            + " + (Adj) " + str(round(adjustments_df['CUR_EV_COMPONENT'][0], 2)) + " = " +
+                            str(round(alpha_balance_sheet_df_bull['CUR_EV_COMPONENT'][0], 2)))
+            dvd_yield_bull = ('DVD Indicated Yield: (Bloomberg) ' +
+                              str(round(alpha_balance_sheet_df_ptd['DIVIDEND_INDICATED_YIELD'][0], 2)))
         else:
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
@@ -468,15 +762,42 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             alpha_balance_sheet_df_bull = adjustments_df
             df['Alpha Balance Sheet DataFrame (Bull Case)'] = [alpha_balance_sheet_df_bull] * len(df)
             df['Alpha Bull Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, price) in
+                compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, analyst_upside) in
                 zip(df['Metric'], df['Alpha Upside (analyst)'])]
+            ebitda_bull = "EBITDA: (Adj) " + str(round(adjustments_df['BEST_EBITDA'][0], 2))
+            px_bull = "PX: (Adj) " + str(adjustments_df['PX'][0])
+            eqy_sh_out_bull = 'EQY_SH_OUT: (Adj) ' + str(round(adjustments_df['EQY_SH_OUT'][0], 2))
+            sales_bull = 'Sales: (Adj) ' + str(round(adjustments_df['BEST_SALES'][0], 2))
+            eps_bull = 'EPS: (Adj) ' + str(round(adjustments_df['BEST_EPS'][0], 2))
+            opp_bull = ('OPP: (Adj) ' + str(round(adjustments_df['BEST_OPP'][0], 2)) + " = "
+                        + str(round(alpha_balance_sheet_df_bear['BEST_OPP'][0], 2)))
+            ni_bull = 'Net Income: (Adj) ' + str(round(adjustments_df['BEST_NET_INCOME'][0], 2))
+            capex_bull = 'CAPEX: (Adj) ' + str(round(adjustments_df['BEST_CAPEX'][0], 2))
+            ev_comp_bull = 'CUR EV Component: (Adj) ' + str(round(adjustments_df['CUR_EV_COMPONENT'][0], 2))
+            dvd_yield_bull = ('DVD Indicated Yield: (Bloomberg) ' +
+                              str(round(alpha_balance_sheet_df_ptd['DIVIDEND_INDICATED_YIELD'][0], 2)))
+
+    bull_bs_dict = {'EBITDA': ebitda_bull, 'PX': px_bull, 'EQY_SH_OUT':eqy_sh_out_bull, "Sales": sales_bull,
+                    'EPS': eps_bull, 'OPP': opp_bull, 'NI': ni_bull, 'CAPEX': capex_bull, 'EV_COMP': ev_comp_bull,
+                    'DVD': dvd_yield_bull}
 
     if adjustments_df_pt is None:
         alpha_balance_sheet_df_pt = alpha_balance_sheet_df_ptd
         df['Alpha Balance Sheet DataFrame (PT WIC Case)'] = [alpha_balance_sheet_df_pt] * len(df)
         df['Alpha PT WIC Multiple @ Price Target Date'] = [
-            compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_ptd) for (m, price) in
+            compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_ptd) for (m, analyst_pt_wic) in
             zip(df['Metric'], df['Alpha PT WIC (analyst)'])]
+        ebitda_pt = "EBITDA: (Bloomberg) " + str(round(alpha_balance_sheet_df_ptd['BEST_EBITDA'][0], 2))
+        px_pt = 'PX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['PX'][0], 2))
+        eqy_sh_out_pt = 'EQY_SH_OUT: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['EQY_SH_OUT'][0], 2))
+        sales_pt = 'Sales: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_SALES'][0], 2))
+        eps_pt = 'EPS: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_EPS'][0], 2))
+        opp_pt = 'OPP: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_OPP'][0], 2))
+        ni_pt = 'Net Income: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_NET_INCOME'][0], 2))
+        capex_pt = 'CAPEX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_CAPEX'][0], 2))
+        ev_comp_pt = 'CUR EV Component: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['CUR_EV_COMPONENT'][0], 2))
+        dvd_yield_pt = ('DVD Indicated Yield: (Bloomberg) ' +
+                        str(round(alpha_balance_sheet_df_ptd['DIVIDEND_INDICATED_YIELD'][0], 2)))
     else:
         if pt_flag is None:
             adjustments = ast.literal_eval(adjustments_df_pt)[0]
@@ -488,8 +809,38 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             alpha_balance_sheet_df_pt = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
             df['Alpha Balance Sheet DataFrame (PT WIC Case)'] = [alpha_balance_sheet_df_pt] * len(df)
             df['Alpha PT WIC Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_pt) for (m, price) in
+                compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_pt) for (m, analyst_pt_wic) in
                 zip(df['Metric'], df['Alpha PT WIC (analyst)'])]
+            ebitda_pt = ("EBITDA: (Bloomberg) " + str(round(alpha_balance_sheet_df_ptd['BEST_EBITDA'][0], 2)) +
+                         " + (Adj) " + str(round(adjustments_df['BEST_EBITDA'][0], 2)) + " = " +
+                         str(round(alpha_balance_sheet_df_pt['BEST_EBITDA'][0], 2)))
+            px_pt = ('PX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['PX'][0], 2)) +" + (Adj) "
+                     + str(round(adjustments_df['PX'][0], 2)) + " = " +
+                     str(round(alpha_balance_sheet_df_pt['PX'][0], 2)))
+            eqy_sh_out_pt = ('EQY_SH_OUT: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['EQY_SH_OUT'][0], 2))
+                             + " + (Adj) " + str(round(adjustments_df['EQY_SH_OUT'][0], 2)) + " = " +
+                             str(round(alpha_balance_sheet_df_pt['EQY_SH_OUT'][0], 2)))
+            sales_pt = ('Sales: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_SALES'][0], 2)) +
+                        " + (Adj) " + str(round(adjustments_df['BEST_SALES'][0], 2)) + " = " +
+                        str(round(alpha_balance_sheet_df_pt['BEST_SALES'][0], 2)))
+            eps_pt = ('EPS: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_EPS'][0], 2)) +
+                      " + (Adj) "+ str(round(adjustments_df['BEST_EPS'][0], 2)) + " = " +
+                      str(round(alpha_balance_sheet_df_pt['BEST_EPS'][0], 2)))
+            opp_pt = ('OPP: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_OPP'][0], 2)) +
+                      " + (Adj) " + str(round(adjustments_df['BEST_OPP'][0], 2)) + " = " +
+                      str(alpha_balance_sheet_df_pt['BEST_OPP'][0]))
+            ni_pt = ('Net Income: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_NET_INCOME'][0], 2))
+                     + " + (Adj) " + str(round(adjustments_df['BEST_NET_INCOME'][0], 2)) + " = " +
+                     str(round(alpha_balance_sheet_df_pt['BEST_NET_INCOME'][0], 2)))
+            capex_pt = ('CAPEX: (Bloomberg) ' + str(round(alpha_balance_sheet_df_ptd['BEST_CAPEX'][0], 2)) +
+                        " + (Adj) " + str(round(adjustments_df['BEST_CAPEX'][0], 2)) + " = " +
+                        str(round(alpha_balance_sheet_df_pt['BEST_CAPEX'][0], 2)))
+            ev_comp_pt = ('CUR EV Component: (Bloomberg) ' +
+                          str(round(alpha_balance_sheet_df_ptd['CUR_EV_COMPONENT'][0], 2)) +
+                          " + (Adj) " + str(round(adjustments_df['CUR_EV_COMPONENT'][0], 2)) + " = "
+                          + str(round(alpha_balance_sheet_df_pt['CUR_EV_COMPONENT'][0], 2)))
+            dvd_yield_pt = ('DVD Indicated Yield: (Bloomberg) ' +
+                            str(round(alpha_balance_sheet_df_ptd['DIVIDEND_INDICATED_YIELD'][0], 2)))
         else:
             adjustments = ast.literal_eval(adjustments_df_pt)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
@@ -500,8 +851,24 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
             alpha_balance_sheet_df_pt = adjustments_df
             df['Alpha Balance Sheet DataFrame (PT WIC Case)'] = [alpha_balance_sheet_df_pt] * len(df)
             df['Alpha PT WIC Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_pt) for (m, price) in
+                compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_pt) for (m, analyst_pt_wic) in
                 zip(df['Metric'], df['Alpha PT WIC (analyst)'])]
+            ebitda_pt = "EBITDA: (Adj) " + str(round(adjustments_df['BEST_EBITDA'][0], 2))
+            px_pt = "PX: (Adj) " + str(round(adjustments_df['PX'][0], 2))
+            eqy_sh_out_pt = 'EQY_SH_OUT: (Adj) ' + str(round(adjustments_df['EQY_SH_OUT'][0], 2))
+            sales_pt = 'Sales: (Adj) ' + str(round(adjustments_df['BEST_SALES'][0], 2))
+            eps_pt = 'EPS: (Adj) ' + str(round(adjustments_df['BEST_EPS'][0], 2))
+            opp_pt = ('OPP: (Adj) ' + str(round(adjustments_df['BEST_OPP'][0], 2)) + " = " +
+                      str(round(alpha_balance_sheet_df_bear['BEST_OPP'][0], 2)))
+            ni_pt = 'Net Income: (Adj) ' + str(round(adjustments_df['BEST_NET_INCOME'][0], 2))
+            capex_pt = 'CAPEX: (Adj) ' + str(round(adjustments_df['BEST_CAPEX'][0], 2))
+            ev_comp_pt = 'CUR EV Component: (Adj) ' + str(round(adjustments_df['CUR_EV_COMPONENT'][0], 2))
+            dvd_yield_pt = ('DVD Indicated Yield: (Bloomberg) ' +
+                            str(round(alpha_balance_sheet_df_ptd['DIVIDEND_INDICATED_YIELD'][0], 2)))
+
+    pt_bs_dict = {'EBITDA':ebitda_pt, 'PX': px_pt, 'EQY_SH_OUT': eqy_sh_out_pt, "Sales": sales_pt,
+                  'EPS': eps_pt, 'OPP': opp_pt, 'NI': ni_pt, 'CAPEX': capex_pt, 'EV_COMP': ev_comp_pt,
+                  'DVD': dvd_yield_pt}
 
     df['Premium Bear (%)'] = (((df['Alpha Bear Multiple @ Price Target Date'] / df[
         'Alpha Implied Multiple @ Price Target Date']) * 100.0) - 100.0).astype(float)
@@ -518,14 +885,14 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
         lambda m: {p: peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peer_ticker_list})
     df['Alpha Implied Multiple @ Now'] = df['Metric'].apply(lambda m: sum(
         [metric2peer2coeff[m][p] * peer2now_multiple[p][m].fillna(0).iloc[-1] for p in peer_ticker_list]) +
-                                                                      metric2peer2coeff[m]['Intercept'])
+                                                            metric2peer2coeff[m]['Intercept'])
 
     df['Alpha Bear Multiple @ Now'] = (
-            df['Alpha Implied Multiple @ Now'] * (1 + (df['Premium Bear (%)'] / 100.0))).astype(float)
+        df['Alpha Implied Multiple @ Now'] * (1 + (df['Premium Bear (%)'] / 100.0))).astype(float)
     df['Alpha PT WIC Multiple @ Now'] = (
-            df['Alpha Implied Multiple @ Now'] * (1 + (df['Premium PT WIC (%)'] / 100.0))).astype(float)
+        df['Alpha Implied Multiple @ Now'] * (1 + (df['Premium PT WIC (%)'] / 100.0))).astype(float)
     df['Alpha Bull Multiple @ Now'] = (
-            df['Alpha Implied Multiple @ Now'] * (1 + (df['Premium Bull (%)'] / 100.0))).astype(float)
+        df['Alpha Implied Multiple @ Now'] * (1 + (df['Premium Bull (%)'] / 100.0))).astype(float)
 
     df['Alpha Downside'] = [compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_bear) for (m, mult) in
                             zip(df['Metric'], df['Alpha Bear Multiple @ Now'])]
@@ -534,14 +901,15 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
     df['Alpha Upside'] = [compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_bull) for (m, mult) in
                           zip(df['Metric'], df['Alpha Bull Multiple @ Now'])]
 
-    df['Alpha Downside (Adj,weighted)'] = df['Alpha Downside'] * df['Metric'].apply(lambda m: metric2weight[m]).astype(
-        float)
-    df['Alpha PT WIC (Adj,weighted)'] = df['Alpha PT WIC'] * df['Metric'].apply(lambda m: metric2weight[m]).astype(
-        float)
-    df['Alpha Upside (Adj,weighted)'] = df['Alpha Upside'] * df['Metric'].apply(lambda m: metric2weight[m]).astype(
-        float)
+    df['Alpha Downside (Adj,weighted)'] = df['Alpha Downside']*df['Metric'].apply(lambda m:
+                                                                                  metric2weight[m]).astype(float)
+    df['Alpha PT WIC (Adj,weighted)'] = df['Alpha PT WIC']*df['Metric'].apply(lambda m: metric2weight[m]).astype(float)
+    df['Alpha Upside (Adj,weighted)'] = df['Alpha Upside']*df['Metric'].apply(lambda m: metric2weight[m]).astype(float)
 
-    return df
+
+    calculations_dict = calculations_summary(df, metric2weight, analyst_upside, analyst_downside, analyst_pt_wic,
+                                             bear_bs_dict, bull_bs_dict, pt_bs_dict)
+    return df, calculations_dict
 
 
 def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, analyst_upside, analyst_downside,
@@ -577,7 +945,7 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
         alpha_balance_sheet_df_bear = alpha_balance_sheet_df_ptd
         df['Alpha Balance Sheet DataFrame (Bear Case)'] = [alpha_balance_sheet_df_bear] * len(df)
         df['Alpha Bear Multiple @ Price Target Date'] = [
-            compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, price) in
+            compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, analyst_downside) in
             zip(df['Metric'], df['Alpha Downside (analyst)'])]
     else:
         if bear_flag is None:
@@ -590,8 +958,8 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             alpha_balance_sheet_df_bear = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
             df['Alpha Balance Sheet DataFrame (Bear Case)'] = [alpha_balance_sheet_df_bear] * len(df)
             df['Alpha Bear Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, price) in
-                zip(df['Metric'], df['Alpha Downside (analyst)'])]
+                compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, analyst_downside)
+                in zip(df['Metric'], df['Alpha Downside (analyst)'])]
         else:
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
             adjustments_df = pd.DataFrame.from_dict(adjustments, orient='index')
@@ -602,14 +970,14 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             alpha_balance_sheet_df_bear = adjustments_df
             df['Alpha Balance Sheet DataFrame (Bear Case)'] = [alpha_balance_sheet_df_bear] * len(df)
             df['Alpha Bear Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, price) in
-                zip(df['Metric'], df['Alpha Downside (analyst)'])]
+                compute_multiple_from_price(m, analyst_downside, alpha_balance_sheet_df_bear) for (m, analyst_downside)
+                in zip(df['Metric'], df['Alpha Downside (analyst)'])]
 
     if adjustments_df_bull is None:
         alpha_balance_sheet_df_bull = alpha_balance_sheet_df_ptd
         df['Alpha Balance Sheet DataFrame (Bull Case)'] = [alpha_balance_sheet_df_bull] * len(df)
         df['Alpha Bull Multiple @ Price Target Date'] = [
-            compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, price) in
+            compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, analyst_upside) in
             zip(df['Metric'], df['Alpha Upside (analyst)'])]
     else:
         if bull_flag is None:
@@ -622,7 +990,7 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             alpha_balance_sheet_df_bull = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
             df['Alpha Balance Sheet DataFrame (Bull Case)'] = [alpha_balance_sheet_df_bull] * len(df)
             df['Alpha Bull Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, price) in
+                compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, analyst_upside) in
                 zip(df['Metric'], df['Alpha Upside (analyst)'])]
         else:
             adjustments = ast.literal_eval(adjustments_df_bear)[0]
@@ -634,14 +1002,14 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             alpha_balance_sheet_df_bull = adjustments_df
             df['Alpha Balance Sheet DataFrame (Bull Case)'] = [alpha_balance_sheet_df_bull] * len(df)
             df['Alpha Bull Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, price) in
+                compute_multiple_from_price(m, analyst_upside, alpha_balance_sheet_df_bull) for (m, analyst_upside) in
                 zip(df['Metric'], df['Alpha Upside (analyst)'])]
 
     if adjustments_df_pt is None:
         alpha_balance_sheet_df_pt = alpha_balance_sheet_df_ptd
         df['Alpha Balance Sheet DataFrame (PT WIC Case)'] = [alpha_balance_sheet_df_pt] * len(df)
         df['Alpha PT WIC Multiple @ Price Target Date'] = [
-            compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_ptd) for (m, price) in
+            compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_ptd) for (m, analyst_pt_wic) in
             zip(df['Metric'], df['Alpha PT WIC (analyst)'])]
     else:
         if pt_flag is None:
@@ -654,7 +1022,7 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             alpha_balance_sheet_df_pt = alpha_balance_sheet_df_ptd.add(adjustments_df, axis='columns')
             df['Alpha Balance Sheet DataFrame (PT WIC Case)'] = [alpha_balance_sheet_df_pt] * len(df)
             df['Alpha PT WIC Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_pt) for (m, price) in
+                compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_pt) for (m, analyst_pt_wic) in
                 zip(df['Metric'], df['Alpha PT WIC (analyst)'])]
         else:
             adjustments = ast.literal_eval(adjustments_df_pt)[0]
@@ -666,7 +1034,7 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
             alpha_balance_sheet_df_pt = adjustments_df
             df['Alpha Balance Sheet DataFrame (PT WIC Case)'] = [alpha_balance_sheet_df_pt] * len(df)
             df['Alpha PT WIC Multiple @ Price Target Date'] = [
-                compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_pt) for (m, price) in
+                compute_multiple_from_price(m, analyst_pt_wic, alpha_balance_sheet_df_pt) for (m, analyst_pt_wic) in
                 zip(df['Metric'], df['Alpha PT WIC (analyst)'])]
 
     df['Peers Composite Multiple @ Now'] = df['Metric'].apply(lambda m: metric2implied_now[m]['Peers multiple'])
@@ -682,11 +1050,11 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
         'Alpha Implied Multiple (mean) @ Price Target Date']) * 100.0) - 100.0).astype(float)
 
     df['Alpha Bear Multiple @ Now'] = (
-            df['Alpha Implied Multiple (mean) @ Now'] * (1 + (df['Premium Bear (%)'] / 100.0))).astype(float)
+        df['Alpha Implied Multiple (mean) @ Now'] * (1 + (df['Premium Bear (%)'] / 100.0))).astype(float)
     df['Alpha PT WIC Multiple @ Now'] = (
-            df['Alpha Implied Multiple (mean) @ Now'] * (1 + (df['Premium PT WIC (%)'] / 100.0))).astype(float)
+        df['Alpha Implied Multiple (mean) @ Now'] * (1 + (df['Premium PT WIC (%)'] / 100.0))).astype(float)
     df['Alpha Bull Multiple @ Now'] = (
-            df['Alpha Implied Multiple (mean) @ Now'] * (1 + (df['Premium Bull (%)'] / 100.0))).astype(float)
+        df['Alpha Implied Multiple (mean) @ Now'] * (1 + (df['Premium Bull (%)'] / 100.0))).astype(float)
 
     df['Alpha Downside'] = [compute_implied_price_from_multiple(m, mult, alpha_balance_sheet_df_bear) for (m, mult) in
                             zip(df['Metric'], df['Alpha Bear Multiple @ Now'])]
@@ -702,5 +1070,5 @@ def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, ana
     df['Alpha Upside (Adj,weighted)'] = df['Alpha Upside'] * df['Metric'].apply(lambda m: metric2weight[m]).astype(
         float)
 
-
     return df
+
