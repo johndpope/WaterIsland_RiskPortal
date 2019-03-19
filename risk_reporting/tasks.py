@@ -222,7 +222,8 @@ def refresh_base_case_and_outlier_downsides():
                 return row['QTY'] * row['LastPrice']
             if row['SecType'] == 'EXCHOPT':
                 # print(row['OptionLastPrice'])
-                return row['QTY'] * float(row['OptionLastPrice'])
+                option_price = row['OptionLastPrice']
+                return row['QTY'] * float(option_price) if option_price is not None else 0
 
         nav_impacts_positions_df['CurrMktVal'] = nav_impacts_positions_df.apply(get_current_mkt_val, axis=1)
         # Calculate the Impacts
