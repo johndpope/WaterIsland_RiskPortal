@@ -17,6 +17,53 @@
 {% endblock %}
 
 {% block content %}
+
+    {#  Detailed Calculations Modal START#}
+            <input type="hidden" id="regression_calcs_latest" value="{{ regression_calculations }}">
+            <input type="hidden" id="cix_calcs_latest" value="{{ cix_calculations }}">
+
+            <div class="modal animated lightSpeedIn text-left" id="ess_idea_calculations_modal" tabindex="-1"
+                 role="dialog"
+                 aria-labelledby="myModalLabel42" aria-hidden="true">
+                <div class="modal-xl modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title text-center" id="myModalLabel42">Step-by-Step calculations Report</h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-lg-6 offset-4">
+                                    <div class="row">
+                                        <div class="col-lg-2 block-tag">
+                                            <small class="badge badge-default badge-success">Backend calculations
+                                            </small>
+                                        </div>
+                                        <br><br>
+                                        <div class="col-lg-12" id="step_by_step_content">
+                                        </div>
+                                    </div>
+                                    <br>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button id='close_wic_note_modal' type="button"
+                                    class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            {# Detailed Calculations Modal End #}
+
+
+
     <input type="hidden" value="{{ upside_downside_records_df }}" id="upside_downside_records_df">
     {#            Balance Sheet Modal        #}
     <!-- Modal -->
@@ -921,6 +968,8 @@
                                     <small class="badge badge-lg badge-default badge-danger">Bull Thesis</small>
                                     <br>
                                     <small class="badge badge-secondary">Upside: {{ ess_idea_object.pt_up|floatformat:"2" }}</small>
+                                    <br>
+                                    <button id='upside_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">Upside Calculations</button>
                                     <br><br>
                                     <div class="container" id="ess_bull_thesis">
                                     </div>
@@ -937,6 +986,8 @@
                                     <small class="badge badge-lg badge-default badge-danger">Our Thesis</small>
                                     <br>
                                     <small class="badge badge-secondary">PT WIC: {{ ess_idea_object.pt_wic|floatformat:"2" }}</small>
+                                    <br>
+                                    <button id='wic_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">WIC Calculations</button>
                                     <br><br>
                                     <div class="container" id="ess_our_thesis">
                                     </div>
@@ -952,6 +1003,8 @@
                                     <small class="badge badge-lg badge-default badge-danger">Bear Thesis</small>
                                     <br>
                                     <small class="badge badge-secondary">Downside: {{ ess_idea_object.pt_down|floatformat:"2" }}</small>
+                                    <br>
+                                    <button id='downside_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">Downside Calculations</button>
                                     <br><br>
                                     <div class="container" id="ess_bear_thesis">
                                     </div>

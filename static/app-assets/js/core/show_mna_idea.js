@@ -1,5 +1,12 @@
-
 $(document).ready(function () {
+
+    //Fill the Peers Table
+    let related_peers = JSON.parse($('#mna_idea_related_peers').val());
+    if (related_peers.length > 0) {
+        for (var i = 0; i < related_peers.length; i++) {
+            $('#ticker_hedge_' + (i + 1) + '_ticker').val(related_peers[i][0]);
+        }
+    }
 
     //Initialize summernote
     $('#mna_idea_lawyer_report').summernote({'height': '300px'});

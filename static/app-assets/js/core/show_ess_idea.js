@@ -1,4 +1,17 @@
+let calculations_array_global = [];
 $(document).ready(function () {
+    // Step by Step calculations
+    try{
+        let regression_calcs_latest = $.parseJSON($('#regression_calcs_latest').val());
+        let latest_calcs_array = [];
+        latest_calcs_array = fill_calculations_dictionary(regression_calcs_latest);
+        set_global_calculations_array(latest_calcs_array);
+    }
+    catch (e) {
+        console.log(e);
+    }
+
+
     $('#ess_idea_company_overview').summernote({'height': '250px'});
     $('#ess_idea_situation_overview').summernote({'height': '250px'});
     /***********************************************************
@@ -885,6 +898,12 @@ $('#show_premium_analysis').on('click', function (e) {
                     'success': function (response) {
                         let dynamic_upside_downside = response;
                         let regression_results = response['regression_results'];
+                        let regression_calculations = response['regression_calculations'];
+                        let cix_calculations = response['cix_calculations'];
+                        let calculations_array = [];
+                        // Fill Calculations Dictionary
+                        calculations_array = fill_calculations_dictionary(regression_calculations);
+                        set_global_calculations_array(calculations_array); // Calculations Array is Set here. Will respond to event listeners
                         // Create Required Modals dynamically 3 multiples
                         let multiples = Object.keys(regression_results);
                         for (var i = 0; i < multiples.length; i++) {
@@ -1001,6 +1020,70 @@ $('#show_premium_analysis').on('click', function (e) {
 
 });
 
+function set_global_calculations_array(calculations_array){
+    calculations_array_global = calculations_array;
+}
+
+
+function fill_calculations_dictionary(regression_calculations){
+    let bull_calculations = [];
+    let bear_calculations = [];
+    let wic_calculations = [];
+
+    let multiples = Object.keys(regression_calculations);
+    for(var i=0;i<multiples.length;i++){
+        let current_multiple = multiples[i];
+        if(current_multiple === 'Total'){
+            continue;
+        }
+        // Populate Bull Case Parameters for Modal
+        bull_calculations.push({[current_multiple]:{
+            '1':regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
+            '2':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
+            '3':regression_calculations[current_multiple]['Bull Multiple @ PTD'],
+            '4':regression_calculations[current_multiple]['Bull Multiple @ Now'],
+            '5':regression_calculations[current_multiple]['Bull Premium @ PTD'],
+            '6':regression_calculations[current_multiple]['Upside'],
+            '7':regression_calculations[current_multiple]['Upside (Adj,weighted)'],
+        }});
+
+        wic_calculations.push({[current_multiple]:{
+            '1':regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
+            '2':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
+            '3':regression_calculations[current_multiple]['PT WIC Multiple @ PTD'],
+            '4':regression_calculations[current_multiple]['PT WIC Multiple @ Now'],
+            '5':regression_calculations[current_multiple]['PT WIC Premium @ PTD'],
+            '6':regression_calculations[current_multiple]['PT WIC'],
+            '7':regression_calculations[current_multiple]['PT WIC (Adj,weighted)'],
+        }});
+
+
+        bear_calculations.push({[current_multiple]:{
+            '1':regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
+            '2':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
+            '3':regression_calculations[current_multiple]['Bear Multiple @ PTD'],
+            '4':regression_calculations[current_multiple]['Bear Multiple @ Now'],
+            '5':regression_calculations[current_multiple]['Bear Premium @ PTD'],
+            '6':regression_calculations[current_multiple]['Downside'],
+            '7':regression_calculations[current_multiple]['Downside (Adj,weighted)'],
+        }});
+    }
+    //Push the totals
+    bull_calculations.push({
+        'Final':{'1':regression_calculations['Total']['Up Price (Regression)']}
+    });
+
+    bear_calculations.push({
+        'Final':{'1':regression_calculations['Total']['Down Price (Regression)']}
+    });
+
+    wic_calculations.push({
+        'Final':{'1':regression_calculations['Total']['PT WIC Price (Regression)']}
+    });
+
+
+    return [bull_calculations, bear_calculations, wic_calculations]
+}
 
 /** Section to Show Premium Analysis.... **/
 $('#ess_idea_view_balance_sheet').on('click', function (e) {
@@ -1405,3 +1488,58 @@ function get_modal_launch_button(id, datatarget, label) {
         label +
         "</button>"
 }
+
+
+// Detatiled Calculations Event Listeners
+
+$('#upside_calculations').on('click', function () {
+    $('#step_by_step_content').empty();
+    let upside_data = '';
+    if(calculations_array_global.length > 0){
+        for(var i=0;i<calculations_array_global[0].length;i++){
+            let current_multiple = Object.keys(calculations_array_global[0][i])[0];
+            upside_data += '<h5><strong>'+current_multiple+'</strong></h5><br>';
+            var current_keys = Object.keys(calculations_array_global[0][i][current_multiple]);
+            for(var j=0;j < current_keys.length;j++){
+                upside_data += '<p>'+calculations_array_global[0][i][current_multiple][j+1]+'</p><br>'
+            }
+        }
+    }
+    $('#step_by_step_content').append(upside_data);
+    $('#ess_idea_calculations_modal').modal('show');
+
+});
+
+$('#wic_calculations').on('click', function () {
+    $('#step_by_step_content').empty();
+    let wic_data = '';
+    if(calculations_array_global.length > 0){
+        for(var i=0;i<calculations_array_global[2].length;i++){
+            let current_multiple = Object.keys(calculations_array_global[2][i])[0];
+            wic_data += '<h5><strong>'+current_multiple+'</strong></h5><br>';
+            var current_keys = Object.keys(calculations_array_global[2][i][current_multiple]);
+            for(var j=0;j < current_keys.length;j++){
+                wic_data += '<p>'+calculations_array_global[2][i][current_multiple][j+1]+'</p><br>'
+            }
+        }
+    }
+    $('#step_by_step_content').append(wic_data);
+    $('#ess_idea_calculations_modal').modal('show');
+});
+
+$('#downside_calculations').on('click', function () {
+    $('#step_by_step_content').empty();
+    let downside_data = '';
+    if(calculations_array_global.length > 0){
+        for(var i=0;i<calculations_array_global[1].length;i++){
+            let current_multiple = Object.keys(calculations_array_global[1][i])[0];
+            downside_data += '<h5><strong>'+current_multiple+'</strong></h5><br>';
+            var current_keys = Object.keys(calculations_array_global[1][i][current_multiple]);
+            for(var j=0;j < current_keys.length;j++){
+                downside_data += '<p>'+calculations_array_global[1][i][current_multiple][j+1]+'</p><br>'
+            }
+        }
+    }
+    $('#step_by_step_content').append(downside_data);
+    $('#ess_idea_calculations_modal').modal('show');
+});

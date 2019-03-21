@@ -90,7 +90,8 @@ def premium_analysis_flagger():
                                                   f_period="1BF")
 
                 df = result_dictionary['Final Results']
-
+                regression_calculations = result_dictionary['Regression Calculations']
+                cix_calculations = result_dictionary['CIX Calculations']
                 cix_down_price = df['Down Price (CIX)']
                 cix_up_price = df['Up Price (CIX)']
                 regression_up_price = df['Up Price (Regression)']
@@ -109,43 +110,59 @@ def premium_analysis_flagger():
                 percentage_change_pt_wic_reg = ((
                                                         pt_wic_price_regression - deal_object.pt_wic) / pt_wic_price_regression) * 100
 
+                new_upside = 0
+                new_downside = 0
+                new_pt_wic = 0
+
                 if deal_object.pt_wic_check == 'Yes':
                     # Adjust the PT Wic and Record the change
                     old_pt_wic = deal_object.pt_wic
                     deal_change_dict['Old WIC PT'] = old_pt_wic
-                    deal_change_dict['Adjusted WIC PT'] = deal_object.pt_wic
+
                     # Here check if it exceeds the 5% threshold to alert the user
                     if deal_object.how_to_adjust == 'cix':
                         # Check if it exceeds 5% for Cix adjustments
+                        new_pt_wic = pt_wic_price_cix
                         if abs(percentage_change_pt_wic_cix) > 5:
                             deal_object.needs_downside_attention = 1
+
                     else:
+                        new_pt_wic = pt_wic_price_regression
                         if abs(percentage_change_pt_wic_reg) > 5:
                             deal_object.needs_downside_attention = 1
+
+                    deal_change_dict['Adjusted WIC PT'] = new_pt_wic
 
                 if deal_object.pt_up_check == 'Yes':
                     old_pt_up = deal_object.pt_up
                     deal_change_dict['Old Upside'] = old_pt_up
-                    deal_change_dict['Adjusted Upside'] = deal_object.pt_up
+
                     if deal_object.how_to_adjust == 'cix':
+                        new_upside = cix_up_price
                         # Check if it exceeds 5% for Cix adjustments
+
                         if abs(percentage_change_cix_up) > 5:
                             deal_object.needs_downside_attention = 1
                     else:
+                        new_upside = regression_up_price
                         if abs(percentage_change_reg_up) > 5:
                             deal_object.needs_downside_attention = 1
+                    deal_change_dict['Adjusted Upside'] = new_upside
 
                 if deal_object.pt_down_check == 'Yes':
                     old_pt_down = deal_object.pt_down
                     deal_change_dict['Old Downside'] = old_pt_down
-                    deal_change_dict['Adjusted Downside'] = deal_object.pt_down
+
                     if deal_object.how_to_adjust == 'cix':
+                        new_downside = cix_down_price
                         # Check if it exceeds 5% for Cix adjustments
                         if abs(percentage_change_cix_down) > 5:
                             deal_object.needs_downside_attention = 1
                     else:
+                        new_downside = regression_down_price
                         if abs(percentage_change_reg_down) > 5:
                             deal_object.needs_downside_attention = 1
+                    deal_change_dict['Adjusted Downside'] = new_downside
 
                 deal_change_dict['Date'] = datetime.datetime.now().date().strftime("%Y-%m-%d")
                 deal_change_dict['Deal Name'] = deal_object.alpha_ticker
@@ -154,13 +171,15 @@ def premium_analysis_flagger():
 
                 # Record this Upside downside change for the deal
                 ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=deal_object.id, deal_key=deal_object.deal_key,
-                                                        pt_up=deal_object.pt_up,
-                                                        pt_wic=deal_object.pt_wic, pt_down=deal_object.pt_down,
+                                                        pt_up=new_upside,
+                                                        pt_wic=new_pt_wic, pt_down=new_downside,
                                                         date_updated=datetime.datetime.now().date()
                                                         .strftime('%Y-%m-%d')).save()
 
                 EssIdeaAdjustmentsInformation(ess_idea_id_id=deal_object.id, deal_key=deal_object.deal_key,
                                               regression_results=json.dumps(result_dictionary['Regression Results']),
+                                              regression_calculations=json.dumps(regression_calculations),
+                                              cix_calculations = json.dumps(cix_calculations),
                                               calculated_on=datetime.datetime.now().date()).save()
 
                 print('Recorded Upside/Downside Adjustments for ' + str(deal_object.alpha_ticker))
@@ -882,10 +901,11 @@ def run_ess_premium_analysis_task(self, deal_id, latest_version):
 
         df = result_dictionary['Final Results']
         regression_parameters = result_dictionary['Regression Results']
-
+        regression_calculations = result_dictionary['Regression Calculations']
+        cix_calculations = result_dictionary['CIX Calculations']
         progress_recorder.set_progress(100, 100)
 
     except Exception as e:
         print(e)
 
-    return df, regression_parameters
+    return df, regression_parameters, regression_calculations, cix_calculations
