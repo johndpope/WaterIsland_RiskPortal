@@ -14,12 +14,13 @@ $(document).ready(function () {
             buttons: [{
                 extend: 'print',
                 text: '<i class="fa fa-print"></i> Print',
-                title: 'NAV Impacts (Synced on): ' + $('#sync').val(),
+                title: '',
                 exportOptions: {
-                    stripHtml: false,
-                    columns: [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17 ]
+                    stripHtml: true,
+                    columns: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
                 },
                 customize: function (win) {
+
                     $(win.document.body)
                         .css('font-size', '10pt')
                         .prepend(
@@ -31,8 +32,8 @@ $(document).ready(function () {
                         .css('font-size', 'inherit');
 
                     var css = '@page { size: landscape; }',
-                    head = win.document.head || win.document.getElementsByTagName('head')[0],
-                    style = win.document.createElement('style');
+                        head = win.document.head || win.document.getElementsByTagName('head')[0],
+                        style = win.document.createElement('style');
 
                     style.type = 'text/css';
                     style.media = 'print';
@@ -55,6 +56,68 @@ $(document).ready(function () {
                     stripHtml: false
                 }
 
+            }, {
+                extend: "pdfHtml5",
+                text: '<i class="fa fa-file-pdf-o"></i> PDF',
+                orientation: 'landscape',
+                title: 'ARB NAV Impacts',
+                messageBottom:'Report produced by: Water Island Capital, Risk Portal',
+                header: true,
+                customize: function (doc) {
+
+                    doc.content[1].table.headerRows = 2;
+                    var firstHeaderRow = [];
+                    $('#arb_risk_attributes_table').find("thead>tr:first-child>th").each(
+                        function (index, element) {
+                            var colSpan = element.getAttribute("colSpan");
+                            firstHeaderRow.push({
+                                text: element.innerHTML,
+                                style: "tableHeader",
+                                colSpan: colSpan
+                            });
+                            for (var i = 0; i < colSpan - 1; i++) {
+                                firstHeaderRow.push({});
+                            }
+                        });
+                    doc.content[1].table.body.unshift(firstHeaderRow);
+                    let body_rows = doc.content[1].table.body;
+                    for (var row = 2; row < body_rows.length; row++) {
+
+                        var current_row = doc.content[1].table.body[row];
+                        current_row[2].color = 'red';  // Set Risk Limit Color to Red
+                        var funds = [4, 5, 6, 11, 12, 13];
+
+                        $.each(funds, function (index, val) {
+                            if (Math.abs(current_row[val].text) >= Math.abs(current_row[2].text)) {
+                                current_row[val].color = 'red';
+                            }
+                            else {
+                                current_row[val].color = 'green';
+                            }
+                        });
+
+                        funds = [7, 8, 9, 14, 15, 16];  // Multi Strats
+
+                        $.each(funds, function (index, val) {
+                            if (Math.abs(current_row[val].text) >= (2 * Math.abs(current_row[2].text))) {
+                                current_row[val].color = 'red';
+                            }
+                            else {
+                                current_row[val].color = 'green';
+                            }
+                        });
+
+                        funds = [10, 17];   //Leveraged
+                        $.each(funds, function (index, val) {
+                            if (Math.abs(current_row[val].text) >= (3 * Math.abs(current_row[2].text))) {
+                                current_row[val].color = 'red';
+                            }
+                            else {
+                                current_row[val].color = 'green';
+                            }
+                        });
+                    }
+                }
             },
             ],
             dom: {
@@ -106,7 +169,7 @@ $(document).ready(function () {
 
         ],
         "columnDefs": [{
-            "targets": [2, 4, 5, 6, 8, 11, 12, 13],
+            "targets": [2, 4, 5, 6, 11, 12, 13],
             "render": $.fn.dataTable.render.number(',', '.', 2),
             "createdCell": function (td, cellData, rowData, rowIndex) {
                 //Check for % Float and %Shares Out
@@ -127,6 +190,9 @@ $(document).ready(function () {
                 "render": $.fn.dataTable.render.number(',', '.', 2),
                 "createdCell": function (td, cellData, rowData, rowIndex) {
                     //Check for % Float and %Shares Out
+
+                    //console.log(rowData);
+
                     if (Math.abs(cellData) >= Math.abs(2 * rowData['RiskLimit']) && $.isNumeric(cellData)) {
                         $(td).css('color', 'red')
                     }
@@ -194,7 +260,7 @@ $(document).ready(function () {
             }
         }
 
-        for (var j=0;j<ytd_performances.length;j++){
+        for (var j = 0; j < ytd_performances.length; j++) {
             if (ytd_performances[j]['TradeGroup'] === tradegroup) {
                 // Return corresponding rows
                 return_rows += '<tr>' +

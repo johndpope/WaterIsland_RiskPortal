@@ -6,6 +6,7 @@ import ess_premium_analysis
 import bbgclient
 import dfutils
 
+
 def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, analyst_upside, analyst_downside,
                              analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_bear=None,
                              adjustments_df_bull=None, adjustments_df_pt=None, bear_flag=None, bull_flag=None,

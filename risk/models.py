@@ -236,6 +236,8 @@ class EssIdeaAdjustmentsInformation(models.Model):
     ess_idea_id = models.ForeignKey('ESS_Idea', on_delete=models.CASCADE)
     deal_key = models.IntegerField(null=True)  # DealKey reflecting a deal
     regression_results = models.TextField(null=True)
+    regression_calculations = models.TextField(null=True)
+    cix_calculations = models.TextField(null=True)
     calculated_on = models.DateField(null=True)
 
 

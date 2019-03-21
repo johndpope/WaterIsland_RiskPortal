@@ -739,6 +739,7 @@ def show_mna_idea(request):
     peer_charts = {}
     # Get Peer-set if present
     related_peers = MA_Deals_PeerSet.objects.filter(deal_id=deal_id)
+    peer_tickers = list(related_peers.values_list('peer'))
     for eachPeer in related_peers:
         peer_charts[eachPeer.peer] = {'ev_ebitda_ltm': eachPeer.ev_ebitda_chart_ltm,
                                       'ev_ebitda_1bf': eachPeer.ev_ebitda_chart_1bf,
@@ -761,7 +762,8 @@ def show_mna_idea(request):
                    'deal_lawyer_reports': deal_lawyer_reports, 'weekly_downside_estimates': weekly_downside_estimates,
                    'historical_downside_estimates': historical_downside_estimates,
                    'overlay_weekly_downside_estimate': overlay_weekly_downside_estimate,
-                   'px_last_cix_index': px_last_cix_index, 'px_last_spread_index': px_last_spread_index
+                   'px_last_cix_index': px_last_cix_index, 'px_last_spread_index': px_last_spread_index,
+                   'related_peers': json.dumps(peer_tickers)
                    })
 
 
@@ -1338,6 +1340,11 @@ def show_ess_idea(request):
 
     # Show the Optimal Peers
 
+    # Show the latest Regresson calculations
+    calculations = EssIdeaAdjustmentsInformation.objects.get(ess_idea_id_id=deal_id)
+    regression_calculations = calculations.regression_calculations
+    cix_calculations = calculations.cix_calculations
+
     return render(request, 'show_ess_idea.html',
                   context={'news_master': news_master, 'ess_idea_object': ess_idea, 'alpha_chart': alpha_chart,
                            'hedge_chart': hedge_chart, 'event_premium_chart': event_premium_chart,
@@ -1354,6 +1361,8 @@ def show_ess_idea(request):
                            'our_thesis_files': our_thesis_files, 'mosaic_sum': mosaic_sum,
                            'version_numbers': version_numbers, 'downside_changes': downside_changes,
                            'upside_downside_records_df': upside_downside_records_df.to_json(orient='records'),
+                           'regression_calculations': regression_calculations,
+                           'cix_calculations': cix_calculations
                            })
 
 
@@ -1497,6 +1506,10 @@ def ess_idea_save_balance_sheet(request):
             'version_number'
         ).version_number
 
+        # Save Balance Sheet Info in BalanceSheet Table
+        #balance_sheet_object = EssIdeaBalanceSheets.objects.filter()
+
+
         deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
         upside_balance_sheet = pd.DataFrame(pd.read_json(request.POST['upside_balance_sheet'], orient='records',
                                                          typ='series')).transpose()
@@ -1594,10 +1607,13 @@ def ess_idea_premium_analysis(request):
 
 def get_premium_analysis_results_from_worker(request):
     cix_down_price, cix_up_price, regression_up_price, regression_down_price, wic_cix_price, wic_regression_price\
-        = 0,0,0,0,0,0
+        = 0, 0, 0, 0, 0, 0
+    regression_results = None
+    regression_calculations = None
+    cix_calculations = None
     if request.method == 'POST':
         task_id = request.POST['task_id']
-        final_results, regression_results = \
+        final_results, regression_results, regression_calculations, cix_calculations = \
             AsyncResult(task_id, app=run_ess_premium_analysis_task).get()
 
         cix_down_price = np.round(final_results['Down Price (CIX)'], decimals=2)
@@ -1609,8 +1625,9 @@ def get_premium_analysis_results_from_worker(request):
 
     return JsonResponse(
         {'cix_down_price': cix_down_price, 'cix_up_price': cix_up_price, 'regression_up_price': regression_up_price,
-         'regression_down_price': regression_down_price, 'wic_cix_price':wic_cix_price, 'wic_regression_price':wic_regression_price,
-         'regression_results': regression_results})
+         'regression_down_price': regression_down_price, 'wic_cix_price': wic_cix_price,
+         'wic_regression_price': wic_regression_price, 'regression_results': regression_results,
+         'regression_calculations': regression_calculations, 'cix_calculations': cix_calculations})
 
 
 @csrf_exempt
