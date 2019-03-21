@@ -507,7 +507,7 @@ def email_nav_impacts_report():
 
         subject = '(Risk Automation) Merger Arb NAV Impacts - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-                   recipients=['risk@wicfunds.com', 'rlogan@wicfunds.com'],
+                   recipients=['iteam@wicfunds.com'],
                    subject=subject, from_email='dispatch@wicfunds.com', html=html,
                    EXPORTERS=exporters, dataframe=daily_nav_impacts)
 
