@@ -1039,20 +1039,20 @@ function fill_calculations_dictionary(regression_calculations){
         // Populate Bull Case Parameters for Modal
         bull_calculations.push({[current_multiple]:{
             '1':regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
-            '2':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
-            '3':regression_calculations[current_multiple]['Bull Multiple @ PTD'],
-            '4':regression_calculations[current_multiple]['Bull Multiple @ Now'],
-            '5':regression_calculations[current_multiple]['Bull Premium @ PTD'],
+            '2':regression_calculations[current_multiple]['Bull Multiple @ PTD'],
+            '3':regression_calculations[current_multiple]['Bull Premium @ PTD'],
+            '4':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
+            '5':regression_calculations[current_multiple]['Bull Multiple @ Now'],
             '6':regression_calculations[current_multiple]['Upside'],
             '7':regression_calculations[current_multiple]['Upside (Adj,weighted)'],
         }});
 
         wic_calculations.push({[current_multiple]:{
             '1':regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
-            '2':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
-            '3':regression_calculations[current_multiple]['PT WIC Multiple @ PTD'],
-            '4':regression_calculations[current_multiple]['PT WIC Multiple @ Now'],
-            '5':regression_calculations[current_multiple]['PT WIC Premium @ PTD'],
+            '2':regression_calculations[current_multiple]['PT WIC Multiple @ PTD'],
+            '3':regression_calculations[current_multiple]['PT WIC Premium @ PTD'],
+            '4':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
+            '5':regression_calculations[current_multiple]['PT WIC Multiple @ Now'],
             '6':regression_calculations[current_multiple]['PT WIC'],
             '7':regression_calculations[current_multiple]['PT WIC (Adj,weighted)'],
         }});
@@ -1060,10 +1060,10 @@ function fill_calculations_dictionary(regression_calculations){
 
         bear_calculations.push({[current_multiple]:{
             '1':regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
-            '2':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
-            '3':regression_calculations[current_multiple]['Bear Multiple @ PTD'],
-            '4':regression_calculations[current_multiple]['Bear Multiple @ Now'],
-            '5':regression_calculations[current_multiple]['Bear Premium @ PTD'],
+            '2':regression_calculations[current_multiple]['Bear Multiple @ PTD'],
+            '3':regression_calculations[current_multiple]['Bear Premium @ PTD'],
+            '4':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
+            '5':regression_calculations[current_multiple]['Bear Multiple @ Now'],
             '6':regression_calculations[current_multiple]['Downside'],
             '7':regression_calculations[current_multiple]['Downside (Adj,weighted)'],
         }});
