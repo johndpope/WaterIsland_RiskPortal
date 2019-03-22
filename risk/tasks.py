@@ -1,9 +1,8 @@
 import sys
 import os
-
+import io
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 import django
-
 django.setup()
 from celery import shared_task
 from dateutil import parser
@@ -13,22 +12,19 @@ import datetime
 import requests
 from dateutil.relativedelta import relativedelta
 import numpy as np
-from risk.models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records, ESS_Idea_BearFileUploads, \
-    ESS_Idea_BullFileUploads, ESS_Idea_OurFileUploads, EssIdeaAdjustmentsInformation
+from risk.models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records, EssIdeaAdjustmentsInformation
 import bbgclient
 import json
 from django.conf import settings
-from django.db import transaction
 import ast
 from django_slack import slack_message
-from django.core.mail import EmailMessage
 
 api_host = bbgclient.bbgclient.get_next_available_host()
 import ess_function
 from django.core.exceptions import ObjectDoesNotExist
 from celery_progress.backend import ProgressRecorder
 from .ess_idea_db_utilities import add_new_deal, add_new_deal_alpha_only, add_new_deal_with_lock
-
+from email_utilities import send_email
 
 @shared_task
 def premium_analysis_flagger():
@@ -194,16 +190,60 @@ def premium_analysis_flagger():
             print('Failed Calculating Premium Analysis for : ' + str(deal_object.alpha_ticker))
             continue
 
-    from tabulate import tabulate
-    email = EmailMessage('(Risk Automation) ESS IDEA Database Adjustments', body=tabulate(deal_change_log,
-                                                                                          headers=deal_change_log.columns,
-                                                                                          showindex=False,
-                                                                                          tablefmt='psql'),
-                         to=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com',
-                             'kkeung@wicfunds.com'], from_email='dispatch@wicfunds.com')
+    def highlight_major_changes(row):
+        ret = ["" for _ in row.index]
+        if abs(((row['Old Upside']-row['Adjusted Upside'])/row['Old Upside'])*100) >= 5:
+            ret[row.index.get_loc("Old Upside")] = "background-color: #ff4747;color:white"
+            ret[row.index.get_loc("Adjusted Upside")] = "background-color: #ff4747;color:white"
 
-    email.attach('EssIDEA_Adjustments.csv', deal_change_log.to_csv(), 'text/csv')
-    email.send()
+        if abs(((row['Old Downside']-row['Adjusted Downside'])/row['Old Downside'])*100) >= 5:
+            ret[row.index.get_loc("Old Downside")] = "background-color: #ff4747;color:white"
+            ret[row.index.get_loc("Adjusted Downside")] = "background-color: #ff4747;color:white"
+
+        if abs(((row['Old WIC PT']-row['Adjusted WIC PT'])/row['Old WIC PT'])*100) >= 5:
+            ret[row.index.get_loc("Old WIC PT")] = "background-color: #ff4747;color:white"
+            ret[row.index.get_loc("Adjusted WIC PT")] = "background-color: #ff4747;color:white"
+
+        return ret
+
+    deal_change_log = deal_change_log.style.apply(highlight_major_changes, axis=1).set_table_styles([
+        {'selector': 'tr:hover td', 'props': [('background-color', 'green')]},
+        {'selector': 'th, td', 'props': [('border', '1px solid black'),
+                                         ('padding', '4px'),
+                                         ('text-align', 'center')]},
+        {'selector': 'th', 'props': [('font-weight', 'bold')]},
+        {'selector': '', 'props': [('border-collapse', 'collapse'),
+                                   ('border', '1px solid black')]}
+    ])
+
+    html = """ \
+                <html>
+                  <head>
+                  </head>
+                  <body>
+                    <p>Daily Price Tracks (Highlighted RED if difference greater than 5%)</p>
+                    <a href="http://192.168.0.16:8000/risk/ess_idea_database">
+                    Link for ESS IDEA Database</a><br><br>
+                    {0}
+                  </body>
+                </html>
+        """.format(deal_change_log.hide_index().render(index=False))
+
+    def export_excel(df):
+        with io.BytesIO() as buffer:
+            writer = pd.ExcelWriter(buffer)
+            df.to_excel(writer)
+            writer.save()
+            return buffer.getvalue()
+
+    now_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
+    exporters = {'ESS IDEA DB Adjustments (' + now_date + ').xlsx': export_excel}
+
+    subject = '(Risk Automation) ESS IDEA Database Adjustments - ' + now_date
+    send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
+               recipients=['kgorde@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com','kkeung@wicfunds.com'],
+               subject=subject, from_email='dispatch@wicfunds.com', html=html,
+               EXPORTERS=exporters, dataframe=deal_change_log)
 
 
 @shared_task(bind=True)

@@ -162,6 +162,15 @@ DATABASES = {
         'NAME': env('WICFUNDS_DATABASE_NAME'),
         'CONN_MAX_AGE': None,
     },
+    'wic': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': env('WICFUNDS_DATABASE_HOST'),
+        'PORT': env('WICFUNDS_DATABASE_PORT'),
+        'USER': env('WICFUNDS_DATABASE_USER'),
+        'PASSWORD': env('WICFUNDS_DATABASE_PASSWORD'),
+        'NAME': 'wic',
+        'CONN_MAX_AGE': None,
+    },
     'NorthPoint-PnLAppDb': {
         'ENGINE': 'sql_server.pyodbc',
         'HOST': env('NORTHPOINT_PNLAPPDB_DATABASE_HOST'),

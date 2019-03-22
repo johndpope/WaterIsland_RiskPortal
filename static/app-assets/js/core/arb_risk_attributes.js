@@ -64,7 +64,6 @@ $(document).ready(function () {
                 messageBottom:'Report produced by: Water Island Capital, Risk Portal',
                 header: true,
                 customize: function (doc) {
-
                     doc.content[1].table.headerRows = 2;
                     var firstHeaderRow = [];
                     $('#arb_risk_attributes_table').find("thead>tr:first-child>th").each(

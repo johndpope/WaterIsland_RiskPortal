@@ -4,16 +4,16 @@ import pandas as pd
 import datetime
 from django.conf import settings
 
-
 class Wic():
     @staticmethod
     def get_live_pnl_fx_rates_df():
-        query = " SELECT `Timestamp`, `FX_SYMBOL`,`RATE` FROM " + settings.DATABASES['default']['NAME']\
+        query = " SELECT `Timestamp`, `FX_SYMBOL`,`RATE` FROM " + settings.DATABASES['wic']['NAME']\
                 + ".live_pnl_fx_rates "
         cols = ['Timestamp', 'FX_SYMBOL', 'FX_RATE']
         try:
             df = pd.read_sql_query(query, connection)
-        except:
+        except Exception as e:
+            print(e)
             return pd.DataFrame(columns=cols)
 
         df.columns = cols
@@ -25,7 +25,7 @@ class Wic():
     @staticmethod
     def get_live_pnl_px_factors_df():
         query = "SELECT  `API_IDENTIFIER`, `CRNCY`,`TICKER`, `SECURITY_TYP`, `SETTLE_DT`, `FACTOR`, `FX_SYMBOL`," \
-                " `YDAY_API_IDENTIFIER`, `DATA_TIMESTAMP` FROM " + settings.DATABASES['default']['NAME'] \
+                " `YDAY_API_IDENTIFIER`, `DATA_TIMESTAMP` FROM " + settings.DATABASES['wic']['NAME'] \
                 + ".live_pnl_px_factors "
 
         cols = ['API_IDENTIFIER', 'CRNCY', 'TICKER', 'SECURITY_TYP', 'SETTLE_DT', 'FACTOR', 'FX_SYMBOL',
@@ -40,17 +40,19 @@ class Wic():
                     lambda x: pd.to_datetime(x).strftime('%Y-%m-%d %H:%M:%S'))
             df[float_cols] = df[float_cols].astype(float)
             return df
-        except:
+        except Exception as e:
+            print(e)
             return pd.DataFrame(columns=cols)
 
     @staticmethod
     def get_live_pnl_df():
         query = " SELECT `Timestamp`, `API_IDENTIFIER`,`PX_LAST` FROM " +  \
-                settings.DATABASES['default']['NAME'] + ".live_pnl "
+                settings.DATABASES['wic']['NAME'] + ".live_pnl "
         cols = ['Timestamp', 'API_IDENTIFIER', 'PX_LAST']
         try:
             res = pd.read_sql_query(query, connection)
-        except:
+        except Exception as e:
+            print(e)
             return pd.DataFrame(columns=cols)
 
         df = pd.DataFrame(res, columns=cols)
@@ -65,7 +67,7 @@ class Wic():
                 "`Sleeve`, `Bucket`, `AlphaHedge`, `LongShort`, " \
                 "`CatalystName`, `Analyst`, `Northpont_SecType`, `Capital($)`, `Capital(%)`, " \
                 "`BaseCaseNavImpact`, `OutlierNavImpact`, " \
-                "`Desc`, `Group` FROM " + settings.DATABASES['default']['NAME'] \
+                "`Desc`, `Group` FROM " + settings.DATABASES['wic']['NAME'] \
                 + ".live_pnl_monitored_portfolios "
         where_clauses = []
         if len(portfolio_names) > 0: where_clauses.append(
@@ -86,7 +88,8 @@ class Wic():
             df = pd.DataFrame(res, columns=cols)
             df[float_cols] = df[float_cols].astype(float)
             return df
-        except:
+        except Exception as e:
+            print(e)
             return pd.DataFrame(columns=cols)
 
     @staticmethod
@@ -94,7 +97,7 @@ class Wic():
         # region query
         query = "SELECT Fund, Sleeve, TradeGroup, Analyst, LongShort, InceptionDate, EndDate, Status," \
                 "`Metrics in Bet JSON`,`Metrics in Bet notes JSON`,`Metrics in NAV JSON`,`Metrics in NAV notes JSON` " \
-                "FROM `" + settings.DATABASES['default']['NAME'] + "`.tradegroups_snapshot2 "
+                "FROM `" + settings.DATABASES['wic']['NAME'] + "`.tradegroups_snapshot2 "
         # endregion
 
         res = pd.read_sql_query(query, connection)
