@@ -5,8 +5,7 @@ from .models import ArbitrageYTDPerformance
 from django_pandas.io import read_frame
 from django.http import HttpResponse
 import dbutils
-import datetime
-import holidays
+from holiday_utils import is_market_closed
 # Create your views here.
 
 
@@ -89,7 +88,9 @@ def live_tradegroup_pnl(request):
     ytd_performance['TradeGroup'] = ytd_performance['TradeGroup'].apply(lambda x: x.strip())
     ytd_performance.loc[ytd_performance['TradeGroup'] == 'BEL -  MC FP', ['TradeGroup']] = 'BEL - MC FP'  # Todo: Update
 
-    # Merge Only if Market is Closed...
+    # Merge Only if Market is open...
+    if is_market_closed():
+        table_df = table_df.iloc[0:0]
     final_live_df = pd.merge(table_df, ytd_performance, how='outer', left_on=['Group', 'TradeGroup'],
                              right_on=['Fund', 'TradeGroup'])
 
@@ -132,10 +133,3 @@ def live_tradegroup_pnl(request):
     return render(request, 'realtime_pnl_impacts.html', {})
 
 
-def is_market_closed():
-    now = datetime.datetime.now()
-    if now.weekday() in [5,6]: return True # weekend
-    if now.strftime('%Y-%m-%d') in holidays: return True #holiday
-    if now > datetime.datetime(now.year, now.month, now.day, 16,0): return True # after hours
-    if now < datetime.datetime(now.year, now.month, now.day, 9,30): return True # before hours
-    return False

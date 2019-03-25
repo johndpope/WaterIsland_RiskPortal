@@ -1,6 +1,6 @@
 $(document).ready(function () {
     let formulae_table = $('#downside_formulae_table').DataTable({
-        scrollY: "850px",
+        scrollY: "680px",
         scrollX: true,
         scrollCollapse: true,
         paging: false,

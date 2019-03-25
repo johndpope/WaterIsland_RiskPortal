@@ -18,7 +18,7 @@ from risk.chart_utils import *
 from notes.models import NotesMaster
 from .tasks import add_new_idea, run_ess_premium_analysis_task
 from .models import *
-
+from django.db import connection
 api_host = bbgclient.bbgclient.get_next_available_host()
 
 
@@ -317,7 +317,12 @@ def mna_idea_add_peers(request):
         peer_set = ast.literal_eval(request.POST['peer_set'])
         deal_id = request.POST['deal_id']
         deal_object = MA_Deals.objects.get(id=deal_id)
-        peer_set.append(deal_object.target_ticker + " Equity")
+
+        if 'EQUITY' or 'Equity' in deal_object.target_ticker:
+            peer_set.append(deal_object.target_ticker)
+        else:
+            peer_set.append(deal_object.target_ticker + " EQUITY")
+
         # Save to Database if checkbox value is ON
         # Get the Required charts for each Peer and save it in the DB
         charts = {}
@@ -480,11 +485,21 @@ def mna_idea_run_scenario_analysis(request):
             deal_id = request.POST['deal_id']
             stock_component_involved = False
 
+            # Update the Deal Object
+            deal_object = MA_Deals.objects.get(id=deal_id)
+
             if share_terms > 0:
                 stock_component_involved = True  # Check if stock component is involved
                 break_spread = ((acquirer_upside * share_terms) + cash_terms) - deal_downside
                 spread = deal_upside - target_last_price
 
+            # Update the Deal Object
+            deal_object.deal_cash_terms = cash_terms
+            deal_object.deal_share_terms = share_terms
+            deal_object.deal_upside = deal_upside
+            deal_object.target_downside = deal_downside
+            deal_object.acquirer_upside = acquirer_upside
+            deal_object.save()
             # Create Deal Break Scenario First
             bps_to_lose = [0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.75, 0.80, 0.90, 1.0]
 
@@ -751,10 +766,16 @@ def show_mna_idea(request):
                                       'pe_ratio_1bf': eachPeer.pe_ratio_chart_1bf,
                                       'pe_ratio_2bf': eachPeer.pe_ratio_chart_2bf,
                                       'fcf_yield': eachPeer.fcf_yield_chart}
+    try:
+        fund_aum = pd.read_sql_query('SELECT DISTINCT AUM FROM wic.daily_flat_file_db where flat_file_as_of='
+                                     '(select max(flat_file_as_of) from wic.daily_flat_file_db) and fund like \'ARB\'',
+                                     con=connection)
+    except Exception as e:
+        fund_aum = 0
 
     return render(request, 'show_mna_idea.html',
                   {'deal_core': deal_core,
-                   'deal_note': deal_note, 'fund_aum': deal_core.fund_aum,
+                   'deal_note': deal_note, 'fund_aum': fund_aum.iloc[0]['AUM'],
                    'eqy_float': eqy_float, 'eqy_sh_out': eqy_sh_out, 'target_px_last': target_last_px,
                    'px_last_historical': px_last_historical, 'px_last_historical_acquirer': px_last_historical_acquirer,
                    'target_ticker': target_ticker, 'acquirer_ticker': acquirer_ticker,
@@ -763,7 +784,7 @@ def show_mna_idea(request):
                    'historical_downside_estimates': historical_downside_estimates,
                    'overlay_weekly_downside_estimate': overlay_weekly_downside_estimate,
                    'px_last_cix_index': px_last_cix_index, 'px_last_spread_index': px_last_spread_index,
-                   'related_peers': json.dumps(peer_tickers)
+                   'related_peers': json.dumps(peer_tickers), 'peer_lists':related_peers
                    })
 
 
