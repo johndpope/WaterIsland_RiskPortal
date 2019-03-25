@@ -3,6 +3,12 @@ $(document).ready(function () {
     let realtime_pnl_table = $('#realtime_pnl_table').DataTable(get_pnl_table_initialization_configuration("live_tradegroup_pnl", "Total YTD", "data"));
     let realtime_daily_pnl_table = $('#realtime_daily_pnl_table').DataTable(get_pnl_table_initialization_configuration("live_tradegroup_pnl", "Daily", "daily_pnl"));
 
+    // Column Alignment for the Tab Clicks
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        $($.fn.dataTable.tables(true)).DataTable()
+            .columns.adjust()
+            .fixedColumns().relayout();
+    });
 
     setInterval(function () {
         realtime_pnl_table.ajax.reload(null, true);
@@ -15,15 +21,16 @@ $(document).ready(function () {
 
 function get_pnl_table_initialization_configuration(url, total_or_daily_string, json_response_tag) {
     return {
-        scrollY: "850px",
+        scrollY: "680px",
         scrollX: true,
         scrollCollapse: true,
+        fixedColumns: {
+            leftColumns: 1
+        },
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
             '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
             '<"row"<"col-sm-5"i><"col-sm-7"p>>',
-        fixedHeader: {
-            header: true
-        },
+
         buttons: {
             buttons: [{
                 extend: 'print',
@@ -124,6 +131,7 @@ function get_pnl_table_initialization_configuration(url, total_or_daily_string, 
                     select.append('<option value="' + d + '">' + d + '</option>')
                 });
             });
+
         },
         "footerCallback": function (row, data, start, end, display) {
             var api = this.api(), data;

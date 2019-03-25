@@ -152,3 +152,7 @@ select > option
   word-wrap:inherit;
 }
 
+.dataTables_scroll
+{
+    overflow:auto;
+}

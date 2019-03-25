@@ -12,6 +12,7 @@ from django.conf import settings
 from sqlalchemy import create_engine
 from email_utilities import send_email
 import django
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 django.setup()
 
@@ -183,7 +184,7 @@ def refresh_base_case_and_outlier_downsides():
         time.sleep(2)
         # Filter IsExcluded ones
         forumale_linked_downsides = forumale_linked_downsides[forumale_linked_downsides['IsExcluded'] == 'No']
-        forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying','RiskLimit', 'base_case',
+        forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'RiskLimit', 'base_case',
                                                                'outlier', 'LastUpdate', 'LastPrice']]
 
         # Query Options Last Prices
@@ -286,11 +287,11 @@ def refresh_base_case_and_outlier_downsides():
 
         nav_impacts_positions_df = nav_impacts_positions_df.groupby(['FundCode', 'TradeGroup', 'Ticker', 'PM_BASE_CASE',
                                                                      'Outlier', 'LastPrice']).agg({
-                                                                                                  'BASE_CASE_NAV_IMPACT'
-                                                                                                  : 'sum',
-                                                                                                  'OUTLIER_NAV_IMPACT'
-                                                                                                  : 'sum',
-                                                                                                  })
+            'BASE_CASE_NAV_IMPACT'
+            : 'sum',
+            'OUTLIER_NAV_IMPACT'
+            : 'sum',
+        })
 
         nav_impacts_positions_df = pd.pivot_table(nav_impacts_positions_df,
                                                   index=['TradeGroup', 'Ticker', 'PM_BASE_CASE',
@@ -416,14 +417,67 @@ def email_nav_impacts_report():
 
         for col in precision_cols:
             daily_nav_impacts[col] = daily_nav_impacts[col].apply(round_df)
-
-        daily_nav_impacts.drop(columns=['id'], inplace=True)
+            daily_nav_impacts[col] = daily_nav_impacts[col].apply(pd.to_numeric)
 
         daily_nav_impacts = daily_nav_impacts[['TradeGroup', 'RiskLimit', 'Base Case (ARB)', 'Base Case (MACO)',
                                                'Base Case (MALT)', 'Base Case (AED)', 'Base Case (CAM)',
-                                               'Base Case (LG)', 'Base Case (LEV)', 'Outlier (ARB)', 'Outlier (CAM)',
-                                               'Outlier (LEV)', 'Outlier (LG)', 'Outlier (MACO)', 'Outlier (TAQ)',
-                                               'Base Case (MALT)', 'Outlier (MALT)']]
+                                               'Base Case (LG)', 'Base Case (LEV)', 'Outlier (ARB)',
+                                               'Outlier (MACO)', 'Outlier (MALT)', 'Outlier (AED)',
+                                               'Outlier (CAM)', 'Outlier (LG)', 'Outlier (LEV)']]
+
+        def excel_formatting(row):
+            ret = ["color:green" for _ in row.index]
+            # Color Risk Limit and TradeGroup
+            ret[row.index.get_loc("RiskLimit")] = "color:red"
+            ret[row.index.get_loc("TradeGroup")] = "color:black"
+
+            if abs(row['RiskLimit']) <= abs(row['Base Case (ARB)']):
+                ret[row.index.get_loc("Base Case (ARB)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= abs(row['Base Case (MACO)']):
+                ret[row.index.get_loc("Base Case (MACO)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= abs(row['Base Case (MALT)']):
+                ret[row.index.get_loc("Base Case (MALT)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= abs(row['Outlier (ARB)']):
+                ret[row.index.get_loc("Outlier (ARB)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= abs(row['Outlier (MACO)']):
+                ret[row.index.get_loc("Outlier (MACO)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= abs(row['Outlier (MALT)']):
+                ret[row.index.get_loc("Outlier (MALT)")] = "color:red"
+
+            # Multi Strat is 2x Risk
+            if abs(row['RiskLimit']) <= 2 * abs(row['Base Case (AED)']):
+                ret[row.index.get_loc("Base Case (AED)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= 2 * abs(row['Base Case (CAM)']):
+                ret[row.index.get_loc("Base Case (CAM)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= 2 * abs(row['Base Case (LG)']):
+                ret[row.index.get_loc("Base Case (LG)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= 2 * abs(row['Outlier (AED)']):
+                ret[row.index.get_loc("Outlier (AED)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= 2 * abs(row['Outlier (CAM)']):
+                ret[row.index.get_loc("Outlier (CAM)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= 2 * abs(row['Outlier (LG)']):
+                ret[row.index.get_loc("Outlier (LG)")] = "color:red"
+
+            # Leveraged is 3x Risk
+            if abs(row['RiskLimit']) <= 3 * abs(row['Base Case (LEV)']):
+                ret[row.index.get_loc("Base Case (LEV)")] = "color:red"
+
+            if abs(row['RiskLimit']) <= 3 * abs(row['Outlier (LEV)']):
+                ret[row.index.get_loc("Outlier (LEV)")] = "color:red"
+
+            return ret
+
+        daily_nav_impacts = daily_nav_impacts.style.apply(excel_formatting, axis=1)
 
         downsides_df.columns = ['TradeGroup', 'Downside Base Case', 'Last Downside Revision']
 
@@ -469,7 +523,6 @@ def email_nav_impacts_report():
                 writer.save()
                 return buffer.getvalue()
 
-
         def color_negative_red(val):
             value = float(val.split('%')[0])
             if value >= 0:
@@ -503,13 +556,14 @@ def email_nav_impacts_report():
         """.format(last_calculated_on, extra_message, df.hide_index().render(index=False))
 
         exporters = {'Merger Arb NAV Impacts (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
-                     export_excel}
+                         export_excel}
 
         subject = '(Risk Automation) Merger Arb NAV Impacts - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                    recipients=['iteam@wicfunds.com'],
                    subject=subject, from_email='dispatch@wicfunds.com', html=html,
-                   EXPORTERS=exporters, dataframe=daily_nav_impacts)
+                   EXPORTERS=exporters, dataframe=daily_nav_impacts
+                   )
 
     except Exception as e:
         print('Error Occured....')
@@ -546,7 +600,7 @@ def email_daily_formulae_linked_downsides():
         """
 
         exporters = {'FormulaeLinkedDownsides (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
-                     export_excel}
+                         export_excel}
 
         subject = '(Risk Automation) FormulaeLinkedDownsides - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
