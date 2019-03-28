@@ -360,7 +360,7 @@ def calculate_outlier_pl(row):
         else:
             x = 0
 
-        return -row['CurrMktVal'] + x
+    return -row['CurrMktVal'] + x
 
 
 def calculate_outlier_nav_impact(row):
@@ -377,9 +377,8 @@ def email_nav_impacts_report():
         df = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_dailynavimpacts', con=con)
         time.sleep(3)
         downsides_df = pd.read_sql_query(
-            'SELECT TradeGroup, base_case, max(LastUpdate) as LastUpdate FROM '
-            'test_wic_db.risk_reporting_formulaebaseddownsides WHERE TargetAcquirer = \'Target\' '
-            'AND IsExcluded = \'No\''
+            'SELECT TradeGroup, base_case,outlier, max(LastUpdate) as LastUpdate FROM '
+            'test_wic_db.risk_reporting_formulaebaseddownsides WHERE IsExcluded = \'No\''
             ' GROUP BY TradeGroup', con=con)
         time.sleep(3)
         arb_ytd_pnl = pd.read_sql_query(
@@ -479,36 +478,51 @@ def email_nav_impacts_report():
 
         daily_nav_impacts = daily_nav_impacts.style.apply(excel_formatting, axis=1)
 
-        downsides_df.columns = ['TradeGroup', 'Downside Base Case', 'Last Downside Revision']
+        downsides_df.columns = ['TradeGroup', 'Downside Base Case','Outlier', 'Last Downside Revision']
 
-        df = df[['TradeGroup', 'RiskLimit', 'BASE_CASE_NAV_IMPACT_ARB']]
+        df = df[['TradeGroup', 'RiskLimit', 'BASE_CASE_NAV_IMPACT_ARB', 'OUTLIER_NAV_IMPACT_ARB']]
 
         df = pd.merge(df, downsides_df, on='TradeGroup')
 
-        df.columns = ['TradeGroup', 'RiskLimit', 'NAV Impact', 'Downside Base Case', 'Last Update']
+        df.columns = ['TradeGroup', 'RiskLimit', '(Base Case) NAV Impact', '(Outlier) NAV Impact',
+                      'Downside Base Case', 'Outlier', 'Last Update']
 
-        df = df[df['NAV Impact'] != '']
-        df['NAV Impact'] = df['NAV Impact'].apply(lambda x: np.round(float(x), decimals=2))
+        df = df[df['(Base Case) NAV Impact'] != '']
+        df['(Base Case) NAV Impact'] = df['(Base Case) NAV Impact'].apply(lambda x: np.round(float(x), decimals=2))
+
+        df = df[df['(Outlier) NAV Impact'] != '']
+        df['(Outlier) NAV Impact'] = df['(Outlier) NAV Impact'].apply(lambda x: np.round(float(x), decimals=2))
 
         downsides_not_updated = df[pd.isna(df['Downside Base Case'])]['TradeGroup'].tolist()
         extra_message = '' if len(downsides_not_updated) == 0 else \
             '<br><br> Please update downsides for these Tradegroups: ' + ', '.join(downsides_not_updated)
         df = df[~(pd.isna(df['Downside Base Case']))]
+        df = df[~(pd.isna(df['Outlier']))]
         df['Downside Base Case'] = df['Downside Base Case'].apply(lambda x: np.round(float(x), decimals=2))
+        df['Outlier'] = df['Outlier'].apply(lambda x: np.round(float(x), decimals=2))
 
-        def get_impact_over_limit(row):
-            if abs(row['RiskLimit']) <= abs(row['NAV Impact']):
-                return np.round((row['RiskLimit'] - row['NAV Impact']), decimals=2)
+        def get_base_case_impact_over_limit(row):
+            if abs(row['RiskLimit']) <= abs(row['(Base Case) NAV Impact']):
+                return np.round((row['RiskLimit'] - row['(Base Case) NAV Impact']), decimals=2)
 
-            return np.round((row['RiskLimit'] - row['NAV Impact']), decimals=2)
+            return np.round((row['RiskLimit'] - row['(Base Case) NAV Impact']), decimals=2)
 
-        df['Impact Over Limit'] = df.apply(get_impact_over_limit, axis=1)
-        df1 = df.sort_values(by=['Impact Over Limit'], ascending=False)
-        df_over_limit = df1[df1['Impact Over Limit'] >= 0]
-        df_under_limit = df1[df1['Impact Over Limit'] < 0]
-        df_under_limit = df_under_limit.sort_values(by=['Impact Over Limit'], ascending=False)
+        def get_outlier_impact_over_limit(row):
+            if abs(row['RiskLimit']) <= abs(row['(Outlier) NAV Impact']):
+                return np.round((row['RiskLimit'] - row['(Outlier) NAV Impact']), decimals=2)
+
+            return np.round((row['RiskLimit'] - row['(Outlier) NAV Impact']), decimals=2)
+
+        df['(BaseCase)Impact Over Limit'] = df.apply(get_base_case_impact_over_limit, axis=1)
+        df['(Outlier)Impact Over Limit'] = df.apply(get_outlier_impact_over_limit, axis=1)
+
+        df1 = df.sort_values(by=['(Outlier)Impact Over Limit'], ascending=False)
+        df_over_limit = df1[df1['(Outlier)Impact Over Limit'] >= 0]
+        df_under_limit = df1[df1['(Outlier)Impact Over Limit'] < 0]
+        df_under_limit = df_under_limit.sort_values(by=['(Outlier)Impact Over Limit'], ascending=False)
         df = pd.concat([df_over_limit, df_under_limit])
-        df['Impact Over Limit'] = df['Impact Over Limit'].apply(lambda x: str(x) + '%')
+        df['(Outlier)Impact Over Limit'] = df['(Outlier)Impact Over Limit'].apply(lambda x: str(x) + '%')
+        df['(BaseCase)Impact Over Limit'] = df['(BaseCase)Impact Over Limit'].apply(lambda x: str(x) + '%')
         df = pd.merge(df, arb_ytd_pnl, how='left', on='TradeGroup')
 
         df['(ARB) YTD $ P&L'] = df.apply(lambda x: "{:,}".format(int(x['(ARB) YTD $ P&L'])), axis=1)
@@ -532,7 +546,7 @@ def email_nav_impacts_report():
 
             return 'color: %s' % color
 
-        df = df.style.applymap(color_negative_red, subset=['Impact Over Limit']).set_table_styles([
+        df = df.style.applymap(color_negative_red, subset=['(Outlier)Impact Over Limit', '(BaseCase)Impact Over Limit']).set_table_styles([
             {'selector': 'tr:hover td', 'props': [('background-color', 'yellow')]},
             {'selector': 'th, td', 'props': [('border', '1px solid black'),
                                              ('padding', '4px'),
@@ -560,7 +574,7 @@ def email_nav_impacts_report():
 
         subject = '(Risk Automation) Merger Arb NAV Impacts - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-                   recipients=['iteam@wicfunds.com'],
+                   recipients=['kgorde@wicfunds.com'],
                    subject=subject, from_email='dispatch@wicfunds.com', html=html,
                    EXPORTERS=exporters, dataframe=daily_nav_impacts
                    )

@@ -6,25 +6,25 @@
 
 {% load staticfiles %}
 
-    {% block css_styles %}
-        {{ block.super }}
-    {% endblock %}
+{% block css_styles %}
+    {{ block.super }}
+{% endblock %}
 
-    {% block datatables_bootstrap_css %}
-        {{ block.super }}
-    {% endblock %}
+{% block datatables_bootstrap_css %}
+    {{ block.super }}
+{% endblock %}
 
-    {% block summernote_css %}
-        {{ block.super }}
-    {% endblock %}
+{% block summernote_css %}
+    {{ block.super }}
+{% endblock %}
 
-    {% block checkboxes_css %}
-        {{ block.super }}
-    {% endblock %}
+{% block checkboxes_css %}
+    {{ block.super }}
+{% endblock %}
 
-    {% block moment_js %}
-        {{ block.super }}
-    {% endblock %}
+{% block moment_js %}
+    {{ block.super }}
+{% endblock %}
 
 {% block content %}
     <div class="app-content content">
@@ -119,8 +119,28 @@
                                             </div>
 
                                         </div>
-
                                         <br>
+                                        <div class="row">
+                                            <div class="col-lg-2 block-tag">
+                                                <small class="badge badge-default badge-success">Attachments
+                                                </small>
+                                            </div>
+                                            <br><br>
+                                            <div class="col-lg-12">
+                                                <div class="container">
+                                                    <div class="fileupload-buttonbar text-center">
+                                                        <span class="btn btn-success fileinput-button mr-1">
+                                                            <i class="icon-plus"></i>
+                                                            <span>Upload files...</span>
+                                                            <input type="file" multiple id='notes_attachments_model'
+                                                                   name="files_notes_attachments[]">
+                                                        </span>
+                                                        <p id="notes_attachments"></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
                                     </div>
                                 </div>
 
@@ -230,6 +250,27 @@
 
                                         </div>
 
+                                        <div class="row">
+                                            <div class="col-lg-2 block-tag">
+                                                <small class="badge badge-default badge-success">Attachments
+                                                </small>
+                                            </div>
+                                            <br><br>
+                                            <div class="col-lg-12">
+                                                <div class="container">
+                                                    <div class="fileupload-buttonbar text-center">
+                                                        <span class="btn btn-success fileinput-button mr-1">
+                                                            <i class="icon-plus"></i>
+                                                            <span>Upload files...</span>
+                                                            <input type="file" multiple id='edit_notes_attachments_model'
+                                                                   name="edit_files_notes_attachments[]">
+                                                        </span>
+                                                        <p id="edit_notes_attachments"></p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                        </div>
                                         <br>
                                     </div>
                                 </div>
@@ -252,46 +293,46 @@
             <div class="modal animated lightSpeedIn text-left" id="wic_notes_view_modal" tabindex="-1"
                  role="dialog"
                  aria-labelledby="myModalLabel42" aria-hidden="true">
-                    <div class="modal-xl modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h4 class="modal-title text-center" id="myModalLabel42">Here's your Note</h4>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
+                <div class="modal-xl modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h4 class="modal-title text-center" id="myModalLabel42">Here's your Note</h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
 
-                            <div class="modal-body">
+                        <div class="modal-body">
 
-                                <div class="row">
+                            <div class="row">
 
-                                    <div class="col-lg-6 offset-4">
-                                        <div class="row">
-                                            <div class="col-lg-2 block-tag">
-                                                <small class="badge badge-default badge-success">My Note
-                                                </small>
-                                            </div>
-                                            <br><br>
-                                            <div class="col-lg-12">
-                                                <div class="container" id="wic_note_view_article">
-
-                                                </div>
-                                            </div>
-
+                                <div class="col-lg-6 offset-4">
+                                    <div class="row">
+                                        <div class="col-lg-2 block-tag">
+                                            <small class="badge badge-default badge-success">My Note
+                                            </small>
                                         </div>
-                                        <br>
-                                    </div>
-                                </div>
+                                        <br><br>
+                                        <div class="col-lg-12">
+                                            <div class="container" id="wic_note_view_article">
 
-                            </div>
-                            <div class="modal-footer">
-                                <button id='close_wic_note_modal' type="button"
-                                        class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
-                                </button>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                    <br>
+                                </div>
                             </div>
 
                         </div>
+                        <div class="modal-footer">
+                            <button id='close_wic_note_modal' type="button"
+                                    class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
+                            </button>
+                        </div>
+
                     </div>
+                </div>
             </div>
             {#        Show View Modal END#}
             <section class="row">
@@ -331,7 +372,7 @@
                                             <td>{{ notes_item.date }}</td>
                                             <td>{{ notes_item.title }}</td>
                                             <td>{{ notes_item.author }}</td>
-                                            <td>{{ notes_item.article }}</td>
+                                            <td data-value="{{ notes_item.article }}">{{ notes_item.article|slice:"0:200"|add:"..." }}</td>
                                             <td>{{ notes_item.tickers }}</td>
                                             <td>
                                                 <div class="btn-group">

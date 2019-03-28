@@ -313,7 +313,7 @@ def update_downside_formulae(request):
     if request.method == 'POST':
         # Gather the data
         try:
-            id = request.POST['id']
+            row_id = request.POST['id']
             is_excluded = request.POST['is_excluded']
             risk_limit = request.POST['risk_limit']
             base_case_downside_type = request.POST['base_case_downside_type']
@@ -331,7 +331,13 @@ def update_downside_formulae(request):
             outlier_custom_input = request.POST['outlier_custom_input']
             outlier = request.POST['outlier']
             outlier_notes = request.POST['outlier_notes']
-            obj = FormulaeBasedDownsides.objects.get(id=id)
+            # Retroactively update Risk Limit for all matching TradeGroups
+            obj = FormulaeBasedDownsides.objects.get(id=row_id)
+            deal_name = obj.TradeGroup
+            matching_tradegroups = FormulaeBasedDownsides.objects.filter(TradeGroup__exact=deal_name)
+            for deals in matching_tradegroups:
+                deals.RiskLimit = risk_limit
+
             old_base_case_downside = obj.base_case
             old_outlier = obj.outlier
             old_risk_limit = obj.RiskLimit
