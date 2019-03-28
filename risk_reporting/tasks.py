@@ -546,7 +546,13 @@ def email_nav_impacts_report():
 
             return 'color: %s' % color
 
-        df = df.style.applymap(color_negative_red, subset=['(Outlier)Impact Over Limit', '(BaseCase)Impact Over Limit']).set_table_styles([
+        del df['Downside Base Case']
+        del df['Outlier']
+        df = df[['TradeGroup', 'RiskLimit', '(Outlier) NAV Impact', '(Outlier)Impact Over Limit',
+                 '(Base Case) NAV Impact', '(BaseCase)Impact Over Limit','Last Update', '(ARB) YTD $ P&L']]
+
+        df = df.style.applymap(color_negative_red,
+                               subset=['(Outlier)Impact Over Limit', '(BaseCase)Impact Over Limit']).set_table_styles([
             {'selector': 'tr:hover td', 'props': [('background-color', 'yellow')]},
             {'selector': 'th, td', 'props': [('border', '1px solid black'),
                                              ('padding', '4px'),
@@ -574,7 +580,7 @@ def email_nav_impacts_report():
 
         subject = '(Risk Automation) Merger Arb NAV Impacts - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-                   recipients=['kgorde@wicfunds.com'],
+                   recipients=['iteam@wicfunds.com'],
                    subject=subject, from_email='dispatch@wicfunds.com', html=html,
                    EXPORTERS=exporters, dataframe=daily_nav_impacts
                    )
