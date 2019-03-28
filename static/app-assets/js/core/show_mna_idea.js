@@ -44,7 +44,7 @@ $(document).ready(function () {
     });
 
     let analyst_comments = $('#mna_idea_analyst_comments').summernote({
-        'height': '400px',
+        'height': '460px',
     });
     let downside_comments = $('#mna_idea_weekly_downside_estimate_comment').summernote({'height': '300px'});
     var ebitda_charts = null;
@@ -942,7 +942,7 @@ $(document).ready(function () {
         let lawyer_report_date = $('#mna_idea_lawyer_date').val();
         let analyst_by = $('#lawyer_analyst_by').val();
         let lawyer_report = $('#mna_idea_lawyer_report').summernote('code');
-        let analyst_rating = $('#lawyer_analyst_rating').val();
+        let title = $('#mna_idea_note_title').val();
         let csrf_token = $('#mna_idea_lawyer_csrf_token').val();
         let deal_id = $('#deal_id').val();
 
@@ -954,19 +954,19 @@ $(document).ready(function () {
                 'lawyer_report_date': lawyer_report_date,
                 'analyst_by': analyst_by,
                 'lawyer_report': lawyer_report,
-                'analyst_rating': analyst_rating,
+                'title':title,
                 'deal_id': deal_id
             },
             success: function (response) {
                 $('#mna_idea_add_lawyer_report_modal').modal('hide');
                 if (response === 'Success') {
-                    toastr.success('Report Added!', 'Reloading the Page!', {
+                    toastr.success('Added!', 'Reloading the Page!', {
                         positionClass: 'toast-top-right',
                         containerId: 'toast-top-right'
                     });
                     location.reload();
                 } else {
-                    toastr.error('Failed Adding Laywer Report!', 'Please check your Inputs!', {
+                    toastr.error('Failed Adding Note!', 'Please check your Inputs!', {
                         positionClass: 'toast-top-right',
                         containerId: 'toast-top-right'
                     });
@@ -987,15 +987,16 @@ $(document).ready(function () {
         let $tds = $(this).find('td');
         let date = moment($tds.eq(0).text()).format("YYYY-MM-DD");
         let analyst = $tds.eq(1).text();
-        let rating = $(this).data('rating');
-        let report = $tds.eq(2).text();
+        let title = $tds.eq(2).text();
+        let report = $tds.eq(2).attr('data-value');
         let report_id = $(this).data("id");
         //Populate the Modal with above values
         $('#mna_idea_lawyer_date').val(date);
         $('#lawyer_analyst_by').val(analyst).change();
         var lawyer_report_summernote = $('#mna_idea_lawyer_report').summernote();
         lawyer_report_summernote.summernote('code', report);
-        $('#lawyer_analyst_rating').val(rating);
+        $('#mna_idea_note_title').val(title);
+
         //Display the Modal
         $('#mna_idea_add_lawyer_report_modal').modal('show');
 
@@ -1005,7 +1006,7 @@ $(document).ready(function () {
             report = lawyer_report_summernote.summernote('code');
             date = $('#mna_idea_lawyer_date').val();
             analyst = $('#lawyer_analyst_by').val();
-            rating = $('#lawyer_analyst_rating').val();
+            title = $('#mna_idea_note_title').val();
             $.ajax({
                 url: '../risk/update_mna_idea_lawyer_report',
                 type: 'POST',
@@ -1013,7 +1014,7 @@ $(document).ready(function () {
                     'id': report_id,
                     'date': date,
                     'analyst_by': analyst,
-                    'analyst_rating': rating,
+                    'title': title,
                     'report': report
                 },
                 success: function (response) {
@@ -1059,14 +1060,14 @@ $(document).ready(function () {
                         type: 'POST',
                         success: function (response) {
                             if (response === 'Success') {
-                                toastr.success('Report Deleted!', 'Reloading the Page!', {
+                                toastr.success('Note Deleted!', 'Reloading the Page!', {
                                     positionClass: 'toast-top-right',
                                     containerId: 'toast-top-right'
                                 });
                                 location.reload();
                             }
                             else {
-                                toastr.error('Failed Deleting Laywer Report!', 'Please check your Inputs or contact support!', {
+                                toastr.error('Failed Deleting Note!', 'Please check your Inputs or contact support!', {
                                     positionClass: 'toast-top-right',
                                     containerId: 'toast-top-right'
                                 });
@@ -1074,8 +1075,8 @@ $(document).ready(function () {
 
                         },
                         error: function (err) {
-                            consooe.log(err);
-                            toastr.error('Failed Updating Laywer Report!', 'Please check your Inputs or contact support!', {
+                            console.log(err);
+                            toastr.error('Failed Updating Note!', 'Please check your Inputs or contact support!', {
                                 positionClass: 'toast-top-right',
                                 containerId: 'toast-top-right'
                             });
@@ -1365,6 +1366,5 @@ $(document).ready(function () {
 
 
     $('.show_1bf_dataset').trigger('click'); // Show 1BF dataset by Default..
-
 
 });

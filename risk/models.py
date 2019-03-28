@@ -112,14 +112,12 @@ class MA_Deals_WeeklyDownsideEstimates(models.Model):
         return str(self.week_no)
 
 
-
 class MA_Deals_Lawyer_Reports(models.Model):
     deal = models.ForeignKey(MA_Deals, on_delete=models.CASCADE)
-    lawyer_report_date = models.DateField()
-    lawyer_report = models.TextField()
-    analyst_by = models.CharField(max_length=100)
-    analyst_rating = models.CharField(max_length=1)
-
+    lawyer_report_date = models.DateField(null=True)
+    lawyer_report = models.TextField(null=True)
+    analyst_by = models.CharField(max_length=100, null=True)
+    title = models.TextField(null=True)
 
 
 class MA_Deals_PeerSet(models.Model):

@@ -239,7 +239,7 @@ def add_or_update_mna_idea_weekly_downside_estimates(request):
 
 def update_mna_idea_lawyer_report(request):
     """
-    @param request: Request Object containing ID of the Report, Analyst, Report, Rating, Date
+    @param request: Request Object containing ID of the Report, Analyst, Report, Title, Date
     @return: Success or Failed depending on the outcome of the execution.
     """
     response = 'Failed'
@@ -247,14 +247,14 @@ def update_mna_idea_lawyer_report(request):
         try:
             id = request.POST['id']
             analyst_by = request.POST['analyst_by']
-            analyst_rating = request.POST['analyst_rating']
+            title = request.POST['title']
             date = request.POST['date']
             report = request.POST['report']
             MA_Deals_Lawyer_Reports.objects.update_or_create(id=id,
                                                              defaults={'analyst_by': analyst_by,
                                                                        'lawyer_report_date': date,
                                                                        'lawyer_report': report,
-                                                                       'analyst_rating': analyst_rating})
+                                                                       'title': title})
             response = 'Success'
         except Exception as exception:
             print(exception)  # Exceptions should be Logged...
@@ -291,10 +291,10 @@ def add_new_mna_idea_lawyer_report(request):
             lawyer_report_date = request.POST['lawyer_report_date']
             analyst_by = request.POST['analyst_by']
             lawyer_report = request.POST['lawyer_report']
-            analyst_rating = request.POST['analyst_rating']
+            title = request.POST['title']
             lawyer_report_object = MA_Deals_Lawyer_Reports(deal_id=deal_id, lawyer_report_date=lawyer_report_date,
                                                            analyst_by=analyst_by, lawyer_report=lawyer_report,
-                                                           analyst_rating=analyst_rating)
+                                                           title=title)
             lawyer_report_object.save()
             response = 'Success'
 

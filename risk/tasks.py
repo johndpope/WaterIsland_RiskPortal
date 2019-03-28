@@ -241,7 +241,7 @@ def premium_analysis_flagger():
 
     subject = '(Risk Automation) ESS IDEA Database Adjustments - ' + now_date
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-               recipients=['kgorde@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com','kkeung@wicfunds.com'],
+               recipients=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com','kkeung@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
                EXPORTERS=exporters, dataframe=deal_change_log)
 
