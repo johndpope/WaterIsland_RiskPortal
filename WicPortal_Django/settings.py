@@ -151,26 +151,7 @@ WSGI_APPLICATION = 'WicPortal_Django.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
-
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': env('WICFUNDS_DATABASE_HOST'),
-        'PORT': env('WICFUNDS_DATABASE_PORT'),
-        'USER': env('WICFUNDS_DATABASE_USER'),
-        'PASSWORD': env('WICFUNDS_DATABASE_PASSWORD'),
-        'NAME': env('WICFUNDS_DATABASE_NAME'),
-        'CONN_MAX_AGE': None,
-    },
-    'wic': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': env('WICFUNDS_DATABASE_HOST'),
-        'PORT': env('WICFUNDS_DATABASE_PORT'),
-        'USER': env('WICFUNDS_DATABASE_USER'),
-        'PASSWORD': env('WICFUNDS_DATABASE_PASSWORD'),
-        'NAME': 'wic',
-        'CONN_MAX_AGE': None,
-    },
     'NorthPoint-PnLAppDb': {
         'ENGINE': 'sql_server.pyodbc',
         'HOST': env('NORTHPOINT_PNLAPPDB_DATABASE_HOST'),
@@ -186,6 +167,45 @@ DATABASES = {
         'NAME': env('NORTHPOINT_SECURITYMASTER_DATABASE_NAME')
     },
 }
+
+if DEBUG == 'on':
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': env('LOCAL_TEST_DB_HOST'),
+        'PORT': env('LOCAL_TEST_DB_PORT'),
+        'USER': env('LOCAL_TEST_DB_USER'),
+        'PASSWORD': env('LOCAL_TEST_DB_PASSWORD'),
+        'NAME': env('LOCAL_TEST_DB_NAME'),
+        'CONN_MAX_AGE': None,
+    }
+    DATABASES['wic'] = {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': env('LOCAL_TEST_DB_HOST'),
+        'PORT': env('LOCAL_TEST_DB_PORT'),
+        'USER': env('LOCAL_TEST_DB_USER'),
+        'PASSWORD': env('LOCAL_TEST_DB_PASSWORD'),
+        'NAME': 'wic',
+        'CONN_MAX_AGE': None,
+    }
+else:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': env('WICFUNDS_DATABASE_HOST'),
+        'PORT': env('WICFUNDS_DATABASE_PORT'),
+        'USER': env('WICFUNDS_DATABASE_USER'),
+        'PASSWORD': env('WICFUNDS_DATABASE_PASSWORD'),
+        'NAME': env('WICFUNDS_DATABASE_NAME'),
+        'CONN_MAX_AGE': None,
+    }
+    DATABASES['wic'] = {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': env('WICFUNDS_DATABASE_HOST'),
+        'PORT': env('WICFUNDS_DATABASE_PORT'),
+        'USER': env('WICFUNDS_DATABASE_USER'),
+        'PASSWORD': env('WICFUNDS_DATABASE_PASSWORD'),
+        'NAME': 'wic',
+        'CONN_MAX_AGE': None,
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
