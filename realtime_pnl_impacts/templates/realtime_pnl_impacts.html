@@ -12,6 +12,7 @@
     {{ block.super }}
     <link rel="stylesheet" type="text/css"
           href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.bootstrap.min.css">
+
 {% endblock %}
 
 {% block content %}
@@ -33,6 +34,7 @@
                                     <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
                                     <div class="heading-elements">
                                     </div>
+                                    <h5 class="center">Last synced on: <span class="badge badge-secondary">{{ last_updated }}</span></h5>
                                 </div>
                             </div>
                             <div class="card-content">
@@ -62,6 +64,7 @@
                                                        style="font-size:12px;width:100%;">
                                                     <thead>
                                                     <tr>
+                                                        <th></th>
                                                         <th>TradeGroup</th>
                                                         <th>Sleeve</th>
                                                         <th>Catalyst</th>
@@ -94,6 +97,7 @@
                                                         <th></th>
                                                         <th></th>
                                                         <th></th>
+                                                        <th></th>
                                                     </tr>
                                                     </tfoot>
                                                 </table>
@@ -111,6 +115,7 @@
                                                    style="font-size:12px; width:100%">
                                                 <thead>
                                                 <tr>
+                                                    <th></th>
                                                     <th>TradeGroup</th>
                                                     <th>Sleeve</th>
                                                     <th>Catalyst</th>
@@ -130,6 +135,7 @@
                                                 </tbody>
                                                 <tfoot>
                                                 <tr>
+                                                    <th></th>
                                                     <th></th>
                                                     <th></th>
                                                     <th></th>
