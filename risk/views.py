@@ -424,7 +424,7 @@ def add_new_mna_idea(request):
         deal_cash_terms = request.POST['deal_cash_terms']
         deal_share_terms = request.POST['deal_stock_terms']
         deal_value = request.POST['deal_value']
-        status = 'Simulating'  # Set simulation status
+        status = 'ACTIVE'  # Set simulation status
         created = datetime.datetime.now().date()
 
         # Save to New Deal Model

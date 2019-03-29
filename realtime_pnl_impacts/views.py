@@ -33,7 +33,7 @@ def live_tradegroup_pnl(request):
     px_df = px_df[px_df.PX_LAST.notnull()]
     px_factor_df = dbutils.Wic.get_live_pnl_px_factors_df()  # ['BBGID','CRNCY','FACTOR','FX_SYMBOL','DATA_TIMESTAMP']
     fx_df = dbutils.Wic.get_live_pnl_fx_rates_df()  # cols = ['Timestamp','FX_SYMBOL','FX_RATE']
-
+    last_updated = fx_df['Timestamp'].max()
     df = pd.merge(px_df, px_factor_df, how='inner', on='API_IDENTIFIER')
     df = pd.merge(df, fx_df, how='left', on=['FX_SYMBOL', 'Timestamp'])
     df = pd.merge(df, portfolio_df, how='inner', on='API_IDENTIFIER')
@@ -53,6 +53,7 @@ def live_tradegroup_pnl(request):
                     'Sleeve', 'Bucket', 'AlphaHedge', 'LongShort', 'CatalystName', 'Analyst', 'NP_SecType',
                     'Capital($)',
                     'Capital(%)', 'BaseCaseNavImpact', 'OutlierNavImpact']
+
     join_on_cols = ['Group', 'TradeGroup', 'API_IDENTIFIER', 'Sleeve', 'Bucket', 'AlphaHedge', 'LongShort',
                     'CatalystName',
                     'Analyst', 'NP_SecType']
@@ -69,6 +70,20 @@ def live_tradegroup_pnl(request):
                                       table_df['NP_SecType'])]
     table_df['PX_CHG_PCT'] = 100.0 * (
                 (table_df['END_ADJ_PX'].astype(float) / table_df['START_ADJ_PX'].astype(float)) - 1.0)
+
+    position_level_pnl = table_df[['Group', 'TradeGroup', 'TICKER_x', 'START_ADJ_PX', 'END_ADJ_PX',
+                                   'MKTVAL_CHG_USD']].copy()
+
+    position_level_pnl = position_level_pnl[position_level_pnl['Group'].isin(['ARB', 'AED', 'LG', 'MACO', 'TAQ', 'CAM',
+                                                                              'LEV', 'TACO', 'MALT', 'WED'])]
+
+    position_level_pnl = pd.pivot_table(position_level_pnl, index=['TradeGroup','TICKER_x', 'START_ADJ_PX',
+                                                                   'END_ADJ_PX'], columns=['Group'], aggfunc='first',
+                                        fill_value=0).reset_index()
+    position_level_pnl.columns = ["_".join((i, j)) for i, j in position_level_pnl.columns]
+    position_level_pnl.reset_index(inplace=True)
+    del position_level_pnl['index']
+
     table_df = table_df[['Group', 'TradeGroup', 'START_ADJ_PX', 'END_ADJ_PX', 'PX_CHG_PCT', 'Qty_x', 'Analyst',
                          'Capital($)_x', 'Capital(%)_x', 'START_MKTVAL', 'END_MKTVAL', 'MKTVAL_CHG_USD']]
 
@@ -126,10 +141,11 @@ def live_tradegroup_pnl(request):
 
     if request.is_ajax():
         return_data = {'data': final_live_df.to_json(orient='records'),
-                       'daily_pnl': final_daily_pnl.to_json(orient='records')}
+                       'daily_pnl': final_daily_pnl.to_json(orient='records'),
+                       'position_level_pnl': position_level_pnl.to_json(orient='records')}
 
         return HttpResponse(json.dumps(return_data), content_type='application/json')
 
-    return render(request, 'realtime_pnl_impacts.html', {})
+    return render(request, 'realtime_pnl_impacts.html', {'last_updated':last_updated})
 
 
