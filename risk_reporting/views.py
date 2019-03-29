@@ -5,7 +5,6 @@ import datetime
 import pandas as pd
 import numpy as np
 import json
-from ipware import get_client_ip
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db import connection
@@ -13,7 +12,6 @@ from .models import ArbNAVImpacts, DailyNAVImpacts, FormulaeBasedDownsides, Posi
 from django.conf import settings
 from django_slack import slack_message
 from django.db.models import Max
-import bbgclient
 from django.db import close_old_connections
 
 # Following NAV Impacts Utilities
@@ -331,6 +329,16 @@ def update_downside_formulae(request):
             outlier_custom_input = request.POST['outlier_custom_input']
             outlier = request.POST['outlier']
             outlier_notes = request.POST['outlier_notes']
+
+            if outlier_downside_type == 'None' or outlier_downside_type is None:
+                # Outlier should match base case by Default
+                outlier_downside_type = 'Matches Base Case'
+                outlier_reference_data_point = base_case_reference_data_point
+                outlier_reference_price = base_case_reference_price
+                outlier_operation = base_case_operation
+                outlier_custom_input = base_case_custom_input
+                outlier = base_case
+
             # Retroactively update Risk Limit for all matching TradeGroups
             obj = FormulaeBasedDownsides.objects.get(id=row_id)
             deal_name = obj.TradeGroup
@@ -361,13 +369,7 @@ def update_downside_formulae(request):
             obj.LastUpdate = datetime.datetime.now()
             obj.save()
             response = 'Success'
-            ip_addr = None
-            client_ip, is_routable = get_client_ip(request)
-            if client_ip is None:
-                ip_addr = 'NA'
-            else:
-                ip_addr = client_ip
-
+            ip_addr = request.META['REMOTE_ADDR']
             slack_message('portal_downsides.slack',
                           {'updated_deal': str(obj.TradeGroup),
                            'underlying_security': obj.Underlying,
