@@ -611,6 +611,28 @@
                         into the Database and subsequent Premium analysis would be calculated based off this balance
                         sheet!
                     </small>
+
+                    <fieldset>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input"
+                                   id="use_upside_without_bloomberg">
+                            <label class="custom-control-label"
+                                   for="use_upside_without_bloomberg">Up w/o BBG</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input"
+                                   id="use_wic_without_bloomberg">
+                            <label class="custom-control-label"
+                                   for="use_wic_without_bloomberg">WIC w/o BBG</label>
+                        </div>
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input"
+                                   id="use_downside_without_bloomberg">
+                            <label class="custom-control-label"
+                                   for="use_downside_without_bloomberg">Down w/o BBG</label>
+                        </div>
+                    </fieldset>
+
                     <button type="button" id='copy_from_upside_adjustments' class="btn btn-indigo">Populate WIC and Downside Adj. from Upside Adj.
                     </button>
                     <button type="button" id='calculate_balance_sheet' class="btn btn-warning">Update Balance Sheet
@@ -683,7 +705,8 @@
 
                                             </div>
                                         </div>
-
+                                        <br><br>
+                                        <p id="edit_notes_attachments"></p>
                                     </div>
                                     <br>
                                 </div>
@@ -765,8 +788,8 @@
                 <fieldset class="form-group">
                     <select id="ess_idea_version_number_select" class="custom-select">
                         <option selected value="N/A">Select a version to view</option>
-                        {% for versions in version_numbers %}
-                            <option value="{{ versions }}">Version Number: {{ versions }}
+                        {% for versions, timestamps in version_numbers %}
+                            <option value="{{ versions }}">Version Number: {{ versions }} -> {{ timestamps }}
                             </option>
                         {% endfor %}
                     </select>
@@ -1046,7 +1069,7 @@
                                     <tbody>
                                     {% for note_item in notes_master %}
 
-                                        <tr class="clickable-row-notes" data-value="{{ note_item.article }}">
+                                        <tr class="clickable-row-notes" data-value="{{ note_item.article }}" data-ids="{{ note_item.id }}" >
                                             <td>{{ note_item.date }}</td>
                                             <td>{{ note_item.title }}</td>
                                             <td>{{ note_item.author }}</td>

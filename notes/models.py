@@ -19,12 +19,8 @@ class NotesMaster(models.Model):
 class NotesAttachments(models.Model):
     """ Model for Notes Files Attachments."""
     notes_id = models.ForeignKey('NotesMaster', on_delete=models.CASCADE)
-    date = models.DateField()
-    title = models.CharField(max_length=1000)
-    author = models.CharField(max_length=1000)
-    article = models.TextField()
-    tickers = models.CharField(max_length=1000)
     notes_attachment = models.FileField(null=True, upload_to='NOTES_ATTACHMENTS')
+    uploaded_on = models.DateField(null=True)
 
     def filename(self):
         return os.path.basename(self.notes_attachment.name)

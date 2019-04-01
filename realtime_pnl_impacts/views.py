@@ -83,6 +83,7 @@ def live_tradegroup_pnl(request):
     position_level_pnl.columns = ["_".join((i, j)) for i, j in position_level_pnl.columns]
     position_level_pnl.reset_index(inplace=True)
     del position_level_pnl['index']
+    position_level_pnl = position_level_pnl.round(decimals=2)    # Round to 2 decimals
 
     table_df = table_df[['Group', 'TradeGroup', 'START_ADJ_PX', 'END_ADJ_PX', 'PX_CHG_PCT', 'Qty_x', 'Analyst',
                          'Capital($)_x', 'Capital(%)_x', 'START_MKTVAL', 'END_MKTVAL', 'MKTVAL_CHG_USD']]
@@ -142,7 +143,8 @@ def live_tradegroup_pnl(request):
     if request.is_ajax():
         return_data = {'data': final_live_df.to_json(orient='records'),
                        'daily_pnl': final_daily_pnl.to_json(orient='records'),
-                       'position_level_pnl': position_level_pnl.to_json(orient='records')}
+                       'position_level_pnl': position_level_pnl.to_json(orient='records'),
+                       'last_synced_on': last_updated}
 
         return HttpResponse(json.dumps(return_data), content_type='application/json')
 

@@ -842,6 +842,30 @@ $(document).ready(function () {
         $('#show_ess_idea_note_article').summernote({'height': 300});
         $('#show_ess_idea_note_article').summernote('code', $(this).data('value'));
         $('#show_ess_idea_notes_modal').modal('show');
+        let notes_id = $(this).data('ids');
+        // POST Ajax Request for Attachments
+        $.ajax({
+               url:"../notes/get_attachments/",
+               type:'POST',
+               data:{'notes_id':notes_id},
+               success:function(response){
+                   let attachments = response['attachments'];
+                   if(attachments.length > 0){
+                       let files = "<br> Your attachments:<br><br>";
+                       for(var i=0;i<attachments.length;i++){
+                           files += attachments[i].filename + " --><a>"+attachments[i].url+"</a>"+"\n";
+                       }
+                       $('#edit_notes_attachments').html(files);
+                   }
+               },
+               error: function (err) {
+                   console.log(err);
+               }
+            });
+
+
+
+
     });
 
 
@@ -1103,15 +1127,25 @@ $('#ess_idea_view_balance_sheet').on('click', function (e) {
         'type': 'POST',
         'data': {'deal_id': deal_id},
         'success': function (response) {
-
-
             $('#ess_idea_view_balance_sheet').prop('disabled', false);
             //Show the modal
-
             let balance_sheet_bloomberg = $.parseJSON(response['balance_sheet']);
             let upside_balance_sheet_adjustments = $.parseJSON(response['upside_balance_sheet_adjustments']);
             let wic_balance_sheet_adjustments = $.parseJSON(response['wic_balance_sheet_adjustments']);
             let downside_balance_sheet_adjustments = $.parseJSON(response['downside_balance_sheet_adjustments']);
+            let adjust_upside_with_bloomberg = response['adjust_upside_with_bloomberg'];
+            let adjust_wic_with_bloomberg = response['adjust_wic_with_bloomberg'];
+            let adjust_downside_with_bloomberg = response['adjust_downside_with_bloomberg'];
+
+            if(adjust_upside_with_bloomberg === 'No'){
+                $('#use_upside_without_bloomberg').prop('checked', true);
+            }
+            if(adjust_wic_with_bloomberg === 'No'){
+                $('#use_wic_without_bloomberg').prop('checked', true);
+            }
+            if(adjust_downside_with_bloomberg === 'No'){
+                $('#use_downside_without_bloomberg').prop('checked', true);
+            }
 
             $('#upside_balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
             $('#upside_balance_sheet_best_eps').val(balance_sheet_bloomberg[0]['BEST_EPS']);
@@ -1250,6 +1284,25 @@ $('#save_balance_sheet').on('click', function (e) {
         'EQY_SH_OUT': $('#downsides_adjustment_balance_sheet_eqy_sh_out').val()
     };
 
+    let x = $('#use_upside_without_bloomberg').is(":checked");
+    let y = $('#use_wic_without_bloomberg').is(":checked");
+    let z = $('#use_downside_without_bloomberg').is(":checked");
+
+    let upside_with_bloomberg = 'Yes';
+    let wic_with_bloomberg = 'Yes';
+    let downside_with_bloomberg = 'Yes';
+
+    if(x){
+        upside_with_bloomberg = 'No'
+    }
+    if(y){
+        wic_with_bloomberg = 'No'
+    }
+    if(z){
+        downside_with_bloomberg = 'No'
+    }
+
+
     $.ajax({
         'url': '../risk/ess_idea_save_balance_sheet',
         'type': 'POST',
@@ -1257,7 +1310,10 @@ $('#save_balance_sheet').on('click', function (e) {
             'deal_id': deal_id,
             'upside_balance_sheet': JSON.stringify(upside_balance_sheet),
             'wic_balance_sheet': JSON.stringify(wic_balance_sheet),
-            'downside_balance_sheet': JSON.stringify(downside_balance_sheet)
+            'downside_balance_sheet': JSON.stringify(downside_balance_sheet),
+            'upside_with_bloomberg': upside_with_bloomberg,
+            'wic_with_bloomberg': wic_with_bloomberg,
+            'downside_with_bloomberg': downside_with_bloomberg
         },
         'success': function (response) {
             if (response === 'Success') {
