@@ -44,7 +44,7 @@ $(document).ready(function () {
         }
     });
 
-    later.setInterval(refreshPnL, later.parse.text('every 1 mins on Mon, Tue, Weds, Thurs and Fri'));
+    later.setInterval(refreshPnL, later.parse.text('every 10 mins on Mon, Tue, Weds, Thurs and Fri'));
 
     function refreshPnL(){
         realtime_pnl_table.ajax.reload(null, true);
