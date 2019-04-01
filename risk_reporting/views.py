@@ -5,6 +5,7 @@ import datetime
 import pandas as pd
 import numpy as np
 import json
+from ipware import get_client_ip
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db import connection
@@ -330,9 +331,9 @@ def update_downside_formulae(request):
             outlier = request.POST['outlier']
             outlier_notes = request.POST['outlier_notes']
 
-            if outlier_downside_type == 'None' or outlier_downside_type is None:
+            if outlier == 'None' or outlier is None:
                 # Outlier should match base case by Default
-                outlier_downside_type = 'Matches Base Case'
+                outlier_downside_type = base_case_downside_type
                 outlier_reference_data_point = base_case_reference_data_point
                 outlier_reference_price = base_case_reference_price
                 outlier_operation = base_case_operation
@@ -369,7 +370,12 @@ def update_downside_formulae(request):
             obj.LastUpdate = datetime.datetime.now()
             obj.save()
             response = 'Success'
-            ip_addr = request.META['REMOTE_ADDR']
+            ip_addr = None
+            client_ip, is_routable = get_client_ip(request)
+            if client_ip is None:
+                ip_addr = 'NA'
+            else:
+                ip_addr = client_ip
             slack_message('portal_downsides.slack',
                           {'updated_deal': str(obj.TradeGroup),
                            'underlying_security': obj.Underlying,

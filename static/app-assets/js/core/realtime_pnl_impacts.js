@@ -1,5 +1,6 @@
 $(document).ready(function () {
-
+    later.date.localTime();
+    let last_synced_on = null;
     let realtime_pnl_table = $('#realtime_pnl_table').DataTable(get_pnl_table_initialization_configuration("live_tradegroup_pnl", "Total YTD", "data"));
     let realtime_daily_pnl_table = $('#realtime_daily_pnl_table').DataTable(get_pnl_table_initialization_configuration("live_tradegroup_pnl", "Daily", "daily_pnl"));
     let position_level_pnl = null;
@@ -43,12 +44,14 @@ $(document).ready(function () {
         }
     });
 
+    later.setInterval(refreshPnL, later.parse.text('every 10 mins on Mon, Tue, Weds, Thurs and Fri'));
 
-    setInterval(function () {
+    function refreshPnL(){
         realtime_pnl_table.ajax.reload(null, true);
         realtime_daily_pnl_table.ajax.reload(null, true);
         console.log('Requesting Updated P&L..');
-    }, 3600000); // Every Hour
+        $('#last_sycned').text(last_synced_on);
+    }
 
 
     function get_pnl_table_initialization_configuration(url, total_or_daily_string, json_response_tag) {
@@ -113,6 +116,7 @@ $(document).ready(function () {
                 dataSrc: function (json) {
                     let obj = JSON.parse(json[[json_response_tag]]);
                     position_level_pnl = JSON.parse(json[['position_level_pnl']]);
+                    last_synced_on = json[['last_synced_on']];
                     return obj;
                 }
             },

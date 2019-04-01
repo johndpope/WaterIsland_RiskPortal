@@ -9,7 +9,7 @@ import ess_function
 from django_pandas.io import read_frame
 from django.shortcuts import redirect
 from wic_news.models import NewsMaster
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse, Http404
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
@@ -932,7 +932,7 @@ def show_ess_idea(request):
         # Use this deal key and version no. combination to find the right deal_object
         ess_idea = ESS_Idea.objects.get(deal_key=deal_key, version_number=version_requested)
         latest_version = ess_idea.version_number
-        version_numbers = ESS_Idea.objects.filter(deal_key=deal_key).values_list('version_number', flat=True)
+        version_numbers = ESS_Idea.objects.filter(deal_key=deal_key).values_list('version_number', 'created_on')
     else:
 
         deal_id = request.GET['ess_idea_id']
@@ -943,7 +943,7 @@ def show_ess_idea(request):
 
         # First Retrieve DealKey
         deal_key = ESS_Idea.objects.get(id=deal_id).deal_key
-        version_numbers = ESS_Idea.objects.filter(deal_key=deal_key).values_list('version_number', flat=True)
+        version_numbers = ESS_Idea.objects.filter(deal_key=deal_key).values_list('version_number', 'created_on')
         ess_idea = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
 
     news_master = NewsMaster.objects.filter(tickers__contains=ess_idea.alpha_ticker.split(' ')[0])
@@ -1362,7 +1362,7 @@ def show_ess_idea(request):
     # Show the Optimal Peers
 
     # Show the latest Regresson calculations
-    calculations = EssIdeaAdjustmentsInformation.objects.get(ess_idea_id_id=deal_id)
+    calculations = EssIdeaAdjustmentsInformation.objects.get(deal_key=deal_key)
     regression_calculations = calculations.regression_calculations
     cix_calculations = calculations.cix_calculations
 
@@ -1406,10 +1406,6 @@ def premium_analysis_get_latest_calculations(request):
             print(e)
 
     return JsonResponse(response)
-
-
-
-
 
 
 # @login_required
@@ -1523,29 +1519,32 @@ def ess_idea_save_balance_sheet(request):
     response = 'Failed'
     if request.method == 'POST':
         deal_id = request.POST.get('deal_id')
-        latest_version = ESS_Idea.objects.filter(id=deal_id).latest(
-            'version_number'
-        ).version_number
-
+        deal_key = ESS_Idea.objects.get(id=deal_id).deal_key
         # Save Balance Sheet Info in BalanceSheet Table
-        #balance_sheet_object = EssIdeaBalanceSheets.objects.filter()
+        try:
+            balance_sheet_object = EssBalanceSheets.objects.get(ess_idea_id_id=deal_id)
+        except EssBalanceSheets.DoesNotExist:
+            balance_sheet_object = EssBalanceSheets.objects.create(ess_idea_id_id=deal_id)
 
-
-        deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
         upside_balance_sheet = pd.DataFrame(pd.read_json(request.POST['upside_balance_sheet'], orient='records',
                                                          typ='series')).transpose()
 
         wic_balance_sheet = pd.DataFrame(pd.read_json(request.POST['wic_balance_sheet'], orient='records',
-                                                        typ='series')).transpose()
+                                                      typ='series')).transpose()
 
         downside_balance_sheet = pd.DataFrame(pd.read_json(request.POST['downside_balance_sheet'], orient='records',
-                                                        typ='series')).transpose()
+                                              typ='series')).transpose()
 
-        deal_object.upside_balance_sheet = upside_balance_sheet.to_json(orient='records')
-        deal_object.wic_balance_sheet = wic_balance_sheet.to_json(orient='records')
-        deal_object.downside_balance_sheet = downside_balance_sheet.to_json(orient='records')
+        balance_sheet_object.deal_key = deal_key
+        balance_sheet_object.adjust_up_bs_with_bloomberg = request.POST['upside_with_bloomberg']
+        balance_sheet_object.adjust_wic_bs_with_bloomberg = request.POST['wic_with_bloomberg']
+        balance_sheet_object.adjust_down_bs_with_bloomberg = request.POST['downside_with_bloomberg']
 
-        deal_object.save()
+        balance_sheet_object.upside_balance_sheet = upside_balance_sheet.to_json(orient='records')
+        balance_sheet_object.wic_balance_sheet = wic_balance_sheet.to_json(orient='records')
+        balance_sheet_object.downside_balance_sheet = downside_balance_sheet.to_json(orient='records')
+
+        balance_sheet_object.save()
 
         response = 'Success'
 
@@ -1562,7 +1561,9 @@ def ess_idea_view_balance_sheet(request):
     wic_balance_sheet_adjustments = None
     downside_balance_sheet_adjustments = None
     balance_sheet = None
-
+    adjust_upside_with_bloomberg = 'Yes'
+    adjust_wic_with_bloomberg = 'Yes'    # Adjusts by default...
+    adjust_downside_with_bloomberg = 'Yes'
 
     if request.method == 'POST':
         deal_id = request.POST.get('deal_id')
@@ -1571,11 +1572,17 @@ def ess_idea_view_balance_sheet(request):
         ).version_number
 
         deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
+        try:
+            balance_sheet_object = EssBalanceSheets.objects.get(deal_key=deal_object.deal_key)
+            upside_balance_sheet_adjustments = balance_sheet_object.upside_balance_sheet
+            wic_balance_sheet_adjustments = balance_sheet_object.wic_balance_sheet
+            downside_balance_sheet_adjustments = balance_sheet_object.downside_balance_sheet
+            adjust_upside_with_bloomberg = balance_sheet_object.adjust_up_bs_with_bloomberg
+            adjust_wic_with_bloomberg = balance_sheet_object.adjust_wic_bs_with_bloomberg
+            adjust_downside_with_bloomberg = balance_sheet_object.adjust_down_bs_with_bloomberg
 
-        upside_balance_sheet_adjustments = deal_object.upside_balance_sheet
-        wic_balance_sheet_adjustments = deal_object.wic_balance_sheet
-        downside_balance_sheet_adjustments = deal_object.downside_balance_sheet
-
+        except EssBalanceSheets.DoesNotExist:
+            print('Balance Sheets not Found..')
         balance_sheet = ess_premium_analysis.multiple_underlying_df(deal_object.alpha_ticker,
                                                                     datetime.datetime.now().strftime('%Y%m%d'),
                                                                     api_host)
@@ -1605,7 +1612,10 @@ def ess_idea_view_balance_sheet(request):
 
     return JsonResponse({'balance_sheet': balance_sheet, 'upside_balance_sheet_adjustments':
                         upside_balance_sheet_adjustments, 'wic_balance_sheet_adjustments': wic_balance_sheet_adjustments,
-                        'downside_balance_sheet_adjustments': downside_balance_sheet_adjustments})
+                        'downside_balance_sheet_adjustments': downside_balance_sheet_adjustments,
+                         'adjust_upside_with_bloomberg':adjust_upside_with_bloomberg,
+                         'adjust_wic_with_bloomberg': adjust_wic_with_bloomberg,
+                         'adjust_downside_with_bloomberg':adjust_downside_with_bloomberg})
 
 
 def ess_idea_premium_analysis(request):
@@ -1667,7 +1677,6 @@ def add_new_ess_idea_deal(request):
             bull_thesis_model_files = request.FILES.getlist('filesBullThesis[]')
             our_thesis_model_files = request.FILES.getlist('filesOurThesis[]')
             bear_thesis_model_files = request.FILES.getlist('filesBearThesis[]')
-            print(bull_thesis_model_files)
             update_id = request.POST.get('update_id')
             ticker = request.POST.get('ticker')
             situation_overview = request.POST.get('situation_overview')
