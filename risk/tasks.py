@@ -12,7 +12,8 @@ import datetime
 import requests
 from dateutil.relativedelta import relativedelta
 import numpy as np
-from risk.models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records, EssIdeaAdjustmentsInformation
+from risk.models import ESS_Peers, ESS_Idea, ESS_Idea_Upside_Downside_Change_Records, EssIdeaAdjustmentsInformation, \
+    EssBalanceSheets
 import bbgclient
 import json
 from django.conf import settings
@@ -66,9 +67,17 @@ def premium_analysis_flagger():
             # Process only if Requested
 
             if deal_object.pt_down_check == 'Yes' or deal_object.pt_wic_check == 'Yes' or deal_object.pt_up_check == 'Yes':
-                upside_balance_sheet = deal_object.upside_balance_sheet
-                wic_balance_sheet = deal_object.wic_balance_sheet
-                downside_balance_sheet = deal_object.downside_balance_sheet
+                balance_sheet_object = EssBalanceSheets.objects.get(deal_key=deal_object.deal_key)
+                upside_balance_sheet = balance_sheet_object.upside_balance_sheet
+                wic_balance_sheet = balance_sheet_object.wic_balance_sheet
+                downside_balance_sheet = balance_sheet_object.downside_balance_sheet
+                pt_flag, bear_flag, bull_flag = None, None, None
+                if balance_sheet_object.adjust_up_bs_with_bloomberg == 'No':
+                    bull_flag = True
+                if balance_sheet_object.adjust_wic_bs_with_bloomberg == 'No':
+                    pt_flag = True
+                if balance_sheet_object.adjust_down_bs_with_bloomberg == 'No':
+                    bear_flag = True
 
                 result_dictionary = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker,
                                                   cix_index=deal_object.cix_index,
@@ -82,7 +91,8 @@ def premium_analysis_flagger():
                                                   metric2weight=multiples_dictionary,
                                                   api_host=api_host, adjustments_df_bear=upside_balance_sheet,
                                                   adjustments_df_bull=downside_balance_sheet,
-                                                  adjustments_df_pt=wic_balance_sheet,
+                                                  adjustments_df_pt=wic_balance_sheet, bull_flag=bull_flag,
+                                                  bear_flag=bear_flag, pt_flag=pt_flag,
                                                   f_period="1BF")
 
                 df = result_dictionary['Final Results']
@@ -899,7 +909,7 @@ def get_fcf_yield(ticker, api_host, start_date_yyyymmdd, end_date_yyyymmdd, fper
 
 @shared_task(bind=True)
 def run_ess_premium_analysis_task(self, deal_id, latest_version):
-    df, regression_parameters = None, None
+    df, regression_parameters, regression_calculations, cix_calculations = None, None, None, None
     try:
         progress_recorder = ProgressRecorder(self)
         deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
@@ -919,9 +929,18 @@ def run_ess_premium_analysis_task(self, deal_id, latest_version):
             peers_weights_dictionary[each_peer.ticker] = each_peer.hedge_weight / 100
 
         progress_recorder.set_progress(40, 100)
-        upside_balance_sheet = deal_object.upside_balance_sheet
-        wic_balance_sheet = deal_object.wic_balance_sheet
-        downside_balance_sheet = deal_object.downside_balance_sheet
+        balance_sheet_object = EssBalanceSheets.objects.get(deal_key=deal_object.deal_key)
+
+        upside_balance_sheet = balance_sheet_object.upside_balance_sheet
+        wic_balance_sheet = balance_sheet_object.wic_balance_sheet
+        downside_balance_sheet = balance_sheet_object.downside_balance_sheet
+        bear_flag, bull_flag, pt_flag = None, None, None
+        if balance_sheet_object.adjust_up_bs_with_bloomberg == 'No':
+            bull_flag = True
+        if balance_sheet_object.adjust_wic_bs_with_bloomberg == 'No':
+            pt_flag = True
+        if balance_sheet_object.adjust_down_bs_with_bloomberg == 'No':
+            bear_flag = True
 
         progress_recorder.set_progress(43, 100)
         result_dictionary = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker,
@@ -936,8 +955,9 @@ def run_ess_premium_analysis_task(self, deal_id, latest_version):
                                                   metric2weight=multiples_dictionary,
                                                   api_host=api_host, adjustments_df_bear=upside_balance_sheet,
                                                   adjustments_df_bull=downside_balance_sheet,
-                                                  adjustments_df_pt=wic_balance_sheet,
-                                                  f_period="1BF", progress_recorder=progress_recorder)
+                                                  adjustments_df_pt=wic_balance_sheet, pt_flag=pt_flag,
+                                                  bull_flag=bull_flag, bear_flag=bear_flag, f_period="1BF",
+                                                  progress_recorder=progress_recorder)
 
         df = result_dictionary['Final Results']
         regression_parameters = result_dictionary['Regression Results']
