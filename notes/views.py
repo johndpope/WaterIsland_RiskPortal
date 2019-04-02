@@ -21,6 +21,8 @@ def get_attachments(request):
         attachments = []
         for file in NotesAttachments.objects.filter(notes_id_id=notes_id):
             attachments.append({
+                'id': file.id,
+                'notes_id': notes_id,
                 'filename':file.filename(),
                 'url':file.notes_attachment.url
             })
@@ -44,7 +46,8 @@ def create_note(request):
             print('Now saving, File Uploads...')
             notes_fiies = request.FILES.getlist('filesNotes[]')
 
-            if notes_fiies is not None:
+            if notes_fiies:
+                print(notes_fiies)
                 for file in notes_fiies:
                     NotesAttachments(notes_id_id=new_notes_item.id,
                                      uploaded_on=datetime.datetime.now().strftime('%Y-%m-%d'),
@@ -71,11 +74,20 @@ def update_note(request):
         title = request.POST['title']
         article = request.POST['article']
         tickers = request.POST['tickers']
+        remove_file_ids = request.POST.get('remove_file_ids')
+        try:
+            if remove_file_ids:
+                remove_file_ids = remove_file_ids.split(",")
+                NotesAttachments.objects.filter(notes_id_id=id, id__in=remove_file_ids).delete()
+                print('Deleted files', remove_file_ids)
+        except Exception as error:
+            print('Error Deleting files. File IDs are: ', remove_file_ids, error)
         NotesMaster.objects.filter(id=id).update(author=author, date=date, title=title,
                                                  article=article, tickers=tickers)
         print('Now saving, File Uploads...')
         notes_fiies = request.FILES.getlist('filesNotes[]')
-        if notes_fiies is not None:
+        if notes_fiies:
+            print(notes_fiies)
             for file in notes_fiies:
                 NotesAttachments(notes_id_id=id,
                                  uploaded_on=datetime.datetime.now().strftime('%Y-%m-%d'),

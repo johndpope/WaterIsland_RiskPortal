@@ -118,7 +118,7 @@ $(document).ready(function () {
 
         if (input.files && input.files[0]) {
             for (var i = 0; i < input.files.length; i++) {
-                text += input.files[i].name + "\n";
+                text += input.files[i].name + "<br>";
             }
             $(target).text(text);
         }

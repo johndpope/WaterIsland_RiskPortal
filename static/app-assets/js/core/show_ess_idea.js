@@ -853,7 +853,7 @@ $(document).ready(function () {
                    if(attachments.length > 0){
                        let files = "<br> Your attachments:<br><br>";
                        for(var i=0;i<attachments.length;i++){
-                           files += attachments[i].filename + " --><a>"+attachments[i].url+"</a>"+"\n";
+                           files += "<a href=" + attachments[i].url + ">" + attachments[i].filename + "</a><br />";
                        }
                        $('#edit_notes_attachments').html(files);
                    }
