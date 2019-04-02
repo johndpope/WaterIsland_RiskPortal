@@ -67,17 +67,23 @@ def premium_analysis_flagger():
             # Process only if Requested
 
             if deal_object.pt_down_check == 'Yes' or deal_object.pt_wic_check == 'Yes' or deal_object.pt_up_check == 'Yes':
-                balance_sheet_object = EssBalanceSheets.objects.get(deal_key=deal_object.deal_key)
-                upside_balance_sheet = balance_sheet_object.upside_balance_sheet
-                wic_balance_sheet = balance_sheet_object.wic_balance_sheet
-                downside_balance_sheet = balance_sheet_object.downside_balance_sheet
                 pt_flag, bear_flag, bull_flag = None, None, None
-                if balance_sheet_object.adjust_up_bs_with_bloomberg == 'No':
-                    bull_flag = True
-                if balance_sheet_object.adjust_wic_bs_with_bloomberg == 'No':
-                    pt_flag = True
-                if balance_sheet_object.adjust_down_bs_with_bloomberg == 'No':
-                    bear_flag = True
+                try:
+                    balance_sheet_object = EssBalanceSheets.objects.get(deal_key=deal_object.deal_key)
+                    upside_balance_sheet = balance_sheet_object.upside_balance_sheet
+                    wic_balance_sheet = balance_sheet_object.wic_balance_sheet
+                    downside_balance_sheet = balance_sheet_object.downside_balance_sheet
+
+                    if balance_sheet_object.adjust_up_bs_with_bloomberg == 'No':
+                        bull_flag = True
+                    if balance_sheet_object.adjust_wic_bs_with_bloomberg == 'No':
+                        pt_flag = True
+                    if balance_sheet_object.adjust_down_bs_with_bloomberg == 'No':
+                        bear_flag = True
+                except EssBalanceSheets.DoesNotExist:
+                    upside_balance_sheet = None
+                    wic_balance_sheet = None
+                    downside_balance_sheet = None
 
                 result_dictionary = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker,
                                                   cix_index=deal_object.cix_index,
@@ -929,18 +935,23 @@ def run_ess_premium_analysis_task(self, deal_id, latest_version):
             peers_weights_dictionary[each_peer.ticker] = each_peer.hedge_weight / 100
 
         progress_recorder.set_progress(40, 100)
-        balance_sheet_object = EssBalanceSheets.objects.get(deal_key=deal_object.deal_key)
-
-        upside_balance_sheet = balance_sheet_object.upside_balance_sheet
-        wic_balance_sheet = balance_sheet_object.wic_balance_sheet
-        downside_balance_sheet = balance_sheet_object.downside_balance_sheet
         bear_flag, bull_flag, pt_flag = None, None, None
-        if balance_sheet_object.adjust_up_bs_with_bloomberg == 'No':
-            bull_flag = True
-        if balance_sheet_object.adjust_wic_bs_with_bloomberg == 'No':
-            pt_flag = True
-        if balance_sheet_object.adjust_down_bs_with_bloomberg == 'No':
-            bear_flag = True
+        try:
+            balance_sheet_object = EssBalanceSheets.objects.get(deal_key=deal_object.deal_key)
+            upside_balance_sheet = balance_sheet_object.upside_balance_sheet
+            wic_balance_sheet = balance_sheet_object.wic_balance_sheet
+            downside_balance_sheet = balance_sheet_object.downside_balance_sheet
+
+            if balance_sheet_object.adjust_up_bs_with_bloomberg == 'No':
+                bull_flag = True
+            if balance_sheet_object.adjust_wic_bs_with_bloomberg == 'No':
+                pt_flag = True
+            if balance_sheet_object.adjust_down_bs_with_bloomberg == 'No':
+                bear_flag = True
+        except EssBalanceSheets.DoesNotExist:
+            upside_balance_sheet = None
+            wic_balance_sheet = None
+            downside_balance_sheet = None
 
         progress_recorder.set_progress(43, 100)
         result_dictionary = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker,
