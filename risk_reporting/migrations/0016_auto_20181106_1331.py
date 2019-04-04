@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('risk_reporting', '0015_remove_formulaebaseddownsides_outlier'),
+        ('risk_reporting', '0013_formulaebaseddownsides'),
     ]
 
     operations = [
