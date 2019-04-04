@@ -101,6 +101,7 @@ $(document).ready(function () {
             // Display success Alert
             var notes_id_to_edit = current_note.split('_')[1]; //Get the ID
             var edit_row = $('#row_' + notes_id_to_edit);
+            remove_file_ids = [];
             $('#submit_wic_notes_edit_form').trigger('reset');
 
             var $tds = edit_row.find('td');
@@ -319,6 +320,7 @@ $(document).ready(function () {
                 break;
             }
         }
+        console.log(remove_file_ids);
         fileList.splice(index, 1);
         fileList = fileList.join("<br>")
         $('#edit_notes_attachments').html(fileList);

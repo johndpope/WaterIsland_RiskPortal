@@ -46,6 +46,7 @@ urlpatterns = [
         name='get_premium_analysis_results_from_worker'),
     url('premium_analysis_get_latest_calculations$',views.premium_analysis_get_latest_calculations,
         name = 'premium_analysis_get_latest_calculations'),
+    url('get_attachments/', views.get_attachments, name='get_attachments'),
 
 ]
 
