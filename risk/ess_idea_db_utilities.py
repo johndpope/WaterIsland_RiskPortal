@@ -600,7 +600,7 @@ def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear
                            catalyst_tier, hedges, gics_sector, lead_analyst, status, pt_up_check,
                            pt_down_check, pt_wic_check,
                            adjust_based_off, premium_format, multiples_mappings, progress_recorder, peer_tickers,
-                           peer_hedge_weights):
+                           peer_hedge_weights, remove_file_ids=None):
 
     # Update ID should not be false here
     print('This is for Update ID:::: ' + str(update_id))
@@ -975,6 +975,8 @@ def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear
             for file in bear_thesis_model_files:
                 ESS_Idea_BearFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
                                          bear_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+        
+        delete_thesis_files(new_deal.deal_key, remove_file_ids)
 
         # Associate the Deal with each of its Peers
         # First delete existing Peers
@@ -1193,7 +1195,7 @@ def add_new_deal_alpha_only(bull_thesis_model_files, our_thesis_model_files, bea
                             deal_type,
                             catalyst_tier, hedges, gics_sector, lead_analyst, status, pt_up_check, pt_down_check,
                             pt_wic_check,
-                            adjust_based_off, premium_format, multiples_mappings, progress_recorder):
+                            adjust_based_off, premium_format, multiples_mappings, progress_recorder, remove_file_ids=None):
     """ When no Peers are specified """
 
     end_date = datetime.datetime.strptime(unaffected_date, '%Y-%m-%d')
@@ -1399,6 +1401,8 @@ def add_new_deal_alpha_only(bull_thesis_model_files, our_thesis_model_files, bea
             ESS_Idea_BearFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
                                      bear_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
 
+    delete_thesis_files(new_deal.deal_key, remove_file_ids)
+
 
 def get_fcf_yield(ticker, api_host, start_date_yyyymmdd, end_date_yyyymmdd, fperiod):
     ''' Calculates FCF Yield and Returns a Series object '''
@@ -1429,3 +1433,29 @@ def get_fcf_yield(ticker, api_host, start_date_yyyymmdd, end_date_yyyymmdd, fper
     fcf['FCF yield'] = fcf['FCF'] / fcf['PX']
 
     return fcf[['Date', 'FCF yield']]
+
+
+def delete_thesis_files(deal_key, remove_file_ids):
+    try:
+        # Delete Bull Thesis files
+        bull_thesis_to_be_removed = remove_file_ids.get('BULL')
+        if bull_thesis_to_be_removed:
+            bull_thesis_to_be_removed = list(map(int, bull_thesis_to_be_removed))
+            ESS_Idea_BullFileUploads.objects.filter(deal_key=deal_key, id__in=bull_thesis_to_be_removed).delete()
+            print('Deleted ESS Bull Thesis files', bull_thesis_to_be_removed)
+
+        # Delete Our Thesis files
+        our_thesis_to_be_removed = remove_file_ids.get('OUR')
+        if our_thesis_to_be_removed:
+            our_thesis_to_be_removed = list(map(int, our_thesis_to_be_removed))
+            ESS_Idea_OurFileUploads.objects.filter(deal_key=deal_key, id__in=our_thesis_to_be_removed).delete()
+            print('Deleted ESS Our Thesis files', our_thesis_to_be_removed)
+
+        # Delete Bear Thesis files
+        bear_thesis_to_be_removed = remove_file_ids.get('BEAR')
+        if bear_thesis_to_be_removed:
+            bear_thesis_to_be_removed = list(map(int, bear_thesis_to_be_removed))
+            ESS_Idea_BearFileUploads.objects.filter(deal_key=deal_key, id__in=bear_thesis_to_be_removed).delete()
+            print('Deleted ESS Bear Thesis files', bear_thesis_to_be_removed)
+    except Exception as error:
+        print('Error Deleting files. File IDs are: ', remove_file_ids, error)

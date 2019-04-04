@@ -270,7 +270,7 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
                  c_value, m_overview, o_overview, s_overview, a_overview, i_overview, c_overview, ticker_hedge_length,
                  ticker_hedge_mappings, cix_index, price_target_date, multiples, category, catalyst, deal_type,
                  catalyst_tier, hedges, gics_sector, lead_analyst, status, pt_up_check, pt_down_check, pt_wic_check,
-                 adjust_based_off, premium_format):
+                 adjust_based_off, premium_format, remove_file_ids=None):
     for name, info in django.db.connections.databases.items():  # Close old DB connections
         django.db.connection.close()
         print('Closing connection: ' + str(name))
@@ -307,7 +307,7 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
                                     deal_type,
                                     catalyst_tier, hedges, gics_sector, lead_analyst, status, pt_up_check,
                                     pt_down_check, pt_wic_check,
-                                    adjust_based_off, premium_format, multiples_mappings, progress_recorder)
+                                    adjust_based_off, premium_format, multiples_mappings, progress_recorder, remove_file_ids)
 
             return 'Task done'
 
@@ -329,7 +329,7 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
                                    catalyst_tier, hedges, gics_sector, lead_analyst, status, pt_up_check,
                                    pt_down_check, pt_wic_check,
                                    adjust_based_off, premium_format, multiples_mappings, progress_recorder,
-                                   peer_tickers, peer_hedge_weights)
+                                   peer_tickers, peer_hedge_weights, remove_file_ids)
         else:
             try:
                 latest_deal_key = ESS_Idea.objects.latest('deal_key').deal_key + 1

@@ -1,4 +1,5 @@
 $(document).ready(function () {
+    var remove_file_ids = {BULL: [], OUR: [], BEAR: []};
 
     var ess_idea_table = $('#ess_idea_table').DataTable({
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
@@ -120,22 +121,53 @@ $(document).ready(function () {
             for (var i = 0; i < input.files.length; i++) {
                 text += input.files[i].name + "<br>";
             }
-            $(target).text(text);
+            $(target).html(text);
         }
 
     }
 
 
     $('#bull_thesis_model').change(function () {
-        readURL(this, '#target_bull_thesis');
+        readURL(this, '#edit_selected_bull_attachments');
     });
 
     $('#our_thesis_model').change(function () {
-        readURL(this, '#target_our_thesis');
+        readURL(this, '#edit_selected_our_attachments');
     });
 
     $('#bear_thesis_model').change(function () {
-        readURL(this, '#target_bear_thesis');
+        readURL(this, '#edit_selected_bear_attachments');
+    });
+
+    var wrapper = $(".display_attachments");
+    $(wrapper).on("click", ".remove_file", function(e){
+        var index = -1;
+        var file_id = $(this).attr('data-id');
+        var target = ''
+        if (file_id.indexOf("bull") >= 0) {
+            remove_file_ids.BULL[remove_file_ids.BULL.length] = file_id.split("_").pop();
+            target = '#target_bull_thesis'
+        }
+        else if (file_id.indexOf("our") >= 0) {
+            remove_file_ids.OUR[remove_file_ids.OUR.length] = file_id.split("_").pop();
+            target = '#target_our_thesis'
+        }
+        else if (file_id.indexOf("bear") >= 0) {
+            remove_file_ids.BEAR[remove_file_ids.BEAR.length] = file_id.split("_").pop();
+            target = '#target_bear_thesis'
+        }
+        console.log("FILE", target, remove_file_ids);
+        var fileList = $(target).html().split("<br>")
+        for (var i = 0; i< fileList.length; i++) {
+            if (fileList[i].includes(file_id)) {
+                index = i;
+                break;
+            }
+        }
+        fileList.splice(index, 1);
+        fileList = fileList.join("<br>")
+        $(target).html(fileList);
+
     });
 
 //---------------------------------------------------------------------------
@@ -386,6 +418,7 @@ $(document).ready(function () {
         data.append('pt_wic_check', pt_wic_check);
         data.append('adjust_based_off', adjust_based_off);
         data.append('premium_format', premium_format);
+        data.append('remove_file_ids', JSON.stringify(remove_file_ids));
         // // Done getting all Fields. Now POST via AJAX and get Response. If response is success, inserting the row (from response) into the Existing DataTable and Redraw it
 
         $.ajax({
@@ -504,9 +537,56 @@ $(document).ready(function () {
         var csrfmiddlewaretoken = $('#ess_idea_csrf_token').val();
         // Handle Selected Logic Here
         if (current_deal.search('edit_') != -1) {
+
+            remove_file_ids = {BULL: [], OUR: [], BEAR: []};
+            $('#edit_selected_bull_attachments').empty();
+            $('#target_bull_thesis').empty();
+            $('#edit_selected_our_attachments').empty();
+            $('#target_our_thesis').empty();
+            $('#edit_selected_bear_attachments').empty();
+            $('#target_bear_thesis').empty();
             //Logic for Editing a Deal
             // Steps. Populate Edit Modal with existing fields. Show Modal. Make changes through Ajax. Get Response. Display success Alert
             var deal_id_to_edit = current_deal.split('_')[1]; //Get the ID
+            
+            $.ajax({
+                url:"../risk/get_attachments/",
+                type:'POST',
+                data:{'deal_id': deal_id_to_edit},
+                success:function(response){
+                    let bull_attachments = response['bull_attachments'];
+                    if(bull_attachments.length > 0) {
+                        let files = "";
+                        for(var i=0; i<bull_attachments.length; i++){
+                            let bull_attachment = bull_attachments[i];
+                            files += "<a href=" + bull_attachment.url + ">" + bull_attachment.filename + "</a> <a class='remove_file' data-id='remove_bull_" + deal_id_to_edit + "_file_" + bull_attachment.id + "' href='#'><i class='ft-trash-2'></i></a><br />";
+                        }
+                        $('#target_bull_thesis').html(files);
+                    }
+                    let our_attachments = response['our_attachments'];
+                    if(our_attachments.length > 0) {
+                        let files = "";
+                        for(var i=0; i<our_attachments.length; i++){
+                            let our_attachment = our_attachments[i];
+                            files += "<a href=" + our_attachment.url + ">" + our_attachment.filename + "</a> <a class='remove_file' data-id='remove_our_" + deal_id_to_edit + "_file_" + our_attachment.id + "' href='#'><i class='ft-trash-2'></i></a><br />";
+                        }
+                        $('#target_our_thesis').html(files);
+                    }
+                    let bear_attachments = response['bear_attachments'];
+                    if(bear_attachments.length > 0) {
+                        let files = "";
+                        for(var i=0; i<bear_attachments.length; i++){
+                            let bear_attachment = bear_attachments[i];
+                            files += "<a href=" + bear_attachment.url + ">" + bear_attachment.filename + "</a> <a class='remove_file' data-id='remove_bear_" + deal_id_to_edit + "_file_" + bear_attachment.id + "' href='#'><i class='ft-trash-2'></i></a><br />";
+                        }
+                        $('#target_bear_thesis').html(files);
+                    }
+                },
+                error: function (err) {
+                    console.log(err);
+                }
+             });
+            
             $.ajax({
                 url: "edit_ess_deal",
                 method: "POST",
@@ -617,9 +697,6 @@ $(document).ready(function () {
                     $('#ess_I_overview').val(i_description);
                     $('#ess_C_overview').val(c_description);
                     $('#ess_idea_new_deal_update_id').val(id);
-                    $('#target_bear_thesis').text(bear_thesis_files);
-                    $('#target_bull_thesis').text(bull_thesis_files);
-                    $('#target_our_thesis').text(our_thesis_files);
                     $('#ess_idea_new_deal_cix_index').val(cix_index);
                     $('#ess_idea_new_deal_price_target_date').val(price_target_date);
                     //Add category

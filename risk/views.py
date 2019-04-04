@@ -19,6 +19,7 @@ from notes.models import NotesMaster
 from .tasks import add_new_idea, run_ess_premium_analysis_task
 from .models import *
 from django.db import connection
+from django.conf import settings
 api_host = bbgclient.bbgclient.get_next_available_host()
 
 
@@ -1477,11 +1478,11 @@ def ess_idea_database(request):
     :return: Render object with all ESS IDEA deals in a dataframe
     """
     df = ESS_Idea.objects.raw("SELECT  * "
-                              "FROM  test_wic_db.risk_ess_idea AS A "
+                              "FROM  " + settings.CURRENT_DATABASE + ".risk_ess_idea AS A "
                               "INNER JOIN ("
                               "SELECT   "
                               "deal_key, max(version_number) as max_version "
-                              "from  test_wic_db.risk_ess_idea "
+                              "from " + settings.CURRENT_DATABASE + ".risk_ess_idea "
                               "group by deal_key "
                               ") AS B ON A.deal_key = B.deal_key AND A.version_number = B.max_version")
 
@@ -1718,6 +1719,7 @@ def add_new_ess_idea_deal(request):
             pt_wic_check = request.POST.get('pt_wic_check')
             adjust_based_off = request.POST.get('adjust_based_off')
             premium_format = request.POST.get('premium_format')
+            remove_file_ids = json.loads(request.POST.get('remove_file_ids'))
 
             task = add_new_idea.delay(bull_thesis_model_files=bull_thesis_model_files,
                                       our_thesis_model_files=our_thesis_model_files,
@@ -1735,7 +1737,7 @@ def add_new_ess_idea_deal(request):
                                       catalyst=catalyst, deal_type=deal_type, catalyst_tier=catalyst_tier,
                                       hedges=hedges, gics_sector=gics_sector, lead_analyst=lead_analyst, status=status,
                                       pt_up_check=pt_up_check, pt_down_check=pt_down_check, pt_wic_check=pt_wic_check,
-                                      adjust_based_off=adjust_based_off, premium_format=premium_format)
+                                      adjust_based_off=adjust_based_off, premium_format=premium_format, remove_file_ids=remove_file_ids)
 
             task_id = task.task_id
 
@@ -1763,6 +1765,32 @@ def delete_ess_idea(request):
 
     return HttpResponse(response)
 
+def get_attachments(request):
+    """ Retreives the uploaded attachement for the ESS """
+    bull_attachments = None
+    our_attachments = None
+    bear_attachments = None
+    if request.method == 'POST':
+        deal_id = request.POST['deal_id']
+        try:
+            deal_key = ESS_Idea.objects.get(id=deal_id).deal_key
+            bull_attachments = []
+            our_attachments = []
+            bear_attachments = []
+            for file in ESS_Idea_BullFileUploads.objects.filter(deal_key=deal_key):
+                bull_attachments.append({'id': file.id, 'deal_id': deal_id, 'deal_key': deal_key,
+                                         'filename':file.filename(), 'url':file.bull_thesis_model.url})
+            for file in ESS_Idea_OurFileUploads.objects.filter(deal_key=deal_key):
+                our_attachments.append({'id': file.id, 'deal_id': deal_id, 'deal_key': deal_key,
+                                        'filename':file.filename(), 'url':file.our_thesis_model.url})
+            for file in ESS_Idea_BearFileUploads.objects.filter(deal_key=deal_key):
+                bear_attachments.append({'id': file.id, 'deal_id': deal_id, 'deal_key': deal_key,
+                                         'filename':file.filename(), 'url':file.bear_thesis_model.url})
+        except Exception as error:
+            print(error)
+
+    return JsonResponse({'bull_attachments': bull_attachments, 'our_attachments': our_attachments,
+                         'bear_attachments': bear_attachments})
 
 def ess_idea_download_handler(request):
     """
