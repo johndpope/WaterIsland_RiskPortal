@@ -1,4 +1,5 @@
 import os
+import uuid
 from django.db import models
 
 # Create your models here.
@@ -16,11 +17,18 @@ class NotesMaster(models.Model):
         return self.title+'_'+self.author
 
 
+def get_notes_path_filename(instance, filename):
+    path = 'NOTES_ATTACHMENTS'
+    ext = filename.split('.')[-1]
+    filename = '{filename}_{uuid}.{ext}'.format(filename=filename, uuid=str(uuid.uuid4()), ext=ext)
+    return os.path.join(path, filename)
+
 class NotesAttachments(models.Model):
     """ Model for Notes Files Attachments."""
     notes_id = models.ForeignKey('NotesMaster', on_delete=models.CASCADE)
-    notes_attachment = models.FileField(null=True, upload_to='NOTES_ATTACHMENTS')
+    notes_attachment = models.FileField(null=True, upload_to=get_notes_path_filename)
+    original_filename = models.CharField(default='filename', max_length=100)
     uploaded_on = models.DateField(null=True)
 
     def filename(self):
-        return os.path.basename(self.notes_attachment.name)
+        return self.original_filename

@@ -369,17 +369,20 @@ def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
     if bull_thesis_model_files is not None:
         for file in bull_thesis_model_files:
             ESS_Idea_BullFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                     bull_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+                                     bull_thesis_model=file, original_filename=file.name,
+                                     uploaded_at=datetime.datetime.now().date()).save()
 
     if our_thesis_model_files is not None:
         for file in our_thesis_model_files:
             ESS_Idea_OurFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                    our_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+                                    our_thesis_model=file, original_filename=file.name,
+                                    uploaded_at=datetime.datetime.now().date()).save()
 
     if bear_thesis_model_files is not None:
         for file in bear_thesis_model_files:
             ESS_Idea_BearFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                     bear_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+                                     bear_thesis_model=file, original_filename=file.name,
+                                     uploaded_at=datetime.datetime.now().date()).save()
 
     # Associate the Deal with each of its Peers
     # First delete existing Peers
@@ -964,17 +967,20 @@ def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear
         if bull_thesis_model_files is not None:
             for file in bull_thesis_model_files:
                 ESS_Idea_BullFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                         bull_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+                                         bull_thesis_model=file, original_filename=file.name,
+                                         uploaded_at=datetime.datetime.now().date()).save()
 
         if our_thesis_model_files is not None:
             for file in our_thesis_model_files:
                 ESS_Idea_OurFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                        our_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+                                        our_thesis_model=file, original_filename=file.name,
+                                        uploaded_at=datetime.datetime.now().date()).save()
 
         if bear_thesis_model_files is not None:
             for file in bear_thesis_model_files:
                 ESS_Idea_BearFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                         bear_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+                                         bear_thesis_model=file, original_filename=file.name,
+                                         uploaded_at=datetime.datetime.now().date()).save()
         
         delete_thesis_files(new_deal.deal_key, remove_file_ids)
 
@@ -1389,17 +1395,20 @@ def add_new_deal_alpha_only(bull_thesis_model_files, our_thesis_model_files, bea
     if bull_thesis_model_files is not None:
         for file in bull_thesis_model_files:
             ESS_Idea_BullFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                     bull_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+                                     bull_thesis_model=file, original_filename=file.name,
+                                     uploaded_at=datetime.datetime.now().date()).save()
 
     if our_thesis_model_files is not None:
         for file in our_thesis_model_files:
             ESS_Idea_OurFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                    our_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+                                    our_thesis_model=file, original_filename=file.name,
+                                    uploaded_at=datetime.datetime.now().date()).save()
 
     if bear_thesis_model_files is not None:
         for file in bear_thesis_model_files:
             ESS_Idea_BearFileUploads(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                     bear_thesis_model=file, uploaded_at=datetime.datetime.now().date()).save()
+                                     bear_thesis_model=file, original_filename=file.name,
+                                     uploaded_at=datetime.datetime.now().date()).save()
 
     delete_thesis_files(new_deal.deal_key, remove_file_ids)
 
