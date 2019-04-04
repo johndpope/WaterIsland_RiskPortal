@@ -1,6 +1,10 @@
-import os
 import datetime
+import os
+import uuid
+
 from django.db import models
+
+# from custom_storages import get_custom_path_filename
 
 class MA_Deals(models.Model):
 
@@ -201,14 +205,23 @@ class ESS_Idea_Upside_Downside_Change_Records(models.Model):
     date_updated = models.DateField(null=False) #Updated Record shouldn't be Null
 
 
+def get_custom_path_filename(instance, filename):
+    print(instance)
+    path = "ESS_IDEA_DB_FILES/BULL_THESIS_FILES"
+    ext = filename.split('.')[-1]
+    filename = '{filename}_{uuid}.{ext}'.format(filename=filename, uuid=str(uuid.uuid4()), ext=ext)
+    return os.path.join(path, filename)
+
+
 class ESS_Idea_BullFileUploads(models.Model):
     ess_idea_id = models.ForeignKey('ESS_Idea', on_delete=models.CASCADE)
     deal_key = models.IntegerField(null=True)  # DealKey reflecting a deal
-    bull_thesis_model = models.FileField(null=True, upload_to='ESS_IDEA_DB_FILES/BULL_THESIS_FILES')
+    bull_thesis_model = models.FileField(null=True, upload_to=get_custom_path_filename)
+    original_filename = models.CharField(default='filename', max_length=100)
     uploaded_at = models.DateField(null=True)
 
     def filename(self):
-        return os.path.basename(self.bull_thesis_model.name)
+        return self.original_filename
 
 
 class ESS_Idea_OurFileUploads(models.Model):
@@ -325,6 +338,7 @@ class ESS_Idea(models.Model):
     how_to_adjust = models.CharField(max_length=10, null=True, default='cix')   # CIX or Regression
     premium_format = models.CharField(max_length=10, null=True, default='dollar')  # Dollar or Percentage
     created_on = models.DateTimeField(null=True, default=datetime.datetime.now())
+
 
 class CreditDatabase(models.Model):
     id = models.AutoField(primary_key=True)
