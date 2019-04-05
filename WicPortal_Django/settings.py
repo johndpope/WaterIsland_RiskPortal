@@ -279,10 +279,10 @@ MEDIA_URL = 'http://s3.amazonaws.com/{}/media/'.format(AWS_STORAGE_BUCKET_NAME)
 
 if DEBUG == 'on':
     DEBUG = True
-    CURRENT_DATABASE = 'local_test_db'
+    CURRENT_DATABASE = env('LOCAL_TEST_DB_NAME')
 else:
     DEBUG = False
-    CURRENT_DATABASE = 'test_wic_db'
+    CURRENT_DATABASE = env('WICFUNDS_DATABASE_NAME')
 
 # DEBUG = False
 # STATICFILES_LOCATION = 'static'
