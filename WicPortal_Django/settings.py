@@ -133,8 +133,7 @@ ROOT_URLCONF = 'WicPortal_Django.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')]
-        ,
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -280,7 +279,7 @@ MEDIA_URL = 'http://s3.amazonaws.com/{}/media/'.format(AWS_STORAGE_BUCKET_NAME)
 
 if DEBUG == 'on':
     DEBUG = True
-    CURRENT_DATABASE = 'test_wic_db'
+    CURRENT_DATABASE = 'local_test_db'
 else:
     DEBUG = False
     CURRENT_DATABASE = 'test_wic_db'

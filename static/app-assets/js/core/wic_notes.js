@@ -103,6 +103,8 @@ $(document).ready(function () {
             var edit_row = $('#row_' + notes_id_to_edit);
             remove_file_ids = [];
             $('#submit_wic_notes_edit_form').trigger('reset');
+            $('#edit_selected_notes_attachments').empty();
+            $('#edit_notes_attachments').empty();
 
             var $tds = edit_row.find('td');
             var date = $tds.eq(0).text();

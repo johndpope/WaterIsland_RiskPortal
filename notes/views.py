@@ -49,7 +49,7 @@ def create_note(request):
             if notes_fiies:
                 print(notes_fiies)
                 for file in notes_fiies:
-                    NotesAttachments(notes_id_id=new_notes_item.id,
+                    NotesAttachments(notes_id_id=new_notes_item.id, original_filename=file.name,
                                      uploaded_on=datetime.datetime.now().strftime('%Y-%m-%d'),
                                      notes_attachment=file).save()
 
@@ -89,7 +89,7 @@ def update_note(request):
         if notes_fiies:
             print(notes_fiies)
             for file in notes_fiies:
-                NotesAttachments(notes_id_id=id,
+                NotesAttachments(notes_id_id=id, original_filename=file.name,
                                  uploaded_on=datetime.datetime.now().strftime('%Y-%m-%d'),
                                  notes_attachment=file).save()
         response = id

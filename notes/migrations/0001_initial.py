@@ -22,4 +22,13 @@ class Migration(migrations.Migration):
                 ('tickers', models.CharField(max_length=1000)),
             ],
         ),
+        migrations.CreateModel(
+            name='NotesAttachments',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('notes_attachment', models.FileField(null=True, upload_to="NOTES_ATTACHMENTS")),
+                ('uploaded_on', models.DateField(null=True)),
+                ('notes_id', models.ForeignKey(on_delete=models.deletion.CASCADE, to='notes.NotesMaster')),
+            ],
+        ),
     ]
