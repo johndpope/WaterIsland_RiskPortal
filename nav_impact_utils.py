@@ -87,11 +87,11 @@ def update_positions_for_downside_formulae_merger_arb():
     # df.rename(columns={'index':'id'}, inplace=True)
     #
     # df.to_sql(name='risk_reporting_formulaebaseddownsides', con=con, if_exists='append', index=False,
-    #           schema='test_wic_db')
+    #           schema=settings.CURRENT_DATABASE)
     # exit(1)
 
     #Exclude the Current Positions
-    current_df = pd.read_sql_query('Select * from test_wic_db.risk_reporting_formulaebaseddownsides', con=connection)
+    current_df = pd.read_sql_query('Select * from '+settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides', con=connection)
     #     # Perform an Outer Merge on current and new df on Underlying and Tradegroup....After that delete the previous Risklimit and DealValue
     current_df = pd.merge(current_df, df, how='outer', on=cols2merge).reset_index().drop(columns=['id']).rename(columns={'index':'id'})
 
@@ -111,9 +111,9 @@ def update_positions_for_downside_formulae_merger_arb():
     current_df['IsExcluded'] = current_df['IsExcluded'].apply(lambda x: 'No' if pd.isnull(x) else x)
 
     #Truncate the Current downsides table
-    connection.cursor().execute('SET FOREIGN_KEY_CHECKS=0;TRUNCATE TABLE test_wic_db.risk_reporting_formulaebaseddownsides')
+    connection.cursor().execute('SET FOREIGN_KEY_CHECKS=0;TRUNCATE TABLE '+settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides')
 
-    current_df.to_sql(name='risk_reporting_formulaebaseddownsides', con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, schema='test_wic_db')
+    current_df.to_sql(name='risk_reporting_formulaebaseddownsides', con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, schema=settings.CURRENT_DATABASE)
     #Export only the Excluded ones
     print('Done Exporting new Deals')
 
@@ -122,7 +122,7 @@ def update_positions_for_downside_formulae_merger_arb():
 '''Should Run Every 30 mins...'''
 def update_live_price_of_formula_based_downsides_positions():
     api_host = bbgclient.bbgclient.get_next_available_host()
-    df = pd.read_sql_query('Select * from test_wic_db.risk_reporting_formulaebaseddownsides', con=connection)
+    df = pd.read_sql_query('Select * from '+settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides', con=connection)
     all_unique_tickers = list(df['Underlying'].apply(lambda x: x.upper() + " EQUITY").unique())
     live_price_df = pd.DataFrame.from_dict(
         bbgclient.bbgclient.get_secid2field(all_unique_tickers, 'tickers', ['PX_LAST'], req_type='refdata',
@@ -140,7 +140,7 @@ def update_live_price_of_formula_based_downsides_positions():
     # Delete the old LastPrice
     del df['LastPrice']
     df.rename(columns={'PX_LAST': 'LastPrice'}, inplace=True)
-    df.to_sql(name='risk_reporting_formulaebaseddownsides', con=settings.SQLALCHEMY_CONNECTION, if_exists='replace', index=False, schema='test_wic_db')
+    df.to_sql(name='risk_reporting_formulaebaseddownsides', con=settings.SQLALCHEMY_CONNECTION, if_exists='replace', index=False, schema=settings.CURRENT_DATABASE)
     print('Updated Live Prices of Formula Based Downsides')
 
 

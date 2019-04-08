@@ -155,11 +155,11 @@ def merger_arb_risk_attributes(request):
     """ View to Populate the Risk attributes for the Arbitrage Fund """
     close_old_connections()
     ytd_performances = pd.read_sql_query(
-        'SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance',
+        'SELECT DISTINCT tradegroup, fund, pnl_bps FROM '+settings.CURRENT_DATABASE+'.realtime_pnl_impacts_arbitrageytdperformance',
         con=connection)
     ytd_performances.columns = ['TradeGroup', 'FundCode', 'PnL_BPS']
 
-    forumale_linked_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
+    forumale_linked_downsides = pd.read_sql_query('SELECT * FROM '+settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides',
                                                   con=connection)
 
     forumale_linked_downsides = forumale_linked_downsides[['TradeGroup', 'Underlying', 'base_case', 'outlier',
@@ -291,7 +291,7 @@ def merger_arb_nav_impacts(request):
 
     nav_impacts_sum_df.to_sql(con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False,
                               name='risk_reporting_dailynavimpacts',
-                              schema='test_wic_db')
+                              schema=settings.CURRENT_DATABASE)
     return render(request, 'merger_arb_nav_impacts.html', context={'impacts':
                                                                        nav_impacts_sum_df.to_json(orient='index')})
 

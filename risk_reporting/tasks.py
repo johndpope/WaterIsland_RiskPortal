@@ -26,7 +26,7 @@ def refresh_base_case_and_outlier_downsides():
                            + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
 
     con = engine.connect()
-    formulae_based_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
+    formulae_based_downsides = pd.read_sql_query('SELECT * FROM '+settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides',
                                                  con=con)
     time.sleep(3)
     # Update the Last Prices of Each Deal
@@ -144,19 +144,19 @@ def refresh_base_case_and_outlier_downsides():
     formulae_based_downsides['base_case'] = formulae_based_downsides.apply(update_base_case_downsides, axis=1)
     formulae_based_downsides['outlier'] = formulae_based_downsides.apply(update_outlier_downsides, axis=1)
 
-    old_formulaes = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides', con=con)
+    old_formulaes = pd.read_sql_query('SELECT * FROM '+settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides', con=con)
     # Base Case and Outliers are now updated! Delete the old table and insert new ones
     try:
         FormulaeBasedDownsides.objects.all().delete()
         time.sleep(2)
         formulae_based_downsides.to_sql(name='risk_reporting_formulaebaseddownsides', con=con, if_exists='append',
-                                        index=False, schema='test_wic_db')
+                                        index=False, schema=settings.CURRENT_DATABASE)
         print('Refreshed Base Case and Outlier Downsides successfully...')
     except Exception as e:
         print(e)
         print('Some Error occured....Rolling back changes to downsides')
         old_formulaes.to_sql(name='risk_reporting_formulaebaseddownsides', con=con, if_exists='append', index=False,
-                             schema='test_wic_db')
+                             schema=settings.CURRENT_DATABASE)
         print('Restored Downside formulae state to previous...!')
 
     # Post to Slack
@@ -166,20 +166,20 @@ def refresh_base_case_and_outlier_downsides():
         api_host = bbgclient.bbgclient.get_next_available_host()
         # Populate all the deals
         nav_impacts_positions_df = pd.read_sql_query(
-            'SELECT * FROM test_wic_db.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=con)
+            'SELECT * FROM '+settings.CURRENT_DATABASE+'.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=con)
         # Drop the Last Price
         time.sleep(2)
         nav_impacts_positions_df.drop(columns=['LastPrice', 'RiskLimit'], inplace=True)
 
         ytd_performances = pd.read_sql_query(
-            'SELECT DISTINCT tradegroup, fund, pnl_bps FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance',
+            'SELECT DISTINCT tradegroup, fund, pnl_bps FROM '+settings.CURRENT_DATABASE+'.realtime_pnl_impacts_arbitrageytdperformance',
             con=con)
         time.sleep(1)
         ytd_performances.columns = ['TradeGroup', 'FundCode', 'PnL_BPS']
         # Convert Underlying Ticker to format Ticker Equity
         nav_impacts_positions_df['Underlying'] = nav_impacts_positions_df['Underlying'].apply(
             lambda x: x + " EQUITY" if "EQUITY" not in x else x)
-        forumale_linked_downsides = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_formulaebaseddownsides',
+        forumale_linked_downsides = pd.read_sql_query('SELECT * FROM '+settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides',
                                                       con=con)
         time.sleep(2)
         # Filter IsExcluded ones
@@ -268,7 +268,7 @@ def refresh_base_case_and_outlier_downsides():
         time.sleep(4)
 
         nav_impacts_sum_df.to_sql(con=con, if_exists='append', index=False, name='risk_reporting_dailynavimpacts',
-                                  schema='test_wic_db')
+                                  schema=settings.CURRENT_DATABASE)
 
         impacts = DailyNAVImpacts.objects.all()
         impacts_df = pd.DataFrame.from_records(impacts.values())
@@ -305,7 +305,7 @@ def refresh_base_case_and_outlier_downsides():
         PositionLevelNAVImpacts.objects.all().delete()
         time.sleep(4)
         nav_impacts_positions_df.to_sql(name='risk_reporting_positionlevelnavimpacts', con=con,
-                                        if_exists='append', index=False, schema='test_wic_db')
+                                        if_exists='append', index=False, schema=settings.CURRENT_DATABASE)
 
         slack_message('generic.slack', {'message': 'NAV Impacts refreshed with Latest Prices'},
                       channel='realtimenavimpacts',
@@ -374,15 +374,15 @@ def email_nav_impacts_report():
         engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD
                                + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
         con = engine.connect()
-        df = pd.read_sql_query('SELECT * FROM test_wic_db.risk_reporting_dailynavimpacts', con=con)
+        df = pd.read_sql_query('SELECT * FROM '+settings.CURRENT_DATABASE+'.risk_reporting_dailynavimpacts', con=con)
         time.sleep(3)
         downsides_df = pd.read_sql_query(
             'SELECT TradeGroup, base_case,outlier, max(LastUpdate) as LastUpdate FROM '
-            'test_wic_db.risk_reporting_formulaebaseddownsides WHERE IsExcluded = \'No\''
+            + settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides WHERE IsExcluded = \'No\''
             ' GROUP BY TradeGroup', con=con)
         time.sleep(3)
         arb_ytd_pnl = pd.read_sql_query(
-            'SELECT tradegroup, ytd_dollar FROM test_wic_db.realtime_pnl_impacts_arbitrageytdperformance WHERE '
+            'SELECT tradegroup, ytd_dollar FROM '+settings.CURRENT_DATABASE+'.realtime_pnl_impacts_arbitrageytdperformance WHERE '
             'fund = \'ARB\' GROUP BY tradegroup', con=con)
 
         time.sleep(3)
@@ -598,8 +598,7 @@ def email_daily_formulae_linked_downsides():
                                + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
         con = engine.connect()
         downsides_df = pd.read_sql_query(
-            'SELECT * FROM '
-            'test_wic_db.risk_reporting_formulaebaseddownsides ', con=con)
+            'SELECT * FROM ' + settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides ', con=con)
         time.sleep(3)
 
         def export_excel(df):
