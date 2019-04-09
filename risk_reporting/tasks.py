@@ -542,7 +542,7 @@ def email_nav_impacts_report():
             if value >= 0:
                 color = 'red'
             else:
-                color = '#d17d00'
+                color = 'black'
 
             return 'color: %s' % color
 

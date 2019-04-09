@@ -185,6 +185,7 @@ def exposure_df(as_of_yyyy_mm_dd=None):
                                      'Directional Equity Risk', 'Directional Credit Risk(bps)',
                                      'Directional IR Risk(bps)'])
 
+
 def perf_timeseries_df(pnl_df, capital_df, as_of_date=None, calc_stats=True, periods=('MTD','QTD','YTD','ITD',"1D","3D","5D","30D")):
     empty_stats_df = pd.DataFrame(columns=["Period",'P&L($)','P&L(bps)','ROMC(bps)', 'ANN. VOL','CAPITAL($)','CAPITAL CHG(%)'])
     empty_stats_df["Period"] = periods
@@ -206,9 +207,6 @@ def perf_timeseries_df(pnl_df, capital_df, as_of_date=None, calc_stats=True, per
     capital_df_cpy['Shifted Capital'] = capital_df_cpy[capital_cln].shift(1)
 
     df = pd.merge(pnl_df, capital_df_cpy, how='left', on=['Date']).sort_values(by='Date') #assuming NAV's first element is removed here
-
-
-
 
 
     if pd.isnull(df['Shifted Capital'].iloc[0]): df.loc[0,'Shifted Capital'] = df['Capital'].iloc[0] # adjust null-starting shift
@@ -266,6 +264,7 @@ def perf_timeseries_df(pnl_df, capital_df, as_of_date=None, calc_stats=True, per
         capital_chg_pct = 1e2*((capitals.iloc[-1]/capitals.iloc[0])-1.0) if capitals.iloc[0] != 0 else np.nan
         stats_df.loc[next_idx] = [period,cumpnl_usd,cumret_bps,romc_bps,vol_pct,capital_usd,capital_chg_pct]
     return df, stats_df
+
 
 def df2row(pivot_col, df):
     dfcols = [c for c in df.columns if c != pivot_col]

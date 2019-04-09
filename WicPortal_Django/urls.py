@@ -43,6 +43,7 @@ urlpatterns = [
     url('realtime_pnl_impacts/', include('realtime_pnl_impacts.urls')),
     url('securities/', include('securities.urls')),
     url('exposures/', include('exposures.urls')),
+    url('position_stats/', include('position_stats.urls')),
     url(r'^celeryprogressmonitor/', include('celeryprogressmonitor.urls')),
 ]
 

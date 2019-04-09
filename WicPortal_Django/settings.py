@@ -107,7 +107,8 @@ INSTALLED_APPS = [
     'securities',
     'storages',
     'exposures',
-    'celeryprogressmonitor'
+    'celeryprogressmonitor',
+    'position_stats',
 ]
 
 MIDDLEWARE = [

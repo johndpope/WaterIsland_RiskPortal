@@ -3,10 +3,11 @@
 *.pot
 *.pyc
 __pycache__/
+.pytlintrc
 local_settings.py
 db.sqlite3
 media
-.idea/*/*
+.idea/
 # Distribution / packaging
 .Python
 build/

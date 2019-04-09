@@ -156,3 +156,19 @@ select > option
 {
     overflow:auto;
 }
+
+.bordered-row {
+  display: flex;
+}
+
+.bordered-row > div {
+  flex: 1;
+  border: 2px solid maroon;
+
+}
+
+#tradegroup_attributions{
+    text-align: center;
+    text-align-last: center;
+    margin: auto
+}

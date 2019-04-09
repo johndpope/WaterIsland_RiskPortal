@@ -379,6 +379,7 @@
                     </ul>
                 </li>
 
+
                 <li class=" nav-item"><a href="#"><i class="icon-doc"></i><span class="menu-title"
                                                                                 data-i18n="nav.invoice.main">Risk Reporting</span></a>
                     <ul class="menu-content">
@@ -415,6 +416,19 @@
                 <li class=" nav-item"><a href="{% url 'exposures:exposures_snapshot' %}"><i
                         class="icon-pie-chart"></i><span class="menu-title">Exposure Snapshot</span>
                 </a></li>
+
+                <li class=" nav-item"><a href="#"><i class="icon-chart"></i><span class="menu-title"
+                                                                                data-i18n="nav.invoice.main">TradeGroup Perf.</span></a>
+                    <ul class="menu-content">
+                        <li><a class="menu-item" href="{% url 'position_stats:get_tradegroup_performance_main_page' %}">Over Fund NAV</a>
+                        </li>
+                    </ul>
+
+                    <ul class="menu-content">
+                        <li><a class="menu-item" href="{% url 'position_stats:get_tradegroup_attribution_over_own_capital' %}">Over own Capital</a>
+                        </li>
+                    </ul>
+                </li>
 
                 <li class=" nav-item"><a href="#"><i class="icon-feed"></i><span class="menu-title">News & Notes</span></a>
                     <ul class="menu-content">

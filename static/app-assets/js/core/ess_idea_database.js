@@ -633,12 +633,12 @@ $(document).ready(function () {
                     let price_target_date = deal_object[0][48];
                     let cix_index = deal_object[0][50];
 
-                    let pt_up_check = deal_object[0][64];
-                    let pt_down_check = deal_object[0][65];
-                    let pt_wic_check = deal_object[0][66];
+                    let pt_up_check = deal_object[0][61];
+                    let pt_down_check = deal_object[0][62];
+                    let pt_wic_check = deal_object[0][63];
 
-                    let adjust_based_off = deal_object[0][67];
-                    let premium_format = deal_object[0][68];
+                    let adjust_based_off = deal_object[0][64];
+                    let premium_format = deal_object[0][65];
 
                     $('#select_based_off').val(adjust_based_off);
                     $('#premium_format').val(premium_format);

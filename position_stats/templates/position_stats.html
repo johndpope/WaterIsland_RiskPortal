@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% block title_block %}
+    Tradegroup Story
+{% endblock %}
+{% load staticfiles %}
+
+
+{% block amcharts_scripts %}
+    {{ block.super }}
+{% endblock %}
+
+{% block loaders_css %}
+    {{ block.super }}
+{% endblock %}
+
+
+{% block css_styles %}
+    {{ block.super }}
+{% endblock %}
+
+{% block content %}
+    <input type="hidden" id="unique_tickers" value="{{ unique_tickers }}">
+    <input type="hidden" id="tradegroup_name" value="{{ tradegroup_name }}">
+    <input type="hidden" id="fund_code" value="{{ fund_code }}">
+    <input type="hidden" id="exposures_and_pnl" value="{{ exposures_and_pnl }}">
+    <input type="hidden" id="security_contribution_breakdown" value="{{ security_contribution_breakdown }}">
+
+    <div class="app-content content">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-gradient-directional-brown card-head-inverse">
+                        <h4 class="card-title text-center white">Tradegroup Story: {{ tradegroup_name }}
+                            in {{ fund_code }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="content-wrapper">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="card">
+                        <div class="card-content">
+                            <div class="card-body">
+
+                                <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" id="base-tab41" data-toggle="tab"
+                                           aria-controls="tab41"
+                                           href="#tab41" aria-expanded="true">Tradegroup Story</a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="base-tab42" data-toggle="tab" aria-controls="tab42"
+                                           href="#tab42"
+                                           aria-expanded="false">P&L Statistics</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="base-tab43" data-toggle="tab" aria-controls="tab43"
+                                           href="#tab43"
+                                           aria-expanded="false">Exposure Breakdown</a>
+                                    </li>
+                                </ul>
+
+                                <div class="tab-content px-1 pt-1">
+                                    <div role="tabpanel" class="tab-pane active" id="tab41" aria-expanded="true"
+                                         aria-labelledby="base-tab41">
+
+                                        <div >
+                                            <div class="container">
+                                                <div id="tradegroup_story_main" style="height: 700px">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <br><br>
+                                        <div class="table-responsive table-hover">
+                                            <!-- Task List table -->
+                                            <table class="table table-striped text-dark" id='position_summary'>
+                                                <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Bucket</th>
+                                                    <th>TradeGroup</th>
+                                                    <th>Ticker</th>
+                                                    <th>Strike</th>
+                                                    <th>Expiration</th>
+                                                    <th>Sector</th>
+                                                    <th>AlphaHedge</th>
+                                                    <th>Catalyst Type</th>
+                                                    <th>Catalyst Rating</th>
+                                                    <th>Qty</th>
+                                                    <th>Exposure</th>
+                                                    <th>DeltaAdj</th>
+                                                    <th>BetaAdj</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                {% for item in position_summary %}
+                                                    <tr>
+                                                        <td>{{ item.TradeDate }}</td>
+                                                        <td>{{ item.Bucket }}</td>
+                                                        <td>{{ item.TradeGroup }}</td>
+                                                        <td>{{ item.Ticker }}</td>
+                                                        <td>{{ item.Strike }}</td>
+                                                        <td>{{ item.Expiration }}</td>
+                                                        <td>{{ item.Sector }}</td>
+                                                        <td>{{ item.AlphaHedge }}</td>
+                                                        <td>{{ item.CatalystType }}</td>
+                                                        <td>{{ item.CatalystRating }}</td>
+                                                        <td>{{ item.Qty }}</td>
+                                                        <td>{{ item.Exposure }}</td>
+                                                        <td>{{ item.DeltaAdj }}</td>
+                                                        <td>{{ item.BetaAdj }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane " id="tab42" aria-labelledby="base-tab42">
+
+                                        <div class="row bordered-row">
+
+                                            <div class="col-xl-4" style="background-color: #000; color: #fff; ">
+                                                <div id="pnl_dollar_performance" style="height: 430px">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-xl-4" style="background-color: #000; color: #fff; ">
+                                                <div id="pnl_performance_over_capital" style="height: 430px">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-xl-4" style="background-color: #000; color: #fff; ">
+                                                <div id="volatility_of_roc" style="height: 430px">
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="row bordered-row">
+                                            <div class="col-xl-4" style="background-color: #000; color: #fff; ">
+                                                <div id="pnl_bps_performance" style="height: 430px">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-xl-4" style="background-color: #000; color: #fff; ">
+                                                <div id="spread_history" style="height: 430px">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-xl-4">
+                                                <div id="pnl_breakdown_table" style="height: 430px">
+                                                    <div class="table-responsive table-hover">
+                                                        <!-- Task List table -->
+                                                        <table class="table table-striped text-dark"
+                                                               id='security_pnl_breakdown' style="width: 100%">
+                                                            <thead>
+                                                            <tr>
+                                                                <th>Ticker</th>
+                                                                <th>P&L</th>
+                                                                <th>Contribution to NAV</th>
+                                                            </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                            {% for item in security_pnl_breakdown %}
+                                                                <tr>
+                                                                    <td>{{ item.Ticker }}</td>
+                                                                    <td>{{ item.Ticker_PnL_Dollar }}</td>
+                                                                    <td>{{ item.Ticker_PnL_bps }}</td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                            </tbody>
+                                                            <tfoot>
+                                                            <tr>
+                                                                <td></td>
+                                                                <td></td>
+                                                                <td></td>
+                                                            </tr>
+                                                            </tfoot>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                    </div>
+                                    <div class="tab-pane " id="tab43" aria-labelledby="base-tab43">
+                                        <div class="row bordered-row">
+                                            <div class="col-xl-6" style="background-color: #000; color: #fff; ">
+                                                <div id="exposure" style="height: 430px">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-xl-6" style="background-color: #000; color: #fff; ">
+                                                <div id="exposure_breakdown_in_nav" style="height: 430px">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <p class="card-text text-lg-center">
+                                <small class="text-muted">Chart Insights</small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+        </div>
+    </div>
+
+    <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+
+    {% block sweetalert_js %}
+        {{ block.super }}
+    {% endblock %}
+
+    {% block navs_js %}
+        {{ block.super }}
+    {% endblock %}
+
+    <script src="{% static 'app-assets/vendors/js/pickers/dateTime/moment-with-locales.min.js' %}"
+            type="text/javascript"></script>
+    <script src="{% static 'app-assets/vendors/js/pickers/daterange/daterangepicker.js' %}"
+            type="text/javascript"></script>
+    <script src="{% static 'app-assets/vendors/js/loaders/loaders.css.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.5.4/randomColor.min.js"></script>
+    <script src="https://www.amcharts.com/lib/3/themes/black.js"></script>
+    <script src="{% static 'app-assets/js/core/position_stats.js' %}"></script>
+
+
+{% endblock %}

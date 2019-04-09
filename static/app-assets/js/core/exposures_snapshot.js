@@ -9,7 +9,7 @@ $(document).ready(function () {
     });
 
     let exposures = $.parseJSON($('#exposures').val());
-
+    console.log(exposures);
     Object.keys(exposures).forEach(function (fund) {
         addFundMainTab(fund, 'fundtabs', 'fund-tab-content', 'Across', exposures);
 

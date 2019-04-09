@@ -87,7 +87,7 @@ def update_positions_for_downside_formulae_merger_arb():
     # df.rename(columns={'index':'id'}, inplace=True)
     #
     # df.to_sql(name='risk_reporting_formulaebaseddownsides', con=con, if_exists='append', index=False,
-    #           schema=settings.CURRENT_DATABASE)
+    #          schema=settings.CURRENT_DATABASE)
     # exit(1)
 
     #Exclude the Current Positions
@@ -113,7 +113,7 @@ def update_positions_for_downside_formulae_merger_arb():
     #Truncate the Current downsides table
     connection.cursor().execute('SET FOREIGN_KEY_CHECKS=0;TRUNCATE TABLE '+settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides')
 
-    current_df.to_sql(name='risk_reporting_formulaebaseddownsides', con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, schema=settings.CURRENT_DATABASE)
+    current_df.to_sql(name='risk_reporting_formulaebaseddownsides', con=settings.SQLALCHEMY_CONNECTION, if_exists='append', index=False, schema='test_wic_db')
     #Export only the Excluded ones
     print('Done Exporting new Deals')
 
