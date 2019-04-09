@@ -19,7 +19,9 @@ class NotesMaster(models.Model):
 
 def get_notes_path_filename(instance, filename):
     path = 'NOTES_ATTACHMENTS'
-    ext = filename.split('.')[-1]
+    file_split = filename.split('.')
+    ext = file_split[-1]
+    filename = file_split[0]
     filename = '{filename}_{uuid}.{ext}'.format(filename=filename, uuid=str(uuid.uuid4()), ext=ext)
     return os.path.join(path, filename)
 

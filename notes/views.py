@@ -1,10 +1,10 @@
 import datetime
+
 from django.views.generic import ListView
-from .models import NotesMaster, NotesAttachments
 from django.http import HttpResponse, JsonResponse
 
-
-# Create your views here.
+from cleanup.models import DeleteFile
+from notes.models import NotesMaster, NotesAttachments
 
 
 class ListNotes(ListView):
@@ -78,7 +78,14 @@ def update_note(request):
         try:
             if remove_file_ids:
                 remove_file_ids = remove_file_ids.split(",")
-                NotesAttachments.objects.filter(notes_id_id=id, id__in=remove_file_ids).delete()
+                notes_files = NotesAttachments.objects.filter(notes_id_id=id, id__in=remove_file_ids)
+                for notes_file in notes_files:
+                    notes_filefield = notes_file.notes_attachment
+                    DeleteFile(file_details=notes_filefield,
+                               aws_file_key=notes_filefield.file.obj.key,
+                               aws_bucket=notes_filefield.file.obj.bucket_name,
+                               requested_delete_at=datetime.datetime.now()).save()
+                notes_files.delete()
                 print('Deleted files', remove_file_ids)
         except Exception as error:
             print('Error Deleting files. File IDs are: ', remove_file_ids, error)

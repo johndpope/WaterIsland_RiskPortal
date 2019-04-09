@@ -207,7 +207,9 @@ class ESS_Idea_Upside_Downside_Change_Records(models.Model):
 
 def get_bullfile_path_filename(instance, filename):
     path = "ESS_IDEA_DB_FILES/BULL_THESIS_FILES"
-    ext = filename.split('.')[-1]
+    file_split = filename.split('.')
+    ext = file_split[-1]
+    filename = file_split[0]
     filename = '{filename}_{uuid}.{ext}'.format(filename=filename, uuid=str(uuid.uuid4()), ext=ext)
     return os.path.join(path, filename)
 
@@ -224,7 +226,9 @@ class ESS_Idea_BullFileUploads(models.Model):
 
 def get_ourfile_path_filename(instance, filename):
     path = 'ESS_IDEA_DB_FILES/OUR_THESIS_FILES'
-    ext = filename.split('.')[-1]
+    file_split = filename.split('.')
+    ext = file_split[-1]
+    filename = file_split[0]
     filename = '{filename}_{uuid}.{ext}'.format(filename=filename, uuid=str(uuid.uuid4()), ext=ext)
     return os.path.join(path, filename)
 
@@ -241,7 +245,9 @@ class ESS_Idea_OurFileUploads(models.Model):
 
 def get_bearfile_path_filename(instance, filename):
     path = 'ESS_IDEA_DB_FILES/BEAR_THESIS_FILES'
-    ext = filename.split('.')[-1]
+    file_split = filename.split('.')
+    ext = file_split[-1]
+    filename = file_split[0]
     filename = '{filename}_{uuid}.{ext}'.format(filename=filename, uuid=str(uuid.uuid4()), ext=ext)
     return os.path.join(path, filename)
 

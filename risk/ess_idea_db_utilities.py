@@ -1,13 +1,16 @@
 import datetime
 from dateutil.relativedelta import relativedelta
-import requests
-import pandas as pd
-import bbgclient
-import numpy as np
 import json
-from .models import *
+import requests
+
 from django.db import transaction
 from django.db.models import Max
+import bbgclient
+import numpy as np
+import pandas as pd
+
+from cleanup.models import DeleteFile
+from risk.models import *
 
 
 def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id,
@@ -1450,21 +1453,42 @@ def delete_thesis_files(deal_key, remove_file_ids):
         bull_thesis_to_be_removed = remove_file_ids.get('BULL')
         if bull_thesis_to_be_removed:
             bull_thesis_to_be_removed = list(map(int, bull_thesis_to_be_removed))
-            ESS_Idea_BullFileUploads.objects.filter(deal_key=deal_key, id__in=bull_thesis_to_be_removed).delete()
+            bull_files = ESS_Idea_BullFileUploads.objects.filter(deal_key=deal_key, id__in=bull_thesis_to_be_removed)
+            for bull_file in bull_files:
+                bull_filefield = bull_file.bull_thesis_model
+                DeleteFile(file_details=bull_filefield,
+                           aws_file_key=bull_filefield.file.obj.key,
+                           aws_bucket=bull_filefield.file.obj.bucket_name,
+                           requested_delete_at=datetime.datetime.now()).save()
+            bull_files.delete()
             print('Deleted ESS Bull Thesis files', bull_thesis_to_be_removed)
 
         # Delete Our Thesis files
         our_thesis_to_be_removed = remove_file_ids.get('OUR')
         if our_thesis_to_be_removed:
             our_thesis_to_be_removed = list(map(int, our_thesis_to_be_removed))
-            ESS_Idea_OurFileUploads.objects.filter(deal_key=deal_key, id__in=our_thesis_to_be_removed).delete()
+            our_files = ESS_Idea_OurFileUploads.objects.filter(deal_key=deal_key, id__in=our_thesis_to_be_removed)
+            for our_file in our_files:
+                our_filefield = our_file.our_thesis_model
+                DeleteFile(file_details=our_filefield,
+                           aws_file_key=our_filefield.file.obj.key,
+                           aws_bucket=our_filefield.file.obj.bucket_name,
+                           requested_delete_at=datetime.datetime.now()).save()
+            our_files.delete()
             print('Deleted ESS Our Thesis files', our_thesis_to_be_removed)
 
         # Delete Bear Thesis files
         bear_thesis_to_be_removed = remove_file_ids.get('BEAR')
         if bear_thesis_to_be_removed:
             bear_thesis_to_be_removed = list(map(int, bear_thesis_to_be_removed))
-            ESS_Idea_BearFileUploads.objects.filter(deal_key=deal_key, id__in=bear_thesis_to_be_removed).delete()
+            bear_files = ESS_Idea_BearFileUploads.objects.filter(deal_key=deal_key, id__in=bear_thesis_to_be_removed)
+            for bear_file in bear_files:
+                bear_filefield = bear_file.bear_thesis_model
+                DeleteFile(file_details=bear_filefield,
+                           aws_file_key=bear_filefield.file.obj.key,
+                           aws_bucket=bear_filefield.file.obj.bucket_name,
+                           requested_delete_at=datetime.datetime.now()).save()
+            bear_files.delete()
             print('Deleted ESS Bear Thesis files', bear_thesis_to_be_removed)
     except Exception as error:
         print('Error Deleting files. File IDs are: ', remove_file_ids, error)
