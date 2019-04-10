@@ -36,15 +36,23 @@ $(document).ready(function () {
         },
         bSort: false,
         columnDefs: [{
-            targets: [9, 10], render: function (data) {
+            targets: [9, 10], render: function (data)
+            {
                 return moment(data).format('YYYY-MM-DD');
             }
-        }, {
-            targets: [6, 7, 8], render: function (data) {
+        },
+        {
+            targets: [6, 7, 8], render: function (data)
+            {
                 return parseFloat(data).toFixed(2);
             }
-        }
-        ],
+        },
+        {
+            targets: [5], render: function(data)
+            {
+                return Number(data).toFixed(2);
+            }
+        }],
         buttons: {
             buttons: [{
                 extend: 'print',
