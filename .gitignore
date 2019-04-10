@@ -1,4 +1,6 @@
 ### Django ###
+*.csv
+.idea/
 *.log
 *.pot
 *.pyc

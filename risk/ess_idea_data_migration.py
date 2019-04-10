@@ -4,6 +4,8 @@ import json
 import sys
 import risk.tasks
 import datetime
+
+
 def populate_new_ess_idea_db_from_old_db():
     import pandas as pd
     from sqlalchemy import create_engine

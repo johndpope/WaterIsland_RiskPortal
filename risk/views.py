@@ -1363,9 +1363,12 @@ def show_ess_idea(request):
     # Show the Optimal Peers
 
     # Show the latest Regresson calculations
-    calculations = EssIdeaAdjustmentsInformation.objects.get(deal_key=deal_key)
-    regression_calculations = calculations.regression_calculations
-    cix_calculations = calculations.cix_calculations
+    try:
+        calculations = EssIdeaAdjustmentsInformation.objects.get(deal_key=deal_key)
+        regression_calculations = calculations.regression_calculations
+        cix_calculations = calculations.cix_calculations
+    except EssIdeaAdjustmentsInformation.DoesNotExist:
+        calculations, regression_calculations, cix_calculations = None, None, None
 
     return render(request, 'show_ess_idea.html',
                   context={'news_master': news_master, 'ess_idea_object': ess_idea, 'alpha_chart': alpha_chart,
@@ -1396,7 +1399,11 @@ def premium_analysis_get_latest_calculations(request):
             regression_results = None
             calculated_on = None
             deal_id = request.POST['deal_id']
-            calculations = EssIdeaAdjustmentsInformation.objects.get(ess_idea_id_id=deal_id)
+            try:
+                calculations = EssIdeaAdjustmentsInformation.objects.get(ess_idea_id_id=deal_id)
+            except EssIdeaAdjustmentsInformation.DoesNotExist:
+                calculations = None
+
             if calculations:
                 regression_results = calculations.regression_results
                 calculated_on = calculations.calculated_on
@@ -1443,6 +1450,22 @@ def edit_ess_deal(request):
             for file in ESS_Idea_BearFileUploads.objects.select_related().filter(deal_key=deal_key):
                 bear_thesis_files.append(file.filename())
 
+            # Get Latest Calculations
+            latest_upside, latest_wic, latest_downside = None, None, None
+
+            try:
+                latest_adjustments_obj = ESS_Idea_Upside_Downside_Change_Records.objects.filter(deal_key=deal_key)\
+                                                                                        .order_by('-date_updated')[0]
+                latest_upside = latest_adjustments_obj.pt_up
+                latest_wic = latest_adjustments_obj.pt_wic
+                latest_downside = latest_adjustments_obj.pt_down
+
+            except ESS_Idea_Upside_Downside_Change_Records.DoesNotExist:
+                pass
+
+            response['latest_upside'] = latest_upside
+            response['latest_wic'] = latest_wic
+            response['latest_downside'] = latest_downside
             response['bull_thesis_files'] = bull_thesis_files
             response['our_thesis_files'] = our_thesis_files
             response['bear_thesis_files'] = bear_thesis_files
@@ -1484,7 +1507,13 @@ def ess_idea_database(request):
                               "deal_key, max(version_number) as max_version "
                               "from " + settings.CURRENT_DATABASE + ".risk_ess_idea "
                               "group by deal_key "
-                              ") AS B ON A.deal_key = B.deal_key AND A.version_number = B.max_version")
+                              ") AS B ON A.deal_key = B.deal_key AND A.version_number = B.max_version"
+                              " LEFT JOIN (SELECT deal_key,pt_up as model_up, pt_down as model_down, pt_wic as "
+                              "model_wic from "+settings.CURRENT_DATABASE +
+                              ".risk_ess_idea_upside_downside_change_records " 
+                              "where date_updated=(Select max(date_updated) from "+settings.CURRENT_DATABASE +
+                              ".risk_ess_idea_upside_downside_change_records)) as ADJ  on "
+                              " ADJ.deal_key = A.deal_key ")
 
     return render(request, 'ess_idea_database.html', context={'ess_idea_df': df})
 

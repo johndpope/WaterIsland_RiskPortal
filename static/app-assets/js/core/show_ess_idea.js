@@ -1,7 +1,7 @@
 let calculations_array_global = [];
 $(document).ready(function () {
     // Step by Step calculations
-    try{
+    try {
         let regression_calcs_latest = $.parseJSON($('#regression_calcs_latest').val());
         let latest_calcs_array = [];
         latest_calcs_array = fill_calculations_dictionary(regression_calcs_latest);
@@ -207,7 +207,7 @@ $(document).ready(function () {
                     obj[peer_tickers[counter] + "_ev_ebitda"] = null;
                 }
                 else {
-                    obj[peer_tickers[counter] + "_ev_ebitda"] = all_ebitda_json_parsed[counter][i][field_name];
+                    obj[peer_tickers[counter] + "_ev_ebitda"] = parseFloat(all_ebitda_json_parsed[counter][i][field_name]).toFixed(2);
                 }
                 counter++;
             }
@@ -241,7 +241,7 @@ $(document).ready(function () {
         "legend": {
             "useGraphSettings": true
         },
-        // "hideCredits":true,
+        "hideCredits": true,
         "dataProvider": ev_ebitda_chart_data_ltm[0],
         "dataDateFormat": "YYYY-MM-DD",
         "synchronizeGrid": true,
@@ -251,6 +251,7 @@ $(document).ready(function () {
             "axisThickness": 2,
             "axisAlpha": 1,
             "position": "left",
+            "precision": 2,
 
         }],
         "graphs": ev_ebitda_chart_data_ltm[1],
@@ -265,10 +266,6 @@ $(document).ready(function () {
             "axisColor": "#DADADA",
             "minorGridEnabled": true,
             "equalSpacing": true
-        },
-        "legend": {
-            "useGraphSettings": true,
-            "valueText": ""
         },
         "export": {
             "enabled": true,
@@ -542,7 +539,7 @@ $(document).ready(function () {
             for (let i = 0; i < alpha_chart_data.length; i++) {
                 chartData.push({
                     date: alpha_chart_data[i].date,
-                    px_last: alpha_chart_data[i].px_last,
+                    px_last: parseFloat(alpha_chart_data[i].px_last).toFixed(2),
                 })
             }
             return chartData;
@@ -552,9 +549,9 @@ $(document).ready(function () {
         for (let i = 0; i < hedge_chart_data.length; i++) {
             chartData.push({
                 date: alpha_chart_data[i]['date'],
-                px_last: alpha_chart_data[i]['px_last'],
-                hedges: hedge_chart_data[i]['vol'],
-                market_neutral_val: market_neutral_chart_data[i]['market_netural_value']
+                px_last: parseFloat(alpha_chart_data[i]['px_last']).toFixed(2),
+                hedges: parseFloat(hedge_chart_data[i]['vol']).toFixed(2),
+                market_neutral_val: parseFloat(market_neutral_chart_data[i]['market_netural_value']).toFixed(2)
             })
         }
 
@@ -573,7 +570,7 @@ $(document).ready(function () {
         "legend": {
             "useGraphSettings": true
         },
-        // "hideCredits":true,
+        "hideCredits": true,
         "dataDateFormat": "YYYY-MM-DD",
         "dataProvider": implied_probability_chart_data,
         "synchronizeGrid": true,
@@ -582,7 +579,8 @@ $(document).ready(function () {
             "axisColor": "#FF6600",
             "axisThickness": 2,
             "axisAlpha": 1,
-            "position": "left"
+            "position": "left",
+            "unit": '%',
         }, {
             "id": "v2",
             "axisColor": "#FF6600",
@@ -600,6 +598,7 @@ $(document).ready(function () {
             "hideBulletsCount": 30,
             "title": "Implied Probability Chart",
             "valueField": "implied_probability",
+            "balloonText": "[[implied_probability]]%",
             "fillAlphas": 0.1,
             "id": "g1"
         }],
@@ -615,10 +614,6 @@ $(document).ready(function () {
             "axisColor": "#DADADA",
             "minorGridEnabled": true,
             "equalSpacing": true
-        },
-        "legend": {
-            "useGraphSettings": true,
-            "valueText": ""
         },
         "categoryAxesSettings": {
             "minPeriod": "DD",
@@ -636,7 +631,7 @@ $(document).ready(function () {
         for (let i = 0; i < implied_chart_data.length; i++) {
             chartData.push({
                 date: implied_chart_data[i].date,
-                implied_probability: implied_chart_data[i].implied_probability * 100,
+                implied_probability: parseFloat(implied_chart_data[i].implied_probability * 100).toFixed(2),
             })
         }
         return chartData;
@@ -647,12 +642,15 @@ $(document).ready(function () {
     function generateUpsideDownsideTrackRecordData() {
         let upside_downside_records = JSON.parse($('#upside_downside_records_df').val());
         let chartData = [];
+        $('#model-upside').html("Upside: "+parseFloat(upside_downside_records[upside_downside_records.length-1].pt_up).toFixed(2));
+        $('#model-downside').html("Downside: "+parseFloat(upside_downside_records[upside_downside_records.length-1].pt_down).toFixed(2));
+        $('#model-ptwic').html("PT WIC: "+parseFloat(upside_downside_records[upside_downside_records.length-1].pt_wic).toFixed(2));
         for (let i = 0; i < upside_downside_records.length; i++) {
             chartData.push({
                 date: upside_downside_records[i].date_updated,
-                pt_up: upside_downside_records[i].pt_up,
-                pt_down: upside_downside_records[i].pt_down,
-                pt_wic: upside_downside_records[i].pt_wic,
+                pt_up: parseFloat(upside_downside_records[i].pt_up).toFixed(2),
+                pt_down: parseFloat(upside_downside_records[i].pt_down).toFixed(2),
+                pt_wic: parseFloat(upside_downside_records[i].pt_wic).toFixed(2),
             })
         }
         return chartData;
@@ -673,7 +671,7 @@ $(document).ready(function () {
             "axisColor": "#FF6600",
             "axisThickness": 2,
             "axisAlpha": 1,
-            "position": "left"
+            "position": "left",
         }, {
             "id": "v2",
             "axisColor": "#FF6600",
@@ -729,11 +727,6 @@ $(document).ready(function () {
             "minorGridEnabled": true,
             "equalSpacing": true
         },
-        "legend": {
-            "useGraphSettings": true,
-            "valueText": ""
-        },
-
         "export": {
             "enabled": true,
             "position": "bottom-right"
@@ -750,9 +743,6 @@ $(document).ready(function () {
     let EventPremiumChart = AmCharts.makeChart("ess_idea_event_premium_chart", {
         "type": "serial",
         "theme": "black",
-        "legend": {
-            "useGraphSettings": true
-        },
         "dataDateFormat": "YYYY-MM-DD",
         "hideCredits": true,
         "dataProvider": event_premium_chart_data,
@@ -763,6 +753,7 @@ $(document).ready(function () {
             "axisThickness": 2,
             "axisAlpha": 1,
             "position": "left",
+            "unit": "%"
         }, {
             "id": "v2",
             "axisColor": "#FF6600",
@@ -780,6 +771,7 @@ $(document).ready(function () {
             "hideBulletsCount": 30,
             "title": "Event Premium Chart",
             "valueField": "event_premium",
+            "balloonText": "[[event_premium]]%",
             "fillAlphas": 0.1
         }],
         "chartScrollbar": {},
@@ -813,7 +805,7 @@ $(document).ready(function () {
         for (let i = 0; i < event_premium_chart_data.length; i++) {
             chartData.push({
                 date: event_premium_chart_data[i].date,
-                event_premium: event_premium_chart_data[i].event_premium * 100,
+                event_premium: parseFloat(event_premium_chart_data[i].event_premium * 100).toFixed(2),
             })
         }
         return chartData;
@@ -845,25 +837,23 @@ $(document).ready(function () {
         let notes_id = $(this).data('ids');
         // POST Ajax Request for Attachments
         $.ajax({
-               url:"../notes/get_attachments/",
-               type:'POST',
-               data:{'notes_id':notes_id},
-               success:function(response){
-                   let attachments = response['attachments'];
-                   if(attachments.length > 0){
-                       let files = "<br> Your attachments:<br><br>";
-                       for(var i=0;i<attachments.length;i++){
-                           files += "<a href=" + attachments[i].url + ">" + attachments[i].filename + "</a><br />";
-                       }
-                       $('#edit_notes_attachments').html(files);
-                   }
-               },
-               error: function (err) {
-                   console.log(err);
-               }
-            });
-
-
+            url: "../notes/get_attachments/",
+            type: 'POST',
+            data: {'notes_id': notes_id},
+            success: function (response) {
+                let attachments = response['attachments'];
+                if (attachments.length > 0) {
+                    let files = "<br> Your attachments:<br><br>";
+                    for (var i = 0; i < attachments.length; i++) {
+                        files += "<a href=" + attachments[i].url + ">" + attachments[i].filename + "</a><br />";
+                    }
+                    $('#edit_notes_attachments').html(files);
+                }
+            },
+            error: function (err) {
+                console.log(err);
+            }
+        });
 
 
     });
@@ -920,6 +910,7 @@ $('#show_premium_analysis').on('click', function (e) {
                     'type': 'POST',
                     'data': {'task_id': task_id},
                     'success': function (response) {
+                        $('#progress-bar').hide();
                         let dynamic_upside_downside = response;
                         let regression_results = response['regression_results'];
                         let regression_calculations = response['regression_calculations'];
@@ -957,7 +948,7 @@ $('#show_premium_analysis').on('click', function (e) {
                             let coefficients_table = '<table class=\"table table-striped\"><thead><tr><th>Peer/Intercept</th><th>Coefficients</th></tr></thead><tbody>';
 
                             for (var peer in coefficients) {
-                                coefficients_table += '<tr><td>' + peer + '</td><td>' + coefficients[peer] +
+                                coefficients_table += '<tr><td>' + peer + '</td><td>' + parseFloat(coefficients[peer]).toFixed(4) +
                                     '</td></tr>'
                             }
                             coefficients_table += '</table>';
@@ -972,7 +963,7 @@ $('#show_premium_analysis').on('click', function (e) {
                             let peer_multiples_at_pt_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
 
                             for (var peer in peer_multiples_at_price_target_date) {
-                                peer_multiples_at_pt_table += '<tr><td>' + peer + '</td><td>' + peer_multiples_at_price_target_date[peer] +
+                                peer_multiples_at_pt_table += '<tr><td>' + peer + '</td><td>' + parseFloat(peer_multiples_at_price_target_date[peer]).toFixed(2) +
                                     '</td></tr>'
                             }
                             peer_multiples_at_pt_table += '</table>';
@@ -993,7 +984,7 @@ $('#show_premium_analysis').on('click', function (e) {
                             let peer_multiples_at_now_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
 
                             for (var peer in peer_multiples_at_now) {
-                                peer_multiples_at_now_table += '<tr><td>' + peer + '</td><td>' + peer_multiples_at_now[peer] +
+                                peer_multiples_at_now_table += '<tr><td>' + peer + '</td><td>' + parseFloat(peer_multiples_at_now[peer]).toFixed(2) +
                                     '</td></tr>'
                             }
                             peer_multiples_at_now_table += '</table>';
@@ -1044,65 +1035,71 @@ $('#show_premium_analysis').on('click', function (e) {
 
 });
 
-function set_global_calculations_array(calculations_array){
+function set_global_calculations_array(calculations_array) {
     calculations_array_global = calculations_array;
 }
 
 
-function fill_calculations_dictionary(regression_calculations){
+function fill_calculations_dictionary(regression_calculations) {
     let bull_calculations = [];
     let bear_calculations = [];
     let wic_calculations = [];
 
     let multiples = Object.keys(regression_calculations);
-    for(var i=0;i<multiples.length;i++){
+    for (var i = 0; i < multiples.length; i++) {
         let current_multiple = multiples[i];
-        if(current_multiple === 'Total'){
+        if (current_multiple === 'Total') {
             continue;
         }
         // Populate Bull Case Parameters for Modal
-        bull_calculations.push({[current_multiple]:{
-            '1':regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
-            '2':regression_calculations[current_multiple]['Bull Multiple @ PTD'],
-            '3':regression_calculations[current_multiple]['Bull Premium @ PTD'],
-            '4':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
-            '5':regression_calculations[current_multiple]['Bull Multiple @ Now'],
-            '6':regression_calculations[current_multiple]['Upside'],
-            '7':regression_calculations[current_multiple]['Upside (Adj,weighted)'],
-        }});
+        bull_calculations.push({
+            [current_multiple]: {
+                '1': regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
+                '2': regression_calculations[current_multiple]['Bull Multiple @ PTD'],
+                '3': regression_calculations[current_multiple]['Bull Premium @ PTD'],
+                '4': regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
+                '5': regression_calculations[current_multiple]['Bull Multiple @ Now'],
+                '6': regression_calculations[current_multiple]['Upside'],
+                '7': regression_calculations[current_multiple]['Upside (Adj,weighted)'],
+            }
+        });
 
-        wic_calculations.push({[current_multiple]:{
-            '1':regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
-            '2':regression_calculations[current_multiple]['PT WIC Multiple @ PTD'],
-            '3':regression_calculations[current_multiple]['PT WIC Premium @ PTD'],
-            '4':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
-            '5':regression_calculations[current_multiple]['PT WIC Multiple @ Now'],
-            '6':regression_calculations[current_multiple]['PT WIC'],
-            '7':regression_calculations[current_multiple]['PT WIC (Adj,weighted)'],
-        }});
+        wic_calculations.push({
+            [current_multiple]: {
+                '1': regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
+                '2': regression_calculations[current_multiple]['PT WIC Multiple @ PTD'],
+                '3': regression_calculations[current_multiple]['PT WIC Premium @ PTD'],
+                '4': regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
+                '5': regression_calculations[current_multiple]['PT WIC Multiple @ Now'],
+                '6': regression_calculations[current_multiple]['PT WIC'],
+                '7': regression_calculations[current_multiple]['PT WIC (Adj,weighted)'],
+            }
+        });
 
 
-        bear_calculations.push({[current_multiple]:{
-            '1':regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
-            '2':regression_calculations[current_multiple]['Bear Multiple @ PTD'],
-            '3':regression_calculations[current_multiple]['Bear Premium @ PTD'],
-            '4':regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
-            '5':regression_calculations[current_multiple]['Bear Multiple @ Now'],
-            '6':regression_calculations[current_multiple]['Downside'],
-            '7':regression_calculations[current_multiple]['Downside (Adj,weighted)'],
-        }});
+        bear_calculations.push({
+            [current_multiple]: {
+                '1': regression_calculations[current_multiple]['Alpha Implied Multiple @ PTD'],
+                '2': regression_calculations[current_multiple]['Bear Multiple @ PTD'],
+                '3': regression_calculations[current_multiple]['Bear Premium @ PTD'],
+                '4': regression_calculations[current_multiple]['Alpha Implied Multiple @ Now'],
+                '5': regression_calculations[current_multiple]['Bear Multiple @ Now'],
+                '6': regression_calculations[current_multiple]['Downside'],
+                '7': regression_calculations[current_multiple]['Downside (Adj,weighted)'],
+            }
+        });
     }
     //Push the totals
     bull_calculations.push({
-        'Final':{'1':regression_calculations['Total']['Up Price (Regression)']}
+        'Final': {'1': regression_calculations['Total']['Up Price (Regression)']}
     });
 
     bear_calculations.push({
-        'Final':{'1':regression_calculations['Total']['Down Price (Regression)']}
+        'Final': {'1': regression_calculations['Total']['Down Price (Regression)']}
     });
 
     wic_calculations.push({
-        'Final':{'1':regression_calculations['Total']['PT WIC Price (Regression)']}
+        'Final': {'1': regression_calculations['Total']['PT WIC Price (Regression)']}
     });
 
 
@@ -1137,13 +1134,13 @@ $('#ess_idea_view_balance_sheet').on('click', function (e) {
             let adjust_wic_with_bloomberg = response['adjust_wic_with_bloomberg'];
             let adjust_downside_with_bloomberg = response['adjust_downside_with_bloomberg'];
 
-            if(adjust_upside_with_bloomberg === 'No'){
+            if (adjust_upside_with_bloomberg === 'No') {
                 $('#use_upside_without_bloomberg').prop('checked', true);
             }
-            if(adjust_wic_with_bloomberg === 'No'){
+            if (adjust_wic_with_bloomberg === 'No') {
                 $('#use_wic_without_bloomberg').prop('checked', true);
             }
-            if(adjust_downside_with_bloomberg === 'No'){
+            if (adjust_downside_with_bloomberg === 'No') {
                 $('#use_downside_without_bloomberg').prop('checked', true);
             }
 
@@ -1210,7 +1207,6 @@ $('#ess_idea_view_balance_sheet').on('click', function (e) {
 
             // Populate the Adjustments for Downsides
             console.log(downside_balance_sheet_adjustments);
-
 
 
             if (downside_balance_sheet_adjustments.length > 0) {
@@ -1292,13 +1288,13 @@ $('#save_balance_sheet').on('click', function (e) {
     let wic_with_bloomberg = 'Yes';
     let downside_with_bloomberg = 'Yes';
 
-    if(x){
+    if (x) {
         upside_with_bloomberg = 'No'
     }
-    if(y){
+    if (y) {
         wic_with_bloomberg = 'No'
     }
-    if(z){
+    if (z) {
         downside_with_bloomberg = 'No'
     }
 
@@ -1345,95 +1341,104 @@ $('#ess_idea_todays_calculations').on('click', function () {
             }
             else {
                 // Process and Populate the Table...
-                let regression_results = $.parseJSON(response['regression_results']);
-                //let calculated_on = response['calculated_on'];
-                let multiples = Object.keys(regression_results);
-                for (var i = 0; i < multiples.length; i++) {
-                    let multiple = multiples[i];
-                    let id = '';
-                    if (multiple === 'EV/EBITDA') {
-                        id = 'ev_ebitda'
+                try {
+                    let regression_results = $.parseJSON(response['regression_results']);
+                    //let calculated_on = response['calculated_on'];
+                    let multiples = Object.keys(regression_results);
+                    for (var i = 0; i < multiples.length; i++) {
+                        let multiple = multiples[i];
+                        let id = '';
+                        if (multiple === 'EV/EBITDA') {
+                            id = 'ev_ebitda'
+                        }
+                        else if (multiple === 'P/E') {
+                            id = 'p_e'
+                        }
+                        else if (multiple === 'EV/Sales') {
+                            id = 'ev_sales'
+                        }
+                        else if (multiple === 'DVD Yield') {
+                            id = 'dvd_yield'
+                        }
+                        else if (multiple === 'FCF Yield') {
+                            id = 'fcf_yield'
+                        }
+                        // Append Multiple
+                        let currernt_row = '<tr>';
+                        let row_cell = currernt_row + '<td>' + multiple + '</td>';
+
+                        let coefficients = regression_results[multiples[i]]['Coefficients'];
+                        // Iterate throught coeffieicent and create a Table
+                        let coefficients_table = '<table class=\"table table-striped\"><thead><tr><th>Peer/Intercept</th><th>Coefficients</th></tr></thead><tbody>';
+
+                        for (var peer in coefficients) {
+                            coefficients_table += '<tr><td>' + peer + '</td><td>' + parseFloat(coefficients[peer]).toFixed(4) +
+                                '</td></tr>'
+                        }
+                        coefficients_table += '</table>';
+                        // Create a Bootstrap Modal
+                        get_regression_analysis_modal(id + '_coefficients', coefficients_table, 'Regression Coefficients');
+
+                        row_cell += '<td>' + get_modal_launch_button('id', id + '_coefficients', 'View Coefficients') +
+                            '</td>';
+
+                        let peer_multiples_at_price_target_date = regression_results[multiples[i]]['Peers Multiples @ Price Target Date'];
+                        // Iterate throught Peer Multiples at PT Date
+                        let peer_multiples_at_pt_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
+
+                        for (var peer in peer_multiples_at_price_target_date) {
+                            peer_multiples_at_pt_table += '<tr><td>' + peer + '</td><td>' + parseFloat(peer_multiples_at_price_target_date[peer]).toFixed(2) +
+                                '</td></tr>'
+                        }
+                        peer_multiples_at_pt_table += '</table>';
+
+                        get_regression_analysis_modal(id + '_peer_multiples_at_pt', peer_multiples_at_pt_table, 'Peer Multiples at Price Target Date');
+
+                        row_cell += '<td>' + get_modal_launch_button('id', id + '_peer_multiples_at_pt', 'Peers Multiple Drilldown') +
+                            '</td>';
+
+                        row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Implied Multiple @ Price Target Date']).toFixed(2) + '</td>';
+                        row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bear Multiple @ Price Target Date']).toFixed(2) + '</td>';
+                        row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha PT WIC Multiple @ Price Target Date']).toFixed(2) + '</td>';
+                        row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bull Multiple @ Price Target Date']).toFixed(2) + '</td>';
+
+                        // Repeat the Above for Now Section
+                        let peer_multiples_at_now = regression_results[multiples[i]]['Peers Multiples @ Now'];
+                        // Iterate throught Peer Multiples at PT Date
+                        let peer_multiples_at_now_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
+
+                        for (var peer in peer_multiples_at_now) {
+                            peer_multiples_at_now_table += '<tr><td>' + peer + '</td><td>' + parseFloat(peer_multiples_at_now[peer]).toFixed(2) +
+                                '</td></tr>'
+                        }
+                        peer_multiples_at_now_table += '</table>';
+
+                        get_regression_analysis_modal(id + '_peer_multiples_at_now', peer_multiples_at_now_table, 'Peer Multiples (Now)');
+
+                        row_cell += '<td>' + get_modal_launch_button('id', id + '_peer_multiples_at_now', 'Peers Multiple Drilldown') +
+                            '</td>';
+
+                        row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Implied Multiple @ Now']).toFixed(2) + '</td>';
+                        row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bear Multiple @ Now']).toFixed(2) + '</td>';
+                        row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha PT WIC Multiple @ Now']).toFixed(2) + '</td>';
+                        row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bull Multiple @ Now']).toFixed(2) + '</td>';
+                        row_cell += '</tr>';
+                        $('#premium_analysis_regression_breakdown_table tbody').append(row_cell);
+
                     }
-                    else if (multiple === 'P/E') {
-                        id = 'p_e'
-                    }
-                    else if (multiple === 'EV/Sales') {
-                        id = 'ev_sales'
-                    }
-                    else if (multiple === 'DVD Yield') {
-                        id = 'dvd_yield'
-                    }
-                    else if (multiple === 'FCF Yield') {
-                        id = 'fcf_yield'
-                    }
-                    // Append Multiple
-                    let currernt_row = '<tr>';
-                    let row_cell = currernt_row + '<td>' + multiple + '</td>';
-
-                    let coefficients = regression_results[multiples[i]]['Coefficients'];
-                    // Iterate throught coeffieicent and create a Table
-                    let coefficients_table = '<table class=\"table table-striped\"><thead><tr><th>Peer/Intercept</th><th>Coefficients</th></tr></thead><tbody>';
-
-                    for (var peer in coefficients) {
-                        coefficients_table += '<tr><td>' + peer + '</td><td>' + coefficients[peer] +
-                            '</td></tr>'
-                    }
-                    coefficients_table += '</table>';
-                    // Create a Bootstrap Modal
-                    get_regression_analysis_modal(id + '_coefficients', coefficients_table, 'Regression Coefficients');
-
-                    row_cell += '<td>' + get_modal_launch_button('id', id + '_coefficients', 'View Coefficients') +
-                        '</td>';
-
-                    let peer_multiples_at_price_target_date = regression_results[multiples[i]]['Peers Multiples @ Price Target Date'];
-                    // Iterate throught Peer Multiples at PT Date
-                    let peer_multiples_at_pt_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
-
-                    for (var peer in peer_multiples_at_price_target_date) {
-                        peer_multiples_at_pt_table += '<tr><td>' + peer + '</td><td>' + peer_multiples_at_price_target_date[peer] +
-                            '</td></tr>'
-                    }
-                    peer_multiples_at_pt_table += '</table>';
-
-                    get_regression_analysis_modal(id + '_peer_multiples_at_pt', peer_multiples_at_pt_table, 'Peer Multiples at Price Target Date');
-
-                    row_cell += '<td>' + get_modal_launch_button('id', id + '_peer_multiples_at_pt', 'Peers Multiple Drilldown') +
-                        '</td>';
-
-                    row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Implied Multiple @ Price Target Date']).toFixed(2) + '</td>';
-                    row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bear Multiple @ Price Target Date']).toFixed(2) + '</td>';
-                    row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha PT WIC Multiple @ Price Target Date']).toFixed(2) + '</td>';
-                    row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bull Multiple @ Price Target Date']).toFixed(2) + '</td>';
-
-                    // Repeat the Above for Now Section
-                    let peer_multiples_at_now = regression_results[multiples[i]]['Peers Multiples @ Now'];
-                    // Iterate throught Peer Multiples at PT Date
-                    let peer_multiples_at_now_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
-
-                    for (var peer in peer_multiples_at_now) {
-                        peer_multiples_at_now_table += '<tr><td>' + peer + '</td><td>' + peer_multiples_at_now[peer] +
-                            '</td></tr>'
-                    }
-                    peer_multiples_at_now_table += '</table>';
-
-                    get_regression_analysis_modal(id + '_peer_multiples_at_now', peer_multiples_at_now_table, 'Peer Multiples (Now)');
-
-                    row_cell += '<td>' + get_modal_launch_button('id', id + '_peer_multiples_at_now', 'Peers Multiple Drilldown') +
-                        '</td>';
-
-                    row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Implied Multiple @ Now']).toFixed(2) + '</td>';
-                    row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bear Multiple @ Now']).toFixed(2) + '</td>';
-                    row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha PT WIC Multiple @ Now']).toFixed(2) + '</td>';
-                    row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bull Multiple @ Now']).toFixed(2) + '</td>';
-                    row_cell += '</tr>';
-                    $('#premium_analysis_regression_breakdown_table tbody').append(row_cell);
-
+                    $('.premium-analysis-table').show();
                 }
-                $('.premium-analysis-table').show();
+                catch (e) {
+                    swal("Error!", "No latest adjustment info found. Please run Live Analysis", "error");
+                    return;
+                }
+
+
             }
         },
         error: function (err) {
             console.log(err);
+            swal("Error!", err.toString(), "error");
         }
     })
 });
@@ -1551,13 +1556,13 @@ function get_modal_launch_button(id, datatarget, label) {
 $('#upside_calculations').on('click', function () {
     $('#step_by_step_content').empty();
     let upside_data = '';
-    if(calculations_array_global.length > 0){
-        for(var i=0;i<calculations_array_global[0].length;i++){
+    if (calculations_array_global.length > 0) {
+        for (var i = 0; i < calculations_array_global[0].length; i++) {
             let current_multiple = Object.keys(calculations_array_global[0][i])[0];
-            upside_data += '<h5><strong>'+current_multiple+'</strong></h5><br>';
+            upside_data += '<h5><strong>' + current_multiple + '</strong></h5><br>';
             var current_keys = Object.keys(calculations_array_global[0][i][current_multiple]);
-            for(var j=0;j < current_keys.length;j++){
-                upside_data += '<p>'+calculations_array_global[0][i][current_multiple][j+1]+'</p><br>'
+            for (var j = 0; j < current_keys.length; j++) {
+                upside_data += '<p>' + calculations_array_global[0][i][current_multiple][j + 1] + '</p><br>'
             }
         }
     }
@@ -1569,13 +1574,13 @@ $('#upside_calculations').on('click', function () {
 $('#wic_calculations').on('click', function () {
     $('#step_by_step_content').empty();
     let wic_data = '';
-    if(calculations_array_global.length > 0){
-        for(var i=0;i<calculations_array_global[2].length;i++){
+    if (calculations_array_global.length > 0) {
+        for (var i = 0; i < calculations_array_global[2].length; i++) {
             let current_multiple = Object.keys(calculations_array_global[2][i])[0];
-            wic_data += '<h5><strong>'+current_multiple+'</strong></h5><br>';
+            wic_data += '<h5><strong>' + current_multiple + '</strong></h5><br>';
             var current_keys = Object.keys(calculations_array_global[2][i][current_multiple]);
-            for(var j=0;j < current_keys.length;j++){
-                wic_data += '<p>'+calculations_array_global[2][i][current_multiple][j+1]+'</p><br>'
+            for (var j = 0; j < current_keys.length; j++) {
+                wic_data += '<p>' + calculations_array_global[2][i][current_multiple][j + 1] + '</p><br>'
             }
         }
     }
@@ -1586,13 +1591,13 @@ $('#wic_calculations').on('click', function () {
 $('#downside_calculations').on('click', function () {
     $('#step_by_step_content').empty();
     let downside_data = '';
-    if(calculations_array_global.length > 0){
-        for(var i=0;i<calculations_array_global[1].length;i++){
+    if (calculations_array_global.length > 0) {
+        for (var i = 0; i < calculations_array_global[1].length; i++) {
             let current_multiple = Object.keys(calculations_array_global[1][i])[0];
-            downside_data += '<h5><strong>'+current_multiple+'</strong></h5><br>';
+            downside_data += '<h5><strong>' + current_multiple + '</strong></h5><br>';
             var current_keys = Object.keys(calculations_array_global[1][i][current_multiple]);
-            for(var j=0;j < current_keys.length;j++){
-                downside_data += '<p>'+calculations_array_global[1][i][current_multiple][j+1]+'</p><br>'
+            for (var j = 0; j < current_keys.length; j++) {
+                downside_data += '<p>' + calculations_array_global[1][i][current_multiple][j + 1] + '</p><br>'
             }
         }
     }

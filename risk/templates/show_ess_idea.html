@@ -990,7 +990,7 @@
                                 <div class="col-lg-4 text-center">
                                     <small class="badge badge-lg badge-default badge-danger">Bull Thesis</small>
                                     <br>
-                                    <small class="badge badge-secondary">Upside: {{ ess_idea_object.pt_up|floatformat:"2" }}</small>
+                                    <small id='model-upside' class="badge badge-secondary"></small>
                                     <br>
                                     <button id='upside_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">Upside Calculations</button>
                                     <br><br>
@@ -1008,7 +1008,7 @@
                                 <div class="col-lg-4 text-center">
                                     <small class="badge badge-lg badge-default badge-danger">Our Thesis</small>
                                     <br>
-                                    <small class="badge badge-secondary">PT WIC: {{ ess_idea_object.pt_wic|floatformat:"2" }}</small>
+                                    <small id='model-ptwic' class="badge badge-secondary"></small>
                                     <br>
                                     <button id='wic_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">WIC Calculations</button>
                                     <br><br>
@@ -1025,7 +1025,7 @@
                                 <div class="col-lg-4 text-center">
                                     <small class="badge badge-lg badge-default badge-danger">Bear Thesis</small>
                                     <br>
-                                    <small class="badge badge-secondary">Downside: {{ ess_idea_object.pt_down|floatformat:"2" }}</small>
+                                    <small id='model-downside' class="badge badge-secondary"></small>
                                     <br>
                                     <button id='downside_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">Downside Calculations</button>
                                     <br><br>

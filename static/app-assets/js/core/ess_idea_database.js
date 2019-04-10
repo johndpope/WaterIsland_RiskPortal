@@ -600,6 +600,18 @@ $(document).ready(function () {
                     let bull_thesis_files = response['bull_thesis_files'];
                     let our_thesis_files = response['our_thesis_files'];
                     let bear_thesis_files = response['bear_thesis_files'];
+
+                    let latest_upside = response['latest_upside'];
+                    let latest_wic = response['latest_wic'];
+                    let latest_downside = response['latest_downside'];
+                    latest_downside = "Model : " + "<strong>"+parseFloat(latest_downside).toFixed(2).toString()+"</strong>";
+                    latest_wic = "Model : " + "<strong>"+ parseFloat(latest_wic).toFixed(2).toString()+"</strong>";
+                    latest_upside = "Model : " + "<strong>"+ parseFloat(latest_upside).toFixed(2).toString()+"</strong>";
+
+                    $('#latest_model_downside').html(latest_downside.trim());
+                    $('#latest_model_upside').html(latest_upside.trim());
+                    $('#latest_model_wic').html(latest_wic.trim());
+
                     // clear the Ticker Hedge Table
                     $('#ess_new_deal_form').trigger('reset');
                     console.log(deal_object);

@@ -61,7 +61,7 @@ $(document).ready(function () {
             scrollX: true,
             scrollCollapse: true,
             fixedColumns: {
-                leftColumns: 1
+                leftColumns: 2
             },
             dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
                 '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
