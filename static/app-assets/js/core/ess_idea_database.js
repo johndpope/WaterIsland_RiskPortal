@@ -740,10 +740,60 @@ $(document).ready(function () {
             //Logic for Deleting a deal
             //First Popup sweetAlert to Confirm Deletion
 
-            let deal_id_to_edit = current_deal.split('_')[1];
+            let deal_id_to_delete = current_deal.split('_')[1];
+            let delete_all_versions = 'false';
 
             // Send this Deal key to Django View to Delete and Wait for Response. If Response is successful, then Delete the row from DataTable
+            
+            swal({
+                title: "Please select one option",
+                icon: "warning",
+                className: 'delete-swal-wide',
+                buttons: {
+                    cancel: {
+                        text: "Cancel",
+                        visible: true,
+                        closeModal: true,
+                        value: 0,
+                    },
+                    delete_current: {
+                        text: "Delete Selected Version",
+                        visible: true,
+                        closeModal: false,
+                        value: 1
+                    },
+                    delete_all: {
+                        text: "Delete All Versions",
+                        visible: true,
+                        closeModal: false,
+                        value: 2
+                    }
+                },
+                dangerMode: true,
+            }).then(value => {
+                switch (value) {
+                    case 0:
+                        break;
+                    case 1:
+                        delete_all_versions = 'false';
+                        delete_ess_idea(deal_id_to_delete, delete_all_versions);
+                        break;
+                    case 2:
+                        delete_all_versions = 'true';
+                        delete_ess_idea(deal_id_to_delete, delete_all_versions);
+                        break;
+                }
+            });
+        }
+        else {
+            //Logic to View the Deal
+            //Just take the URL and redirect to the page. Front-end handling
+            let idea_to_view = current_deal.split('_')[1];
+            window.open("../risk/show_ess_idea?ess_idea_id=" + idea_to_view, '_blank');
+            return false;
+        }
 
+        function delete_ess_idea(deal_id, delete_all_versions) {
             swal({
                 title: "Are you sure?",
                 text: "Once deleted, you will not be able to recover this Deal!",
@@ -756,14 +806,21 @@ $(document).ready(function () {
                     $.ajax({
                         type: 'POST',
                         url: '../risk/delete_ess_idea',
-                        data: {'id': deal_id_to_edit, 'csrfmiddlewaretoken': $('#ess_idea_csrf_token').val()},
+                        data: {'id': deal_id, 'delete_all_versions': delete_all_versions},
                         success: function (response) {
-                            if (response === "ess_idea_deleted") {
+                            if (response === "all_ess_idea_deleted") {
+                                //Delete Row from DataTable
+                                swal("Success! All the versions of the selected IDEA has been deleted!", {icon: "success"});
+                                //ReDraw The Table by Removing the Row with ID equivalent to dealkey
+                                ess_idea_table.row($("#row_" + deal_id)).remove().draw();
+    
+                            }
+                            else if (response === "selected_ess_idea_deleted") {
                                 //Delete Row from DataTable
                                 swal("Success! The IDEA has been deleted!", {icon: "success"});
                                 //ReDraw The Table by Removing the Row with ID equivalent to dealkey
-                                ess_idea_table.row($("#row_" + deal_id_to_edit)).remove().draw();
-
+                                ess_idea_table.row($("#row_" + deal_id)).remove().draw();
+    
                             }
                             else {
                                 //show a sweet alert
@@ -776,21 +833,8 @@ $(document).ready(function () {
                             console.log(error);
                         }
                     });
-
                 }
             });
         }
-        else {
-            //Logic to View the Deal
-            //Just take the URL and redirect to the page. Front-end handling
-            let idea_to_view = current_deal.split('_')[1];
-            window.open("../risk/show_ess_idea?ess_idea_id=" + idea_to_view, '_blank');
-            return false;
-        }
-
-
     });
-
-
-})
-;
+});

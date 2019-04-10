@@ -1756,10 +1756,16 @@ def delete_ess_idea(request):
     """
     if request.method == 'POST':
         deal_id = request.POST['id']
+        delete_all_versions = request.POST.get('delete_all_versions') == 'true'
         response = 'failed'
         try:
-            ESS_Idea.objects.filter(id=deal_id).delete()
-            response = 'ess_idea_deleted'
+            if delete_all_versions:
+                deal_key = ESS_Idea.objects.get(id=deal_id).deal_key
+                ESS_Idea.objects.filter(deal_key=deal_key).delete()
+                response = 'all_ess_idea_deleted'
+            else:
+                ESS_Idea.objects.get(id=deal_id).delete()
+                response = 'selected_ess_idea_deleted'
         except Exception as exception:
             print(exception)
 

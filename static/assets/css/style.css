@@ -45,6 +45,10 @@ p{
 }
 .modal-backdrop.in { background: rgba(0, 0, 0, 0.5); } .modal-backdrop { background-color:transparent; transition: all .3s}
 
+.delete-swal-wide{
+  width:600px !important;
+}
+
 #mna_idea_table {
     word-wrap: break-word;
     table-layout:auto;
