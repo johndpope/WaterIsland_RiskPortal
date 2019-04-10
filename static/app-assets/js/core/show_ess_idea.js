@@ -1144,64 +1144,64 @@ $('#ess_idea_view_balance_sheet').on('click', function (e) {
                 $('#use_downside_without_bloomberg').prop('checked', true);
             }
 
-            $('#upside_balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
-            $('#upside_balance_sheet_best_eps').val(balance_sheet_bloomberg[0]['BEST_EPS']);
-            $('#upside_balance_sheet_best_net_income').val(balance_sheet_bloomberg[0]['BEST_NET_INCOME']);
-            $('#upside_balance_sheet_best_opp').val(balance_sheet_bloomberg[0]['BEST_OPP']);
-            $('#upside_balance_sheet_best_sales').val(balance_sheet_bloomberg[0]['BEST_SALES']);
-            $('#upside_balance_sheet_cur_ev_component').val(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT']);
-            $('#upside_balance_sheet_best_capex').val(balance_sheet_bloomberg[0]['BEST_CAPEX']);
-            $('#upside_balance_sheet_best_ebitda').val(balance_sheet_bloomberg[0]['BEST_EBITDA']);
-            $('#upside_balance_sheet_eqy_sh_out').val(balance_sheet_bloomberg[0]['EQY_SH_OUT']);
+            $('#upside_balance_sheet_px').val(decimal_places(balance_sheet_bloomberg[0]['PX'], 2));
+            $('#upside_balance_sheet_best_eps').val(decimal_places(balance_sheet_bloomberg[0]['BEST_EPS'], 2));
+            $('#upside_balance_sheet_best_net_income').val(decimal_places(balance_sheet_bloomberg[0]['BEST_NET_INCOME'], 1));
+            $('#upside_balance_sheet_best_opp').val(decimal_places(balance_sheet_bloomberg[0]['BEST_OPP'], 1));
+            $('#upside_balance_sheet_best_sales').val(decimal_places(balance_sheet_bloomberg[0]['BEST_SALES'], 1));
+            $('#upside_balance_sheet_cur_ev_component').val(decimal_places(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT'], 1));
+            $('#upside_balance_sheet_best_capex').val(decimal_places(balance_sheet_bloomberg[0]['BEST_CAPEX'], 1));
+            $('#upside_balance_sheet_best_ebitda').val(decimal_places(balance_sheet_bloomberg[0]['BEST_EBITDA'], 1));
+            $('#upside_balance_sheet_eqy_sh_out').val(decimal_places(balance_sheet_bloomberg[0]['EQY_SH_OUT'], 1));
 
             // Populate for On WIC Balance Sheet
-            $('#wic_balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
-            $('#wic_balance_sheet_best_eps').val(balance_sheet_bloomberg[0]['BEST_EPS']);
-            $('#wic_balance_sheet_best_net_income').val(balance_sheet_bloomberg[0]['BEST_NET_INCOME']);
-            $('#wic_balance_sheet_best_opp').val(balance_sheet_bloomberg[0]['BEST_OPP']);
-            $('#wic_balance_sheet_best_sales').val(balance_sheet_bloomberg[0]['BEST_SALES']);
-            $('#wic_balance_sheet_cur_ev_component').val(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT']);
-            $('#wic_balance_sheet_best_capex').val(balance_sheet_bloomberg[0]['BEST_CAPEX']);
-            $('#wic_balance_sheet_best_ebitda').val(balance_sheet_bloomberg[0]['BEST_EBITDA']);
-            $('#wic_balance_sheet_eqy_sh_out').val(balance_sheet_bloomberg[0]['EQY_SH_OUT']);
+            $('#wic_balance_sheet_px').val(decimal_places(balance_sheet_bloomberg[0]['PX'], 2));
+            $('#wic_balance_sheet_best_eps').val(decimal_places(balance_sheet_bloomberg[0]['BEST_EPS'], 2));
+            $('#wic_balance_sheet_best_net_income').val(decimal_places(balance_sheet_bloomberg[0]['BEST_NET_INCOME'], 1));
+            $('#wic_balance_sheet_best_opp').val(decimal_places(balance_sheet_bloomberg[0]['BEST_OPP'], 1));
+            $('#wic_balance_sheet_best_sales').val(decimal_places(balance_sheet_bloomberg[0]['BEST_SALES'], 1));
+            $('#wic_balance_sheet_cur_ev_component').val(decimal_places(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT'], 1));
+            $('#wic_balance_sheet_best_capex').val(decimal_places(balance_sheet_bloomberg[0]['BEST_CAPEX'], 1));
+            $('#wic_balance_sheet_best_ebitda').val(decimal_places(balance_sheet_bloomberg[0]['BEST_EBITDA'], 1));
+            $('#wic_balance_sheet_eqy_sh_out').val(decimal_places(balance_sheet_bloomberg[0]['EQY_SH_OUT'], 1));
 
             // Populate for On Downside Balance Sheet
-            $('#downsides_balance_sheet_px').val(balance_sheet_bloomberg[0]['PX']);
-            $('#downsides_balance_sheet_best_eps').val(balance_sheet_bloomberg[0]['BEST_EPS']);
-            $('#downsides_balance_sheet_best_net_income').val(balance_sheet_bloomberg[0]['BEST_NET_INCOME']);
-            $('#downsides_balance_sheet_best_opp').val(balance_sheet_bloomberg[0]['BEST_OPP']);
-            $('#downsides_balance_sheet_best_sales').val(balance_sheet_bloomberg[0]['BEST_SALES']);
-            $('#downsides_balance_sheet_cur_ev_component').val(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT']);
-            $('#downsides_balance_sheet_best_capex').val(balance_sheet_bloomberg[0]['BEST_CAPEX']);
-            $('#downsides_balance_sheet_best_ebitda').val(balance_sheet_bloomberg[0]['BEST_EBITDA']);
-            $('#downsides_balance_sheet_eqy_sh_out').val(balance_sheet_bloomberg[0]['EQY_SH_OUT']);
+            $('#downsides_balance_sheet_px').val(decimal_places(balance_sheet_bloomberg[0]['PX'], 2));
+            $('#downsides_balance_sheet_best_eps').val(decimal_places(balance_sheet_bloomberg[0]['BEST_EPS'], 2));
+            $('#downsides_balance_sheet_best_net_income').val(decimal_places(balance_sheet_bloomberg[0]['BEST_NET_INCOME'], 1));
+            $('#downsides_balance_sheet_best_opp').val(decimal_places(balance_sheet_bloomberg[0]['BEST_OPP'], 1));
+            $('#downsides_balance_sheet_best_sales').val(decimal_places(balance_sheet_bloomberg[0]['BEST_SALES'], 1));
+            $('#downsides_balance_sheet_cur_ev_component').val(decimal_places(balance_sheet_bloomberg[0]['CUR_EV_COMPONENT'], 1));
+            $('#downsides_balance_sheet_best_capex').val(decimal_places(balance_sheet_bloomberg[0]['BEST_CAPEX'], 1));
+            $('#downsides_balance_sheet_best_ebitda').val(decimal_places(balance_sheet_bloomberg[0]['BEST_EBITDA'], 1));
+            $('#downsides_balance_sheet_eqy_sh_out').val(decimal_places(balance_sheet_bloomberg[0]['EQY_SH_OUT'], 1));
 
 
             // Populate the Adjustments balance Sheet
             if (upside_balance_sheet_adjustments.length > 0) {
-                $('#upside_adjustment_balance_sheet_px').val(upside_balance_sheet_adjustments[0]['PX']);
-                $('#upside_adjustment_balance_sheet_best_eps').val(upside_balance_sheet_adjustments[0]['BEST_EPS']);
-                $('#upside_adjustment_balance_sheet_best_net_income').val(upside_balance_sheet_adjustments[0]['BEST_NET_INCOME']);
-                $('#upside_adjustment_balance_sheet_best_opp').val(upside_balance_sheet_adjustments[0]['BEST_OPP']);
-                $('#upside_adjustment_balance_sheet_best_sales').val(upside_balance_sheet_adjustments[0]['BEST_SALES']);
-                $('#upside_adjustment_balance_sheet_cur_ev_component').val(upside_balance_sheet_adjustments[0]['CUR_EV_COMPONENT']);
-                $('#upside_adjustment_balance_sheet_best_capex').val(upside_balance_sheet_adjustments[0]['BEST_CAPEX']);
-                $('#upside_adjustment_balance_sheet_best_ebitda').val(upside_balance_sheet_adjustments[0]['BEST_EBITDA']);
-                $('#upside_adjustment_balance_sheet_eqy_sh_out').val(upside_balance_sheet_adjustments[0]['EQY_SH_OUT']);
+                $('#upside_adjustment_balance_sheet_px').val(decimal_places(upside_balance_sheet_adjustments[0]['PX'], 2));
+                $('#upside_adjustment_balance_sheet_best_eps').val(decimal_places(upside_balance_sheet_adjustments[0]['BEST_EPS'], 2));
+                $('#upside_adjustment_balance_sheet_best_net_income').val(decimal_places(upside_balance_sheet_adjustments[0]['BEST_NET_INCOME'], 1));
+                $('#upside_adjustment_balance_sheet_best_opp').val(decimal_places(upside_balance_sheet_adjustments[0]['BEST_OPP'], 1));
+                $('#upside_adjustment_balance_sheet_best_sales').val(decimal_places(upside_balance_sheet_adjustments[0]['BEST_SALES'], 1));
+                $('#upside_adjustment_balance_sheet_cur_ev_component').val(decimal_places(upside_balance_sheet_adjustments[0]['CUR_EV_COMPONENT'], 1));
+                $('#upside_adjustment_balance_sheet_best_capex').val(decimal_places(upside_balance_sheet_adjustments[0]['BEST_CAPEX'], 1));
+                $('#upside_adjustment_balance_sheet_best_ebitda').val(decimal_places(upside_balance_sheet_adjustments[0]['BEST_EBITDA'], 1));
+                $('#upside_adjustment_balance_sheet_eqy_sh_out').val(decimal_places(upside_balance_sheet_adjustments[0]['EQY_SH_OUT'], 1));
 
             }
             // Populate the Adjustments for WIC
 
             if (wic_balance_sheet_adjustments.length > 0) {
-                $('#wic_adjustment_balance_sheet_px').val(wic_balance_sheet_adjustments[0]['PX']);
-                $('#wic_adjustment_balance_sheet_best_eps').val(wic_balance_sheet_adjustments[0]['BEST_EPS']);
-                $('#wic_adjustment_balance_sheet_best_net_income').val(wic_balance_sheet_adjustments[0]['BEST_NET_INCOME']);
-                $('#wic_adjustment_balance_sheet_best_opp').val(wic_balance_sheet_adjustments[0]['BEST_OPP']);
-                $('#wic_adjustment_balance_sheet_best_sales').val(wic_balance_sheet_adjustments[0]['BEST_SALES']);
-                $('#wic_adjustment_balance_sheet_cur_ev_component').val(wic_balance_sheet_adjustments[0]['CUR_EV_COMPONENT']);
-                $('#wic_adjustment_balance_sheet_best_capex').val(wic_balance_sheet_adjustments[0]['BEST_CAPEX']);
-                $('#wic_adjustment_balance_sheet_best_ebitda').val(wic_balance_sheet_adjustments[0]['BEST_EBITDA']);
-                $('#wic_adjustment_balance_sheet_eqy_sh_out').val(wic_balance_sheet_adjustments[0]['EQY_SH_OUT']);
+                $('#wic_adjustment_balance_sheet_px').val(decimal_places(wic_balance_sheet_adjustments[0]['PX'], 2));
+                $('#wic_adjustment_balance_sheet_best_eps').val(decimal_places(wic_balance_sheet_adjustments[0]['BEST_EPS'], 2));
+                $('#wic_adjustment_balance_sheet_best_net_income').val(decimal_places(wic_balance_sheet_adjustments[0]['BEST_NET_INCOME'], 1));
+                $('#wic_adjustment_balance_sheet_best_opp').val(decimal_places(wic_balance_sheet_adjustments[0]['BEST_OPP'], 1));
+                $('#wic_adjustment_balance_sheet_best_sales').val(decimal_places(wic_balance_sheet_adjustments[0]['BEST_SALES'], 1));
+                $('#wic_adjustment_balance_sheet_cur_ev_component').val(decimal_places(wic_balance_sheet_adjustments[0]['CUR_EV_COMPONENT'], 1));
+                $('#wic_adjustment_balance_sheet_best_capex').val(decimal_places(wic_balance_sheet_adjustments[0]['BEST_CAPEX'], 1));
+                $('#wic_adjustment_balance_sheet_best_ebitda').val(decimal_places(wic_balance_sheet_adjustments[0]['BEST_EBITDA'], 1));
+                $('#wic_adjustment_balance_sheet_eqy_sh_out').val(decimal_places(wic_balance_sheet_adjustments[0]['EQY_SH_OUT'], 1));
 
             }
 
@@ -1210,15 +1210,15 @@ $('#ess_idea_view_balance_sheet').on('click', function (e) {
 
 
             if (downside_balance_sheet_adjustments.length > 0) {
-                $('#downsides_adjustment_balance_sheet_px').val(downside_balance_sheet_adjustments[0]['PX']);
-                $('#downsides_adjustment_balance_sheet_best_eps').val(downside_balance_sheet_adjustments[0]['BEST_EPS']);
-                $('#downsides_adjustment_balance_sheet_best_net_income').val(downside_balance_sheet_adjustments[0]['BEST_NET_INCOME']);
-                $('#downsides_adjustment_balance_sheet_best_opp').val(downside_balance_sheet_adjustments[0]['BEST_OPP']);
-                $('#downsides_adjustment_balance_sheet_best_sales').val(downside_balance_sheet_adjustments[0]['BEST_SALES']);
-                $('#downsides_adjustment_balance_sheet_cur_ev_component').val(downside_balance_sheet_adjustments[0]['CUR_EV_COMPONENT']);
-                $('#downsides_adjustment_balance_sheet_best_capex').val(downside_balance_sheet_adjustments[0]['BEST_CAPEX']);
-                $('#downsides_adjustment_balance_sheet_best_ebitda').val(downside_balance_sheet_adjustments[0]['BEST_EBITDA']);
-                $('#downsides_adjustment_balance_sheet_eqy_sh_out').val(downside_balance_sheet_adjustments[0]['EQY_SH_OUT']);
+                $('#downsides_adjustment_balance_sheet_px').val(decimal_places(downside_balance_sheet_adjustments[0]['PX'], 2));
+                $('#downsides_adjustment_balance_sheet_best_eps').val(decimal_places(downside_balance_sheet_adjustments[0]['BEST_EPS'], 2));
+                $('#downsides_adjustment_balance_sheet_best_net_income').val(decimal_places(downside_balance_sheet_adjustments[0]['BEST_NET_INCOME'], 1));
+                $('#downsides_adjustment_balance_sheet_best_opp').val(decimal_places(downside_balance_sheet_adjustments[0]['BEST_OPP'], 1));
+                $('#downsides_adjustment_balance_sheet_best_sales').val(decimal_places(downside_balance_sheet_adjustments[0]['BEST_SALES'], 1));
+                $('#downsides_adjustment_balance_sheet_cur_ev_component').val(decimal_places(downside_balance_sheet_adjustments[0]['CUR_EV_COMPONENT'], 1));
+                $('#downsides_adjustment_balance_sheet_best_capex').val(decimal_places(downside_balance_sheet_adjustments[0]['BEST_CAPEX'], 1));
+                $('#downsides_adjustment_balance_sheet_best_ebitda').val(decimal_places(downside_balance_sheet_adjustments[0]['BEST_EBITDA'], 1));
+                $('#downsides_adjustment_balance_sheet_eqy_sh_out').val(decimal_places(downside_balance_sheet_adjustments[0]['EQY_SH_OUT'], 1));
 
             }
 
@@ -1457,67 +1457,71 @@ $('#calculate_balance_sheet').on('click', function () {
 
 
 function caclulateFinalBalanceSheet() {
-    $('#upside_final_balance_sheet_best_capex').val(eval($('#upside_balance_sheet_best_capex').val() + "+" + $('#upside_adjustment_balance_sheet_best_capex').val()));
-    $('#upside_final_balance_sheet_px').val(eval($('#upside_balance_sheet_px').val() + "+" + $('#upside_adjustment_balance_sheet_px').val()));
-    $('#upside_final_balance_sheet_best_eps').val(eval($('#upside_balance_sheet_best_eps').val() + "+" + $('#upside_adjustment_balance_sheet_best_eps').val()));
-    $('#upside_final_balance_sheet_best_net_income').val(eval($('#upside_balance_sheet_best_net_income').val() + "+" + $('#upside_adjustment_balance_sheet_best_net_income').val()));
-    $('#upside_final_balance_sheet_best_opp').val(eval($('#upside_balance_sheet_best_opp').val() + "+" + $('#upside_adjustment_balance_sheet_best_opp').val()));
-    $('#upside_final_balance_sheet_best_sales').val(eval($('#upside_balance_sheet_best_sales').val() + "+" + $('#upside_adjustment_balance_sheet_best_sales').val()));
-    $('#upside_final_balance_sheet_cur_ev_component').val(eval($('#upside_balance_sheet_cur_ev_component').val() + "+" + $('#upside_adjustment_balance_sheet_cur_ev_component').val()));
-    $('#upside_final_balance_sheet_best_ebitda').val(eval($('#upside_balance_sheet_best_ebitda').val() + "+" + $('#upside_adjustment_balance_sheet_best_ebitda').val()));
-    $('#upside_final_balance_sheet_eqy_sh_out').val(eval($('#upside_balance_sheet_eqy_sh_out').val() + "+" + $('#upside_adjustment_balance_sheet_eqy_sh_out').val()));
+    $('#upside_final_balance_sheet_best_capex').val(decimal_places(eval($('#upside_balance_sheet_best_capex').val() + "+" + $('#upside_adjustment_balance_sheet_best_capex').val()), 1));
+    $('#upside_final_balance_sheet_px').val(decimal_places(eval($('#upside_balance_sheet_px').val() + "+" + $('#upside_adjustment_balance_sheet_px').val()), 2));
+    $('#upside_final_balance_sheet_best_eps').val(decimal_places(eval($('#upside_balance_sheet_best_eps').val() + "+" + $('#upside_adjustment_balance_sheet_best_eps').val()), 2));
+    $('#upside_final_balance_sheet_best_net_income').val(decimal_places(eval($('#upside_balance_sheet_best_net_income').val() + "+" + $('#upside_adjustment_balance_sheet_best_net_income').val()), 1));
+    $('#upside_final_balance_sheet_best_opp').val(decimal_places(eval($('#upside_balance_sheet_best_opp').val() + "+" + $('#upside_adjustment_balance_sheet_best_opp').val()), 1));
+    $('#upside_final_balance_sheet_best_sales').val(decimal_places(eval($('#upside_balance_sheet_best_sales').val() + "+" + $('#upside_adjustment_balance_sheet_best_sales').val()), 1));
+    $('#upside_final_balance_sheet_cur_ev_component').val(decimal_places(eval($('#upside_balance_sheet_cur_ev_component').val() + "+" + $('#upside_adjustment_balance_sheet_cur_ev_component').val()), 1));
+    $('#upside_final_balance_sheet_best_ebitda').val(decimal_places(eval($('#upside_balance_sheet_best_ebitda').val() + "+" + $('#upside_adjustment_balance_sheet_best_ebitda').val()), 1));
+    $('#upside_final_balance_sheet_eqy_sh_out').val(decimal_places(eval($('#upside_balance_sheet_eqy_sh_out').val() + "+" + $('#upside_adjustment_balance_sheet_eqy_sh_out').val()), 1));
 
 
     // Calculate Balance Sheet for WIC
-    $('#wic_final_balance_sheet_best_capex').val(eval($('#wic_balance_sheet_best_capex').val() + "+" + $('#wic_adjustment_balance_sheet_best_capex').val()));
-    $('#wic_final_balance_sheet_px').val(eval($('#wic_balance_sheet_px').val() + "+" + $('#wic_adjustment_balance_sheet_px').val()));
-    $('#wic_final_balance_sheet_best_eps').val(eval($('#wic_balance_sheet_best_eps').val() + "+" + $('#wic_adjustment_balance_sheet_best_eps').val()));
-    $('#wic_final_balance_sheet_best_net_income').val(eval($('#wic_balance_sheet_best_net_income').val() + "+" + $('#wic_adjustment_balance_sheet_best_net_income').val()));
-    $('#wic_final_balance_sheet_best_opp').val(eval($('#wic_balance_sheet_best_opp').val() + "+" + $('#wic_adjustment_balance_sheet_best_opp').val()));
-    $('#wic_final_balance_sheet_best_sales').val(eval($('#wic_balance_sheet_best_sales').val() + "+" + $('#wic_adjustment_balance_sheet_best_sales').val()));
-    $('#wic_final_balance_sheet_cur_ev_component').val(eval($('#wic_balance_sheet_cur_ev_component').val() + "+" + $('#wic_adjustment_balance_sheet_cur_ev_component').val()));
-    $('#wic_final_balance_sheet_best_ebitda').val(eval($('#wic_balance_sheet_best_ebitda').val() + "+" + $('#wic_adjustment_balance_sheet_best_ebitda').val()));
-    $('#wic_final_balance_sheet_eqy_sh_out').val(eval($('#wic_balance_sheet_eqy_sh_out').val() + "+" + $('#wic_adjustment_balance_sheet_eqy_sh_out').val()));
+    $('#wic_final_balance_sheet_best_capex').val(decimal_places(eval($('#wic_balance_sheet_best_capex').val() + "+" + $('#wic_adjustment_balance_sheet_best_capex').val()), 1));
+    $('#wic_final_balance_sheet_px').val(decimal_places(eval($('#wic_balance_sheet_px').val() + "+" + $('#wic_adjustment_balance_sheet_px').val()), 2));
+    $('#wic_final_balance_sheet_best_eps').val(decimal_places(eval($('#wic_balance_sheet_best_eps').val() + "+" + $('#wic_adjustment_balance_sheet_best_eps').val()), 2));
+    $('#wic_final_balance_sheet_best_net_income').val(decimal_places(eval($('#wic_balance_sheet_best_net_income').val() + "+" + $('#wic_adjustment_balance_sheet_best_net_income').val()), 1));
+    $('#wic_final_balance_sheet_best_opp').val(decimal_places(eval($('#wic_balance_sheet_best_opp').val() + "+" + $('#wic_adjustment_balance_sheet_best_opp').val()), 1));
+    $('#wic_final_balance_sheet_best_sales').val(decimal_places(eval($('#wic_balance_sheet_best_sales').val() + "+" + $('#wic_adjustment_balance_sheet_best_sales').val()), 1));
+    $('#wic_final_balance_sheet_cur_ev_component').val(decimal_places(eval($('#wic_balance_sheet_cur_ev_component').val() + "+" + $('#wic_adjustment_balance_sheet_cur_ev_component').val()), 1));
+    $('#wic_final_balance_sheet_best_ebitda').val(decimal_places(eval($('#wic_balance_sheet_best_ebitda').val() + "+" + $('#wic_adjustment_balance_sheet_best_ebitda').val()), 1));
+    $('#wic_final_balance_sheet_eqy_sh_out').val(decimal_places(eval($('#wic_balance_sheet_eqy_sh_out').val() + "+" + $('#wic_adjustment_balance_sheet_eqy_sh_out').val()), 1));
 
 
     // Calculate Balance Sheet for Downsides
-    $('#downsides_final_balance_sheet_best_capex').val(eval($('#downsides_balance_sheet_best_capex').val() + "+" + $('#downsides_adjustment_balance_sheet_best_capex').val()));
-    $('#downsides_final_balance_sheet_px').val(eval($('#downsides_balance_sheet_px').val() + "+" + $('#downsides_adjustment_balance_sheet_px').val()));
-    $('#downsides_final_balance_sheet_best_eps').val(eval($('#downsides_balance_sheet_best_eps').val() + "+" + $('#downsides_adjustment_balance_sheet_best_eps').val()));
-    $('#downsides_final_balance_sheet_best_net_income').val(eval($('#downsides_balance_sheet_best_net_income').val() + "+" + $('#downsides_adjustment_balance_sheet_best_net_income').val()));
-    $('#downsides_final_balance_sheet_best_opp').val(eval($('#downsides_balance_sheet_best_opp').val() + "+" + $('#downsides_adjustment_balance_sheet_best_opp').val()));
-    $('#downsides_final_balance_sheet_best_sales').val(eval($('#downsides_balance_sheet_best_sales').val() + "+" + $('#downsides_adjustment_balance_sheet_best_sales').val()));
-    $('#downsides_final_balance_sheet_cur_ev_component').val(eval($('#downsides_balance_sheet_cur_ev_component').val() + "+" + $('#downsides_adjustment_balance_sheet_cur_ev_component').val()));
-    $('#downsides_final_balance_sheet_best_ebitda').val(eval($('#downsides_balance_sheet_best_ebitda').val() + "+" + $('#downsides_adjustment_balance_sheet_best_ebitda').val()));
-    $('#downsides_final_balance_sheet_eqy_sh_out').val(eval($('#downsides_balance_sheet_eqy_sh_out').val() + "+" + $('#downsides_adjustment_balance_sheet_eqy_sh_out').val()));
+    $('#downsides_final_balance_sheet_best_capex').val(decimal_places(eval($('#downsides_balance_sheet_best_capex').val() + "+" + $('#downsides_adjustment_balance_sheet_best_capex').val()), 1));
+    $('#downsides_final_balance_sheet_px').val(decimal_places(eval($('#downsides_balance_sheet_px').val() + "+" + $('#downsides_adjustment_balance_sheet_px').val()), 2));
+    $('#downsides_final_balance_sheet_best_eps').val(decimal_places(eval($('#downsides_balance_sheet_best_eps').val() + "+" + $('#downsides_adjustment_balance_sheet_best_eps').val()), 2));
+    $('#downsides_final_balance_sheet_best_net_income').val(decimal_places(eval($('#downsides_balance_sheet_best_net_income').val() + "+" + $('#downsides_adjustment_balance_sheet_best_net_income').val()), 1));
+    $('#downsides_final_balance_sheet_best_opp').val(decimal_places(eval($('#downsides_balance_sheet_best_opp').val() + "+" + $('#downsides_adjustment_balance_sheet_best_opp').val()), 1));
+    $('#downsides_final_balance_sheet_best_sales').val(decimal_places(eval($('#downsides_balance_sheet_best_sales').val() + "+" + $('#downsides_adjustment_balance_sheet_best_sales').val()), 1));
+    $('#downsides_final_balance_sheet_cur_ev_component').val(decimal_places(eval($('#downsides_balance_sheet_cur_ev_component').val() + "+" + $('#downsides_adjustment_balance_sheet_cur_ev_component').val()), 1));
+    $('#downsides_final_balance_sheet_best_ebitda').val(decimal_places(eval($('#downsides_balance_sheet_best_ebitda').val() + "+" + $('#downsides_adjustment_balance_sheet_best_ebitda').val()), 1));
+    $('#downsides_final_balance_sheet_eqy_sh_out').val(decimal_places(eval($('#downsides_balance_sheet_eqy_sh_out').val() + "+" + $('#downsides_adjustment_balance_sheet_eqy_sh_out').val()), 1));
 
 
+}
+
+function decimal_places(value, decimal) {
+    return Number(value).toFixed(decimal);
 }
 
 
 /* Copy Function: To Copy Current Balance Sheet Adjustments to Price Target Date Adjustments */
 $('#copy_from_upside_adjustments').on('click', function () {
     // Set Downsides and WIC from Upside Adjustments
-    $('#wic_adjustment_balance_sheet_best_capex').val($('#upside_adjustment_balance_sheet_best_capex').val());
-    $('#wic_adjustment_balance_sheet_px').val($('#upside_adjustment_balance_sheet_px').val());
-    $('#wic_adjustment_balance_sheet_best_eps').val($('#upside_adjustment_balance_sheet_best_eps').val());
-    $('#wic_adjustment_balance_sheet_best_net_income').val($('#upside_adjustment_balance_sheet_best_net_income').val());
-    $('#wic_adjustment_balance_sheet_best_opp').val($('#upside_adjustment_balance_sheet_best_opp').val());
-    $('#wic_adjustment_balance_sheet_best_sales').val($('#upside_adjustment_balance_sheet_best_sales').val());
-    $('#wic_adjustment_balance_sheet_cur_ev_component').val($('#upside_adjustment_balance_sheet_cur_ev_component').val());
-    $('#wic_adjustment_balance_sheet_best_ebitda').val($('#upside_adjustment_balance_sheet_best_ebitda').val());
-    $('#wic_adjustment_balance_sheet_eqy_sh_out').val($('#upside_adjustment_balance_sheet_eqy_sh_out').val());
+    $('#wic_adjustment_balance_sheet_best_capex').val(decimal_places($('#upside_adjustment_balance_sheet_best_capex').val(), 1));
+    $('#wic_adjustment_balance_sheet_px').val(decimal_places($('#upside_adjustment_balance_sheet_px').val(), 2));
+    $('#wic_adjustment_balance_sheet_best_eps').val(decimal_places($('#upside_adjustment_balance_sheet_best_eps').val(), 2));
+    $('#wic_adjustment_balance_sheet_best_net_income').val(decimal_places($('#upside_adjustment_balance_sheet_best_net_income').val(), 1));
+    $('#wic_adjustment_balance_sheet_best_opp').val(decimal_places($('#upside_adjustment_balance_sheet_best_opp').val(), 1));
+    $('#wic_adjustment_balance_sheet_best_sales').val(decimal_places($('#upside_adjustment_balance_sheet_best_sales').val(), 1));
+    $('#wic_adjustment_balance_sheet_cur_ev_component').val(decimal_places($('#upside_adjustment_balance_sheet_cur_ev_component').val(), 1));
+    $('#wic_adjustment_balance_sheet_best_ebitda').val(decimal_places($('#upside_adjustment_balance_sheet_best_ebitda').val(), 1));
+    $('#wic_adjustment_balance_sheet_eqy_sh_out').val(decimal_places($('#upside_adjustment_balance_sheet_eqy_sh_out').val(), 1));
 
 
-    $('#downsides_adjustment_balance_sheet_best_capex').val($('#upside_adjustment_balance_sheet_best_capex').val());
-    $('#downsides_adjustment_balance_sheet_px').val($('#upside_adjustment_balance_sheet_px').val());
-    $('#downsides_adjustment_balance_sheet_best_eps').val($('#upside_adjustment_balance_sheet_best_eps').val());
-    $('#downsides_adjustment_balance_sheet_best_net_income').val($('#upside_adjustment_balance_sheet_best_net_income').val());
-    $('#downsides_adjustment_balance_sheet_best_opp').val($('#upside_adjustment_balance_sheet_best_opp').val());
-    $('#downsides_adjustment_balance_sheet_best_sales').val($('#upside_adjustment_balance_sheet_best_sales').val());
-    $('#downsides_adjustment_balance_sheet_cur_ev_component').val($('#upside_adjustment_balance_sheet_cur_ev_component').val());
-    $('#downsides_adjustment_balance_sheet_best_ebitda').val($('#upside_adjustment_balance_sheet_best_ebitda').val());
-    $('#downsides_adjustment_balance_sheet_eqy_sh_out').val($('#upside_adjustment_balance_sheet_eqy_sh_out').val());
+    $('#downsides_adjustment_balance_sheet_best_capex').val(decimal_places($('#upside_adjustment_balance_sheet_best_capex').val(), 1));
+    $('#downsides_adjustment_balance_sheet_px').val(decimal_places($('#upside_adjustment_balance_sheet_px').val(), 2));
+    $('#downsides_adjustment_balance_sheet_best_eps').val(decimal_places($('#upside_adjustment_balance_sheet_best_eps').val(), 2));
+    $('#downsides_adjustment_balance_sheet_best_net_income').val(decimal_places($('#upside_adjustment_balance_sheet_best_net_income').val(), 1));
+    $('#downsides_adjustment_balance_sheet_best_opp').val(decimal_places($('#upside_adjustment_balance_sheet_best_opp').val(), 1));
+    $('#downsides_adjustment_balance_sheet_best_sales').val(decimal_places($('#upside_adjustment_balance_sheet_best_sales').val(), 1));
+    $('#downsides_adjustment_balance_sheet_cur_ev_component').val(decimal_places($('#upside_adjustment_balance_sheet_cur_ev_component').val(), 1));
+    $('#downsides_adjustment_balance_sheet_best_ebitda').val(decimal_places($('#upside_adjustment_balance_sheet_best_ebitda').val(), 1));
+    $('#downsides_adjustment_balance_sheet_eqy_sh_out').val(decimal_places($('#upside_adjustment_balance_sheet_eqy_sh_out').val(), 1));
 
 });
 
