@@ -235,177 +235,77 @@ $(document).ready(function () {
 
     }
 
-    let EV_EBITDA_CHART = AmCharts.makeChart("ess_idea_ev_ebitda_chart", {
-        "type": "serial",
-        "theme": "black",
-        "legend": {
-            "useGraphSettings": true
-        },
-        "hideCredits": true,
-        "dataProvider": ev_ebitda_chart_data_ltm[0],
-        "dataDateFormat": "YYYY-MM-DD",
-        "synchronizeGrid": true,
-        "valueAxes": [{
-            "id": "v1",
-            "axisColor": "#FF6600",
-            "axisThickness": 2,
-            "axisAlpha": 1,
-            "position": "left",
-            "precision": 2,
+    function makeEssChart(chartId, graphData) {
+        amChart = AmCharts.makeChart(chartId, {
+            "type": "serial",
+            "theme": "black",
+            "legend": {
+                "useGraphSettings": true
+            },
+            // "hideCredits":true,
+            "dataProvider": graphData[0],
+            "dataDateFormat": "YYYY-MM-DD",
+            "synchronizeGrid": true,
+            "valueAxes": [{
+                "id": "v1",
+                "axisColor": "#FF6600",
+                "axisThickness": 2,
+                "axisAlpha": 1,
+                "position": "left",
 
-        }],
-        "graphs": ev_ebitda_chart_data_ltm[1],
-        "chartScrollbar": {},
-        "chartCursor": {
-            "cursorPosition": "mouse"
-        },
-        "categoryField": "date",
-        "categoryAxis": {
-            "parseDates": true,
-            "minPeriod": "dd",
-            "axisColor": "#DADADA",
-            "minorGridEnabled": true,
-            "equalSpacing": true
-        },
-        "export": {
-            "enabled": true,
-            "position": "bottom-right"
-        }
-    });
+            }],
+            "graphs": graphData[1],
+            "chartScrollbar": {},
+            "chartCursor": {
+                "cursorPosition": "mouse"
+            },
+            "categoryField": "date",
+            "categoryAxis": {
+                "parseDates": true,
+                "minPeriod": "dd",
+                "axisColor": "#DADADA",
+                "minorGridEnabled": true,
+                "equalSpacing": true
+            },
+            "legend": {
+                "useGraphSettings": true,
+                "valueText": ""
+            },
+            "export": {
+                "enabled": true,
+                "position": "bottom-right"
+            }
+        });
+        return amChart;
+    }
 
-
-    // EV/SAles Chart
-    let EV_SALES_CHART = AmCharts.makeChart("ess_idea_ev_sales_chart", {
-        "type": "serial",
-        "theme": "black",
-        "legend": {
-            "useGraphSettings": true
-        },
-        // "hideCredits":true,
-        "dataProvider": ev_sales_chart_data_ltm[0],
-        "dataDateFormat": "YYYY-MM-DD",
-        "synchronizeGrid": true,
-        "valueAxes": [{
-            "id": "v1",
-            "axisColor": "#FF6600",
-            "axisThickness": 2,
-            "axisAlpha": 1,
-            "position": "left",
-
-        }],
-        "graphs": ev_sales_chart_data_ltm[1],
-        "chartScrollbar": {},
-        "chartCursor": {
-            "cursorPosition": "mouse"
-        },
-        "categoryField": "date",
-        "categoryAxis": {
-            "parseDates": true,
-            "minPeriod": "dd",
-            "axisColor": "#DADADA",
-            "minorGridEnabled": true,
-            "equalSpacing": true
-        },
-        "legend": {
-            "useGraphSettings": true,
-            "valueText": ""
-        },
-        "export": {
-            "enabled": true,
-            "position": "bottom-right"
-        }
-    });
-
-
-    /**  P/EPS Chart **/
-
-    let P_EPS_CHART = AmCharts.makeChart("ess_idea_p_eps_chart", {
-        "type": "serial",
-        "theme": "black",
-        "legend": {
-            "useGraphSettings": true
-        },
-
-        // "hideCredits":true,
-        "dataDateFormat": "YYYY-MM-DD",
-        "dataProvider": p_eps_chart_data_ltm[0],
-        "synchronizeGrid": true,
-        "valueAxes": [{
-            "id": "v1",
-            "axisColor": "#FF6600",
-            "axisThickness": 2,
-            "axisAlpha": 1,
-            "position": "left",
-
-        }],
-        "graphs": p_eps_chart_data_ltm[1],
-        "chartScrollbar": {},
-        "chartCursor": {
-            "cursorPosition": "mouse"
-        },
-        "categoryField": "date",
-        "categoryAxis": {
-            "parseDates": true,
-            "minPeriod": "dd",
-            "axisColor": "#DADADA",
-            "minorGridEnabled": true,
-            "equalSpacing": true
-        },
-        "legend": {
-            "useGraphSettings": true,
-            "valueText": ""
-        },
-        "export": {
-            "enabled": true,
-            "position": "bottom-right"
-        }
-    });
-
-
-    /**  P/FCF Chart **/
-
-    let P_FCF_CHART = AmCharts.makeChart("ess_idea_p_fcf_chart", {
-        "type": "serial",
-        "theme": "black",
-        "legend": {
-            "useGraphSettings": true
-        },
-
-        // "hideCredits":true,
-        "dataDateFormat": "YYYY-MM-DD",
-        "dataProvider": p_fcf_chart_data[0],
-        "synchronizeGrid": true,
-        "valueAxes": [{
-            "id": "v1",
-            "axisColor": "#FF6600",
-            "axisThickness": 2,
-            "axisAlpha": 1,
-            "position": "left",
-
-        }],
-        "graphs": p_fcf_chart_data[1],
-        "chartScrollbar": {},
-        "chartCursor": {
-            "cursorPosition": "mouse"
-        },
-        "categoryField": "date",
-        "categoryAxis": {
-            "parseDates": true,
-            "minPeriod": "dd",
-            "axisColor": "#DADADA",
-            "minorGridEnabled": true,
-            "equalSpacing": true
-        },
-        "legend": {
-            "useGraphSettings": true,
-            "valueText": ""
-        },
-        "export": {
-            "enabled": true,
-            "position": "bottom-right"
-        }
-    });
-
+    var ev_ebitda = ev_ebitda_chart_data_1bf
+    var ev_sales = ev_sales_chart_data_1bf
+    var p_eps = p_eps_chart_data_1bf
+    var p_fcf = p_fcf_chart_data
+    var selected_graph_option = $('#fperiod_override option:selected').val();
+    if (selected_graph_option == '1BF') {
+        ev_ebitda = ev_ebitda_chart_data_1bf
+        ev_sales = ev_sales_chart_data_1bf
+        p_eps = p_eps_chart_data_1bf
+        p_fcf = p_fcf_chart_data
+    }
+    else if (selected_graph_option == 'LTM') {
+        ev_ebitda = ev_ebitda_chart_data_ltm
+        ev_sales = ev_sales_chart_data_ltm
+        p_eps = p_eps_chart_data_ltm
+        p_fcf = p_fcf_chart_data
+    }
+    else if (selected_graph_option == '2BF') {
+        ev_ebitda = ev_ebitda_chart_data_2bf
+        ev_sales = ev_sales_chart_data_2bf
+        p_eps = p_eps_chart_data_2bf
+        p_fcf = p_fcf_chart_data
+    }
+    let EV_EBITDA_CHART = makeEssChart("ess_idea_ev_ebitda_chart", ev_ebitda)
+    let EV_SALES_CHART = makeEssChart("ess_idea_ev_sales_chart", ev_sales)
+    let P_EPS_CHART = makeEssChart("ess_idea_p_eps_chart", p_eps)
+    let P_FCF_CHART = makeEssChart("ess_idea_p_fcf_chart", p_fcf)
 
     /** Peer Valuation Chart Ends **/
 
