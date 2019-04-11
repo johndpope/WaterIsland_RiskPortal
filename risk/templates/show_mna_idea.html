@@ -40,6 +40,8 @@
             <input type="hidden" id="overlay_weekly_downside_estimates"
                    value="{{ overlay_weekly_downside_estimate.estimate }}">
 
+             <input type="hidden" id="tradegroup_name"
+                   value="{{ deal_core.deal_name }}">
             <input type="hidden" id="mna_idea_related_peers"
                    value="{{ related_peers }}">
             <input type="hidden" id="overlay_weekly_downside_date_updated"
@@ -78,8 +80,15 @@
                             <div class="card-body">
 
                                 <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg">
+
                                     <li class="nav-item">
-                                        <a class="nav-link active" id="base-tab41" data-toggle="tab"
+                                        <a class="nav-link active" id="base-tab1" data-toggle="tab"
+                                           aria-controls="tab1"
+                                           href="#tab1" aria-expanded="true">TradeGroup Story</a>
+                                    </li>
+
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="base-tab41" data-toggle="tab"
                                            aria-controls="tab41"
                                            href="#tab41" aria-expanded="true">Target/Acquirer Charts</a>
                                     </li>
@@ -97,7 +106,16 @@
                                 </ul>
 
                                 <div class="tab-content px-1 pt-1">
-                                    <div role="tabpanel" class="tab-pane active" id="tab41" aria-expanded="true"
+                                    <div role="tabpanel" class="tab-pane active" id="tab1" aria-expanded="true"
+                                         aria-labelledby="base-tab1">
+
+                                        <div id="mna_idea_tradegroup_story" style="height: 430px">
+
+                                        </div>
+
+                                    </div>
+
+                                    <div role="tabpanel" class="tab-pane" id="tab41" aria-expanded="true"
                                          aria-labelledby="base-tab41">
 
                                         <div id="mna_idea_targetAcquirer_chart" style="height: 430px">
@@ -1121,7 +1139,7 @@
     </div>
 
     <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
-
+    <script type="text/javascript" src="{% static "app-assets/js/core/chartBuilder.js" %}"></script>
     {% block sweetalert_js %}
         {{ block.super }}
     {% endblock %}
@@ -1139,6 +1157,9 @@
     <script src="{% static 'app-assets/vendors/js/pickers/daterange/daterangepicker.js' %}"
             type="text/javascript"></script>
     <script src="{% static 'app-assets/vendors/js/loaders/loaders.css.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.5.4/randomColor.min.js"></script>
+
+    <script src="https://www.amcharts.com/lib/3/themes/black.js"></script>
     <script src="{% static 'app-assets/js/core/show_mna_idea.js' %}"></script>
 
 

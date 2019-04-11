@@ -217,6 +217,7 @@ $(document).ready(function () {
             if (position_level_pnl[i]['TradeGroup_'] === tradegroup) {
                 // Return corresponding rows
                 return_rows += '<tr>' +
+                    '<td></td>' +
                     '<td>' + position_level_pnl[i]['TradeGroup_'] + '</td>' +
                     '<td>' + position_level_pnl[i]['TICKER_x_'] + '</td>' +
                     '<td>' + position_level_pnl[i]['START_ADJ_PX_'] + '</td>' +
@@ -240,7 +241,7 @@ $(document).ready(function () {
         return '<div class="table-responsive" style="padding-left:3%"> <table class="table table-striped table-bordered" border="0">' +
             '<thead>' +
             '<tr>' +
-            '<th>TradeGroup</th>' + '<th>Ticker</th>' + '<th>Start PX</th>' + '<th>End PX</th>' + '<th>P&L ARB</th>' + '<th>P&L MACO</th>' +
+            '<th></th><th>TradeGroup</th>' + '<th>Ticker</th>' + '<th>Start PX</th>' + '<th>End PX</th>' + '<th>P&L ARB</th>' + '<th>P&L MACO</th>' +
             '<th>P&L MALT</th>' + '<th>P&L LEV</th>' + '<th>P&L AED</th>' + '<th>P&L CAM</th>' + '<th>P&L LG</th>' + '<th>P&L WED</th>'
             + '<th>P&L TAQ</th>' +
             '<th>P&L TACO</th>' +
