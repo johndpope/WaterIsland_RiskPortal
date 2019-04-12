@@ -1,21 +1,17 @@
 $(document).ready(function () {
-
     $('#submit_expoures_as_of').on('click', function(){
         // Get the Date
         let as_of = $('#exposures_as_of').val();
         window.location.replace('../exposures/exposures_snapshot?as_of='+as_of);
-
-
     });
 
     let exposures = $.parseJSON($('#exposures').val());
-    console.log(exposures);
     Object.keys(exposures).forEach(function (fund) {
         addFundMainTab(fund, 'fundtabs', 'fund-tab-content', 'Across', exposures);
 
     });
 
-
+     $(".loader-wrapper").remove();
 });
 
 function addFundMainTab(name, addToTab, addToContent, sleeve, exposures) {
