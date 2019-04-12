@@ -302,18 +302,20 @@ $(document).ready(function () {
     function generateTargetPriceChart(target_ticker_prices, target_ticker_dates, hist_prices_dates_acquirer, div_id, target_ticker, acquirer_ticker, acquirer_error_flag) {
         var chartData = [];
         var stockEvents = [];
-        if (unaffected_date != 'None') {
+        var guides = [];
+        var deal_risk_factors_list = $.parseJSON($('#deal_risk_factors_list').val());
+        if (unaffected_date != null) {
             //Create Stock Event
             stockEvents.push({
                 'date': new Date(unaffected_date),
                 'type': 'flag',
                 'backgroundColor': 'cyan',
                 'graph': 'g1',
-                'text': 'UnaffectedDate',
+                'text': 'Unaffected Date',
                 'description': 'This is the Unaffected Date for the Deal..'
             });
         }
-        if (overlay_weekly_downside_estimate != 'None') {
+        if (overlay_weekly_downside_estimate != null) {
             stockEvents.push({
                 'date': new Date(overlay_weekly_downside_date_updated),
                 'type': 'flag',
@@ -322,6 +324,47 @@ $(document).ready(function () {
                 'text': 'DownsideEstimate',
                 'description': 'Analyst Estimated Downside (on this day) -->' + overlay_weekly_downside_estimate.toString()
             });
+        }
+        if (deal_risk_factors_list != null) {
+            for (var i=0; i<deal_risk_factors_list.length; i++ ) {
+                var deal_risk_factors_dict = deal_risk_factors_list[i];
+                var deal_risk_factors_expected = deal_risk_factors_dict['expected'];
+                var deal_risk_factors_requirement = deal_risk_factors_dict['requirement'];
+                var deal_risk_factors_actual = deal_risk_factors_dict['actual'];
+                var deal_risk_factors_regulatory = deal_risk_factors_dict['regulatory'];
+                var balloonText = "";
+                if (deal_risk_factors_requirement.toLowerCase() != 'not required' || deal_risk_factors_requirement != null) {
+                    balloonText = deal_risk_factors_requirement;
+                }
+                else {
+                    balloonText = "This is the " + deal_risk_factors_regulatory + " expected date";
+                }
+                balloonText += " (" + deal_risk_factors_expected + ")";
+                var color = randomColor({luminosity: 'dark', hue: 'random',})
+                if (deal_risk_factors_expected != null ) {
+                    guides.push({
+                        'date': new Date(deal_risk_factors_expected),
+                        'balloonText': balloonText,
+                        "lineColor": color,
+                        "lineAlpha": 1,
+                        "dashLength": 12,
+                        "inside": true,
+                        "labelRotation": 90,
+                        "label": deal_risk_factors_regulatory + ' Expected',
+                        "fontSize": 15,
+                    });
+                }
+                if (deal_risk_factors_actual != null) {
+                    stockEvents.push({
+                        'date': new Date(deal_risk_factors_actual),
+                        'type': 'flag',
+                        'backgroundColor': color,
+                        'graph': 'g1',
+                        'text':  deal_risk_factors_regulatory + ' Approved',
+                        'description': "This is the " + deal_risk_factors_regulatory + " Approved date (" + deal_risk_factors_actual + ")",
+                    });
+                }
+            }
         }
 
 
@@ -372,8 +415,6 @@ $(document).ready(function () {
                     "valueField": "px_last",
                     "title": target_ticker,
                     "lineColor": "#ff0400",
-
-
                 }, {
                     "useDataSetColors": false,
                     "id": "g2",
@@ -385,7 +426,8 @@ $(document).ready(function () {
                 }],
                 "stockLegend": {
                     useGraphSettings: true
-                }
+                },
+                "guides": guides,
             }],
 
             "chartScrollbarSettings": {
@@ -401,6 +443,9 @@ $(document).ready(function () {
             },
             "export": {
                 "enabled": true
+            },
+            "balloon": {
+                "fixedPosition": false,
             }
 
         });

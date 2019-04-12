@@ -1,24 +1,27 @@
-import datetime
-import json
 import ast
+import datetime
 from dateutil.relativedelta import relativedelta
-import numpy as np
+import json
 import requests
-import ess_premium_analysis
-from django_pandas.io import read_frame
-from django.shortcuts import redirect
-from wic_news.models import NewsMaster
-from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse, Http404
-from django.core import serializers
-from django.views.decorators.csrf import csrf_exempt
+
 from celery.result import AsyncResult
-from risk.chart_utils import *
-from notes.models import NotesMaster
-from .tasks import add_new_idea, run_ess_premium_analysis_task
-from .models import *
-from django.db import connection
 from django.conf import settings
+from django.core import serializers
+from django.db import connection
+from django.http import HttpResponse, JsonResponse, Http404
+from django.shortcuts import redirect, render
+from django.views.decorators.csrf import csrf_exempt
+from django_pandas.io import read_frame
+import numpy as np
+import pandas as pd
+
+from ess_premium_analysis import multiple_underlying_df
+from notes.models import NotesMaster
+from risk.chart_utils import *
+from risk.models import *
+from risk.tasks import add_new_idea, run_ess_premium_analysis_task
+from wic_news.models import NewsMaster
+
 api_host = bbgclient.bbgclient.get_next_available_host()
 
 
@@ -623,12 +626,73 @@ def mna_idea_database(request):
     return render(request, 'mna_idea_database.html', {'deals_df': deals_df, 'archived_deals_df': archived_deals_df})
 
 
+def convert_date_to_string(date):
+    return date.strftime('%Y-%m-%d') if date else None
+
+
 def show_mna_idea(request):
     """
         :param request: Request Object containing ID for the deal to populate
         :return: JSON encoded response object to display the deal
     """
+    deal_risk_factors_list = None
     deal_id = request.GET['mna_idea_id']
+    maximum_graph_range = datetime.date.today()
+    try:
+        deal_risk_factors_dict = MA_Deals_Risk_Factors.objects.filter(deal_id=deal_id).values(
+            'sec_expected_clearance', 'hsr_expected_clearance', 'mofcom_expected_clearance',
+            'cifius_expected_clearance', 'ec_expected_clearance', 'accc_expected_clearance',
+            'investment_canada_expected_clearance', 'cade_expected_clearance')
+        if deal_risk_factors_dict:
+            data_frame = read_frame(deal_risk_factors_dict)
+            data_frame = data_frame.dropna(axis=1)
+            data_frame_max = data_frame.max(axis=1)[0]
+            maximum_graph_range = data_frame_max if data_frame_max > maximum_graph_range else maximum_graph_range
+
+            deal_risk_factors_list = []
+            deal_risk_factors = MA_Deals_Risk_Factors.objects.get(deal_id=deal_id)
+            deal_risk_factors_list.append({
+                'regulatory': 'SEC',
+                'requirement': deal_risk_factors.sec_requirement,
+                'expected': convert_date_to_string(deal_risk_factors.sec_expected_clearance),
+                'actual': convert_date_to_string(deal_risk_factors.sec_actual_clearance)})
+            deal_risk_factors_list.append({
+                'regulatory': 'HSR',
+                'requirement': deal_risk_factors.hsr_requirement,
+                'expected': convert_date_to_string(deal_risk_factors.hsr_expected_clearance),
+                'actual': convert_date_to_string(deal_risk_factors.hsr_actual_clearance)})
+            deal_risk_factors_list.append({
+                'regulatory': 'MOFCOM',
+                'requirement': deal_risk_factors.mofcom_requirement,
+                'expected': convert_date_to_string(deal_risk_factors.mofcom_expected_clearance),
+                'actual': convert_date_to_string(deal_risk_factors.mofcom_actual_clearance)})
+            deal_risk_factors_list.append({
+                'regulatory': 'CIFIUS',
+                'requirement': deal_risk_factors.cifius_requirement,
+                'expected': convert_date_to_string(deal_risk_factors.cifius_expected_clearance),
+                'actual': convert_date_to_string(deal_risk_factors.cifius_actual_clearance)})
+            deal_risk_factors_list.append({
+                'regulatory': 'EC',
+                'requirement': deal_risk_factors.ec_requirement,
+                'expected': convert_date_to_string(deal_risk_factors.ec_expected_clearance),
+                'actual': convert_date_to_string(deal_risk_factors.ec_actual_clearance)})
+            deal_risk_factors_list.append({
+                'regulatory': 'ACCC',
+                'requirement': deal_risk_factors.accc_requirement,
+                'expected': convert_date_to_string(deal_risk_factors.accc_expected_clearance),
+                'actual': convert_date_to_string(deal_risk_factors.accc_actual_clearance)})
+            deal_risk_factors_list.append({
+                'regulatory': 'INVESTMENT CA',
+                'requirement': deal_risk_factors.investment_canada_requirement,
+                'expected': convert_date_to_string(deal_risk_factors.investment_canada_expected_clearance),
+                'actual': convert_date_to_string(deal_risk_factors.investment_canada_actual_clearance)})
+            deal_risk_factors_list.append({
+                'regulatory': 'CADE',
+                'requirement': deal_risk_factors.cade_requirement,
+                'expected': convert_date_to_string(deal_risk_factors.cade_expected_clearance),
+                'actual': convert_date_to_string(deal_risk_factors.cade_actual_clearance)})
+    except MA_Deals_Risk_Factors.DoesNotExist as error:
+        deal_risk_factors_list = None
     # 1. Get all Core parameters for this deal
     deal_core = MA_Deals.objects.get(id=deal_id)
     # 2. Get Weekly Downside Estimates for the deal id
@@ -675,8 +739,7 @@ def show_mna_idea(request):
                              timeout=15)  # Set a 15 secs Timeout
 
     # Make a historical Data Request for Target and Acquirer Tickers
-    acquirer_ticker = deal_core.acquirer_ticker if "EQUITY" in deal_core.acquirer_ticker \
-        else deal_core.acquirer_ticker + " EQUITY"
+    acquirer_ticker = deal_core.deal_name.split("-")[1].strip() + " EQUITY"
 
     main_tickers = [target_ticker]
 
@@ -705,10 +768,19 @@ def show_mna_idea(request):
     except KeyError as KE:
         print(KE)
 
-    # Process the Historical Data Request
-    hist_data_results = r_histdata.json()['results']
-    px_last_historical = json.dumps(hist_data_results[0][target_ticker])
+    maximum_graph_range = maximum_graph_range + datetime.timedelta(days=60)
+    maximum_graph_range = convert_date_to_string(maximum_graph_range)
 
+    # Process the Historical Data Request
+    try:
+        hist_data_results = r_histdata.json()['results']
+        px_last_historical_data = hist_data_results[0][target_ticker]
+        px_last_historical_data.get('fields').get('PX_LAST').append(None)
+        px_last_historical_data.get('fields').get('date').append(maximum_graph_range)
+        px_last_historical = json.dumps(px_last_historical_data)
+    except Exception as exception:
+        print(exception)
+        px_last_historical = None
     # Get the Previous Analysis (if any)
     scenario_analysis_object = MA_Deals_Scenario_Analysis.objects.filter(deal_id=deal_id).first()
 
@@ -716,7 +788,10 @@ def show_mna_idea(request):
     scenario_analysis_object = '' if not scenario_analysis_object else scenario_analysis_object
 
     try:
-        px_last_historical_acquirer = json.dumps(hist_data_results[1][acquirer_ticker])
+        px_last_historical_acquirer_data = hist_data_results[1][acquirer_ticker]
+        px_last_historical_acquirer_data.get('fields').get('PX_LAST').append(None)
+        px_last_historical_acquirer_data.get('fields').get('date').append(maximum_graph_range)
+        px_last_historical_acquirer = json.dumps(px_last_historical_acquirer_data)
     except Exception as exception:
         print(exception)  # Log this Exception
         px_last_historical_acquirer = None
@@ -730,7 +805,10 @@ def show_mna_idea(request):
                                             "end_date": datetime.datetime.now().strftime('%Y%m%d')},
                                     timeout=15)  # Set a 15 secs Timeout
         hist_data_results = cix_histdata.json()['results']
-        px_last_cix_index = json.dumps(hist_data_results[0][deal_core.cix_index]['fields'])
+        px_last_cix_index_data = hist_data_results[0][deal_core.cix_index]['fields']
+        px_last_cix_index_data.get('PX_LAST').append(None)
+        px_last_cix_index_data.get('date').append(maximum_graph_range)
+        px_last_cix_index = json.dumps(px_last_cix_index_data)
     except Exception as exception:
         print(exception)
         px_last_cix_index = None
@@ -740,13 +818,14 @@ def show_mna_idea(request):
                                        params={'idtype': "tickers", "fields": "PX_LAST",
                                                "tickers": ','.join([deal_core.spread_index]),
                                                "override": "",
-                                               "start_date": (
-                                                       datetime.datetime.now() - relativedelta(months=12)).strftime(
-                                                   '%Y%m%d'),
+                                               "start_date": (datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
                                                "end_date": datetime.datetime.now().strftime('%Y%m%d')},
                                        timeout=15)  # Set a 15 secs Timeout
         hist_data_results = spread_histdata.json()['results']
-        px_last_spread_index = json.dumps(hist_data_results[0][deal_core.spread_index]['fields'])
+        px_last_spread_index_data = hist_data_results[0][deal_core.spread_index]['fields']
+        px_last_spread_index_data.get('PX_LAST').append(None)
+        px_last_spread_index_data.get('date').append(maximum_graph_range)
+        px_last_spread_index = json.dumps(px_last_spread_index_data)
     except Exception as exception:
         print(exception)
         px_last_spread_index = None
@@ -775,6 +854,7 @@ def show_mna_idea(request):
 
     return render(request, 'show_mna_idea.html',
                   {'deal_core': deal_core,
+                   'deal_risk_factors_list': json.dumps(deal_risk_factors_list),
                    'deal_note': deal_note, 'fund_aum': fund_aum.iloc[0]['AUM'],
                    'eqy_float': eqy_float, 'eqy_sh_out': eqy_sh_out, 'target_px_last': target_last_px,
                    'px_last_historical': px_last_historical, 'px_last_historical_acquirer': px_last_historical_acquirer,
@@ -1612,7 +1692,7 @@ def ess_idea_view_balance_sheet(request):
 
         except EssBalanceSheets.DoesNotExist:
             print('Balance Sheets not Found..')
-        balance_sheet = ess_premium_analysis.multiple_underlying_df(deal_object.alpha_ticker,
+        balance_sheet = multiple_underlying_df(deal_object.alpha_ticker,
                                                                     datetime.datetime.now().strftime('%Y%m%d'),
                                                                     api_host)
         if upside_balance_sheet_adjustments is not None:
