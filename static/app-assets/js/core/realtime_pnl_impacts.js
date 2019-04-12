@@ -1,5 +1,4 @@
 $(document).ready(function () {
-    later.date.localTime();
     let last_synced_on = null;
     let realtime_pnl_table = $('#realtime_pnl_table').DataTable(get_pnl_table_initialization_configuration("live_tradegroup_pnl", "Total YTD", "data"));
     let realtime_daily_pnl_table = $('#realtime_daily_pnl_table').DataTable(get_pnl_table_initialization_configuration("live_tradegroup_pnl", "Daily", "daily_pnl"));
@@ -7,8 +6,7 @@ $(document).ready(function () {
     // Column Alignment for the Tab Clicks
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         $($.fn.dataTable.tables(true)).DataTable()
-            .columns.adjust()
-            .fixedColumns().relayout();
+            .columns.adjust();
     });
 
 
@@ -57,12 +55,10 @@ $(document).ready(function () {
     function get_pnl_table_initialization_configuration(url, total_or_daily_string, json_response_tag) {
 
         return {
-            scrollY: "680px",
+            scrollY: "580px",
             scrollX: true,
+            responsive: false,
             scrollCollapse: true,
-            fixedColumns: {
-                leftColumns: 2
-            },
             dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
                 '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
                 '<"row"<"col-sm-5"i><"col-sm-7"p>>',
@@ -143,7 +139,8 @@ $(document).ready(function () {
 
             ],
             "columnDefs": [{
-                "targets": [ 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+                "targets": [4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+                "width": "1%",
                 "createdCell": function (td, cellData, rowData, rowIndex) {
                     //Check for % Float and %Shares Out
                     if (cellData < 0) {
@@ -154,6 +151,18 @@ $(document).ready(function () {
                     }
                 },
                 "render": $.fn.dataTable.render.number(',', '.', 2),
+            },
+            {
+                "targets": [0],
+                "width": "2%",
+            },
+            {
+                "targets": [1],
+                "width": "5%",
+            },
+            {
+                "targets": [2, 3],
+                "width": "3%",
             }],
             initComplete: function () {
                 this.api().columns([2, 3]).every(function () {

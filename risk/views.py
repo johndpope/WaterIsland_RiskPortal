@@ -5,11 +5,10 @@ from dateutil.relativedelta import relativedelta
 import numpy as np
 import requests
 import ess_premium_analysis
-import ess_function
 from django_pandas.io import read_frame
 from django.shortcuts import redirect
 from wic_news.models import NewsMaster
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, Http404
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
