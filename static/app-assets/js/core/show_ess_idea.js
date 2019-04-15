@@ -759,11 +759,11 @@ $(document).ready(function () {
     });
 
 
-    $('#ess_bull_thesis').summernote({toolbar: [], height: 120});
+    $('#ess_bull_thesis').summernote({toolbar: [], height: 360});
     $('#ess_bull_thesis').summernote('disable');
-    $('#ess_bear_thesis').summernote({toolbar: [], height: 120});
+    $('#ess_bear_thesis').summernote({toolbar: [], height: 360});
     $('#ess_bear_thesis').summernote('disable');
-    $('#ess_our_thesis').summernote({toolbar: [], height: 120});
+    $('#ess_our_thesis').summernote({toolbar: [], height: 360});
     $('#ess_our_thesis').summernote('disable');
 
 

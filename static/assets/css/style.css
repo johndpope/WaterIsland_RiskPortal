@@ -49,6 +49,8 @@ p{
   width:600px !important;
 }
 
+
+
 #mna_idea_table {
     word-wrap: break-word;
     table-layout:auto;
@@ -175,4 +177,12 @@ select > option
     text-align: center;
     text-align-last: center;
     margin: auto
+}
+
+#ess_idea_new_deal_situation_overview{
+    height: 275px;
+}
+
+#ess_idea_new_deal_company_overview{
+    height: 275px;
 }

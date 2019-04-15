@@ -648,7 +648,7 @@ def show_mna_idea(request):
             data_frame = data_frame.dropna(axis=1)
             data_frame_max = data_frame.max(axis=1)[0]
             maximum_graph_range = data_frame_max if data_frame_max > maximum_graph_range else maximum_graph_range
-
+            maximum_graph_range = maximum_graph_range + datetime.timedelta(days=60)
             deal_risk_factors_list = []
             deal_risk_factors = MA_Deals_Risk_Factors.objects.get(deal_id=deal_id)
             deal_risk_factors_list.append({
@@ -768,7 +768,6 @@ def show_mna_idea(request):
     except KeyError as KE:
         print(KE)
 
-    maximum_graph_range = maximum_graph_range + datetime.timedelta(days=60)
     maximum_graph_range = convert_date_to_string(maximum_graph_range)
 
     # Process the Historical Data Request

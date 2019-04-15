@@ -5,8 +5,8 @@ $(document).ready(function () {
 
     $.ajax({
         'type': 'GET',
-        'url': '../position_stats/get_tradegroup_story?TradeGroup='+$('#tradegroup_name').val()+'&Fund=ARB',
-        success: function(response){
+        'url': '../position_stats/get_tradegroup_story?TradeGroup=' + $('#tradegroup_name').val() + '&Fund=ARB',
+        success: function (response) {
             let exposures_and_pnl = JSON.parse(response['exposures_and_pnl_df']);
             let fund_name = 'ARB';
             let tradegroup_name = $('#tradegroup_name').val();
@@ -32,7 +32,7 @@ $(document).ready(function () {
             let graphs = createPnlGraphs(exposures_and_pnl, unique_tickers, tradegroup_name, tradegroup_level_dictionary, true, tickerFieldMappings, true);
 
 
-            let title = "TIMELINE OF "+tradegroup_name + " in " + fund_name + "\n" + "P&L CONTRIBUTION, SPREAD (LEFT) v/s EXPOSURES(RIGHT)";
+            let title = "TIMELINE OF " + tradegroup_name + " in " + fund_name + "\n" + "P&L CONTRIBUTION, SPREAD (LEFT) v/s EXPOSURES(RIGHT)";
             let tradegroup_story_chart = AmCharts.makeChart("mna_idea_tradegroup_story", createLineChartConfigs(exposures_and_pnl, datasets, graphs, title, '$$', 'light'));
 
         },
@@ -40,10 +40,6 @@ $(document).ready(function () {
             console.log(err);
         }
     });
-
-
-
-
 
 
     //Fill the Peers Table
@@ -269,7 +265,7 @@ $(document).ready(function () {
         var acq_historical_pxs = $('#historical_px_last_acquirer').val();
         var acq_historical_px = $.parseJSON(acq_historical_pxs);
         var hist_prices_dates_acquirer = acq_historical_px['fields']['PX_LAST'];
-
+        var hist_dates_acquirer = acq_historical_px['fields']['date'];
         if (hist_prices_dates_acquirer.length === 0) {
             acquirer_error_flag = 1;
         }
@@ -281,7 +277,7 @@ $(document).ready(function () {
 
 
     try {
-        generateTargetPriceChart(hist_prices_dates, dates, hist_prices_dates_acquirer, 'mna_idea_targetAcquirer_chart', target_ticker, acquirer_ticker, acquirer_error_flag);
+        generateTargetPriceChart(hist_prices_dates, dates, hist_prices_dates_acquirer, 'mna_idea_targetAcquirer_chart', target_ticker, acquirer_ticker, acquirer_error_flag, hist_dates_acquirer);
 
     }
     catch (err) {
@@ -298,35 +294,47 @@ $(document).ready(function () {
         console.log(err);
     }
 
+    function get_acquirer_chart_data(val) {
+        console.log(val);
+        return val;
 
-    function generateTargetPriceChart(target_ticker_prices, target_ticker_dates, hist_prices_dates_acquirer, div_id, target_ticker, acquirer_ticker, acquirer_error_flag) {
+    }
+
+    function generateTargetPriceChart(target_ticker_prices, target_ticker_dates, hist_prices_dates_acquirer, div_id, target_ticker, acquirer_ticker, acquirer_error_flag, hist_dates_acquirer) {
         var chartData = [];
         var stockEvents = [];
         var guides = [];
         var deal_risk_factors_list = $.parseJSON($('#deal_risk_factors_list').val());
-        if (unaffected_date != null) {
-            //Create Stock Event
-            stockEvents.push({
+
+        if (unaffected_date != null && unaffected_date !== 'None') {
+            guides.push({
                 'date': new Date(unaffected_date),
-                'type': 'flag',
-                'backgroundColor': 'cyan',
-                'graph': 'g1',
-                'text': 'Unaffected Date',
-                'description': 'This is the Unaffected Date for the Deal..'
+                "lineColor": "cyan",
+                "lineAlpha": 1,
+                "dashLength": 0,
+                "inside": true,
+                "labelRotation": 90,
+                "label": 'Unaffected Date',
+                "fontSize": 12,
             });
         }
-        if (overlay_weekly_downside_estimate != null) {
-            stockEvents.push({
+        console.log(overlay_weekly_downside_estimate);
+        if (overlay_weekly_downside_estimate != null && overlay_weekly_downside_estimate !== '') {
+
+            guides.push({
                 'date': new Date(overlay_weekly_downside_date_updated),
-                'type': 'flag',
-                'backgroundColor': 'green',
-                'graph': 'g1',
-                'text': 'DownsideEstimate',
-                'description': 'Analyst Estimated Downside (on this day) -->' + overlay_weekly_downside_estimate.toString()
+                "lineColor": "red",
+                "lineAlpha": 4,
+                "dashLength": 0,
+                "inside": true,
+                "labelRotation": 90,
+                "label": 'Estimated Downside',
+                "baloonText": 'Analyst Estimated Downside (on this day) -->' + overlay_weekly_downside_estimate.toString(),
+                "fontSize": 12,
             });
         }
         if (deal_risk_factors_list != null) {
-            for (var i=0; i<deal_risk_factors_list.length; i++ ) {
+            for (var i = 0; i < deal_risk_factors_list.length; i++) {
                 var deal_risk_factors_dict = deal_risk_factors_list[i];
                 var deal_risk_factors_expected = deal_risk_factors_dict['expected'];
                 var deal_risk_factors_requirement = deal_risk_factors_dict['requirement'];
@@ -341,13 +349,13 @@ $(document).ready(function () {
                 }
                 balloonText += " (" + deal_risk_factors_expected + ")";
                 var color = randomColor({luminosity: 'dark', hue: 'random',})
-                if (deal_risk_factors_expected != null ) {
+                if (deal_risk_factors_expected != null) {
                     guides.push({
                         'date': new Date(deal_risk_factors_expected),
                         'balloonText': balloonText,
                         "lineColor": color,
                         "lineAlpha": 1,
-                        "dashLength": 12,
+                        "dashLength": 5,
                         "inside": true,
                         "labelRotation": 90,
                         "label": deal_risk_factors_regulatory + ' Expected',
@@ -355,29 +363,39 @@ $(document).ready(function () {
                     });
                 }
                 if (deal_risk_factors_actual != null) {
-                    stockEvents.push({
+                    guides.push({
                         'date': new Date(deal_risk_factors_actual),
-                        'type': 'flag',
-                        'backgroundColor': color,
-                        'graph': 'g1',
-                        'text':  deal_risk_factors_regulatory + ' Approved',
-                        'description': "This is the " + deal_risk_factors_regulatory + " Approved date (" + deal_risk_factors_actual + ")",
+                        "lineColor": color,
+                        "lineAlpha": 1,
+                        "dashLength": 0,
+                        "inside": true,
+                        "labelRotation": 90,
+                        "label": deal_risk_factors_regulatory + ' Approved',
+                        "fontSize": 15,
+                        "balloonText": "This is the " + deal_risk_factors_regulatory + " Approved date (" + deal_risk_factors_actual + ")",
                     });
                 }
             }
         }
 
-
         if (acquirer_error_flag != 1) {
-            for (var i = 0; i < target_ticker_prices.length; i++) {
+            // First process Acquirer
+            for (var j = 0; j < hist_prices_dates_acquirer.length; j++) {
                 chartData.push({
-                    date: target_ticker_dates[i],
-                    px_last: target_ticker_prices[i],
-                    acq_px_last: hist_prices_dates_acquirer[i]
+                    date: hist_dates_acquirer[j],
+                    acq_px_last: hist_prices_dates_acquirer[j],
                 });
             }
 
+            for (var i = 0; i < target_ticker_dates.length; i++) {
+                if (target_ticker_prices[i] != null) {
+                    chartData[i]['px_last'] = target_ticker_prices[i];
+                }
+
+            }
+
         }
+
         else {
             for (var i = 0; i < target_ticker_prices.length; i++) {
                 chartData.push({
@@ -388,69 +406,72 @@ $(document).ready(function () {
 
         }
 
+
         target_acquier_charts = AmCharts.makeChart(div_id, {
-            "type": "stock",
+            "type": "serial",
             "theme": "light",
-            "dataSets": [{
-                "fieldMappings": [{
-                    "fromField": "px_last",
-                    "toField": "px_last"
-                }, {
-                    "fromField": "acq_px_last",
-                    "toField": "acq_px_last"
-                }],
-                "dataProvider": chartData,
-                "categoryField": "date",
-                "parseDates": true,
-                // EVENTS
-                "stockEvents": stockEvents,
-            }],
+            "dataProvider": chartData,
             "hideCredits": true,
-            "panels": [{
-                recalculateToPercents: "never",
-                "title": "Price",
-                "stockGraphs": [{
-                    "useDataSetColors": false,
-                    "id": "g1",
-                    "valueField": "px_last",
-                    "title": target_ticker,
-                    "lineColor": "#ff0400",
-                }, {
-                    "useDataSetColors": false,
-                    "id": "g2",
-                    "valueField": "acq_px_last",
-                    "title": acquirer_ticker,
-                    "lineColor": "#1dff00",
+            "legend": {
+                "useGraphSettings": true
+            },
+            "graphs": [{
+                "title": target_ticker,
+                "balloonText": "[[px_last]]",
+                "connect": true,
+                "lineColor": "#b6d278",
+                "lineThickness": 2,
+                "valueField": "px_last"
+            }, {
+                "title": acquirer_ticker,
+                "balloonText": "[[acq_px_last]]",
+                "connect": true,
+                "lineColor": "#E9962C",
+                "lineThickness": 2,
+                "valueField": "acq_px_last",
 
-
-                }],
-                "stockLegend": {
-                    useGraphSettings: true
-                },
-                "guides": guides,
             }],
-
-            "chartScrollbarSettings": {
-                "graph": "g1"
-            },
-
-            "chartCursorSettings": {
-                "valueBalloonsEnabled": true,
-                "graphBulletSize": 1,
-                "valueLineBalloonEnabled": true,
-                "valueLineEnabled": true,
-                "valueLineAlpha": 0.5
-            },
             "export": {
                 "enabled": true
             },
             "balloon": {
                 "fixedPosition": false,
+            },
+            "guides": guides,
+            "chartCursor": {
+                "pan": true,
+                "valueLineEnabled": true,
+                "valueLineBalloonEnabled": true,
+                "cursorAlpha": 1,
+                "cursorColor": "#258cbb",
+                "limitToGraph": "g1",
+                "valueLineAlpha": 0.2,
+                "valueZoomable": true
+            },
+            "chartScrollbar": {
+                "graph": "g1",
+                "oppositeAxis": false,
+                "offset": 30,
+                "backgroundAlpha": 0,
+                "selectedBackgroundAlpha": 0.1,
+                "selectedBackgroundColor": "#888888",
+                "graphFillAlpha": 0,
+                "graphLineAlpha": 0.5,
+                "selectedGraphFillAlpha": 0,
+                "selectedGraphLineAlpha": 1,
+                "autoGridCount": true,
+                "color": "#AAAAAA"
+            },
+            "dataDateFormat": "YYYY-MM-DD",
+            "categoryField": "date",
+            "categoryAxis": {
+                "minPeriod": "DD",
+                "parseDates": true,
+                "minorGridEnabled": true
             }
 
         });
     }
-
 
     /* Generate The CIX Price Chart and Spread Index Chart
      */
@@ -1045,7 +1066,7 @@ $(document).ready(function () {
                 'lawyer_report_date': lawyer_report_date,
                 'analyst_by': analyst_by,
                 'lawyer_report': lawyer_report,
-                'title':title,
+                'title': title,
                 'deal_id': deal_id
             },
             success: function (response) {

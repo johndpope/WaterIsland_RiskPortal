@@ -695,9 +695,9 @@ $(document).ready(function () {
                     $('#ess_idea_new_deal_ticker').val(ticker);
                     $('#ess_idea_new_deal_situation_overview').val(situation_overview);
                     $('#ess_idea_new_deal_company_overview').val(company_overview);
-                    $('#ess_idea_new_deal_pt_up').val(pt_up);
-                    $('#ess_idea_new_deal_pt_down').val(pt_down);
-                    $('#ess_idea_new_deal_pt_wic').val(pt_wic);
+                    $('#ess_idea_new_deal_pt_up').val(parseFloat(pt_up).toFixed(2));
+                    $('#ess_idea_new_deal_pt_down').val(parseFloat(pt_down).toFixed(2));
+                    $('#ess_idea_new_deal_pt_wic').val(parseFloat(pt_wic).toFixed(2));
                     $('#ess_idea_new_deal_unaffected_date').val(unaffected_date);
                     $('#ess_idea_new_deal_expected_close').val(expected_close);
                     $('#ess_bull_thesis').summernote('code', bull_thesis);
