@@ -46,7 +46,7 @@ def get_tradegroup_performance_main_page(request):
                                                on=['TradeGroup', 'Fund'])
 
         def create_story_url(row):
-            url = '../get_tradegroup_story?TradeGroup='+row['TradeGroup']+'&Fund='+row['Fund']
+            url = '../position_stats/get_tradegroup_story?TradeGroup='+row['TradeGroup']+'&Fund='+row['Fund']
             return "<a target='_blank' href='"+url+"'>View</a>"
 
         tradegroup_performance_dollars['story_url'] = tradegroup_performance_dollars.apply(create_story_url, axis=1)
@@ -185,7 +185,7 @@ def get_tradegroup_attribution_over_own_capital(request):
             apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
 
         def create_story_url(row):
-            url = '../get_tradegroup_story?TradeGroup='+row['TradeGroup']+'&Fund='+row['Fund']
+            url = '../position_stats/get_tradegroup_story?TradeGroup='+row['TradeGroup']+'&Fund='+row['Fund']
             return "<a target='_blank' href='"+url+"'>View</a>"
 
         tradegroup_performance_over_own_capital['story_url'] = tradegroup_performance_over_own_capital.apply(

@@ -76,7 +76,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'CLEAN_UP_AWS_S3': {
         'task': 'cleanup.tasks.clean_up_aws_s3',
-        'schedule': crontab(minute="00", hour="01", day_of_week=[6]),
+        'schedule': crontab(minute="00", hour="01", day_of_week=6),
     }
 }
 
