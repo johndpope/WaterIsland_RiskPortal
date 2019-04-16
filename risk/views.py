@@ -904,7 +904,9 @@ class MaDealsRiskFactorsView(FormView):
     def get_initial(self):
         initial = super(MaDealsRiskFactorsView, self).get_initial()
         deal_id = self.kwargs.get('deal_id')
-        initial.update(MA_Deals_Risk_Factors.objects.filter(deal__id=deal_id).values()[0])
+        if deal_id:
+            obj, created = MA_Deals_Risk_Factors.objects.get_or_create(deal_id=deal_id)
+            initial.update(vars(obj))
 
         return initial
 
