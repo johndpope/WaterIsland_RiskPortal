@@ -8,51 +8,66 @@ from django.http import JsonResponse
 
 
 def get_tradegroup_performance_main_page(request):
-    tradegroup_performance_dollars = pd.read_sql_query("SELECT * FROM wic.tradegroup_attribution_to_fund_nav_dollar "
-                                                       "where `Date` = (select max(`Date`) "
-                                                       "from wic.tradegroup_attribution_to_fund_nav_dollar)",
-                                                       con=connection)
-
-    tradegroup_performance_bips = pd.read_sql_query("SELECT * FROM wic.tradegroup_attribution_to_fund_nav_bps "
-                                                    "where `Date` = (select max(`Date`) "
-                                                    "from wic.tradegroup_attribution_to_fund_nav_bps)",
-                                                    con=connection)
-
-    catalyst_df = pd.read_sql_query("SELECT DISTINCT TradeGroup, Fund, CatalystTypeWIC, CatalystRating FROM "
-                                    "wic.daily_flat_file_db WHERE Flat_file_as_of = "
-                                    "(SELECT MAX(Flat_file_as_of) FROM wic.daily_flat_file_db)", con=connection)
-
-    tradegroup_performance_bips['Date'] = tradegroup_performance_bips['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
-    tradegroup_performance_dollars['Date'] = tradegroup_performance_dollars['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
-    tradegroup_performance_bips['InceptionDate'] = tradegroup_performance_bips['InceptionDate'].apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
-    tradegroup_performance_dollars['InceptionDate'] = tradegroup_performance_dollars['InceptionDate'].apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
-    tradegroup_performance_bips['EndDate'] = tradegroup_performance_bips['EndDate'].apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
-    tradegroup_performance_dollars['EndDate'] = tradegroup_performance_dollars['EndDate'].apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
-
-    tradegroup_performance_dollars = pd.merge(tradegroup_performance_dollars, catalyst_df, how='left',
-                                              on=['TradeGroup', 'Fund'])
-
-    tradegroup_performance_bips = pd.merge(tradegroup_performance_bips, catalyst_df, how='left',
-                                           on=['TradeGroup', 'Fund'])
-
-    def create_story_url(row):
-        url = '../get_tradegroup_story?TradeGroup='+row['TradeGroup']+'&Fund='+row['Fund']
-        return "<a target='_blank' href='"+url+"'>View</a>"
-
-    tradegroup_performance_dollars['story_url'] = tradegroup_performance_dollars.apply(create_story_url, axis=1)
-    tradegroup_performance_bips['story_url'] = tradegroup_performance_bips.apply(create_story_url, axis=1)
-
+    as_of = '(select max(`Date`)'
+    error = ''
     perf_dict = {}
-    for fund in tradegroup_performance_dollars['Fund'].unique():
-        perf_dict[fund] = tradegroup_performance_dollars[tradegroup_performance_dollars['Fund'] == fund].to_json(orient='records')
-
     perf_dict_bips = {}
-    for fund in tradegroup_performance_bips['Fund'].unique():
-        perf_dict_bips[fund] = tradegroup_performance_bips[tradegroup_performance_bips['Fund'] == fund].to_json(orient='records')
+    if 'as_of' in request.GET:
+        as_of = "(SELECT " + "\'" + request.GET['as_of'] + "\'"
 
+    # Catching Value error referes to Absent Data
+    try:
+
+        tradegroup_performance_dollars = pd.read_sql_query("SELECT * FROM wic.tradegroup_attribution_to_fund_nav_dollar "
+                                                           "where `Date` =  " + as_of +
+                                                           " FROM wic.tradegroup_attribution_to_fund_nav_dollar LIMIT 1)",
+                                                           con=connection)
+
+        tradegroup_performance_bips = pd.read_sql_query("SELECT * FROM wic.tradegroup_attribution_to_fund_nav_bps "
+                                                        "where `Date` =  " + as_of +
+                                                        " FROM wic.tradegroup_attribution_to_fund_nav_bps LIMIT 1)",
+                                                        con=connection)
+
+        catalyst_df = pd.read_sql_query("SELECT DISTINCT TradeGroup, Fund, CatalystTypeWIC, CatalystRating FROM "
+                                        "wic.daily_flat_file_db WHERE Flat_file_as_of = (select max(flat_file_as_of) "
+                                        " FROM wic.daily_flat_file_db)", con=connection)
+
+        tradegroup_performance_bips['Date'] = tradegroup_performance_bips['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
+        tradegroup_performance_dollars['Date'] = tradegroup_performance_dollars['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
+        tradegroup_performance_bips['InceptionDate'] = tradegroup_performance_bips['InceptionDate'].apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
+        tradegroup_performance_dollars['InceptionDate'] = tradegroup_performance_dollars['InceptionDate'].apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
+        tradegroup_performance_bips['EndDate'] = tradegroup_performance_bips['EndDate'].apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
+        tradegroup_performance_dollars['EndDate'] = tradegroup_performance_dollars['EndDate'].apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
+
+        tradegroup_performance_dollars = pd.merge(tradegroup_performance_dollars, catalyst_df, how='left',
+                                                  on=['TradeGroup', 'Fund'])
+
+        tradegroup_performance_bips = pd.merge(tradegroup_performance_bips, catalyst_df, how='left',
+                                               on=['TradeGroup', 'Fund'])
+
+        def create_story_url(row):
+            url = '../get_tradegroup_story?TradeGroup='+row['TradeGroup']+'&Fund='+row['Fund']
+            return "<a target='_blank' href='"+url+"'>View</a>"
+
+        tradegroup_performance_dollars['story_url'] = tradegroup_performance_dollars.apply(create_story_url, axis=1)
+        tradegroup_performance_bips['story_url'] = tradegroup_performance_bips.apply(create_story_url, axis=1)
+
+        perf_dict = {}
+        for fund in tradegroup_performance_dollars['Fund'].unique():
+            perf_dict[fund] = tradegroup_performance_dollars[tradegroup_performance_dollars['Fund'] == fund].to_json(orient='records')
+
+        perf_dict_bips = {}
+        for fund in tradegroup_performance_bips['Fund'].unique():
+            perf_dict_bips[fund] = tradegroup_performance_bips[tradegroup_performance_bips['Fund'] == fund].to_json(orient='records')
+        as_of = tradegroup_performance_dollars['Date'].max()
+    except ValueError:
+        error = "No Data Found! Have you tried the legacy portal?"
+        as_of = request.GET['as_of']
     return render(request, 'tradegroup_performance.html',
                   context={'tradegroup_performance_dollars': json.dumps(perf_dict),
-                           'tradegroup_performance_bips': json.dumps(perf_dict_bips)})
+                           'tradegroup_performance_bips': json.dumps(perf_dict_bips),
+                           'as_of': as_of,
+                           'error': error})
 
 
 def get_tradegroup_story(request):
@@ -131,8 +146,6 @@ def get_tradegroup_story(request):
         return JsonResponse({'exposures_and_pnl_df': exposures_and_pnl_df.to_json(orient='records'),
                              'unique_tickers': json.dumps(unique_tickers)})
 
-
-
     return render(request, 'position_stats.html', {'unique_tickers': json.dumps(unique_tickers),
                                                    'tradegroup_name': tradegroup_name,
                                                    'fund_code': fund_code,
@@ -142,38 +155,55 @@ def get_tradegroup_story(request):
 
 
 def get_tradegroup_attribution_over_own_capital(request):
-    tradegroup_performance_over_own_capital = pd.read_sql_query("SELECT * FROM "
-                                                                "wic.tradegroup_performance_over_own_capital WHERE "
-                                                                "`Date` = (SELECT MAX(`Date`) FROM "
-                                                                "wic.tradegroup_performance_over_own_capital)",
-                                                                con=connection)
-    volatility_distribution_charts = pd.read_sql_query("SELECT vol_distribution_charts FROM "
-                                                       "wic.volatility_distribution_timeseries WHERE"
-                                                       "`Date`=(SELECT MAX(`Date`) FROM "
-                                                       "wic.volatility_distribution_timeseries)", con=connection)
-
-    volatility_distribution_charts = volatility_distribution_charts['vol_distribution_charts'].iloc[0]
-
-    tradegroup_performance_over_own_capital['Date'] = tradegroup_performance_over_own_capital['Date'].\
-        apply(lambda x: x.strftime('%Y-%m-%d'))
-    tradegroup_performance_over_own_capital['InceptionDate'] = tradegroup_performance_over_own_capital['InceptionDate']\
-        .apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
-    tradegroup_performance_over_own_capital['EndDate'] = tradegroup_performance_over_own_capital['EndDate'].\
-        apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
-
-    def create_story_url(row):
-        url = '../get_tradegroup_story?TradeGroup='+row['TradeGroup']+'&Fund='+row['Fund']
-        return "<a target='_blank' href='"+url+"'>View</a>"
-
-    tradegroup_performance_over_own_capital['story_url'] = tradegroup_performance_over_own_capital.apply(
-        create_story_url, axis=1)
-
+    as_of = '(select max(`Date`)'
+    error = ''
     perf_dict = {}
-    for fund in tradegroup_performance_over_own_capital['Fund'].unique():
-        perf_dict[fund] = tradegroup_performance_over_own_capital[
-            tradegroup_performance_over_own_capital['Fund'] == fund].to_json(orient='records')
+    volatility_distribution_charts = {}
+    if 'as_of' in request.GET:
+        as_of = "(SELECT " + "\'" + request.GET['as_of'] + "\'"
+
+    try:
+        tradegroup_performance_over_own_capital = pd.read_sql_query("SELECT * FROM "
+                                                                    "wic.tradegroup_performance_over_own_capital WHERE "
+                                                                    "`Date` = " + as_of +
+                                                                    " FROM wic.tradegroup_performance_over_own_capital "
+                                                                    "LIMIT 1)",
+                                                                    con=connection)
+        volatility_distribution_charts = pd.read_sql_query("SELECT vol_distribution_charts FROM "
+                                                           "wic.volatility_distribution_timeseries WHERE"
+                                                           "`Date`= (select max(`Date`)" +
+                                                           " FROM wic.volatility_distribution_timeseries LIMIT 1)",
+                                                           con=connection)
+
+        volatility_distribution_charts = volatility_distribution_charts['vol_distribution_charts'].iloc[0]
+
+        tradegroup_performance_over_own_capital['Date'] = tradegroup_performance_over_own_capital['Date'].\
+            apply(lambda x: x.strftime('%Y-%m-%d'))
+        tradegroup_performance_over_own_capital['InceptionDate'] = tradegroup_performance_over_own_capital['InceptionDate']\
+            .apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
+        tradegroup_performance_over_own_capital['EndDate'] = tradegroup_performance_over_own_capital['EndDate'].\
+            apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
+
+        def create_story_url(row):
+            url = '../get_tradegroup_story?TradeGroup='+row['TradeGroup']+'&Fund='+row['Fund']
+            return "<a target='_blank' href='"+url+"'>View</a>"
+
+        tradegroup_performance_over_own_capital['story_url'] = tradegroup_performance_over_own_capital.apply(
+            create_story_url, axis=1)
+
+        perf_dict = {}
+        for fund in tradegroup_performance_over_own_capital['Fund'].unique():
+            perf_dict[fund] = tradegroup_performance_over_own_capital[
+                tradegroup_performance_over_own_capital['Fund'] == fund].to_json(orient='records')
+        as_of = tradegroup_performance_over_own_capital['Date'].max()
+    except ValueError:
+        error = "No Data available. Have you tried the legacy portal?"
+        as_of = request.GET['as_of']
 
     return render(request, 'tradegroup_attribution_over_own.html', {'performance_over_own_capital':
                                                                     json.dumps(perf_dict),
                                                                     'volatility_distribution_charts':
-                                                                       volatility_distribution_charts})
+                                                                    volatility_distribution_charts,
+                                                                    'as_of': as_of,
+                                                                    'error': error}
+                  )

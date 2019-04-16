@@ -39,37 +39,40 @@
                                     <option selected>TRADEGROUP ATTRIBUTION OVER OWN CAPITAL</option>
                                 </select>
                             </div>
-                            {#                                <p class="lead h6 text-center font-size-small">As of <mark>{{ as_of }}</mark></p>#}
-                            {#                                {% if not error %}#}
-                            {#                                {% else %}#}
-                            {#                                    <p class="lead text-danger text-center font-size-small">{{ error }}</p>#}
-                            {#                                {% endif %}#}
+                            <input type="hidden" id="as_of" value="{{ as_of }}">
+                            <p class="lead h6 text-center font-size-small">As of <mark>{{ as_of }}</mark></p>
+                            {% if not error %}
+                            {% else %}
+                                <p class="lead text-danger text-center font-size-small">{{ error }}</p>
+                            {% endif %}
                         </div>
                         <div class="card-body">
-                            {#                                <small class="badge badge-default badge-danger">Note: </small> <p class="font-italic text-dark">For historical expsoures prior to 02/08/2018 please visit <a href="http://wicportal.wicfunds.local/risk-exp-snapshot" target="_blank"><u>wicportal.wicfunds.local/risk-exp-snapshot</u></a> </p>#}
-                            {#                                <div class="row">#}
-                            {#                                    <div class="col-lg-4"></div>#}
-                            {#                                    <div class="col-lg-1 block-tag">#}
-                            {#                                        <small class="badge badge-default badge-success">Retrieve Historical Exposures#}
-                            {#                                        </small>#}
-                            {#                                    </div>#}
-                            {#                                    <div class="col-lg-2">#}
-                            {#                                        <fieldset class="form-group">#}
-                            {#                                            <input type="date" class="form-control" required#}
-                            {#                                                   id="exposures_as_of"#}
-                            {#                                                   >#}
-                            {#                                        </fieldset>#}
-                            {#                                    </div>#}
-                            {#                                    <div class="col-lg-1">#}
-                            {#                                        <fieldset class="form-group">#}
-                            {#                                            <button type="button" class="btn btn-info" id="submit_expoures_as_of" >#}
-                            {#                                                Submit#}
-                            {#                                            </button>#}
-                            {#                                        </fieldset>#}
-                            {#                                    </div>#}
-                            {##}
-                            {#                                    <div class="col-lg-4"></div>#}
-                            {#                                </div>#}
+                            <small class="badge badge-default badge-danger">Note:</small>
+                            <p class="font-italic text-dark">For historical performances prior to 04/08/2019 please visit the legacy portal by clicking
+                                <a href="http://wicportal.wicfunds.local/risk-tradegroup-performance?mode=TRADEGROUP%20PERFORMANCE%20OVER%20OWN%20CAPITAL" target="_blank"><u>here</u></a>
+                            </p>
+                            <div class="row">
+                                <div class="col-lg-4"></div>
+                                <div class="col-lg-1 block-tag">
+                                    <small class="badge badge-default badge-success">Retrieve Historical Performances
+                                    </small>
+                                </div>
+                                <div class="col-lg-2">
+                                    <fieldset class="form-group">
+                                        <input type="date" class="form-control" required
+                                               id="tradegroup_performance_as_of">
+                                    </fieldset>
+                                </div>
+                                <div class="col-lg-1">
+                                    <fieldset class="form-group">
+                                        <button type="button" class="btn btn-info" id="submit_tg_performance_as_of">
+                                            Submit
+                                        </button>
+                                    </fieldset>
+                                </div>
+
+                                <div class="col-lg-4"></div>
+                            </div>
 
 
                             <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg" id="fundtabs">
@@ -79,16 +82,11 @@
                             <div class="tab-content" id="fund-tab-content">
                                 <div class="loader-wrapper" style="margin-top: 10%">
                                     <div class="loader-container">
-                                        <div class="ball-grid-pulse loader-primary">
-                                            <div></div>
-                                            <div></div>
-                                            <div></div>
-                                            <div></div>
-                                            <div></div>
-                                            <div></div>
-                                            <div></div>
-                                            <div></div>
-                                            <div></div>
+                                        <div class="folding-cube loader-blue-grey">
+                                            <div class="cube1 cube"></div>
+                                            <div class="cube2 cube"></div>
+                                            <div class="cube4 cube"></div>
+                                            <div class="cube3 cube"></div>
                                         </div>
                                     </div>
                                 </div>
