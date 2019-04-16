@@ -171,7 +171,7 @@ def get_tradegroup_attribution_over_own_capital(request):
                                                                     con=connection)
         volatility_distribution_charts = pd.read_sql_query("SELECT vol_distribution_charts FROM "
                                                            "wic.volatility_distribution_timeseries WHERE"
-                                                           "`Date`= (select max(`Date`)" +
+                                                           "`Date`= " + as_of +
                                                            " FROM wic.volatility_distribution_timeseries LIMIT 1)",
                                                            con=connection)
 
