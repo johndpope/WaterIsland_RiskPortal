@@ -832,10 +832,8 @@
                                     <br>
                                 </div>
                                 <div class="col-lg-3 block-tag">
-                                    <button id='open_arb_risk_form' class="btn btn-primary btn-sm">
-                                        <i class="ft-flag"></i> <a
-                                            href="{% url 'risk:show_risk_factors' deal_id=deal_core.id %}"
-                                            target="_blank" style="text-decoration:none">Open Risk Form</a>
+                                    <button id='open_arb_risk_form' class="btn btn-primary btn-sm" onclick='window.open("{% url 'risk:show_risk_factors' deal_id=deal_core.id %}","_blank")'>
+                                        <i class="ft-flag"> </i>Open Risk Form
                                     </button>
                                 </div>
 

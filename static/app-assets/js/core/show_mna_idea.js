@@ -341,7 +341,7 @@ $(document).ready(function () {
                 var deal_risk_factors_actual = deal_risk_factors_dict['actual'];
                 var deal_risk_factors_regulatory = deal_risk_factors_dict['regulatory'];
                 var balloonText = "";
-                if (deal_risk_factors_requirement.toLowerCase() != 'not required' || deal_risk_factors_requirement != null) {
+                if (deal_risk_factors_requirement != null && deal_risk_factors_requirement.toLowerCase() != 'not required') {
                     balloonText = deal_risk_factors_requirement;
                 }
                 else {

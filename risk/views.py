@@ -8,9 +8,11 @@ from celery.result import AsyncResult
 from django.conf import settings
 from django.core import serializers
 from django.db import connection
+from django.forms import ValidationError
 from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.edit import FormView
 from django_pandas.io import read_frame
 import numpy as np
 import pandas as pd
@@ -18,6 +20,7 @@ import pandas as pd
 from ess_premium_analysis import multiple_underlying_df
 from notes.models import NotesMaster
 from risk.chart_utils import *
+from risk.forms import MaDealsRiskFactorsForm
 from risk.models import *
 from risk.tasks import add_new_idea, run_ess_premium_analysis_task
 from wic_news.models import NewsMaster
@@ -867,116 +870,43 @@ def show_mna_idea(request):
                    })
 
 
-def update_or_create_arb_risk_factors(request):
-    response = 'Failed'
-    if request.method == 'POST':
-        try:
-            deal_id = request.POST['deal_id']
-            definiteness = request.POST['definiteness']
-            hostile_friendly = request.POST['hostile_friendly']
-            strategic_pe = request.POST['strategic_pe']
-            deal_rationale = request.POST['deal_rationale']
-            premium_percentage = request.POST['premium_percentage']
-            stock_cash = request.POST['stock_cash']
-            financing_percent_of_deal_value = request.POST['financing_percent_of_deal_value']
-            proforma_leverage = request.POST['proforma_leverage']
-            estimated_close = request.POST['estimated_close']
-            go_shop = request.POST['go_shop']
-            divestitures_required = request.POST['divestitures_required']
-            termination_fee_acquirer = request.POST['termination_fee_acquirer']
-            termination_fee_target = request.POST['termination_fee_target']
-            fair_valuation = request.POST['fair_valuation']
-            cyclical_industry = request.POST['cyclical_industry']
-            sec_required = request.POST['sec_required']
-            sec_expected = request.POST['sec_expected']
-            sec_actual = request.POST['sec_actual']
-            hsr_required = request.POST['hsr_required']
-            hsr_expected = request.POST['hsr_expected']
-            hsr_actual = request.POST['hsr_actual']
-            mofcom_required = request.POST['mofcom_required']
-            mofcom_expected = request.POST['mofcom_expected']
-            mofcom_actual = request.POST['mofcom_actual']
-            cfius_required = request.POST['cfius_required']
-            cfius_expected = request.POST['cfius_expected']
-            cfius_actual = request.POST['cfius_actual']
-            ec_required = request.POST['ec_required']
-            ec_expected = request.POST['ec_expected']
-            ec_actual = request.POST['ec_actual']
-            accc_required = request.POST['accc_required']
-            accc_expected = request.POST['accc_expected']
-            accc_actual = request.POST['accc_actual']
-            canada_required = request.POST['canada_required']
-            canada_expected = request.POST['canada_expected']
-            canada_actual = request.POST['canada_actual']
-            cade_required = request.POST['cade_required']
-            cade_expected = request.POST['cade_expected']
-            cade_actual = request.POST['cade_actual']
-            other_country_one = request.POST['other_country_one']
-            other_country_two = request.POST['other_country_two']
-            acquirer_sh_vote_required = request.POST['acquirer_sh_vote_required']
-            target_sh_vote_required = request.POST['target_sh_vote_required']
-            acquirer_becomes_target = request.POST['acquirer_becomes_target']
-            potential_bidding_war = request.POST['potential_bidding_war']
-            commodity_risk = request.POST['commodity_risk']
-            estimated_market_share_acquirer = request.POST['estimated_market_share_acquirer']
-            estimated_market_share_target = request.POST['estimated_market_share_target']
+class MaDealsRiskFactorsView(FormView):
+    template_name = 'arb_risk_factors.html'
+    form_class = MaDealsRiskFactorsForm
+    fields = '__all__'
 
-            to_update = {
-                'definiteness':definiteness,
-                'hostile_friendly':hostile_friendly,
-                'strategic_pe':strategic_pe,
-                'deal_rationale':deal_rationale,
-                'premium_percentage':premium_percentage,
-                'stock_cash':stock_cash,
-                'financing_percent_of_deal_value':financing_percent_of_deal_value,
-                'pro_forma_leverage':proforma_leverage,
-                'estimated_closing_date':estimated_close if estimated_close != '' else None,
-                'go_shop':go_shop,
-                'divestitures_required':divestitures_required,
-                'termination_fee_for_acquirer':termination_fee_acquirer,
-                'termination_fee_for_target':termination_fee_target,
-                'fair_valuation':fair_valuation,
-                'cyclical_industry':cyclical_industry,
-                'sec_requirement':sec_required,
-                'sec_expected_clearance':sec_expected if sec_expected != '' else None,
-                'sec_actual_clearance':sec_actual if sec_actual != '' else None,
-                'hsr_requirement':hsr_required, 'hsr_expected_clearance':hsr_expected if hsr_expected != '' else None,
-                'hsr_actual_clearance':hsr_actual if hsr_actual != '' else None,
-                'mofcom_requirement':mofcom_required,
-                'mofcom_expected_clearance':mofcom_expected if mofcom_expected != '' else None,
-                'mofcom_actual_clearance':mofcom_actual if mofcom_actual != '' else None,
-                'cifius_requirement':cfius_required,
-                'cifius_expected_clearance':cfius_expected if cfius_expected != '' else None,
-                'cifius_actual_clearance':cfius_actual if cfius_actual != '' else None, 'ec_requirement':ec_required,
-                'ec_actual_clearance':ec_actual if ec_actual != '' else None,
-                'ec_expected_clearance':ec_expected if ec_expected != '' else None,
-                'accc_requirement':accc_required,
-                'accc_expected_clearance':accc_expected if accc_expected != '' else None,
-                'accc_actual_clearance':accc_actual if accc_actual != '' else None,
-                'investment_canada_requirement':canada_required,
-                'investment_canada_expected_clearance':canada_expected if canada_expected != '' else None,
-                'investment_canada_actual_clearance':canada_actual if canada_actual != '' else None,
-                'cade_requirement':cade_required,
-                'cade_expected_clearance':cade_expected if cade_expected != '' else None,
-                'cade_actual_clearance':cade_actual if cade_actual != '' else None,
-                'other_country_regulatory_risk_one':other_country_one,
-                'other_country_regulatory_risk_two':other_country_two,
-                'acquirer_sh_vote_required':acquirer_sh_vote_required,
-                'target_sh_vote_required_percentage':target_sh_vote_required,
-                'acquirer_becomes_target':acquirer_becomes_target,
-                'potential_bidding_war':potential_bidding_war,
-                'commodity_risk':commodity_risk,
-                'estimated_market_share_acquirer':estimated_market_share_acquirer,
-                'estimated_market_share_target':estimated_market_share_target
-            }
+    def get_success_url(self):
+        return "/risk/show_mna_idea?mna_idea_id=" + self.kwargs.get('deal_id')
 
-            MA_Deals_Risk_Factors.objects.update_or_create(deal_id=deal_id,defaults=to_update)
-            response = 'Success'
-        except Exception as e:
-            print(e)
+    def form_valid(self, form):
+        deal_id = self.kwargs.get('deal_id')
+        if deal_id:
+            obj, created = MA_Deals_Risk_Factors.objects.get_or_create(deal_id=deal_id)
+            form = MaDealsRiskFactorsForm(self.request.POST or None, instance=obj)
+            if form.is_valid():
+                resource = form.save(commit=False)
+                resource.deal_id = self.kwargs.get('deal_id')
+                resource.save()
+                return super(MaDealsRiskFactorsView, self).form_valid(form)
 
-    return HttpResponse(response)
+    def get_context_data(self, **kwargs):
+        context = super(MaDealsRiskFactorsView, self).get_context_data(**kwargs)
+        deal_id = self.kwargs.get('deal_id')
+        if deal_id:
+            context.update({'deal_id': deal_id})
+            try:
+                deal_name = MA_Deals.objects.get(id=deal_id).deal_name
+                context.update({'deal_name': deal_name})
+            except MA_Deals.DoesNotExist:
+                return render('coming_soon.html', status=404)
+        return context
 
+    def get_initial(self):
+        initial = super(MaDealsRiskFactorsView, self).get_initial()
+        deal_id = self.kwargs.get('deal_id')
+        initial.update(MA_Deals_Risk_Factors.objects.filter(deal__id=deal_id).values()[0])
+
+        return initial
 
 
 def show_risk_factors(request, deal_id):

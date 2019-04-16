@@ -19,7 +19,6 @@ from django.urls import path
 from django.conf.urls import url
 from portal import views
 from django.conf import settings
-from risk import views as risk_views
 import risk_reporting
 handler404 = views.handler404
 handler500 = views.handler500

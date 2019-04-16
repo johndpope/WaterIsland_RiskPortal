@@ -48,59 +48,270 @@ class MA_Deals(models.Model):
         return self.deal_name + ' By-'+self.analyst
 
 
+
+DEFINITENESS_CHOICES = (
+    ('Definitive Agreement', 'Definitive Agreement'),
+    ('Agreement in Principle', 'Agreement in Principle'),
+)
+
+HOSTILE_CHOICES = (
+    ('Hostile', 'Hostile'),
+    ('Friendly', 'Friendly'),
+)
+
+STRATEGIC_CHOICES = (
+    ('Strategic', 'Strategic'),
+    ('PE', 'PE'),
+)
+
+DEAL_RATIONALE_CHOICES = (
+    ('One of a kind asset', 'One of a kind asset'),
+    ('Synergy', 'Synergy'),
+    ('Market Share', 'Market Share'),
+    ('Economy of Scale', 'Economy of Scale'),
+    ('Taxation', 'Taxation'),
+    ('Diversification', 'Diversification'),
+    ('Vertical Integration', 'Vertical Integration'),
+)
+
+STOCK_CASH_CHOICES = (
+    ('Cash Tender', 'Cash Tender'),
+    ('Stock Exchange', 'Stock Exchange'),
+    ('Scheme of an Arrangement', 'Scheme of an Arrangement'),
+    ('Merger all Cash', 'Merger all Cash'),
+    ('Merger with Stock Portion', 'Merger with Stock Portion'),
+)
+
+GO_SHOP_CHOICES = (
+    ('No', 'No'),
+    ('Yes', 'Yes'),
+)
+
+DIVESTITURES_CHOICES = (
+    ('Not Required', 'Not Required'),
+    ('required', 'required'),
+)
+
+FAIR_VALUATION_CHOICES = (
+    ('N/A', 'N/A'),
+    ('Fair', 'Fair'),
+    ('Overvalued', 'Overvalued'),
+    ('Undervalued', 'Undervalued'),
+)
+
+CYCLINCAL_INDUSTRY_CHOICES = (
+    ('No', 'No'),
+    ('Yes', 'Yes'),
+)
+
+SEC_REQUIREMENT_CHOICES = (
+    ('Not required', 'Not required'),
+    ('Required - Proxy Review', 'Required - Proxy Review'),
+    ('Required - S4 for US Buyer', 'Required - S4 for US Buyer'),
+    ('Required - S4 for Foreign Buyer', 'Required - S4 for Foreign Buyer'),
+)
+
+HSR_REQUIREMENT_CHOICES = (
+    ('Not required', 'Not required'),
+    ('Required - Expected Phase I', 'Required - Expected Phase I'),
+    ('Required - Expected Phase II', 'Required - Expected Phase II'),
+    ('Required - Potential Block', 'Required - Potential Block'),
+)
+
+MOFCOM_REQUIREMENT_CHOICES = (
+    ('Not required', 'Not required'),
+    ('Required - Expected Phase I', 'Required - Expected Phase I'),
+    ('Required - Expected Phase II', 'Required - Expected Phase II'),
+    ('Required - Expected Phase III', 'Required - Expected Phase III'),
+    ('Required - Potential Block', 'Required - Potential Block'),
+)
+
+CIFIUS_REPLACEMENT_CHOICES = (
+    ('Not required', 'Not required'),
+    ('Required - Expected 45 day approval', 'Required - Expected 45 day approval'),
+    ('Required - Expected 75 day approval', 'Required - Expected 75 day approval'),
+    ('Required - Potential Block', 'Required - Potential Block'),
+)
+
+EC_REQUIREMENT_CHOICES = (
+    ('Not required', 'Not required'),
+    ('Required - Expected Phase I', 'Required - Expected Phase I'),
+    ('Required - Expected Phase II', 'Required - Expected Phase II'),
+    ('Required - Potential Block', 'Required - Potential Block'),
+)
+
+ACCC_REQUIREMENT_CHOICES = (
+    ('Not required', 'Not required'),
+    ('Required - Expected approval < 90 days', 'Required - Expected approval < 90 days'),
+    ('Required - Expected approval > 90 days', 'Required - Expected approval > 90 days'),
+    ('Required - Potential Block', 'Required - Potential Block'),
+)
+
+INVESTMENT_CA_REQUIREMENT_CHOICES = (
+    ('Not required', 'Not required'),
+    ('Required - Expected approval during initial review', 'Required - Expected approval during initial review'),
+    ('Required - Expected approval following extended review', 'Required - Expected approval following extended review'),
+    ('Required - Potential Block', 'Required - Potential Block'),
+)
+
+CADE_REQUIREMENT_CHOICES = (
+    ('Not required', 'Not required'),
+    ('Required - Expected approval < 60 days>', 'Required - Expected approval < 60 days>'),
+    ('Required - Expected approval < 240 days>', 'Required - Expected approval < 240 days>'),
+    ('Required - Expected approval < 330 days>', 'Required - Expected approval < 330 days>'),
+    ('Required - Potential Block', 'Required - Potential Block'),
+)
+
+COUNTRY_RISK_ONE_CHOICES = (
+    ('Germany', 'Germany'),
+    ('Japan', 'Japan'),
+    ('France', 'France'),
+    ('Italy', 'Italy'),
+    ('Israel', 'Israel'),
+    ('Russia', 'Russia'),
+    ('Spain', 'Spain'),
+    ('Mexico', 'Mexico'),
+    ('Switzerland', 'Switzerland'),
+    ('Sweden', 'Sweden'),
+    ('Belgium', 'Belgium'),
+)
+
+COUNTRY_RISK_TWO_CHOICES = (
+    ('N/A', 'N/A'),
+    ('Germany', 'Germany'),
+    ('Japan', 'Japan'),
+    ('France', 'France'),
+    ('Italy', 'Italy'),
+    ('Israel', 'Israel'),
+    ('Russia', 'Russia'),
+    ('Spain', 'Spain'),
+    ('Mexico', 'Mexico'),
+    ('Switzerland', 'Switzerland'),
+    ('Sweden', 'Sweden'),
+    ('Belgium', 'Belgium')
+)
+
+ACQUIRER_SH_VOTE_CHOICES = (
+    ('Not Required', 'Not Required'),
+    ('Required', 'Required'),
+)
+
+TARGET_SH_VOTE_CHOICES = (
+    ('50', '50'),
+    ('67', '67'),
+    ('75', '75'),
+    ('90', '90'),
+)
+
+ACQUIRER_BECOMES_TARGET_CHOICES = (
+    ('Highly Unlikely', 'Highly Unlikely'),
+    ('Unlikely', 'Unlikely'),
+    ('Neutral', 'Neutral'),
+    ('Likely', 'Likely'),
+    ('Highly Likely', 'Highly Likely'),
+)
+
+POTENTIAL_BIDDING_CHOICES = (
+    ('Highly Unlikely', 'Highly Unlikely'),
+    ('Unlikely', 'Unlikely'),
+    ('Neutral', 'Neutral'),
+    ('Likely', 'Likely'),
+    ('Highly Likely', 'Highly Likely'),
+)
+
+COMMODITY_RISK_CHOICES = (
+    ('N/A', 'N/A'),
+    ('Energy', 'Energy'),
+    ('Metals', 'Metals'),
+    ('Grains', 'Grains'),
+    ('Other', 'Other'),
+)
+
+ESTIMATED_MARKET_SHARE_TARGET_CHOICES = (
+    ('N/A', 'N/A'),
+    ('0% - 10%', '0% - 10%'),
+    ('11% - 20%', '11% - 20%'),
+    ('20% - 30%', '20% - 30%'),
+    ('30% - 40%', '30% - 40%'),
+    ('40%+', '40%+'),
+)
+
+ESTIMATED_MARKET_SHARE_ACQUIRER_CHOICES = (
+    ('N/A', 'N/A'),
+    ('0% - 10%', '0% - 10%'),
+    ('11% - 20%', '11% - 20%'),
+    ('20% - 30%', '20% - 30%'),
+    ('30% - 40%', '30% - 40%'),
+    ('40%+', '40%+'),
+)
+
+INVERSION_DEAL_CHOICES = (
+    ('No', 'No'),
+    ('Yes', 'Yes'),
+)
+
+FORM_COMPLETE = (
+    ('No', 'No'),
+    ('Yes', 'Yes'),
+)
+
+
 class MA_Deals_Risk_Factors(models.Model):
+    """
+    Models for MA Deals Risk Factors
+    """
     deal = models.ForeignKey(MA_Deals, on_delete=models.CASCADE)
-    definiteness = models.CharField(null=True, max_length=100)
-    hostile_friendly = models.CharField(null=True, max_length=10)
-    strategic_pe = models.CharField(null=True, max_length=10)
-    deal_rationale = models.CharField(null=True, max_length=100)
-    premium_percentage = models.CharField(null=True, max_length=10)
-    stock_cash = models.CharField(null=True, max_length=100)
-    financing_percent_of_deal_value = models.CharField(null=True, max_length=10)
-    pro_forma_leverage = models.CharField(null=True, max_length=50)
-    estimated_closing_date = models.DateField(null=True)
-    go_shop = models.CharField(null=True, max_length=5)
-    divestitures_required = models.CharField(null=True, max_length=15)
-    termination_fee_for_acquirer = models.FloatField(null=True)
-    termination_fee_for_target = models.FloatField(null=True)
-    fair_valuation = models.CharField(null=True, max_length=30)
-    cyclical_industry = models.CharField(null=True, max_length=5)
-    sec_requirement = models.CharField(null=True, max_length=50)
-    sec_expected_clearance = models.DateField(null=True)
-    sec_actual_clearance = models.DateField(null=True)
-    hsr_requirement = models.CharField(null=True, max_length=50)
-    hsr_expected_clearance = models.DateField(null=True)
-    hsr_actual_clearance = models.DateField(null=True)
-    mofcom_requirement = models.CharField(null=True, max_length=50)
-    mofcom_expected_clearance = models.DateField(null=True)
-    mofcom_actual_clearance = models.DateField(null=True)
-    cifius_requirement = models.CharField(null=True, max_length=50)
-    cifius_expected_clearance = models.DateField(null=True)
-    cifius_actual_clearance = models.DateField(null=True)
-    ec_requirement = models.CharField(null=True, max_length=50)
-    ec_expected_clearance = models.DateField(null=True)
-    ec_actual_clearance = models.DateField(null=True)
-    accc_requirement = models.CharField(null=True, max_length=50)
-    accc_expected_clearance = models.DateField(null=True)
-    accc_actual_clearance = models.DateField(null=True)
-    investment_canada_requirement = models.CharField(null=True, max_length=50)
-    investment_canada_expected_clearance = models.DateField(null=True)
-    investment_canada_actual_clearance = models.DateField(null=True)
-    cade_requirement = models.CharField(null=True, max_length=50)
-    cade_expected_clearance = models.DateField(null=True)
-    cade_actual_clearance = models.DateField(null=True)
-    other_country_regulatory_risk_one = models.CharField(null=True, max_length=50)
-    other_country_regulatory_risk_two = models.CharField(null=True, max_length=50)
-    acquirer_sh_vote_required = models.CharField(null=True, max_length=50)
-    target_sh_vote_required_percentage = models.CharField(null=True, max_length=100)
-    acquirer_becomes_target = models.CharField(null=True, max_length=50)
-    potential_bidding_war = models.CharField(null=True, max_length=50)
-    commodity_risk = models.CharField(null=True, max_length=50)
-    estimated_market_share_acquirer = models.CharField(null=True, max_length=50)
-    estimated_market_share_target = models.CharField(null=True, max_length=50)
-    is_iversion_deal_or_tax_avoidance = models.CharField(null=True, max_length=10)
-    activists_involved = models.TextField(null=True)
-    is_form_complete = models.CharField(max_length=5, default='No')
+    definiteness = models.CharField(null=True, blank=True, max_length=100, choices=DEFINITENESS_CHOICES)
+    hostile_friendly = models.CharField(null=True, blank=True, max_length=10, choices=HOSTILE_CHOICES)
+    strategic_pe = models.CharField(null=True, blank=True, max_length=10, choices=STRATEGIC_CHOICES)
+    deal_rationale = models.CharField(null=True, blank=True, max_length=100, choices=DEAL_RATIONALE_CHOICES)
+    premium_percentage = models.CharField(null=True, blank=True, max_length=10)
+    stock_cash = models.CharField(null=True, blank=True, max_length=100, choices=STOCK_CASH_CHOICES)
+    financing_percent_of_deal_value = models.CharField(null=True, blank=True, max_length=10)
+    pro_forma_leverage = models.CharField(null=True, blank=True, max_length=50)
+    estimated_closing_date = models.DateField(null=True, blank=True)
+    go_shop = models.CharField(null=True, blank=True, max_length=5, choices=GO_SHOP_CHOICES)
+    divestitures_required = models.CharField(null=True, blank=True, max_length=15, choices=DIVESTITURES_CHOICES)
+    termination_fee_for_acquirer = models.FloatField(null=True, blank=True)
+    termination_fee_for_target = models.FloatField(null=True, blank=True)
+    fair_valuation = models.CharField(null=True, blank=True, max_length=30, choices=FAIR_VALUATION_CHOICES)
+    cyclical_industry = models.CharField(null=True, blank=True, max_length=5, choices=CYCLINCAL_INDUSTRY_CHOICES)
+    sec_requirement = models.CharField(null=True, blank=True, max_length=50, choices=SEC_REQUIREMENT_CHOICES)
+    sec_expected_clearance = models.DateField(null=True, blank=True)
+    sec_actual_clearance = models.DateField(null=True, blank=True)
+    hsr_requirement = models.CharField(null=True, blank=True, max_length=50, choices=HSR_REQUIREMENT_CHOICES)
+    hsr_expected_clearance = models.DateField(null=True, blank=True)
+    hsr_actual_clearance = models.DateField(null=True, blank=True)
+    mofcom_requirement = models.CharField(null=True, blank=True, max_length=50, choices=MOFCOM_REQUIREMENT_CHOICES)
+    mofcom_expected_clearance = models.DateField(null=True, blank=True)
+    mofcom_actual_clearance = models.DateField(null=True, blank=True)
+    cifius_requirement = models.CharField(null=True, blank=True, max_length=50, choices=CIFIUS_REPLACEMENT_CHOICES)
+    cifius_expected_clearance = models.DateField(null=True, blank=True)
+    cifius_actual_clearance = models.DateField(null=True, blank=True)
+    ec_requirement = models.CharField(null=True, blank=True, max_length=50, choices=EC_REQUIREMENT_CHOICES)
+    ec_expected_clearance = models.DateField(null=True, blank=True)
+    ec_actual_clearance = models.DateField(null=True, blank=True)
+    accc_requirement = models.CharField(null=True, blank=True, max_length=50, choices=ACCC_REQUIREMENT_CHOICES)
+    accc_expected_clearance = models.DateField(null=True, blank=True)
+    accc_actual_clearance = models.DateField(null=True, blank=True)
+    investment_canada_requirement = models.CharField(null=True, blank=True, max_length=50, choices=INVESTMENT_CA_REQUIREMENT_CHOICES)
+    investment_canada_expected_clearance = models.DateField(null=True, blank=True)
+    investment_canada_actual_clearance = models.DateField(null=True, blank=True)
+    cade_requirement = models.CharField(null=True, blank=True, max_length=50, choices=CADE_REQUIREMENT_CHOICES)
+    cade_expected_clearance = models.DateField(null=True, blank=True)
+    cade_actual_clearance = models.DateField(null=True, blank=True)
+    other_country_regulatory_risk_one = models.CharField(null=True, blank=True, max_length=50, choices=COUNTRY_RISK_ONE_CHOICES)
+    other_country_regulatory_risk_two = models.CharField(null=True, blank=True, max_length=50, choices=COUNTRY_RISK_TWO_CHOICES)
+    acquirer_sh_vote_required = models.CharField(null=True, blank=True, max_length=50, choices=ACQUIRER_SH_VOTE_CHOICES)
+    target_sh_vote_required_percentage = models.CharField(null=True, blank=True, max_length=100, choices=TARGET_SH_VOTE_CHOICES)
+    acquirer_becomes_target = models.CharField(null=True, blank=True, max_length=50, choices=ACQUIRER_BECOMES_TARGET_CHOICES)
+    potential_bidding_war = models.CharField(null=True, blank=True, max_length=50, choices=POTENTIAL_BIDDING_CHOICES)
+    commodity_risk = models.CharField(null=True, blank=True, max_length=50, choices=COMMODITY_RISK_CHOICES)
+    estimated_market_share_acquirer = models.CharField(null=True, blank=True, max_length=50, choices=ESTIMATED_MARKET_SHARE_ACQUIRER_CHOICES)
+    estimated_market_share_target = models.CharField(null=True, blank=True, max_length=50, choices=ESTIMATED_MARKET_SHARE_TARGET_CHOICES)
+    is_inversion_deal_or_tax_avoidance = models.CharField(null=True, blank=True, max_length=10, choices=INVERSION_DEAL_CHOICES)
+    activists_involved = models.TextField(null=True, blank=True)
+    is_form_complete = models.CharField(null=True, blank=True, max_length=5, choices=FORM_COMPLETE)
 
 
 class MA_Deals_WeeklyDownsideEstimates(models.Model):

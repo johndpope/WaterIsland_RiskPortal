@@ -1,5 +1,5 @@
 from django.conf.urls import url,include
-from . import views
+from risk import views
 
 app_name = 'risk'
 
@@ -12,9 +12,7 @@ urlpatterns = [
     url('delete_ess_idea$', views.delete_ess_idea, name='delete_ess_idea'),
     url('ess_idea_download_handler$', views.ess_idea_download_handler, name='ess_idea_download_handler'),
     url('get_ess_idea_celery_status$', views.get_celery_status, name='get_ess_idea_celery_status'),
-    url('show_risk_factors(?P<deal_id>\w+)$', views.show_risk_factors,name='show_risk_factors'),
-    url('update_or_create_arb_risk_factors$', views.update_or_create_arb_risk_factors,
-        name='update_or_create_arb_risk_factors'),
+    url('show_risk_factors(?P<deal_id>\w+)$', views.MaDealsRiskFactorsView.as_view(), name='show_risk_factors'),
     url('show_mna_idea$',views.show_mna_idea,name='show_mna_idea'),
     url('mna_idea_run_scenario_analysis$',views.mna_idea_run_scenario_analysis,name='mna_idea_run_scenario_analysis'),
     url('update_comments$',views.update_comments,name='update_comments'),
