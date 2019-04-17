@@ -1,17 +1,23 @@
+# coding: utf-8
+import datetime
+import io
+import json
+from math import ceil
 import os
 import sys
 import time
-import datetime
-import io
+
 from celery import shared_task
-import pandas as pd
-from risk_reporting.models import DailyNAVImpacts, PositionLevelNAVImpacts, FormulaeBasedDownsides
+import django
+from django.conf import settings
 from django_slack import slack_message
 import numpy as np
-from django.conf import settings
+import pandas as pd
 from sqlalchemy import create_engine
+
 from email_utilities import send_email
-import django
+from risk_reporting.models import DailyNAVImpacts, PositionLevelNAVImpacts, FormulaeBasedDownsides
+
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 django.setup()
@@ -629,3 +635,191 @@ def email_daily_formulae_linked_downsides():
     except Exception as e:
         print('Error Occured....')
         print(e)
+
+
+def append_percentage_sign(string):
+    return string.astype(str) + '%'
+
+
+def round_off(value):
+    try:
+        return round(value, 1).map('{:,.1f}'.format) if value is not None else value
+    except ValueError:
+        return value
+
+
+def round_bps(value):
+    return round((value/100), 2)
+
+
+def get_ytd_key(period_dict):
+    if period_dict:
+        for key in period_dict.keys():
+            if period_dict.get(key) == 'YTD':
+                return key
+    return None
+
+
+def get_bps_value(row):
+    return row['P&L(bps)'].get(get_ytd_key(row['Period']))
+
+
+def hover(hover_color="#ffff99"):
+    return dict(selector="tr:hover",
+                props=[("background-color", "%s" % hover_color)])
+
+
+def style_funds(x):
+    return ['font-size: 125%; font-weight: bold; border: 1px solid black' if v == 'Loss Budgets' else '' for v in x.index]
+
+
+@shared_task
+def email_pl_target_loss_budgets():
+
+    WIC_DB_HOST = 'wic-risk-database.cwi02trt7ww1.us-east-1.rds.amazonaws.com'
+    DB_USER = 'root'
+    DB_PASSWORD = 'waterislandcapital'
+    engine = create_engine("mysql://" + DB_USER + ":" + DB_PASSWORD + "@" + WIC_DB_HOST + "/test_wic_db")
+    con = engine.connect()
+
+    df = pd.read_sql('Select * from test_wic_db.realtime_pnl_impacts_arbitrageytdperformance', con=con)
+    df.drop(columns=['id'], inplace=True)
+    sleeve_df = pd.read_sql('Select * from wic.sleeves_snapshot', con=con)
+    con.close()
+
+    c_load = sleeve_df['Metrics in NAV JSON'].apply(json.loads)
+    c_list = list(c_load)
+    c_dat = json.dumps(c_list)
+    sleeve_df = sleeve_df.join(pd.read_json(c_dat))
+    sleeve_df = sleeve_df.drop('Metrics in NAV JSON' , axis=1)
+
+    sleeve_df['Gross YTD Return'] = sleeve_df.apply(get_bps_value, axis=1)
+
+    new_sleeve_df = sleeve_df[['Fund', 'Gross YTD Return']].copy()
+
+    new_sleeve_df = new_sleeve_df.groupby(['Fund']).sum()
+
+    new_sleeve_df['Gross YTD Return'] = new_sleeve_df['Gross YTD Return'].apply(round_bps)
+    new_sleeve_df = new_sleeve_df.reset_index()
+
+    pd.set_option('float_format', '{:2}'.format)
+    active_tradegroups = df[df['status'] == 'ACTIVE']
+    closed_tradegroups = df[df['status'] == 'CLOSED']
+    fund_active_losers = active_tradegroups[active_tradegroups['ytd_dollar'] < 0][['fund', 'ytd_dollar']].groupby(['fund']).agg('sum').reset_index()
+    fund_active_losers.columns = ['Fund', 'YTD Active Losers']
+    investable_assets_df = df[['fund', 'fund_aum']].drop_duplicates()
+    investable_assets_df.columns = ['Fund', 'AUM']
+    fund_realized_losses = closed_tradegroups[closed_tradegroups['ytd_dollar'] < 0][['fund', 'ytd_dollar']].groupby(['fund']).agg('sum').reset_index()
+    fund_realized_losses.columns = ['Fund', 'YTD Realized Losses']
+    fund_pnl = pd.merge(fund_active_losers, fund_realized_losses, on = ['Fund'])
+    loss_budget_df = pd.DataFrame(columns=['Fund', 'Loss Budget'], data=[['ARB', '-1'], ['AED', '-2'], ['MACO', '-1'], ['MALT', '-1'],
+                                                                         ['LEV', '-3'], ['LG', '-2'], ['CAM', '-2'],])
+    return_targets_df = pd.DataFrame(columns=['Fund', 'Ann Gross P&L Target %'], data=[['ARB', '5'], ['AED', '8'], ['MACO', '5'], ['MALT', '5'],
+                                                                                       ['LEV', '12'], ['LG', '8'], ['CAM', '8'],])
+    merged_df = pd.merge(fund_pnl, loss_budget_df, on=['Fund'])
+    merged_df = pd.merge(merged_df, return_targets_df, on=['Fund'])
+    merged_df = pd.merge(merged_df, investable_assets_df, on=['Fund'])
+    float_cols = ['YTD Active Losers', 'YTD Realized Losses', 'Loss Budget', 'Ann Gross P&L Target %', 'AUM']
+    merged_df[float_cols] = merged_df[float_cols].astype(float)
+    merged_df['Annualized Gross P&L Target $'] = merged_df['Ann Gross P&L Target %'] * merged_df['AUM'] * 0.01
+    gross_ytd_pnl = df[['fund', 'ytd_dollar']].groupby('fund').agg('sum').reset_index()
+    gross_ytd_pnl.columns = ['Fund', 'Gross YTD P&L']
+    merged_df = pd.merge(merged_df, gross_ytd_pnl, on='Fund')
+    merged_df['YTD P&L % of Target'] = (merged_df['Gross YTD P&L']/merged_df['Annualized Gross P&L Target $'])*100
+
+    merged_df = pd.merge(merged_df, new_sleeve_df, on='Fund', how='left')
+
+    loss_budgets = merged_df[['Fund', 'YTD Active Losers', 'YTD Realized Losses', 'Loss Budget', 'AUM', 'Gross YTD P&L', 'Ann Gross P&L Target %', 'Gross YTD Return', 'Annualized Gross P&L Target $', 'YTD P&L % of Target']]
+
+    loss_budgets['Ann Loss Budget $'] = loss_budgets['Loss Budget'] * loss_budgets['AUM'] * 0.01
+
+    current_year = datetime.date.today().year
+    ytd = datetime.date(current_year, 1, 1)
+    now = datetime.datetime.today().date()
+    days_passed = (now - ytd).days
+    time_passed_in_percentage = np.round((days_passed/365.0), decimals=2)*100
+    loss_budgets['Time Passed'] = str(ceil(time_passed_in_percentage))+'%'
+
+    loss_budgets['Ann Gross P&L Target %'] = append_percentage_sign(loss_budgets['Ann Gross P&L Target %'])
+    loss_budgets['Loss Budget'] = append_percentage_sign(loss_budgets['Loss Budget'])
+    loss_budgets['YTD Realized % of Loss Budget'] = (loss_budgets['YTD Realized Losses']/loss_budgets['Ann Loss Budget $']) * 100
+    loss_budgets['YTD Total Loss % of Budget'] = (loss_budgets['YTD Active Losers'] / loss_budgets['Ann Loss Budget $']) * 100
+
+    # Rounding off to 1 decimal place
+    loss_budgets['YTD Active Losers'] = round_off(loss_budgets['YTD Active Losers'])
+    loss_budgets['YTD Realized Losses'] = round_off(loss_budgets['YTD Realized Losses'])
+    loss_budgets['AUM'] = round_off(loss_budgets['AUM'])
+    loss_budgets['Gross YTD Return'] = append_percentage_sign(loss_budgets['Gross YTD Return'])
+    loss_budgets['YTD P&L % of Target'] = append_percentage_sign(round_off(loss_budgets['YTD P&L % of Target']))
+    loss_budgets['YTD Realized % of Loss Budget'] = append_percentage_sign(round_off(loss_budgets['YTD Realized % of Loss Budget']))
+    loss_budgets['Ann Loss Budget $'] = round_off(loss_budgets['Ann Loss Budget $'])
+    loss_budgets['YTD Total Loss % of Budget'] = append_percentage_sign(round_off(loss_budgets['YTD Total Loss % of Budget']))
+    loss_budgets['Gross YTD P&L'] = round_off(loss_budgets['Gross YTD P&L'])
+    loss_budgets['Annualized Gross P&L Target $'] = round_off(loss_budgets['Annualized Gross P&L Target $'])
+    pivoted = pd.pivot_table(loss_budgets, columns=['Fund'], aggfunc=lambda x: x, fill_value='')
+    pivoted = pivoted[['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV']]
+    pivoted = pivoted.reindex(['AUM',
+                               'Ann Gross P&L Target %',
+                               'Gross YTD Return',
+                               'Annualized Gross P&L Target $',
+                               'Gross YTD P&L', 'YTD P&L % of Target',
+                               'Time Passed', 'Loss Budget',
+                               'Ann Loss Budget $',
+                               'YTD Realized Losses',
+                               'YTD Active Losers',
+                               'YTD Realized % of Loss Budget',
+                               'YTD Total Loss % of Budget',
+                               'Time Passed'])
+    df1 = pivoted.iloc[:7].copy()
+    df2 = pivoted.iloc[7:].copy()
+    df3 = pd.DataFrame([list(pivoted.columns.values)], columns=list(pivoted.columns.values))
+    df1 = df1.append(df3)
+    df1.index.values[7] = 'Loss Budgets'
+    df1 = df1.append(df2)
+    df1.index.values[8] = 'Ann Loss Budget %'
+    df1.index.values[0] = 'Investable Assets'
+    df1.index.values[6] = 'Time Passed%'
+    df1.index.values[14] = 'Time Passed %'
+
+    now_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
+ 
+    styles = [
+        hover(),
+        dict(selector="th", props=[("font-size", "125%"), ("text-align", "center")]),
+        dict(selector="tr", props=[("text-align", "center")]),
+        dict(selector="caption", props=[("caption-side", "bottom")]),
+        {'selector': 'tr:hover td', 'props': [('background-color', 'green')]},
+        {'selector': 'th, td', 'props': [('border', '1px solid black'), ('padding', '4px'), ('text-align', 'center')]},
+        {'selector': 'th', 'props': [('font-weight', 'bold')]},
+        {'selector': '', 'props': [('border-collapse', 'collapse'), ('border', '1px solid black'), ('text-align', 'center')]}
+    ]
+
+    styled_html = (df1.style.apply(style_funds).set_table_styles(styles).set_caption("PL Targets & Loss Budgets (" + now_date + ")"))
+
+    html = """ \
+                <html>
+                  <head>
+                  </head>
+                  <body>
+                    <p>PL Targets & Loss Budgets ({date})</p>
+                    
+                    <br><br>
+                    {table}
+                  </body>
+                </html>
+        """.format(table=styled_html.render(), date=now_date)
+
+    def export_excel(df):
+        with io.BytesIO() as buffer:
+            writer = pd.ExcelWriter(buffer)
+            df.to_excel(writer)
+            writer.save()
+            return buffer.getvalue()
+
+    exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
+
+    subject = 'PL Targets & Loss Budgets - ' + now_date
+    send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
+               recipients=['vaggarwal@wicfunds.com', 'cplunkett@wicfunds.com', 'kgorde@wicfunds.com'],
+               subject=subject, from_email='dispatch@wicfunds.com', html=html,
+               EXPORTERS=exporters, dataframe=df1)
