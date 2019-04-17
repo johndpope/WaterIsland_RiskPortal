@@ -77,6 +77,45 @@ function initializeDatatableSummary(data, table_id, column) {
         data: data,
         lengthChange: false,
         paginate: false,
+        dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
+            '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
+            '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+
+        buttons: {
+            buttons: [{
+                extend: 'print',
+                text: '<i class="fa fa-print"></i> Print',
+                title: 'TradeGroup Perf. Over Fund NAV',
+                customize: function (win) {
+                    $(win.document.body)
+                        .css('font-size', '10pt')
+                        .prepend(
+                            '<p> Water Island Capital, Risk Portal</p>'
+                        );
+
+                    $(win.document.body).find('table')
+                        .addClass('compact')
+                        .css('font-size', 'inherit');
+                },
+                autoPrint: true,
+            }, {
+                extend: 'copy',
+                text: '<i class="fa fa-copy"></i> Copy',
+
+            }, {
+                extend: 'csv',
+                text: '<i class="fa fa-book"></i> CSV',
+
+            }],
+            dom: {
+                container: {
+                    className: 'dt-buttons'
+                },
+                button: {
+                    className: 'btn btn-default'
+                }
+            }
+        },
         fixedHeader: {
             header: true,
             footer: true
@@ -142,13 +181,13 @@ function initializeDatatableSummary(data, table_id, column) {
 
 // Below Function to adjust columns for dynamically created Tabs
 $('body').on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
-        $($.fn.dataTable.tables(true)).DataTable()
-            .columns.adjust();
+    $($.fn.dataTable.tables(true)).DataTable()
+        .columns.adjust();
 });
 
 $('#submit_tg_performance_as_of').on('click', function () {
     let as_of = $('#tradegroup_performance_as_of').val();
-    window.location.href = "../position_stats/get_tradegroup_performance_main_page?as_of="+as_of;
+    window.location.href = "../position_stats/get_tradegroup_performance_main_page?as_of=" + as_of;
 
 });
 
@@ -158,8 +197,8 @@ $('#tradegroup_attributions').on('change', function () {
 
     let as_of = $('#as_of').val();
 
-    if(selected === "TRADEGROUP ATTRIBUTION OVER OWN CAPITAL"){
-        window.location.href = "../position_stats/get_tradegroup_attribution_over_own_capital?as_of="+as_of
+    if (selected === "TRADEGROUP ATTRIBUTION OVER OWN CAPITAL") {
+        window.location.href = "../position_stats/get_tradegroup_attribution_over_own_capital?as_of=" + as_of
     }
 
 });
