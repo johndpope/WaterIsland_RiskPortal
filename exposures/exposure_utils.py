@@ -18,6 +18,11 @@ def get_exposure_dataframe(as_of_yyyy_mm_dd=None):
 
     funds_exp_df = pd.DataFrame.from_records(list(ExposuresSnapshot.objects.filter(date=as_of_yyyy_mm_dd).values()))
 
+    def create_story_url(row):
+            url = '../position_stats/get_tradegroup_story?TradeGroup='+row['tradegroup']+'&Fund='+row['fund']
+            return "<a target='_blank' href='"+url+"'>View</a>"
+
+    funds_exp_df['StoryLink'] = funds_exp_df.apply(create_story_url, axis=1)
     funds_exp_df['date'] = funds_exp_df['date'].apply(str)
     funds = funds_exp_df['fund'].unique()
 

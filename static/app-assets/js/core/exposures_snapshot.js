@@ -188,6 +188,7 @@ function addFundMainTab(name, addToTab, addToContent, sleeve, exposures) {
             columns_structure.unshift(extra_data);
             column_targets = [4, 5, 6, 7, 8, 9, 10, 11];
             sum_start_column = 4;
+            columns_structure.push({'title':'Details', data: '.StoryLink'})
         }
         columns_structure.unshift({title: 'Date', data: '.date'});
 
