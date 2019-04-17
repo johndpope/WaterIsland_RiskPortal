@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+from urllib.parse import urlencode
 from django.shortcuts import render
 from django.db import connection
 from django_pandas.io import read_frame
@@ -46,7 +47,9 @@ def get_tradegroup_performance_main_page(request):
                                                on=['TradeGroup', 'Fund'])
 
         def create_story_url(row):
-            url = '../position_stats/get_tradegroup_story?TradeGroup='+row['TradeGroup']+'&Fund='+row['Fund']
+            url = '../position_stats/get_tradegroup_story?'
+            tg_fund = {'TradeGroup': row['TradeGroup'], 'Fund': row['Fund']}
+            url = url + urlencode(tg_fund)
             return "<a target='_blank' href='"+url+"'>View</a>"
 
         tradegroup_performance_dollars['story_url'] = tradegroup_performance_dollars.apply(create_story_url, axis=1)
@@ -75,7 +78,6 @@ def get_tradegroup_story(request):
 
     unique_tickers, tradegroup_name, exposures_and_pnl_df, fund_code = None, None, None, None
     options_pnl_contribution = {}
-
     tradegroup = request.GET['TradeGroup']
     fund = request.GET['Fund']
     tradegroup_overall_pnl = pd.read_sql_query("SELECT * FROM wic.tradegroup_overall_pnl where tradegroup "
@@ -185,7 +187,9 @@ def get_tradegroup_attribution_over_own_capital(request):
             apply(lambda x: x.strftime('%Y-%m-%d') if not pd.isna(x) else x)
 
         def create_story_url(row):
-            url = '../position_stats/get_tradegroup_story?TradeGroup='+row['TradeGroup']+'&Fund='+row['Fund']
+            url = '../position_stats/get_tradegroup_story?'
+            tg_fund = {'TradeGroup': row['TradeGroup'], 'Fund': row['Fund']}
+            url = url + urlencode(tg_fund)
             return "<a target='_blank' href='"+url+"'>View</a>"
 
         tradegroup_performance_over_own_capital['story_url'] = tradegroup_performance_over_own_capital.apply(
