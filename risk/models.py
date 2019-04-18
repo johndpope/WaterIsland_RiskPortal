@@ -7,7 +7,6 @@ from django.db import models
 # from custom_storages import get_custom_path_filename
 
 class MA_Deals(models.Model):
-
     ''' Model to hold Merger ARb Deals '''
     id = models.AutoField(primary_key=True)
     deal_name = models.CharField(max_length=100)
