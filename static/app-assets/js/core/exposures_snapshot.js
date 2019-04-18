@@ -1,17 +1,21 @@
 $(document).ready(function () {
-    $('#submit_expoures_as_of').on('click', function(){
+    $('#submit_expoures_as_of').on('click', function () {
         // Get the Date
         let as_of = $('#exposures_as_of').val();
-        window.location.replace('../exposures/exposures_snapshot?as_of='+as_of);
+        window.location.replace('../exposures/exposures_snapshot?as_of=' + as_of);
     });
+    try {
+        let exposures = $.parseJSON($('#exposures').val());
+        Object.keys(exposures).forEach(function (fund) {
+            addFundMainTab(fund, 'fundtabs', 'fund-tab-content', 'Across', exposures);
 
-    let exposures = $.parseJSON($('#exposures').val());
-    Object.keys(exposures).forEach(function (fund) {
-        addFundMainTab(fund, 'fundtabs', 'fund-tab-content', 'Across', exposures);
+        });
+    }
+    catch (e) {
+        console.log(e)
+    }
 
-    });
-
-     $(".loader-wrapper").remove();
+    $(".loader-wrapper").remove();
 });
 
 function addFundMainTab(name, addToTab, addToContent, sleeve, exposures) {
@@ -188,7 +192,7 @@ function addFundMainTab(name, addToTab, addToContent, sleeve, exposures) {
             columns_structure.unshift(extra_data);
             column_targets = [4, 5, 6, 7, 8, 9, 10, 11];
             sum_start_column = 4;
-            columns_structure.push({'title':'Details', data: '.StoryLink'})
+            columns_structure.push({'title': 'Details', data: '.StoryLink'})
         }
         columns_structure.unshift({title: 'Date', data: '.date'});
 

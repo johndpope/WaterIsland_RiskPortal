@@ -7,16 +7,21 @@ from .models import ExposuresSnapshot
 
 def get_exposure_dataframe(as_of_yyyy_mm_dd=None):
     response = {}
+    max_date = datetime.datetime.now().date()
+    min_date = ExposuresSnapshot.objects.all().aggregate(Min('date'))['date__min']
 
     if as_of_yyyy_mm_dd is None:
         as_of_yyyy_mm_dd = ExposuresSnapshot.objects.all().aggregate(Max('date'))['date__max'].strftime('%Y-%m-%d')
 
     else:
-        if datetime.datetime.strptime(as_of_yyyy_mm_dd, '%Y-%m-%d').date() < ExposuresSnapshot.objects.all().aggregate(Min('date')
-                                                                                                    )['date__min']:
-            return 'DateError', as_of_yyyy_mm_dd
+        if datetime.datetime.strptime(as_of_yyyy_mm_dd, '%Y-%m-%d').date() < min_date:
+            return 'DateError', as_of_yyyy_mm_dd, min_date, max_date
 
+    min_date = min_date.strftime('%Y-%m-%d')
+    max_date = max_date.strftime('%Y-%m-%d')
     funds_exp_df = pd.DataFrame.from_records(list(ExposuresSnapshot.objects.filter(date=as_of_yyyy_mm_dd).values()))
+    if len(funds_exp_df) == 0:
+        return 'No Data Found', as_of_yyyy_mm_dd, min_date, max_date
 
     def create_story_url(row):
             url = '../position_stats/get_tradegroup_story?TradeGroup='+row['tradegroup']+'&Fund='+row['fund']
@@ -52,5 +57,6 @@ def get_exposure_dataframe(as_of_yyyy_mm_dd=None):
                 {'Short': slv_short_df.to_json(orient='records')}
             ]})
 
-    return json.dumps(response), as_of_yyyy_mm_dd
+
+    return json.dumps(response), as_of_yyyy_mm_dd, min_date, max_date
 

@@ -44,10 +44,6 @@
 
                         </div>
                         <div class="card-body">
-                            <small class="badge badge-default badge-danger">Note:</small>
-                            <p class="font-italic text-dark">For historical expsoures prior to 02/08/2019 please visit
-                                <a href="http://wicportal.wicfunds.local/risk-exp-snapshot" target="_blank"><u>wicportal.wicfunds.local/risk-exp-snapshot</u></a>
-                            </p>
                             <div class="row">
                                 <div class="col-lg-4"></div>
                                 <div class="col-lg-1 block-tag">
@@ -57,8 +53,7 @@
                                 <div class="col-lg-2">
                                     <fieldset class="form-group">
                                         <input type="date" class="form-control" required
-                                               id="exposures_as_of"
-                                        >
+                                               id="exposures_as_of" min="{{ min_date }}" max="{{ max_date }}">
                                     </fieldset>
                                 </div>
                                 <div class="col-lg-1">
