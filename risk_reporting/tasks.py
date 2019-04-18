@@ -150,7 +150,8 @@ def refresh_base_case_and_outlier_downsides():
     formulae_based_downsides['base_case'] = formulae_based_downsides.apply(update_base_case_downsides, axis=1)
     formulae_based_downsides['outlier'] = formulae_based_downsides.apply(update_outlier_downsides, axis=1)
 
-    old_formulaes = pd.read_sql_query('SELECT * FROM '+settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides', con=con)
+    old_formulaes = pd.read_sql_query('SELECT * FROM '+settings.CURRENT_DATABASE+
+                                      '.risk_reporting_formulaebaseddownsides', con=con)
     # Base Case and Outliers are now updated! Delete the old table and insert new ones
     try:
         FormulaeBasedDownsides.objects.all().delete()
@@ -164,28 +165,30 @@ def refresh_base_case_and_outlier_downsides():
         old_formulaes.to_sql(name='risk_reporting_formulaebaseddownsides', con=con, if_exists='append', index=False,
                              schema=settings.CURRENT_DATABASE)
         print('Restored Downside formulae state to previous...!')
+        # Post to Slack
+        slack_message('navinspector.slack',
+                      {'impacts': 'While Refreshing Impacts: ' + str(e)})
 
-    # Post to Slack
-    slack_message('navinspector.slack',
-                  {'impacts': 'Base Case and Outlier Downsides refreshed...Working on NAV Impacts'})
     try:
         api_host = bbgclient.bbgclient.get_next_available_host()
         # Populate all the deals
         nav_impacts_positions_df = pd.read_sql_query(
-            'SELECT * FROM '+settings.CURRENT_DATABASE+'.risk_reporting_arbnavimpacts where FundCode not like \'WED\'', con=con)
+            'SELECT * FROM '+settings.CURRENT_DATABASE+'.risk_reporting_arbnavimpacts where FundCode not like \'WED\'',
+            con=con)
         # Drop the Last Price
         time.sleep(2)
         nav_impacts_positions_df.drop(columns=['LastPrice', 'RiskLimit'], inplace=True)
 
         ytd_performances = pd.read_sql_query(
-            'SELECT DISTINCT tradegroup, fund, pnl_bps FROM '+settings.CURRENT_DATABASE+'.realtime_pnl_impacts_arbitrageytdperformance',
-            con=con)
+            'SELECT DISTINCT tradegroup, fund, pnl_bps FROM '+settings.CURRENT_DATABASE+
+            '.realtime_pnl_impacts_arbitrageytdperformance', con=con)
         time.sleep(1)
         ytd_performances.columns = ['TradeGroup', 'FundCode', 'PnL_BPS']
         # Convert Underlying Ticker to format Ticker Equity
         nav_impacts_positions_df['Underlying'] = nav_impacts_positions_df['Underlying'].apply(
             lambda x: x + " EQUITY" if "EQUITY" not in x else x)
-        forumale_linked_downsides = pd.read_sql_query('SELECT * FROM '+settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides',
+        forumale_linked_downsides = pd.read_sql_query('SELECT * FROM '+settings.CURRENT_DATABASE +
+                                                      '.risk_reporting_formulaebaseddownsides',
                                                       con=con)
         time.sleep(2)
         # Filter IsExcluded ones
@@ -313,10 +316,6 @@ def refresh_base_case_and_outlier_downsides():
         nav_impacts_positions_df.to_sql(name='risk_reporting_positionlevelnavimpacts', con=con,
                                         if_exists='append', index=False, schema=settings.CURRENT_DATABASE)
 
-        slack_message('generic.slack', {'message': 'NAV Impacts refreshed with Latest Prices'},
-                      channel='realtimenavimpacts',
-                      token=settings.SLACK_TOKEN,
-                      name='ESS_IDEA_DB_ERROR_INSPECTOR')
     except Exception as e:
         print(e)
         exc_type, exc_obj, exc_tb = sys.exc_info()
