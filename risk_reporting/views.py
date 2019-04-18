@@ -14,7 +14,7 @@ from django.conf import settings
 from django_slack import slack_message
 from django.db.models import Max
 from django.db import close_old_connections
-
+import workstation_mapper
 # Following NAV Impacts Utilities
 
 
@@ -370,12 +370,17 @@ def update_downside_formulae(request):
             obj.LastUpdate = datetime.datetime.now()
             obj.save()
             response = 'Success'
-            ip_addr = None
             client_ip, is_routable = get_client_ip(request)
             if client_ip is None:
                 ip_addr = 'NA'
             else:
                 ip_addr = client_ip
+
+            try:
+                ip_addr = workstation_mapper.ip_mapper[ip_addr]
+            except KeyError:
+                ip_addr = client_ip
+
             slack_message('portal_downsides.slack',
                           {'updated_deal': str(obj.TradeGroup),
                            'underlying_security': obj.Underlying,
