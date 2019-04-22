@@ -10,7 +10,7 @@ $(document).ready(function () {
     $('#submit_wic_notes_form').on('submit', function (e) {
         e.preventDefault(); //to Stop from Refreshing
         //Get all the fields and make an Ajax call. Wait for Response, if positive, show toaster and append this new row to the existing table
-        var article = $('#wic_note_article').summernote('code').replace(/<\/?[^>]+(>|$)/g, "");
+        var article = $('#wic_note_article').summernote('code');
         var date = $('#wic_notes_date').val();
         var title = $('#wic_notes_title').val();
         var author = $('#wic_notes_author').val();
