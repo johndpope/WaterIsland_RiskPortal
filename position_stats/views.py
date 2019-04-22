@@ -177,7 +177,10 @@ def get_tradegroup_attribution_over_own_capital(request):
                                                            " FROM wic.volatility_distribution_timeseries LIMIT 1)",
                                                            con=connection)
 
-        volatility_distribution_charts = volatility_distribution_charts['vol_distribution_charts'].iloc[0]
+        if not volatility_distribution_charts.empty:
+            volatility_distribution_charts = volatility_distribution_charts['vol_distribution_charts'].iloc[0]
+        else:
+            volatility_distribution_charts = {}
 
         tradegroup_performance_over_own_capital['Date'] = tradegroup_performance_over_own_capital['Date'].\
             apply(lambda x: x.strftime('%Y-%m-%d'))

@@ -636,17 +636,6 @@ def email_daily_formulae_linked_downsides():
         print(e)
 
 
-def append_percentage_sign(string):
-    return string.astype(str) + '%'
-
-
-def round_off(value):
-    try:
-        return round(value, 1).map('{:,.1f}'.format) if value is not None else value
-    except ValueError:
-        return value
-
-
 def round_bps(value):
     return round((value/100), 2)
 
@@ -678,10 +667,12 @@ def email_pl_target_loss_budgets():
     WIC_DB_HOST = 'wic-risk-database.cwi02trt7ww1.us-east-1.rds.amazonaws.com'
     DB_USER = 'root'
     DB_PASSWORD = 'waterislandcapital'
-    engine = create_engine("mysql://" + DB_USER + ":" + DB_PASSWORD + "@" + WIC_DB_HOST + "/test_wic_db")
+    engine = create_engine("mysql://" + DB_USER + ":" + DB_PASSWORD + "@" + WIC_DB_HOST + "/" + settings.CURRENT_DATABASE)
     con = engine.connect()
 
-    df = pd.read_sql('Select * from test_wic_db.realtime_pnl_impacts_arbitrageytdperformance', con=con)
+    df = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_arbitrageytdperformance', con=con)
+    average_aum_df = pd.read_sql('select fund as Fund, avg(aum) as `Average YTD AUM` from wic.daily_flat_file_db where year(Flat_file_as_of) >= YEAR(CURDATE()) group by fund order by fund', con=con)
+
     df.drop(columns=['id'], inplace=True)
     sleeve_df = pd.read_sql('Select * from wic.sleeves_snapshot', con=con)
     con.close()
@@ -705,11 +696,11 @@ def email_pl_target_loss_budgets():
     active_tradegroups = df[df['status'] == 'ACTIVE']
     closed_tradegroups = df[df['status'] == 'CLOSED']
     fund_active_losers = active_tradegroups[active_tradegroups['ytd_dollar'] < 0][['fund', 'ytd_dollar']].groupby(['fund']).agg('sum').reset_index()
-    fund_active_losers.columns = ['Fund', 'YTD Active Losers']
+    fund_active_losers.columns = ['Fund', 'YTD Active Deal Losses']
     investable_assets_df = df[['fund', 'fund_aum']].drop_duplicates()
     investable_assets_df.columns = ['Fund', 'AUM']
     fund_realized_losses = closed_tradegroups[closed_tradegroups['ytd_dollar'] < 0][['fund', 'ytd_dollar']].groupby(['fund']).agg('sum').reset_index()
-    fund_realized_losses.columns = ['Fund', 'YTD Realized Losses']
+    fund_realized_losses.columns = ['Fund', 'YTD Closed Deal Losses']
     fund_pnl = pd.merge(fund_active_losers, fund_realized_losses, on = ['Fund'])
     loss_budget_df = pd.DataFrame(columns=['Fund', 'Loss Budget'], data=[['ARB', '-1'], ['AED', '-2'], ['MACO', '-1'], ['MALT', '-1'],
                                                                          ['LEV', '-3'], ['LG', '-2'], ['CAM', '-2'],])
@@ -718,17 +709,17 @@ def email_pl_target_loss_budgets():
     merged_df = pd.merge(fund_pnl, loss_budget_df, on=['Fund'])
     merged_df = pd.merge(merged_df, return_targets_df, on=['Fund'])
     merged_df = pd.merge(merged_df, investable_assets_df, on=['Fund'])
-    float_cols = ['YTD Active Losers', 'YTD Realized Losses', 'Loss Budget', 'Ann Gross P&L Target %', 'AUM']
+    merged_df = pd.merge(merged_df, average_aum_df, on=['Fund'], how='left')
+    float_cols = ['YTD Active Deal Losses', 'YTD Closed Deal Losses', 'Loss Budget', 'Ann Gross P&L Target %', 'AUM']
     merged_df[float_cols] = merged_df[float_cols].astype(float)
-    merged_df['Annualized Gross P&L Target $'] = merged_df['Ann Gross P&L Target %'] * merged_df['AUM'] * 0.01
+    merged_df['Annualized Gross P&L Target $'] = merged_df['Ann Gross P&L Target %'] * merged_df['Average YTD AUM'] * 0.01
     gross_ytd_pnl = df[['fund', 'ytd_dollar']].groupby('fund').agg('sum').reset_index()
     gross_ytd_pnl.columns = ['Fund', 'Gross YTD P&L']
     merged_df = pd.merge(merged_df, gross_ytd_pnl, on='Fund')
-    merged_df['YTD P&L % of Target'] = (merged_df['Gross YTD P&L']/merged_df['Annualized Gross P&L Target $'])*100
-
     merged_df = pd.merge(merged_df, new_sleeve_df, on='Fund', how='left')
+    merged_df['YTD P&L % of Target'] = (merged_df['Gross YTD Return']/merged_df['Ann Gross P&L Target %'])*100
 
-    loss_budgets = merged_df[['Fund', 'YTD Active Losers', 'YTD Realized Losses', 'Loss Budget', 'AUM', 'Gross YTD P&L', 'Ann Gross P&L Target %', 'Gross YTD Return', 'Annualized Gross P&L Target $', 'YTD P&L % of Target']]
+    loss_budgets = merged_df[['Fund', 'YTD Active Deal Losses', 'YTD Closed Deal Losses', 'Loss Budget', 'AUM', 'Gross YTD P&L', 'Ann Gross P&L Target %', 'Gross YTD Return', 'Annualized Gross P&L Target $', 'YTD P&L % of Target']]
 
     loss_budgets['Ann Loss Budget $'] = loss_budgets['Loss Budget'] * loss_budgets['AUM'] * 0.01
 
@@ -737,24 +728,24 @@ def email_pl_target_loss_budgets():
     now = datetime.datetime.today().date()
     days_passed = (now - ytd).days
     time_passed_in_percentage = np.round((days_passed/365.0), decimals=2)*100
-    loss_budgets['Time Passed'] = str(ceil(time_passed_in_percentage))+'%'
+    loss_budgets['Time Passed'] = "{:.2f}%".format(time_passed_in_percentage)
 
-    loss_budgets['Ann Gross P&L Target %'] = append_percentage_sign(loss_budgets['Ann Gross P&L Target %'])
-    loss_budgets['Loss Budget'] = append_percentage_sign(loss_budgets['Loss Budget'])
-    loss_budgets['YTD Realized % of Loss Budget'] = (loss_budgets['YTD Realized Losses']/loss_budgets['Ann Loss Budget $']) * 100
-    loss_budgets['YTD Total Loss % of Budget'] = (loss_budgets['YTD Active Losers'] / loss_budgets['Ann Loss Budget $']) * 100
+    loss_budgets['Ann Gross P&L Target %'] = loss_budgets.apply(lambda x: "{:,.2f}%".format(x['Ann Gross P&L Target %']), axis=1)
+    loss_budgets['Loss Budget'] = loss_budgets.apply(lambda x: "{:,.2f}%".format(x['Loss Budget']), axis=1)
+    loss_budgets['YTD Realized % of Loss Budget'] = (loss_budgets['YTD Closed Deal Losses']/loss_budgets['Ann Loss Budget $']) * 100
+    loss_budgets['YTD Total Loss % of Budget'] = (loss_budgets['YTD Active Deal Losses'] / loss_budgets['Ann Loss Budget $']) * 100
 
-    # Rounding off to 1 decimal place
-    loss_budgets['YTD Active Losers'] = round_off(loss_budgets['YTD Active Losers'])
-    loss_budgets['YTD Realized Losses'] = round_off(loss_budgets['YTD Realized Losses'])
-    loss_budgets['AUM'] = round_off(loss_budgets['AUM'])
-    loss_budgets['Gross YTD Return'] = append_percentage_sign(loss_budgets['Gross YTD Return'])
-    loss_budgets['YTD P&L % of Target'] = append_percentage_sign(round_off(loss_budgets['YTD P&L % of Target']))
-    loss_budgets['YTD Realized % of Loss Budget'] = append_percentage_sign(round_off(loss_budgets['YTD Realized % of Loss Budget']))
-    loss_budgets['Ann Loss Budget $'] = round_off(loss_budgets['Ann Loss Budget $'])
-    loss_budgets['YTD Total Loss % of Budget'] = append_percentage_sign(round_off(loss_budgets['YTD Total Loss % of Budget']))
-    loss_budgets['Gross YTD P&L'] = round_off(loss_budgets['Gross YTD P&L'])
-    loss_budgets['Annualized Gross P&L Target $'] = round_off(loss_budgets['Annualized Gross P&L Target $'])
+    # Rounding off to 2 decimal places for % values
+    loss_budgets['YTD Active Deal Losses'] = loss_budgets.apply(lambda x: "{:,}".format(int(x['YTD Active Deal Losses'])), axis=1)
+    loss_budgets['YTD Closed Deal Losses'] = loss_budgets.apply(lambda x: "{:,}".format(int(x['YTD Closed Deal Losses'])), axis=1)
+    loss_budgets['AUM'] = loss_budgets.apply(lambda x: "{:,}".format(int(x['AUM'])), axis=1)
+    loss_budgets['Gross YTD Return'] = loss_budgets.apply(lambda x: "{:,.2f}%".format(x['Gross YTD Return']), axis=1)
+    loss_budgets['YTD P&L % of Target'] = loss_budgets.apply(lambda x: "{:,.2f}%".format(x['YTD P&L % of Target']), axis=1)
+    loss_budgets['YTD Realized % of Loss Budget'] = loss_budgets.apply(lambda x: "{:,.2f}%".format(x['YTD Realized % of Loss Budget']), axis=1)
+    loss_budgets['Ann Loss Budget $'] = loss_budgets.apply(lambda x: "{:,}".format(int(x['Ann Loss Budget $'])), axis=1)
+    loss_budgets['YTD Total Loss % of Budget'] = loss_budgets.apply(lambda x: "{:,.2f}%".format(x['YTD Total Loss % of Budget']), axis=1)
+    loss_budgets['Gross YTD P&L'] = loss_budgets.apply(lambda x: "{:,}".format(int(x['Gross YTD P&L'])), axis=1)
+    loss_budgets['Annualized Gross P&L Target $'] = loss_budgets.apply(lambda x: "{:,}".format(int(x['Annualized Gross P&L Target $'])), axis=1)
     pivoted = pd.pivot_table(loss_budgets, columns=['Fund'], aggfunc=lambda x: x, fill_value='')
     pivoted = pivoted[['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV']]
     pivoted = pivoted.reindex(['AUM',
@@ -764,8 +755,8 @@ def email_pl_target_loss_budgets():
                                'Gross YTD P&L', 'YTD P&L % of Target',
                                'Time Passed', 'Loss Budget',
                                'Ann Loss Budget $',
-                               'YTD Realized Losses',
-                               'YTD Active Losers',
+                               'YTD Closed Deal Losses',
+                               'YTD Active Deal Losses',
                                'YTD Realized % of Loss Budget',
                                'YTD Total Loss % of Budget',
                                'Time Passed'])
