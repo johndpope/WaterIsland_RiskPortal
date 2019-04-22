@@ -364,18 +364,16 @@
                                         <th>Date</th>
                                         <th>Title</th>
                                         <th>Author</th>
-                                        <th>Article</th>
                                         <th>Associated Tickers</th>
                                         <th>Options</th>
                                     </tr>
                                     </thead>
                                     <tbody>
                                     {% for notes_item in notesmaster_list %}
-                                        <tr id="row_{{ notes_item.id }}">
+                                        <tr id="row_{{ notes_item.id }}" data-article="{{ notes_item.article }}">
                                             <td>{{ notes_item.date }}</td>
                                             <td>{{ notes_item.title }}</td>
                                             <td>{{ notes_item.author }}</td>
-                                            <td data-article="{{ notes_item.article }}">{{ notes_item.article|truncatechars:255}}</td>
                                             <td>{{ notes_item.tickers }}</td>
                                             <td>
                                                 <div class="btn-group">

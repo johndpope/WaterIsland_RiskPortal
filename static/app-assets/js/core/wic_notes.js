@@ -110,7 +110,7 @@ $(document).ready(function () {
             var date = $tds.eq(0).text();
             var title = $tds.eq(1).text();
             var author = $tds.eq(2).text();
-            var article = $tds.eq(3).data('article');
+            var article = edit_row.data('article');
             var tickers = $tds.eq(4).text();
             var formatted_date = moment(new Date(date)).format('YYYY-MM-DD');
             $('#edit_selected_notes_attachments').text('');
@@ -198,7 +198,7 @@ $(document).ready(function () {
             var note_to_view = current_note.split('_')[1];
             var edit_row = $('#row_' + note_to_view);
             var $tds = edit_row.find('td');
-            var article = $tds.eq(3).attr('data-article');
+            var article = edit_row.attr('data-article');
             // Just populate WicNote View Article
             $('#wic_note_view_article').summernote({'height': "400px"});
             $('#wic_note_view_article').summernote('code', article);
