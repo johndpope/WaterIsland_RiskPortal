@@ -334,7 +334,7 @@ def update_risk_limit(request):
                          {'updated_deal': str(obj.TradeGroup),
                           'risk_limit': str(old_risk_limit) + " -> " + str(risk_limit),
                           'IP': str(ip_addr)},
-                          channel='portal_downsides_test',
+                          channel='portal_downsides',
                           token=settings.SLACK_TOKEN,
                           name='PORTAL DOWNSIDE UPDATE AGENT')
         except FormulaeBasedDownsides.DoesNotExist:
