@@ -3,7 +3,13 @@ $(document).ready(function () {
     var remove_file_ids = [];
 
     //Create a Datatable out of retrieved Values
-    var wic_notes_table = $('#wic_notes_table').DataTable();
+    var wic_notes_table = $('#wic_notes_table').DataTable({
+        columnDefs: [{
+            targets: [0], render: function (data) {
+                return moment(data).format('YYYY-MM-DD');
+            }
+        }]
+    });
     $('#wic_note_article').summernote({'height': 200});
 
 
@@ -111,28 +117,28 @@ $(document).ready(function () {
             var title = $tds.eq(1).text();
             var author = $tds.eq(2).text();
             var article = edit_row.data('article');
-            var tickers = $tds.eq(4).text();
+            var tickers = $tds.eq(3).text();
             var formatted_date = moment(new Date(date)).format('YYYY-MM-DD');
             $('#edit_selected_notes_attachments').text('');
             // Collect Uploaded Files through Ajax
             $.ajax({
-               url:"../notes/get_attachments/",
-               type:'POST',
-               data:{'notes_id':notes_id_to_edit},
-               success:function(response){
-                   let attachments = response['attachments'];
-                   if(attachments.length > 0){
-                       let files = "";
-                       for(var i=0;i<attachments.length;i++){
-                           console.log(attachments[i])
-                           files += "<a href=" + attachments[i].url + ">" + attachments[i].filename + "</a> <a class='remove_file' data-id='remove_notes_" + notes_id_to_edit + "_file_" + attachments[i].id + "' href='#'><i class='ft-trash-2'></i></a><br />";
-                       }
-                       $('#edit_notes_attachments').html(files);
-                   }
-               },
-               error: function (err) {
-                   console.log(err);
-               }
+                url: "../notes/get_attachments/",
+                type: 'POST',
+                data: {'notes_id': notes_id_to_edit},
+                success: function (response) {
+                    let attachments = response['attachments'];
+                    if (attachments.length > 0) {
+                        let files = "";
+                        for (var i = 0; i < attachments.length; i++) {
+                            console.log(attachments[i])
+                            files += "<a href=" + attachments[i].url + ">" + attachments[i].filename + "</a> <a class='remove_file' data-id='remove_notes_" + notes_id_to_edit + "_file_" + attachments[i].id + "' href='#'><i class='ft-trash-2'></i></a><br />";
+                        }
+                        $('#edit_notes_attachments').html(files);
+                    }
+                },
+                error: function (err) {
+                    console.log(err);
+                }
             });
 
 
@@ -311,12 +317,12 @@ $(document).ready(function () {
     });
 
     var wrapper = $(".display_attachments");
-    $(wrapper).on("click", ".remove_file", function(e){
+    $(wrapper).on("click", ".remove_file", function (e) {
         var index = -1;
         var file_id = $(this).attr('data-id');
         remove_file_ids[remove_file_ids.length] = file_id.split("_").pop()
         var fileList = $('#edit_notes_attachments').html().split("<br>")
-        for (var i = 0; i< fileList.length; i++) {
+        for (var i = 0; i < fileList.length; i++) {
             if (fileList[i].includes(file_id)) {
                 index = i;
                 break;
