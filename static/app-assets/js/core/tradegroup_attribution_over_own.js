@@ -290,15 +290,17 @@ $('body').on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
 
 $('#submit_tg_performance_as_of').on('click', function () {
     let as_of = $('#tradegroup_performance_as_of').val();
-    window.location.href = "../position_stats/get_tradegroup_performance_main_page?as_of=" + as_of;
+    window.location.href = "../position_stats/get_tradegroup_attribution_over_own_capital?as_of=" + as_of;
 
 });
 
 
 $('#tradegroup_attributions').on('change', function () {
     let selected = $('#tradegroup_attributions').val();
+
+    let as_of = $('#as_of').val();
     if (selected === "TRADEGROUP ATTRIBUTION TO FUND NAV") {
-        window.location.href = "../position_stats/get_tradegroup_performance_main_page/"
+        window.location.href = "../position_stats/get_tradegroup_performance_main_page?as_of=" + as_of
     }
 
 });

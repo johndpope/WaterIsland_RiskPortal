@@ -186,3 +186,8 @@ select > option
 #ess_idea_new_deal_company_overview{
     height: 275px;
 }
+select.form-control {
+  -moz-appearance: none;
+   -webkit-appearance: none;
+   appearance: none;
+}

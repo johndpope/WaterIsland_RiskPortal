@@ -34,10 +34,12 @@
                     <div class="card">
                         <div class="card-head">
                             <div class="card-header">
-                                <select id='tradegroup_attributions' class="custom-select form-control input-lg">
+                                <div class="col-lg-4 offset-4">
+                                    <select id='tradegroup_attributions' class="custom-select form-control">
                                     <option>TRADEGROUP ATTRIBUTION TO FUND NAV</option>
                                     <option selected>TRADEGROUP ATTRIBUTION OVER OWN CAPITAL</option>
                                 </select>
+                                </div>
                             </div>
                             <input type="hidden" id="as_of" value="{{ as_of }}">
                             <p class="lead h6 text-center font-size-small">As of <mark>{{ as_of }}</mark></p>
@@ -47,10 +49,6 @@
                             {% endif %}
                         </div>
                         <div class="card-body">
-                            <small class="badge badge-default badge-danger">Note:</small>
-                            <p class="font-italic text-dark">For historical performances prior to 04/08/2019 please visit the legacy portal by clicking
-                                <a href="http://wicportal.wicfunds.local/risk-tradegroup-performance?mode=TRADEGROUP%20PERFORMANCE%20OVER%20OWN%20CAPITAL" target="_blank"><u>here</u></a>
-                            </p>
                             <div class="row">
                                 <div class="col-lg-4"></div>
                                 <div class="col-lg-1 block-tag">
@@ -59,7 +57,7 @@
                                 </div>
                                 <div class="col-lg-2">
                                     <fieldset class="form-group">
-                                        <input type="date" class="form-control" required
+                                        <input type="date" class="form-control" required min="2016-07-28"
                                                id="tradegroup_performance_as_of">
                                     </fieldset>
                                 </div>
