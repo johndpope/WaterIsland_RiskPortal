@@ -276,7 +276,10 @@
                                                 {% endif %}
                                             </select>
                                         </td>
-                                        <td><input type="number" step="0.01" value="{{ row.RiskLimit }}"></td>
+                                        <td>
+                                            <input type="number" step="0.01" value="{{ row.RiskLimit }}">
+                                            <button class="btn btn-sm btn-success" id='save_risk_limit_{{ row.id }}'>Save</button>
+                                        </td>
                                         <td>
                                             <select class="custom-select2 mr-sm-2 BaseCaseDownsideType">
                                                 <option selected

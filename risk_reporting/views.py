@@ -7,7 +7,7 @@ import numpy as np
 import json
 from ipware import get_client_ip
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db import connection
 from .models import ArbNAVImpacts, DailyNAVImpacts, FormulaeBasedDownsides, PositionLevelNAVImpacts
 from django.conf import settings
@@ -305,94 +305,135 @@ def formula_based_downsides(request):
     return render(request, 'downside_fomulae.html', context={'marb_positions': marb_positions})
 
 
-def update_downside_formulae(request):
-    """ View to Update the downside formulae for each position """
-    # Only process POST requests
-    response = 'Failed'
+def update_risk_limit(request):
+    """
+    View for updating risk limit
+    """
     if request.method == 'POST':
-        # Gather the data
+        risk_limit = request.POST.get('risk_limit')
+        row_id = request.POST.get('id')
         try:
-            row_id = request.POST['id']
-            is_excluded = request.POST['is_excluded']
-            risk_limit = request.POST['risk_limit']
-            base_case_downside_type = request.POST['base_case_downside_type']
-            base_case_reference_data_point = request.POST['base_case_reference_data_point']
-            base_case_reference_price = request.POST['base_case_reference_price']
-            base_case_operation = request.POST['base_case_operation']
-            base_case_custom_input = request.POST['base_case_custom_input']
-            base_case = request.POST['base_case']
-            base_case_notes = request.POST['base_case_notes']
-            cix_ticker = request.POST['cix_ticker']
-            outlier_downside_type = request.POST['outlier_downside_type']
-            outlier_reference_data_point = request.POST['outlier_reference_data_point']
-            outlier_reference_price = request.POST['outlier_reference_price']
-            outlier_operation = request.POST['outlier_operation']
-            outlier_custom_input = request.POST['outlier_custom_input']
-            outlier = request.POST['outlier']
-            outlier_notes = request.POST['outlier_notes']
-
-            if outlier == 'None' or outlier is None:
-                # Outlier should match base case by Default
-                outlier_downside_type = base_case_downside_type
-                outlier_reference_data_point = base_case_reference_data_point
-                outlier_reference_price = base_case_reference_price
-                outlier_operation = base_case_operation
-                outlier_custom_input = base_case_custom_input
-                outlier = base_case
-
-            # Retroactively update Risk Limit for all matching TradeGroups
             obj = FormulaeBasedDownsides.objects.get(id=row_id)
+            old_risk_limit = obj.RiskLimit
             deal_name = obj.TradeGroup
             matching_tradegroups = FormulaeBasedDownsides.objects.filter(TradeGroup__exact=deal_name)
             for deals in matching_tradegroups:
                 deals.RiskLimit = risk_limit
-
-            old_base_case_downside = obj.base_case
-            old_outlier = obj.outlier
-            old_risk_limit = obj.RiskLimit
-            obj.IsExcluded = is_excluded
-            obj.RiskLimit = risk_limit
-            obj.BaseCaseDownsideType = base_case_downside_type
-            obj.BaseCaseReferenceDataPoint = base_case_reference_data_point
-            obj.cix_ticker = cix_ticker
-            obj.BaseCaseReferencePrice = base_case_reference_price
-            obj.BaseCaseOperation = base_case_operation
-            obj.BaseCaseCustomInput = base_case_custom_input
-            obj.base_case = base_case
-            obj.base_case_notes = base_case_notes
-            obj.OutlierDownsideType = outlier_downside_type
-            obj.OutlierReferenceDataPoint = outlier_reference_data_point
-            obj.OutlierReferencePrice = outlier_reference_price
-            obj.OutlierOperation = outlier_operation
-            obj.OutlierCustomInput = outlier_custom_input
-            obj.outlier = outlier
-            obj.outlier_notes = outlier_notes
-            obj.LastUpdate = datetime.datetime.now()
-            obj.save()
+                deals.save()
             response = 'Success'
             client_ip, is_routable = get_client_ip(request)
             if client_ip is None:
                 ip_addr = 'NA'
             else:
                 ip_addr = client_ip
-
             try:
                 ip_addr = workstation_mapper.ip_mapper[ip_addr]
             except KeyError:
                 ip_addr = client_ip
-
-            slack_message('portal_downsides.slack',
-                          {'updated_deal': str(obj.TradeGroup),
-                           'underlying_security': obj.Underlying,
-                           'risk_limit': str(old_risk_limit) + " -> " + str(obj.RiskLimit),
-                           'base_case': str(old_base_case_downside) + " -> " + str(obj.base_case),
-                           'outlier': str(old_outlier) + " -> " + str(obj.outlier),
-                           'IP': str(ip_addr)},
-                          channel='portal_downsides',
+            slack_message('portal_risk_limit_update.slack',
+                         {'updated_deal': str(obj.TradeGroup),
+                          'risk_limit': str(old_risk_limit) + " -> " + str(risk_limit),
+                          'IP': str(ip_addr)},
+                          channel='portal_downsides_test',
                           token=settings.SLACK_TOKEN,
                           name='PORTAL DOWNSIDE UPDATE AGENT')
-        except Exception as e:
-            print(e)
+        except FormulaeBasedDownsides.DoesNotExist:
             response = 'Failed'
+    return HttpResponse(response)
+
+
+def update_downside_formulae(request):
+    """ View to Update the downside formulae for each position """
+    # Only process POST requests
+    response = 'Failed'
+    if request.method == 'POST':
+        if request.POST.get('update_risk_limit') == 'true':
+            risk_limit = request.POST.get('risk_limit')
+            row_id = request.POST.get('id')
+            try:
+                # Retroactively update Risk Limit for all matching TradeGroups
+                obj = FormulaeBasedDownsides.objects.get(id=row_id)
+                original_risk_limit = obj.RiskLimit
+                if str(original_risk_limit) != str(risk_limit):
+                    return JsonResponse({'msg': 'Risk Limit Different', 'original_risk_limit': original_risk_limit})
+                else:
+                    response = 'Risk Limit Same'
+            except FormulaeBasedDownsides.DoesNotExist:
+                response = 'Failed'
+        else:
+            # Gather the data
+            try:
+                row_id = request.POST['id']
+                is_excluded = request.POST['is_excluded']
+                base_case_downside_type = request.POST['base_case_downside_type']
+                base_case_reference_data_point = request.POST['base_case_reference_data_point']
+                base_case_reference_price = request.POST['base_case_reference_price']
+                base_case_operation = request.POST['base_case_operation']
+                base_case_custom_input = request.POST['base_case_custom_input']
+                base_case = request.POST['base_case']
+                base_case_notes = request.POST['base_case_notes']
+                cix_ticker = request.POST['cix_ticker']
+                outlier_downside_type = request.POST['outlier_downside_type']
+                outlier_reference_data_point = request.POST['outlier_reference_data_point']
+                outlier_reference_price = request.POST['outlier_reference_price']
+                outlier_operation = request.POST['outlier_operation']
+                outlier_custom_input = request.POST['outlier_custom_input']
+                outlier = request.POST['outlier']
+                outlier_notes = request.POST['outlier_notes']
+
+                if outlier == 'None' or outlier is None:
+                    # Outlier should match base case by Default
+                    outlier_downside_type = base_case_downside_type
+                    outlier_reference_data_point = base_case_reference_data_point
+                    outlier_reference_price = base_case_reference_price
+                    outlier_operation = base_case_operation
+                    outlier_custom_input = base_case_custom_input
+                    outlier = base_case
+
+                obj = FormulaeBasedDownsides.objects.get(id=row_id)
+                old_base_case_downside = obj.base_case
+                old_outlier = obj.outlier
+                obj.IsExcluded = is_excluded
+                obj.BaseCaseDownsideType = base_case_downside_type
+                obj.BaseCaseReferenceDataPoint = base_case_reference_data_point
+                obj.cix_ticker = cix_ticker
+                obj.BaseCaseReferencePrice = base_case_reference_price
+                obj.BaseCaseOperation = base_case_operation
+                obj.BaseCaseCustomInput = base_case_custom_input
+                obj.base_case = base_case
+                obj.base_case_notes = base_case_notes
+                obj.OutlierDownsideType = outlier_downside_type
+                obj.OutlierReferenceDataPoint = outlier_reference_data_point
+                obj.OutlierReferencePrice = outlier_reference_price
+                obj.OutlierOperation = outlier_operation
+                obj.OutlierCustomInput = outlier_custom_input
+                obj.outlier = outlier
+                obj.outlier_notes = outlier_notes
+                obj.LastUpdate = datetime.datetime.now()
+                obj.save()
+                response = 'Success'
+                client_ip, is_routable = get_client_ip(request)
+                if client_ip is None:
+                    ip_addr = 'NA'
+                else:
+                    ip_addr = client_ip
+
+                try:
+                    ip_addr = workstation_mapper.ip_mapper[ip_addr]
+                except KeyError:
+                    ip_addr = client_ip
+
+                slack_message('portal_downsides.slack',
+                            {'updated_deal': str(obj.TradeGroup),
+                            'underlying_security': obj.Underlying,
+                            'base_case': str(old_base_case_downside) + " -> " + str(obj.base_case),
+                            'outlier': str(old_outlier) + " -> " + str(obj.outlier),
+                            'IP': str(ip_addr)},
+                            channel='portal_downsides',
+                            token=settings.SLACK_TOKEN,
+                            name='PORTAL DOWNSIDE UPDATE AGENT')
+            except Exception as e:
+                print(e)
+                response = 'Failed'
 
     return HttpResponse(response)

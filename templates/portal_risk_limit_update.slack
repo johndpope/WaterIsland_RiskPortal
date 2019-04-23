@@ -3,7 +3,5 @@
 {% block text %}
     Updated By: {{ IP }}
     Downside Updated for  {{ updated_deal }}
-    Underlying Security: {{ underlying_security }}
-    Base Case: {{ base_case }}
-    Outlier: {{ outlier }}
+    Risk Limit: {{ risk_limit }}
 {% endblock %}
