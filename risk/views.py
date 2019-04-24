@@ -650,7 +650,11 @@ def show_mna_idea(request):
             data_frame = read_frame(deal_risk_factors_dict)
             data_frame = data_frame.dropna(axis=1)
             data_frame_max = data_frame.max(axis=1)[0]
-            maximum_graph_range = data_frame_max if data_frame_max > maximum_graph_range else maximum_graph_range
+            data_frame_max_nan = pd.isna(data_frame_max)
+            if (not data_frame_max_nan and data_frame_max > maximum_graph_range):
+                maximum_graph_range = data_frame_max
+            else:
+                maximum_graph_range = maximum_graph_range
             maximum_graph_range = maximum_graph_range + datetime.timedelta(days=60)
             deal_risk_factors_list = []
             deal_risk_factors = MA_Deals_Risk_Factors.objects.get(deal_id=deal_id)
