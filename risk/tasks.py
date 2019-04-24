@@ -19,13 +19,13 @@ import json
 from django.conf import settings
 import ast
 from django_slack import slack_message
-
 api_host = bbgclient.bbgclient.get_next_available_host()
 import ess_function
 from django.core.exceptions import ObjectDoesNotExist
 from celery_progress.backend import ProgressRecorder
 from .ess_idea_db_utilities import add_new_deal, add_new_deal_alpha_only, add_new_deal_with_lock
 from email_utilities import send_email
+
 
 @shared_task
 def premium_analysis_flagger():

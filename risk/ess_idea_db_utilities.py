@@ -1,16 +1,16 @@
 import datetime
+import ast
 from dateutil.relativedelta import relativedelta
 import json
 import requests
-
 from django.db import transaction
 from django.db.models import Max
 import bbgclient
 import numpy as np
 import pandas as pd
-
 from cleanup.models import DeleteFile
 from risk.models import *
+import ess_function
 
 
 def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id,
@@ -591,6 +591,118 @@ def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                          ess_idea_id_id=new_deal.id)
         peer.save()
         print('Added Peer')
+
+    # Run Premium Analysis on this Task
+    print('Now Running Premium Analysis...')
+    try:
+        multiples_dictionary_list = ast.literal_eval(str(new_deal.multiples_dictionary))
+        progress_recorder.set_progress(90, 100)
+        multiples_dictionary = {}
+        for multiple in multiples_dictionary_list:
+            for key, value in multiple.items():
+                multiples_dictionary[key] = float(value)
+
+        progress_recorder.set_progress(92, 100)
+        related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=new_deal.id,
+                                                                  version_number=new_deal.version_number)
+        peers_weights_dictionary = {}
+
+        for each_peer in related_peers:
+            peers_weights_dictionary[each_peer.ticker] = each_peer.hedge_weight / 100
+
+        progress_recorder.set_progress(40, 100)
+        bear_flag, bull_flag, pt_flag = None, None, None
+        try:
+            balance_sheet_object = EssBalanceSheets.objects.get(deal_key=new_deal.deal_key)
+            upside_balance_sheet = balance_sheet_object.upside_balance_sheet
+            wic_balance_sheet = balance_sheet_object.wic_balance_sheet
+            downside_balance_sheet = balance_sheet_object.downside_balance_sheet
+
+            if balance_sheet_object.adjust_up_bs_with_bloomberg == 'No':
+                bull_flag = True
+            if balance_sheet_object.adjust_wic_bs_with_bloomberg == 'No':
+                pt_flag = True
+            if balance_sheet_object.adjust_down_bs_with_bloomberg == 'No':
+                bear_flag = True
+        except EssBalanceSheets.DoesNotExist:
+            upside_balance_sheet = None
+            wic_balance_sheet = None
+            downside_balance_sheet = None
+
+        progress_recorder.set_progress(43, 100)
+        result_dictionary = ess_function.final_df(alpha_ticker=new_deal.alpha_ticker,
+                                                  cix_index=new_deal.cix_index,
+                                                  unaffectedDt=str(new_deal.unaffected_date),
+                                                  expected_close=str(new_deal.expected_close),
+                                                  tgtDate=str(new_deal.price_target_date),
+                                                  analyst_upside=new_deal.pt_up,
+                                                  analyst_downside=new_deal.pt_down,
+                                                  analyst_pt_wic=new_deal.pt_wic,
+                                                  peers2weight=peers_weights_dictionary,
+                                                  metric2weight=multiples_dictionary,
+                                                  api_host=api_host, adjustments_df_bear=upside_balance_sheet,
+                                                  adjustments_df_bull=downside_balance_sheet,
+                                                  adjustments_df_pt=wic_balance_sheet, pt_flag=pt_flag,
+                                                  bull_flag=bull_flag, bear_flag=bear_flag, f_period="1BF",
+                                                  progress_recorder=progress_recorder)
+
+        df = result_dictionary['Final Results']
+        cix_down_price = df['Down Price (CIX)']
+        cix_up_price = df['Up Price (CIX)']
+        regression_up_price = df['Up Price (Regression)']
+        regression_down_price = df['Down Price (Regression)']
+        pt_wic_price_cix = df['PT WIC Price (CIX)']
+        pt_wic_price_regression = df['PT WIC Price (Regression)']
+        regression_calculations = result_dictionary['Regression Calculations']
+        cix_calculations = result_dictionary['CIX Calculations']
+
+        new_upside = 0
+        new_downside = 0
+        new_pt_wic = 0
+
+        if new_deal.pt_wic_check == 'Yes':
+            if new_deal.how_to_adjust == 'cix':
+                # Check if it exceeds 5% for Cix adjustments
+                new_pt_wic = pt_wic_price_cix
+            else:
+                new_pt_wic = pt_wic_price_regression
+
+        if new_deal.pt_up_check == 'Yes':
+            old_pt_up = new_deal.pt_up
+
+            if new_deal.how_to_adjust == 'cix':
+                new_upside = cix_up_price
+            else:
+                new_upside = regression_up_price
+
+        if new_deal.pt_down_check == 'Yes':
+            old_pt_down = new_deal.pt_down
+
+            if new_deal.how_to_adjust == 'cix':
+                new_downside = cix_down_price
+            else:
+                new_downside = regression_down_price
+
+        # Record this Upside downside change for the deal
+        ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                                pt_up=new_upside,
+                                                pt_wic=new_pt_wic, pt_down=new_downside,
+                                                date_updated=datetime.datetime.now().date()
+                                                .strftime('%Y-%m-%d')).save()
+
+        EssIdeaAdjustmentsInformation(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                      regression_results=json.dumps(result_dictionary['Regression Results']),
+                                      regression_calculations=json.dumps(regression_calculations),
+                                      cix_calculations = json.dumps(cix_calculations),
+                                      calculated_on=datetime.datetime.now().date()).save()
+
+        print('Recorded Upside/Downside Adjustments ')
+        print('Saved Daily Regression Results ')
+        progress_recorder.set_progress(100, 100)
+
+    except Exception as e:
+        print(e)
+        raise Exception
 
 
 def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id,
@@ -1191,6 +1303,113 @@ def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear
                              ess_idea_id_id=new_deal.id)
             peer.save()
             print('Added Peer')
+
+    # Run Premium Analysis on this Task
+    print('Now Running Premium Analysis...')
+    try:
+        multiples_dictionary_list = ast.literal_eval(str(new_deal.multiples_dictionary))
+        progress_recorder.set_progress(90, 100)
+        multiples_dictionary = {}
+        for multiple in multiples_dictionary_list:
+            for key, value in multiple.items():
+                multiples_dictionary[key] = float(value)
+
+        progress_recorder.set_progress(92, 100)
+        related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=new_deal.id,
+                                                                  version_number=new_deal.version_number)
+        peers_weights_dictionary = {}
+
+        for each_peer in related_peers:
+            peers_weights_dictionary[each_peer.ticker] = each_peer.hedge_weight / 100
+
+        progress_recorder.set_progress(40, 100)
+        bear_flag, bull_flag, pt_flag = None, None, None
+        try:
+            balance_sheet_object = EssBalanceSheets.objects.get(deal_key=new_deal.deal_key)
+            upside_balance_sheet = balance_sheet_object.upside_balance_sheet
+            wic_balance_sheet = balance_sheet_object.wic_balance_sheet
+            downside_balance_sheet = balance_sheet_object.downside_balance_sheet
+
+            if balance_sheet_object.adjust_up_bs_with_bloomberg == 'No':
+                bull_flag = True
+            if balance_sheet_object.adjust_wic_bs_with_bloomberg == 'No':
+                pt_flag = True
+            if balance_sheet_object.adjust_down_bs_with_bloomberg == 'No':
+                bear_flag = True
+        except EssBalanceSheets.DoesNotExist:
+            upside_balance_sheet = None
+            wic_balance_sheet = None
+            downside_balance_sheet = None
+
+        progress_recorder.set_progress(43, 100)
+        result_dictionary = ess_function.final_df(alpha_ticker=new_deal.alpha_ticker,
+                                                  cix_index=new_deal.cix_index,
+                                                  unaffectedDt=str(new_deal.unaffected_date),
+                                                  expected_close=str(new_deal.expected_close),
+                                                  tgtDate=str(new_deal.price_target_date),
+                                                  analyst_upside=new_deal.pt_up,
+                                                  analyst_downside=new_deal.pt_down,
+                                                  analyst_pt_wic=new_deal.pt_wic,
+                                                  peers2weight=peers_weights_dictionary,
+                                                  metric2weight=multiples_dictionary,
+                                                  api_host=api_host, adjustments_df_bear=upside_balance_sheet,
+                                                  adjustments_df_bull=downside_balance_sheet,
+                                                  adjustments_df_pt=wic_balance_sheet, pt_flag=pt_flag,
+                                                  bull_flag=bull_flag, bear_flag=bear_flag, f_period="1BF",
+                                                  progress_recorder=progress_recorder)
+
+        df = result_dictionary['Final Results']
+        cix_down_price = df['Down Price (CIX)']
+        cix_up_price = df['Up Price (CIX)']
+        regression_up_price = df['Up Price (Regression)']
+        regression_down_price = df['Down Price (Regression)']
+        pt_wic_price_cix = df['PT WIC Price (CIX)']
+        pt_wic_price_regression = df['PT WIC Price (Regression)']
+        regression_calculations = result_dictionary['Regression Calculations']
+        cix_calculations = result_dictionary['CIX Calculations']
+
+        new_upside = 0
+        new_downside = 0
+        new_pt_wic = 0
+
+        if new_deal.pt_wic_check == 'Yes':
+            if new_deal.how_to_adjust == 'cix':
+                new_pt_wic = pt_wic_price_cix
+            else:
+                new_pt_wic = pt_wic_price_regression
+
+        if new_deal.pt_up_check == 'Yes':
+            if new_deal.how_to_adjust == 'cix':
+                new_upside = cix_up_price
+            else:
+                new_upside = regression_up_price
+
+        if new_deal.pt_down_check == 'Yes':
+            if new_deal.how_to_adjust == 'cix':
+                new_downside = cix_down_price
+            else:
+                new_downside = regression_down_price
+
+        # Record this Upside downside change for the deal
+        ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                                pt_up=new_upside,
+                                                pt_wic=new_pt_wic, pt_down=new_downside,
+                                                date_updated=datetime.datetime.now().date()
+                                                .strftime('%Y-%m-%d')).save()
+
+        EssIdeaAdjustmentsInformation(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                      regression_results=json.dumps(result_dictionary['Regression Results']),
+                                      regression_calculations=json.dumps(regression_calculations),
+                                      cix_calculations = json.dumps(cix_calculations),
+                                      calculated_on=datetime.datetime.now().date()).save()
+
+        print('Recorded Upside/Downside Adjustments ')
+        print('Saved Daily Regression Results ')
+        progress_recorder.set_progress(100, 100)
+
+    except Exception as e:
+        print(e)
+        raise Exception
 
 
 def add_new_deal_alpha_only(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id, ticker,

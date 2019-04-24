@@ -1510,20 +1510,46 @@ def ess_idea_database(request):
     :param request: Request Object to View all ESS IDEA Deals
     :return: Render object with all ESS IDEA deals in a dataframe
     """
-    df = ESS_Idea.objects.raw("SELECT  * "
-                              "FROM  " + settings.CURRENT_DATABASE + ".risk_ess_idea AS A "
-                              "INNER JOIN ("
-                              "SELECT   "
-                              "deal_key, max(version_number) as max_version "
-                              "from " + settings.CURRENT_DATABASE + ".risk_ess_idea "
-                              "group by deal_key "
-                              ") AS B ON A.deal_key = B.deal_key AND A.version_number = B.max_version"
-                              " LEFT JOIN (SELECT deal_key,pt_up as model_up, pt_down as model_down, pt_wic as "
-                              "model_wic from "+settings.CURRENT_DATABASE +
-                              ".risk_ess_idea_upside_downside_change_records " 
-                              "where date_updated=(Select max(date_updated) from "+settings.CURRENT_DATABASE +
-                              ".risk_ess_idea_upside_downside_change_records)) as ADJ  on "
-                              " ADJ.deal_key = A.deal_key ")
+
+    df = ESS_Idea.objects.raw("SELECT  * FROM "+settings.CURRENT_DATABASE+".risk_ess_idea AS A "
+                              " INNER JOIN "
+                              "(SELECT deal_key, MAX(version_number) AS max_version "
+                              "FROM  "+settings.CURRENT_DATABASE+".risk_ess_idea GROUP BY deal_key "
+                              ") AS B " 
+                              "ON A.deal_key = B.deal_key "
+                              "AND "
+                              "A.version_number = B.max_version "
+                              "LEFT JOIN "
+                              "(SELECT X.deal_key,X.pt_up as model_up, X.pt_down AS model_down, X.pt_wic "
+                              "AS "
+                              "model_wic FROM "+settings.CURRENT_DATABASE +
+                              ".risk_ess_idea_upside_downside_change_records  AS X "
+                              "INNER JOIN "
+                              "(SELECT deal_key, MAX(date_updated) AS MaxDate FROM "+settings.CURRENT_DATABASE +
+                              ".risk_ess_idea_upside_downside_change_records "
+                              "GROUP BY deal_key) AS Y "
+                              "ON "
+                              "X.deal_key = Y.deal_key "
+                              "WHERE "
+                              "X.date_updated = Y.MaxDate) AS ADJ  "
+                              "ON "
+                              "ADJ.deal_key = A.deal_key ")
+
+
+    # df = ESS_Idea.objects.raw("SELECT  * "
+    #                           "FROM  " + settings.CURRENT_DATABASE + " AS A "
+    #                           "INNER JOIN ("
+    #                           "SELECT   "
+    #                           "deal_key, max(version_number) as max_version "
+    #                           "from " + settings.CURRENT_DATABASE + ".risk_ess_idea "
+    #                           "group by deal_key "
+    #                           ") AS B ON A.deal_key = B.deal_key AND A.version_number = B.max_version"
+    #                           " LEFT JOIN (SELECT deal_key,pt_up as model_up, pt_down as model_down, pt_wic as "
+    #                           "model_wic from "+settings.CURRENT_DATABASE +
+    #                           ".risk_ess_idea_upside_downside_change_records "
+    #                           "where date_updated=(Select max(date_updated) from "+settings.CURRENT_DATABASE +
+    #                           ".risk_ess_idea_upside_downside_change_records)) as ADJ  on "
+    #                           " ADJ.deal_key = A.deal_key ")
 
     return render(request, 'ess_idea_database.html', context={'ess_idea_df': df})
 
@@ -1776,7 +1802,8 @@ def add_new_ess_idea_deal(request):
                                       catalyst=catalyst, deal_type=deal_type, catalyst_tier=catalyst_tier,
                                       hedges=hedges, gics_sector=gics_sector, lead_analyst=lead_analyst, status=status,
                                       pt_up_check=pt_up_check, pt_down_check=pt_down_check, pt_wic_check=pt_wic_check,
-                                      adjust_based_off=adjust_based_off, premium_format=premium_format, remove_file_ids=remove_file_ids)
+                                      adjust_based_off=adjust_based_off, premium_format=premium_format,
+                                      remove_file_ids=remove_file_ids)
 
             task_id = task.task_id
 
