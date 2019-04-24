@@ -17,6 +17,21 @@ def px_adjuster(bbg_sectype, northpoint_sectype, px, crncy, fx_rate, factor):
 
 def live_tradegroup_pnl(request):
     """ Returns the Live PnL and YTD PnL at the Tradegroup level """
+
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated = get_data()
+
+    if request.is_ajax():
+        return_data = {'data': final_live_df.to_json(orient='records'),
+                       'daily_pnl': final_daily_pnl.to_json(orient='records'),
+                       'position_level_pnl': position_level_pnl.to_json(orient='records'),
+                       'last_synced_on': last_updated}
+
+        return HttpResponse(json.dumps(return_data), content_type='application/json')
+
+    return render(request, 'realtime_pnl_impacts.html', {'last_updated':last_updated})
+
+
+def get_data():
     ytd_performance = read_frame(ArbitrageYTDPerformance.objects.all())
 
     ytd_performance.columns = ['id', 'Fund', 'Sleeve', 'Catalyst', 'TradeGroup', 'LongShort', 'InceptionDate',
@@ -139,15 +154,5 @@ def live_tradegroup_pnl(request):
         del final_daily_pnl['index']
     except:
         final_daily_pnl = pd.DataFrame()
-
-    if request.is_ajax():
-        return_data = {'data': final_live_df.to_json(orient='records'),
-                       'daily_pnl': final_daily_pnl.to_json(orient='records'),
-                       'position_level_pnl': position_level_pnl.to_json(orient='records'),
-                       'last_synced_on': last_updated}
-
-        return HttpResponse(json.dumps(return_data), content_type='application/json')
-
-    return render(request, 'realtime_pnl_impacts.html', {'last_updated':last_updated})
-
-
+    
+    return final_live_df, final_daily_pnl, position_level_pnl, last_updated

@@ -16,6 +16,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 from email_utilities import send_email
+from realtime_pnl_impacts.views import get_data
 from risk_reporting.models import DailyNAVImpacts, PositionLevelNAVImpacts, FormulaeBasedDownsides
 
 
@@ -661,6 +662,14 @@ def style_funds(x):
     return ['font-size: 125%; font-weight: bold; border: 1px solid black' if v == 'Loss Budgets' else '' for v in x.index]
 
 
+def calculate_status(row):
+    if row['max_amount'] == 0 and row['min_amount'] == 0:
+        row['status'] = 'CLOSED'
+    else:
+        row['status'] = 'ACTIVE'
+    return row
+
+
 @shared_task
 def email_pl_target_loss_budgets():
 
@@ -670,12 +679,22 @@ def email_pl_target_loss_budgets():
     engine = create_engine("mysql://" + DB_USER + ":" + DB_PASSWORD + "@" + WIC_DB_HOST + "/" + settings.CURRENT_DATABASE)
     con = engine.connect()
 
-    df = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_arbitrageytdperformance', con=con)
+    raw_df = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_arbitrageytdperformance', con=con)
     average_aum_df = pd.read_sql('select fund as Fund, avg(aum) as `Average YTD AUM` from wic.daily_flat_file_db where year(Flat_file_as_of) >= YEAR(CURDATE()) group by fund order by fund', con=con)
-
-    df.drop(columns=['id'], inplace=True)
+    flat_file_df = pd.read_sql('select TradeGroup as tradegroup, Fund as fund, LongShort as long_short, max(amount) as max_amount, min(amount) as min_amount from wic.daily_flat_file_db where Flat_file_as_of = (select max(Flat_file_as_of) from wic.daily_flat_file_db) group by TradeGroup, Fund, LongShort;', con=con)
     sleeve_df = pd.read_sql('Select * from wic.sleeves_snapshot', con=con)
     con.close()
+
+    raw_df.drop(columns=['id'], inplace=True)
+
+    flat_file_df = flat_file_df.apply(calculate_status, axis=1)
+    df_active_null = raw_df[(raw_df['status'] == 'ACTIVE') | (raw_df['status'].isnull())]
+    df_closed = raw_df[raw_df['status'] == 'CLOSED']
+    df_active_null = df_active_null.drop(columns=['status'])
+
+    new_status_df = pd.merge(df_active_null, flat_file_df[['tradegroup', 'fund', 'long_short', 'status']], on=['tradegroup', 'fund', 'long_short'], how='left')
+    df = df_closed.append(new_status_df, ignore_index=True)
+    df["status"] = df["status"].fillna('CLOSED')
 
     c_load = sleeve_df['Metrics in NAV JSON'].apply(json.loads)
     c_list = list(c_load)
@@ -733,7 +752,7 @@ def email_pl_target_loss_budgets():
     loss_budgets['Ann Gross P&L Target %'] = loss_budgets.apply(lambda x: "{:,.2f}%".format(x['Ann Gross P&L Target %']), axis=1)
     loss_budgets['Loss Budget'] = loss_budgets.apply(lambda x: "{:,.2f}%".format(x['Loss Budget']), axis=1)
     loss_budgets['YTD Realized % of Loss Budget'] = (loss_budgets['YTD Closed Deal Losses']/loss_budgets['Ann Loss Budget $']) * 100
-    loss_budgets['YTD Total Loss % of Budget'] = (loss_budgets['YTD Active Deal Losses'] / loss_budgets['Ann Loss Budget $']) * 100
+    loss_budgets['YTD Total Loss % of Budget'] = ((loss_budgets['YTD Active Deal Losses'] + loss_budgets['YTD Closed Deal Losses']) / loss_budgets['Ann Loss Budget $']) * 100
 
     # Rounding off to 2 decimal places for % values
     loss_budgets['YTD Active Deal Losses'] = loss_budgets.apply(lambda x: "{:,}".format(int(x['YTD Active Deal Losses'])), axis=1)
@@ -772,7 +791,45 @@ def email_pl_target_loss_budgets():
     df1.index.values[14] = 'Time Passed %'
 
     now_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
- 
+
+    def excel_formatting(row):
+        ret = ["color:green" for _ in row.index]
+
+        ret[row.index.get_loc("Sleeve_")] = "color:black"
+        ret[row.index.get_loc("TradeGroup_")] = "color:black"
+
+        if row['Total YTD PnL_AED'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_AED")] = "color:red"
+
+        if row['Total YTD PnL_ARB'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_ARB")] = "color:red"
+
+        if row['Total YTD PnL_CAM'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_CAM")] = "color:red"
+
+        if row['Total YTD PnL_LEV'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_LEV")] = "color:red"
+
+        if row['Total YTD PnL_LG'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_LG")] = "color:red"
+
+        if row['Total YTD PnL_MACO'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_MACO")] = "color:red"
+
+        if row['Total YTD PnL_MALT'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_MALT")] = "color:red"
+
+        if row['Total YTD PnL_TACO'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_TACO")] = "color:red"
+
+        if row['Total YTD PnL_TAQ'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_TAQ")] = "color:red"
+
+        if row['Total YTD PnL_WED'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_WED")] = "color:red"
+
+        return ret
+
     styles = [
         hover(),
         dict(selector="th", props=[("font-size", "125%"), ("text-align", "center")]),
@@ -799,12 +856,21 @@ def email_pl_target_loss_budgets():
                 </html>
         """.format(table=styled_html.render(), date=now_date)
 
-    def export_excel(df):
+    def export_excel(df_list):
         with io.BytesIO() as buffer:
             writer = pd.ExcelWriter(buffer)
-            df.to_excel(writer)
+            workbook = writer.book
+            sheet_names = ['Fund P&L Monitor', 'TradeGroup P&L']
+            for i, df in enumerate(df_list):
+                sheet_name = sheet_names[i]
+                worksheet = workbook.add_worksheet(sheet_name)
+                writer.sheets[sheet_name] = worksheet
+                df.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
             writer.save()
             return buffer.getvalue()
+
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated = get_data()
+    final_live_df = final_live_df.style.apply(excel_formatting, axis=1)
 
     exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
 
@@ -812,4 +878,4 @@ def email_pl_target_loss_budgets():
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                recipients=['vaggarwal@wicfunds.com', 'cplunkett@wicfunds.com', 'kgorde@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
-               EXPORTERS=exporters, dataframe=df1)
+               EXPORTERS=exporters, dataframe=[df1, final_live_df])
