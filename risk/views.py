@@ -1593,13 +1593,13 @@ def ess_idea_save_balance_sheet(request):
             balance_sheet_object = EssBalanceSheets.objects.create(ess_idea_id_id=deal_id)
 
         upside_balance_sheet = pd.DataFrame(pd.read_json(request.POST['upside_balance_sheet'], orient='records',
-                                                         typ='series')).transpose()
+                                                         typ='series', convert_dates=False)).transpose()
 
         wic_balance_sheet = pd.DataFrame(pd.read_json(request.POST['wic_balance_sheet'], orient='records',
-                                                      typ='series')).transpose()
+                                                      typ='series', convert_dates=False)).transpose()
 
         downside_balance_sheet = pd.DataFrame(pd.read_json(request.POST['downside_balance_sheet'], orient='records',
-                                              typ='series')).transpose()
+                                              typ='series', convert_dates=False)).transpose()
 
         balance_sheet_object.deal_key = deal_key
         balance_sheet_object.adjust_up_bs_with_bloomberg = request.POST['upside_with_bloomberg']
@@ -1654,19 +1654,19 @@ def ess_idea_view_balance_sheet(request):
                                                                     api_host)
         if upside_balance_sheet_adjustments is not None:
             # Previous Adjustments are saved for this deal. Fetch and display those in Adjustments table.
-            upside_balance_sheet_adjustments = pd.read_json(upside_balance_sheet_adjustments)
+            upside_balance_sheet_adjustments = pd.read_json(upside_balance_sheet_adjustments, convert_dates=False)
         else:
             upside_balance_sheet_adjustments = pd.DataFrame()
 
         if wic_balance_sheet_adjustments is not None:
             # Previous Adjustments are saved for this deal. Fetch and display those in Adjustments table.
-            wic_balance_sheet_adjustments = pd.read_json(wic_balance_sheet_adjustments)
+            wic_balance_sheet_adjustments = pd.read_json(wic_balance_sheet_adjustments, convert_dates=False)
         else:
             wic_balance_sheet_adjustments = pd.DataFrame()
 
         if downside_balance_sheet_adjustments is not None:
             # Previous Adjustments are saved for this deal. Fetch and display those in Adjustments table.
-            downside_balance_sheet_adjustments = pd.read_json(downside_balance_sheet_adjustments)
+            downside_balance_sheet_adjustments = pd.read_json(downside_balance_sheet_adjustments, convert_dates=False)
         else:
             downside_balance_sheet_adjustments = pd.DataFrame()
 
