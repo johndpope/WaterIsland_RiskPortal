@@ -673,10 +673,8 @@ def calculate_status(row):
 @shared_task
 def email_pl_target_loss_budgets():
 
-    WIC_DB_HOST = 'wic-risk-database.cwi02trt7ww1.us-east-1.rds.amazonaws.com'
-    DB_USER = 'root'
-    DB_PASSWORD = 'waterislandcapital'
-    engine = create_engine("mysql://" + DB_USER + ":" + DB_PASSWORD + "@" + WIC_DB_HOST + "/" + settings.CURRENT_DATABASE)
+    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD
+                               + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
     con = engine.connect()
 
     raw_df = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_arbitrageytdperformance', con=con)
