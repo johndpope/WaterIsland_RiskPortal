@@ -100,7 +100,7 @@ function createPnlGraphs(tradegroup_story, unique_tickers, tradegroup_name, trad
 }
 
 
-function createLineChartConfigs(tradegroupOverallDP, datasets, graphs, title, y_title, theme) {
+function createLineChartConfigs(tradegroupOverallDP, datasets, graphs, title, y_title, theme, label_x=0, label_y=0, label_align="center") {
     return {
         "type": "stock",
         "theme": theme,
@@ -114,10 +114,10 @@ function createLineChartConfigs(tradegroupOverallDP, datasets, graphs, title, y_
         "panels": [{
             "title": y_title,
             "allLabels": [{
-                "x": 0,
-                "y": 0,
+                "x": label_x,
+                "y": label_y,
                 "text": title,
-                "align": "center",
+                "align": label_align,
                 "size": 12
             }],
             "stockGraphs": graphs,

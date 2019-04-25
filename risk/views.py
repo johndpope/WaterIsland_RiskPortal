@@ -802,9 +802,10 @@ def show_mna_idea(request):
         print(exception)  # Log this Exception
         px_last_historical_acquirer = None
     try:
+        cix_index = deal_core.cix_index
         cix_histdata = requests.get("http://" + api_host + "/wic/api/v1.0/general_histdata",
                                     params={'idtype': "tickers", "fields": "PX_LAST",
-                                            "tickers": ','.join([deal_core.cix_index]),
+                                            "tickers": ','.join([cix_index]),
                                             "override": "",
                                             "start_date": (datetime.datetime.now() - relativedelta(months=12)).strftime(
                                                 '%Y%m%d'),
@@ -820,9 +821,10 @@ def show_mna_idea(request):
         px_last_cix_index = None
 
     try:
+        spread_index = deal_core.spread_index
         spread_histdata = requests.get("http://" + api_host + "/wic/api/v1.0/general_histdata",
                                        params={'idtype': "tickers", "fields": "PX_LAST",
-                                               "tickers": ','.join([deal_core.spread_index]),
+                                               "tickers": ','.join([spread_index]),
                                                "override": "",
                                                "start_date": (datetime.datetime.now() - relativedelta(months=12)).strftime('%Y%m%d'),
                                                "end_date": datetime.datetime.now().strftime('%Y%m%d')},
@@ -870,7 +872,8 @@ def show_mna_idea(request):
                    'historical_downside_estimates': historical_downside_estimates,
                    'overlay_weekly_downside_estimate': overlay_weekly_downside_estimate,
                    'px_last_cix_index': px_last_cix_index, 'px_last_spread_index': px_last_spread_index,
-                   'related_peers': json.dumps(peer_tickers), 'peer_lists':related_peers
+                   'related_peers': json.dumps(peer_tickers), 'peer_lists':related_peers,
+                   "cix_index": cix_index, "spread_index": spread_index
                    })
 
 

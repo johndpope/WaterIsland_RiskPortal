@@ -75,8 +75,7 @@ def get_tradegroup_performance_main_page(request):
 
 def get_tradegroup_story(request):
     """ Retrieve story charts and render in a template... """
-
-    unique_tickers, tradegroup_name, exposures_and_pnl_df, fund_code = None, None, None, None
+    unique_tickers, tradegroup_name, exposures_and_pnl_df, fund_code = None, None, pd.DataFrame(), None
     options_pnl_contribution = {}
     tradegroup = request.GET['TradeGroup']
     fund = request.GET['Fund']
@@ -84,65 +83,66 @@ def get_tradegroup_story(request):
                                                " like '"+tradegroup+"' and Fund like '"+fund+"'", con=connection)
 
     tradegroup_exposures_info = pd.read_sql_query("SELECT * FROM wic.tradegroup_exposure_nav_info where tradegroup "
-                                               " like '"+tradegroup+"' and Fund like '"+fund+"'", con=connection)
+                                                  " like '"+tradegroup+"' and Fund like '"+fund+"'", con=connection)
 
-    tradegroup_overall_pnl = tradegroup_overall_pnl.sort_values(by='Date')
-    tradegroup_overall_pnl['Cumulative_pnl_dollar'] = tradegroup_overall_pnl['Daily_PnL_Dollar'].cumsum()
-    tradegroup_overall_pnl['Cumulative_pnl_bps'] = tradegroup_overall_pnl['Daily_PnL_bps'].cumsum()
-    tradegroup_overall_pnl['Cumulative_options_pnl_dollar'] = tradegroup_overall_pnl['Options_PnL_Dollar'].cumsum()
-    tradegroup_overall_pnl['Cumulative_options_pnl_bps'] = tradegroup_overall_pnl['Options_PnL_bps'].cumsum()
-    tradegroup_overall_pnl['Cumulative_pnl_over_cap'] = 1e4*((1.0+(tradegroup_overall_pnl["PnL_Over_Cap_bps"].astype(float)/1e4)).cumprod() -1)
-    tradegroup_overall_pnl['Pnl_over_cap_percent'] = tradegroup_overall_pnl['Cumulative_pnl_over_cap'].apply(lambda x: x/100.0)
+    if not tradegroup_overall_pnl.empty:
+        tradegroup_overall_pnl = tradegroup_overall_pnl.sort_values(by='Date')
+        tradegroup_overall_pnl['Cumulative_pnl_dollar'] = tradegroup_overall_pnl['Daily_PnL_Dollar'].cumsum()
+        tradegroup_overall_pnl['Cumulative_pnl_bps'] = tradegroup_overall_pnl['Daily_PnL_bps'].cumsum()
+        tradegroup_overall_pnl['Cumulative_options_pnl_dollar'] = tradegroup_overall_pnl['Options_PnL_Dollar'].cumsum()
+        tradegroup_overall_pnl['Cumulative_options_pnl_bps'] = tradegroup_overall_pnl['Options_PnL_bps'].cumsum()
+        tradegroup_overall_pnl['Cumulative_pnl_over_cap'] = 1e4*((1.0+(tradegroup_overall_pnl["PnL_Over_Cap_bps"].astype(float)/1e4)).cumprod() -1)
+        tradegroup_overall_pnl['Pnl_over_cap_percent'] = tradegroup_overall_pnl['Cumulative_pnl_over_cap'].apply(lambda x: x/100.0)
 
-    options_pnl_contribution['Options_PnL_Dollar'] = tradegroup_overall_pnl['Options_PnL_Dollar'].sum()
-    options_pnl_contribution['Options_bps'] = tradegroup_overall_pnl['Options_PnL_bps'].sum()
+        options_pnl_contribution['Options_PnL_Dollar'] = tradegroup_overall_pnl['Options_PnL_Dollar'].sum()
+        options_pnl_contribution['Options_bps'] = tradegroup_overall_pnl['Options_PnL_bps'].sum()
+
+        tradegroup_names = tradegroup_overall_pnl['TradeGroup'].unique()
+        tradegroup_name = tradegroup_names[0] if tradegroup_names else None
+        fund_codes = tradegroup_overall_pnl['Fund'].unique()
+        fund_code = fund_codes[0] if fund_codes else None
 
     ticker_pnl_df = pd.read_sql_query("SELECT * FROM wic.ticker_pnl_breakdown where tradegroup "
-                                      " like '"+tradegroup+"' and Fund like '"+fund+"'", con=connection)
+                                      " like '" + tradegroup + "' and Fund like '" + fund + "'", con=connection)
 
-    ticker_pnl_df = ticker_pnl_df[['Date','Ticker_PnL_bps', 'Ticker_PnL_Dollar', 'Ticker']]
+    if not ticker_pnl_df.empty:
+        ticker_pnl_df = ticker_pnl_df[['Date','Ticker_PnL_bps', 'Ticker_PnL_Dollar', 'Ticker']]
+        security_pnl_breakdown = ticker_pnl_df.groupby('Ticker').sum().reset_index()
+        security_pnl_breakdown = security_pnl_breakdown.append({'Ticker': 'Options',
+                                                                'Ticker_PnL_bps': options_pnl_contribution['Options_bps'],
+                                                                'Ticker_PnL_Dollar': options_pnl_contribution['Options_PnL_Dollar']},
+                                                                ignore_index=True).to_dict('records')
 
-    security_pnl_breakdown = ticker_pnl_df.groupby('Ticker').sum().reset_index()
-    security_pnl_breakdown = security_pnl_breakdown.append({'Ticker': 'Options',
-                                                            'Ticker_PnL_bps':
-                                                                options_pnl_contribution['Options_bps'],
-                                                            'Ticker_PnL_Dollar':
-                                                                options_pnl_contribution['Options_PnL_Dollar']},
-                                                           ignore_index=True).to_dict('records')
+        unique_tickers = list(ticker_pnl_df['Ticker'].unique())
+        ticker_pnl_df = pd.pivot_table(ticker_pnl_df, index=['Date'], columns=['Ticker'],
+                                       aggfunc='first', fill_value='')
+        ticker_pnl_df.columns = ["_".join((i, j)) for i, j in ticker_pnl_df.columns]
+        ticker_pnl_df.reset_index(inplace=True)
+        ticker_pnl_df.columns = ticker_pnl_df.columns.str.replace(' ', '_')
+        for column in ticker_pnl_df.columns:
+            if column == 'Date': continue
+            ticker_pnl_df[column] = ticker_pnl_df[column].apply(pd.to_numeric)
+            ticker_pnl_df[column] = ticker_pnl_df[column].cumsum()
 
-    unique_tickers = list(ticker_pnl_df['Ticker'].unique())
-    ticker_pnl_df = pd.pivot_table(ticker_pnl_df, index=['Date'], columns=['Ticker'],
-                                   aggfunc='first', fill_value='')
-    ticker_pnl_df.columns = ["_".join((i, j)) for i, j in ticker_pnl_df.columns]
-    ticker_pnl_df.reset_index(inplace=True)
-    ticker_pnl_df.columns = ticker_pnl_df.columns.str.replace(' ', '_')
-    # Merge with Overall Df
-    tradegroup_name = tradegroup_overall_pnl['TradeGroup'].unique()[0]
-    fund_code = tradegroup_overall_pnl['Fund'].unique()[0]
+    if not tradegroup_overall_pnl.empty and not ticker_pnl_df.empty and not tradegroup_exposures_info.empty:
+        tradegroup_story = pd.merge(tradegroup_overall_pnl, ticker_pnl_df, how='left', on='Date')
+        tradegroup_story['Date'] = tradegroup_story['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
+        tradegroup_exposures_info['Date'] = tradegroup_exposures_info['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
+        exposures_and_pnl_df = pd.merge(tradegroup_exposures_info, tradegroup_story, on=['Date', 'Fund', 'TradeGroup'])
+        exposures_and_pnl_df = exposures_and_pnl_df.sort_values(by='Date')
 
-    for column in ticker_pnl_df.columns:
-        if column == 'Date': continue
-        ticker_pnl_df[column] = ticker_pnl_df[column].apply(pd.to_numeric)
-        ticker_pnl_df[column] = ticker_pnl_df[column].cumsum()
-
-    tradegroup_story = pd.merge(tradegroup_overall_pnl, ticker_pnl_df, how='left', on='Date')
-    tradegroup_story['Date'] = tradegroup_story['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
-    tradegroup_exposures_info['Date'] = tradegroup_exposures_info['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
-
-    exposures_and_pnl_df = pd.merge(tradegroup_exposures_info, tradegroup_story, on=['Date', 'Fund', 'TradeGroup'])
     # Get Position Summary Table
     position_summary = pd.read_sql_query("SELECT flat_file_as_of, Bucket, TradeGroup, Ticker, Strike, Expiration, "
                                          "Sector,AlphaHedge, CatalystTypeWIC, CatalystRating, amount, Exposure, "
                                          "DeltaAdj, BetaAdj from wic.daily_flat_file_db where "
                                          "Flat_file_as_of = (select max(flat_file_as_of) "
                                          "from wic.daily_flat_file_db) and TradeGroup like '"
-                                         + tradegroup+"' and Fund like '"+fund+"'", con=connection)
+                                         + tradegroup + "' and Fund like '" + fund + "'", con=connection)
 
     position_summary.columns = ['TradeDate', 'Bucket', 'TradeGroup', 'Ticker', 'Strike', 'Expiration', 'Sector',
                                 'AlphaHedge', 'CatalystType', 'CatalystRating', 'Qty', 'Exposure', 'DeltaAdj',
                                 'BetaAdj']
     position_summary = position_summary.to_dict('records')
-    exposures_and_pnl_df = exposures_and_pnl_df.sort_values(by='Date')
 
     if request.is_ajax():
         return JsonResponse({'exposures_and_pnl_df': exposures_and_pnl_df.to_json(orient='records'),

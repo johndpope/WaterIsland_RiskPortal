@@ -8,33 +8,37 @@ $(document).ready(function () {
         'url': '../position_stats/get_tradegroup_story?TradeGroup=' + $('#tradegroup_name').val() + '&Fund=ARB',
         success: function (response) {
             let exposures_and_pnl = JSON.parse(response['exposures_and_pnl_df']);
-            let fund_name = 'ARB';
-            let tradegroup_name = $('#tradegroup_name').val();
-            let unique_tickers = response['unique_tickers'];
-            let fieldMappingsArray = [];
-            let tradegroup_level_dictionary = {};
+            if (exposures_and_pnl.length > 0) {
+                let fund_name = 'ARB';
+                let tradegroup_name = $('#tradegroup_name').val();
+                let unique_tickers = response['unique_tickers'];
+                let fieldMappingsArray = [];
+                let tradegroup_level_dictionary = {};
 
-            fieldMappingsArray = ["AlphaHedge_Exposure", "Alpha_Exposure", "Capital_Percent_of_NAV", "GrossExp_Percent_of_NAV",
-                "Hedge_Exposure", "NetExp_Percent_of_NAV", "Spread_as_Percent", "Cumulative_pnl_bps",
-                "Cumulative_options_pnl_bps"];
+                fieldMappingsArray = ["AlphaHedge_Exposure", "Alpha_Exposure", "Capital_Percent_of_NAV", "GrossExp_Percent_of_NAV",
+                    "Hedge_Exposure", "NetExp_Percent_of_NAV", "Spread_as_Percent", "Cumulative_pnl_bps",
+                    "Cumulative_options_pnl_bps"];
 
-            tradegroup_level_dictionary["Cumulative_pnl_bps"] = 'Contribution in bps';
-            tradegroup_level_dictionary["Spread_as_Percent"] = "Spread (%)";
-            tradegroup_level_dictionary["Cumulative_options_pnl_bps"] = "Options";
-            tradegroup_level_dictionary["AlphaHedge_Exposure"] = "AlphaHedge Exposure";
-            tradegroup_level_dictionary["Alpha_Exposure"] = "Alpha Exposure";
-            tradegroup_level_dictionary["Capital_Percent_of_NAV"] = "Capital as (%) of NAV";
-            tradegroup_level_dictionary["GrossExp_Percent_of_NAV"] = "Gross Exp (%) of NAV";
-            tradegroup_level_dictionary["Hedge_Exposure"] = "Hedge Exp";
-            tradegroup_level_dictionary["NetExp_Percent_of_NAV"] = "Net Exp (%) of NAV";
-            let tickerFieldMappings = 'Ticker_PnL_bps_';
-            let datasets = createDataSets(exposures_and_pnl, unique_tickers, fieldMappingsArray, true, tickerFieldMappings);
-            let graphs = createPnlGraphs(exposures_and_pnl, unique_tickers, tradegroup_name, tradegroup_level_dictionary, true, tickerFieldMappings, true);
+                tradegroup_level_dictionary["Cumulative_pnl_bps"] = 'Contribution in bps';
+                tradegroup_level_dictionary["Spread_as_Percent"] = "Spread (%)";
+                tradegroup_level_dictionary["Cumulative_options_pnl_bps"] = "Options";
+                tradegroup_level_dictionary["AlphaHedge_Exposure"] = "AlphaHedge Exposure";
+                tradegroup_level_dictionary["Alpha_Exposure"] = "Alpha Exposure";
+                tradegroup_level_dictionary["Capital_Percent_of_NAV"] = "Capital as (%) of NAV";
+                tradegroup_level_dictionary["GrossExp_Percent_of_NAV"] = "Gross Exp (%) of NAV";
+                tradegroup_level_dictionary["Hedge_Exposure"] = "Hedge Exp";
+                tradegroup_level_dictionary["NetExp_Percent_of_NAV"] = "Net Exp (%) of NAV";
+                let tickerFieldMappings = 'Ticker_PnL_bps_';
+                let datasets = createDataSets(exposures_and_pnl, unique_tickers, fieldMappingsArray, true, tickerFieldMappings);
+                let graphs = createPnlGraphs(exposures_and_pnl, unique_tickers, tradegroup_name, tradegroup_level_dictionary, true, tickerFieldMappings, true);
 
 
-            let title = "TIMELINE OF " + tradegroup_name + " in " + fund_name + "\n" + "P&L CONTRIBUTION, SPREAD (LEFT) v/s EXPOSURES(RIGHT)";
-            let tradegroup_story_chart = AmCharts.makeChart("mna_idea_tradegroup_story", createLineChartConfigs(exposures_and_pnl, datasets, graphs, title, '$$', 'light'));
-
+                let title = "TIMELINE OF " + tradegroup_name + " in " + fund_name + "\n" + "P&L CONTRIBUTION, SPREAD (LEFT) v/s EXPOSURES(RIGHT)";
+                let tradegroup_story_chart = AmCharts.makeChart("mna_idea_tradegroup_story", createLineChartConfigs(exposures_and_pnl, datasets, graphs, title, '$$', 'light'));
+            }
+            else {
+                AmCharts.makeChart("mna_idea_tradegroup_story", createLineChartConfigs(exposures_and_pnl, [], [],'The chart contains no data', '', 'light', 0, '50%'));
+            }
         },
         error: function (err) {
             console.log(err);
@@ -263,9 +267,15 @@ $(document).ready(function () {
     //Try to get Acquirer Data
     try {
         var acq_historical_pxs = $('#historical_px_last_acquirer').val();
-        var acq_historical_px = $.parseJSON(acq_historical_pxs);
-        var hist_prices_dates_acquirer = acq_historical_px['fields']['PX_LAST'];
-        var hist_dates_acquirer = acq_historical_px['fields']['date'];
+        if (acq_historical_pxs != "" && acq_historical_pxs != "undefined" && acq_historical_pxs != "None") {
+            var acq_historical_px = $.parseJSON(acq_historical_pxs)
+            var hist_prices_dates_acquirer = acq_historical_px['fields']['PX_LAST'];
+            var hist_dates_acquirer = acq_historical_px['fields']['date'];
+        }
+        else {
+            var hist_prices_dates_acquirer = [];
+            var hist_dates_acquirer = [];
+        }
         if (hist_prices_dates_acquirer.length === 0) {
             acquirer_error_flag = 1;
         }
@@ -318,7 +328,6 @@ $(document).ready(function () {
                 "fontSize": 12,
             });
         }
-        console.log(overlay_weekly_downside_estimate);
         if (overlay_weekly_downside_estimate != null && overlay_weekly_downside_estimate !== '') {
 
             guides.push({
@@ -406,6 +415,27 @@ $(document).ready(function () {
 
         }
 
+        var graphs = []
+        if (target_ticker != "") {
+            graphs.push({
+                "title": target_ticker,
+                "balloonText": "[[px_last]]",
+                "connect": true,
+                "lineColor": "#b6d278",
+                "lineThickness": 2,
+                "valueField": "px_last"
+            });
+        }
+        if (acquirer_ticker != "") {
+            graphs.push({
+                "title": acquirer_ticker,
+                "balloonText": "[[acq_px_last]]",
+                "connect": true,
+                "lineColor": "#E9962C",
+                "lineThickness": 2,
+                "valueField": "acq_px_last",
+            })
+        }
 
         target_acquier_charts = AmCharts.makeChart(div_id, {
             "type": "serial",
@@ -415,22 +445,7 @@ $(document).ready(function () {
             "legend": {
                 "useGraphSettings": true
             },
-            "graphs": [{
-                "title": target_ticker,
-                "balloonText": "[[px_last]]",
-                "connect": true,
-                "lineColor": "#b6d278",
-                "lineThickness": 2,
-                "valueField": "px_last"
-            }, {
-                "title": acquirer_ticker,
-                "balloonText": "[[acq_px_last]]",
-                "connect": true,
-                "lineColor": "#E9962C",
-                "lineThickness": 2,
-                "valueField": "acq_px_last",
-
-            }],
+            "graphs": graphs,
             "export": {
                 "enabled": true
             },
@@ -476,19 +491,27 @@ $(document).ready(function () {
     /* Generate The CIX Price Chart and Spread Index Chart
      */
     try {
-        let cix_prices = $.parseJSON($('#cix_index_json').val())['PX_LAST'];
-        let cix_dates = $.parseJSON($('#cix_index_json').val())['date'];
-        let cix_index = $('#mna_idea_cix_index').val();
-
-        generateTargetPriceChart(cix_prices, cix_dates, [], 'mna_idea_cix_price_chart', cix_index, '', 1);
-
+        let cix_index_json = $('#cix_index_json').val()
+        if (cix_index_json != "None" && cix_index_json != "" && cix_index_json != "undefined") {
+            let cix_prices = $.parseJSON(cix_index_json)['PX_LAST'];
+            let cix_dates = $.parseJSON(cix_index_json)['date'];
+            let cix_index = $('#mna_idea_cix_index').val();
+            generateTargetPriceChart(cix_prices, cix_dates, [], 'mna_idea_cix_price_chart', cix_index, '', 1);
+        }
+        else {
+            AmCharts.makeChart("mna_idea_cix_price_chart", createLineChartConfigs([], [], [], 'The chart contains no data', '', 'light', 0, '50%'));
+        }
         // Generate the Spread Index Chart...
-
-        let spread_index_prices = $.parseJSON($('#spread_index_json').val())['PX_LAST'];
-        let spread_index_dates = $.parseJSON($('#spread_index_json').val())['date'];
-        let spread_index = $('#mna_idea_spread_index').val();
-
-        generateTargetPriceChart(spread_index_prices, spread_index_dates, [], 'mna_idea_spread_index_chart', spread_index, '', 1);
+        let spread_index_json = $('#spread_index_json').val()
+        if (spread_index_json != "None" && spread_index_json != "" && spread_index_json != "undefined") {
+            let spread_index_prices = $.parseJSON(spread_index_json)['PX_LAST'];
+            let spread_index_dates = $.parseJSON(spread_index_json)['date'];
+            let spread_index = $('#mna_idea_spread_index').val();
+            generateTargetPriceChart(spread_index_prices, spread_index_dates, [], 'mna_idea_spread_index_chart', spread_index, '', 1);
+        }
+        else {
+            AmCharts.makeChart("mna_idea_spread_index_chart", createLineChartConfigs([], [], [], 'The chart contains no data', '', 'light', 0, '50%'));
+        }
     } catch (err) {
         console.log(err);
         console.log('Could not populate Spread/CIX Charts...')
@@ -998,7 +1021,9 @@ $(document).ready(function () {
                 try {
                     if (k.toString().indexOf(mneumonic) != -1) {
                         //Populate EvEbitda data
-                        innerChartData = $.parseJSON(v);
+                        if (v != "" && v != "undefined" && v != "None") {
+                            innerChartData = $.parseJSON(v);
+                        }
                     }
                 } catch (err) {
                     console.log('Json parse error for key ' + k);
