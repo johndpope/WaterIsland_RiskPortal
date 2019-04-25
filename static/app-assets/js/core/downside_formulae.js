@@ -98,6 +98,13 @@ $(document).ready(function () {
             $(this).parent().parent().find("td").eq(20).find("input").val($(this).parent().parent().find("td").eq(8).html());
             //Set the value of Outlier right here...
             $(this).parent().parent().find("td").eq(23).find("input").val(eval($(this).parent().parent().find("td").eq(8).html()).toFixed(2)); //Reference Price
+        } else if(downside_type_selected === 'Match Base Case'){
+            // Copy 19 - 23 from 12-16
+            $(this).parent().parent().find("td").eq(19).find("input").val($(this).parent().parent().find("td").eq(12).find('input').val());
+            $(this).parent().parent().find("td").eq(20).find("input").val($(this).parent().parent().find("td").eq(13).find('input').val());
+            $(this).parent().parent().find("td").eq(21).find("select").val($(this).parent().parent().find("td").eq(14).find('option:selected').val());
+            $(this).parent().parent().find("td").eq(22).find("input").val($(this).parent().parent().find("td").eq(15).find('input').val());
+            $(this).parent().parent().find("td").eq(23).find("input").val($(this).parent().parent().find("td").eq(16).find('input').val());
         }
     });
 

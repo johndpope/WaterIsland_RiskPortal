@@ -116,11 +116,29 @@ def refresh_base_case_and_outlier_downsides():
             return float(
                 live_price_df[live_price_df['Underlying'] == row['OutlierReferenceDataPoint']]['PX_LAST'].iloc[0])
 
-        # Else just return the original BaseCaseReferencePrice
+        # Else just return the original OutlierReferencePrice
         return row['OutlierReferencePrice']
+
+    def match_base_case(row, base_cln, outlier_cln):
+        # Only meant for Outlier
+        if row['OutlierDownsideType'] == 'Match Base Case':
+            return row[base_cln]
+        else:
+            return row[outlier_cln]
 
     formulae_based_downsides['BaseCaseReferencePrice'] = formulae_based_downsides.apply(
         update_base_case_reference_price, axis=1)
+
+    match_base_case_rows = [('BaseCaseReferencePrice','OutlierReferencePrice'),
+                            ('BaseCaseReferenceDataPoint', 'OutlierReferenceDataPoint'),
+                            ('BaseCaseOperation', 'OutlierOperation'), ('BaseCaseCustomInput', 'OutlierCustomInput'),
+                            ('base_case', 'outlier')
+                            ]
+
+    for base_column, outlier_column in match_base_case_rows:
+        formulae_based_downsides[outlier_column] = formulae_based_downsides.apply(match_base_case, axis=1,
+                                                                                  args=(base_column, outlier_column))
+
     formulae_based_downsides['OutlierReferencePrice'] = formulae_based_downsides.apply(update_outlier_reference_price,
                                                                                        axis=1)
 
@@ -141,6 +159,8 @@ def refresh_base_case_and_outlier_downsides():
         try:
             if row['OutlierDownsideType'] == 'Fundamental Valuation':
                 return row['outlier']
+            elif row['OutlierDownsideType'] == 'Match Base Case':
+                return row['base_case']
             else:
                 return row['OutlierReferencePrice'] if row['OutlierOperation'] == 'None' else eval(
                     str(row['OutlierReferencePrice']) + str(row['OutlierOperation']) + str(row['OutlierCustomInput']))

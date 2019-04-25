@@ -1,7 +1,10 @@
 from pyowm import OWM
 from django.http import JsonResponse
+
 # Create your views here.
+
 #Todo: Initialize only Once. Do not initialize api on every request
+
 def get_nyc_weather(request):
 
    api_key = 'd8e747361f1eee5489ec3c9644868ae5'

@@ -32,7 +32,8 @@ def multiple_underlying_df(ticker, end_date_yyyymmdd, api_host, fperiod="1BF"):
                                                                         slicer.prev_n_business_days(100,
                                                                                                     end_date_yyyymmdd)
                                                                         .strftime('%Y%m%d'), end_date_yyyymmdd.
-                                                                        strftime('%Y%m%d'), api_host=api_host))
+                                                                        strftime('%Y%m%d'),
+                                                                        api_host=api_host))
 
     eqy_sh_out = last_elem_or_null(bbgclient.bbgclient.get_timeseries(ticker, 'EQY_SH_OUT',
                                                                       slicer.prev_n_business_days(100,
@@ -78,13 +79,13 @@ def multiple_underlying_df(ticker, end_date_yyyymmdd, api_host, fperiod="1BF"):
                                                                    strftime('%Y%m%d'), {'BEST_FPERIOD_OVERRIDE':
                                                                                             fperiod},
                                                                    api_host=api_host))
+    
     best_capex = last_elem_or_null(bbgclient.bbgclient.get_timeseries(ticker, 'BEST_CAPEX',
                                                                       slicer.prev_n_business_days(100,
                                                                                                   end_date_yyyymmdd).
                                                                       strftime('%Y%m%d'),
                                                                       end_date_yyyymmdd.strftime('%Y%m%d'),
-                                                                      {'BEST_FPERIOD_OVERRIDE':
-                                                                                            fperiod},
+                                                                      {'BEST_FPERIOD_OVERRIDE':fperiod},
                                                                       api_host=api_host))
 
     cols = ['Date', 'PX', 'CUR_MKT_CAP', 'EQY_SH_OUT', 'BEST_EBITDA', 'BEST_SALES',

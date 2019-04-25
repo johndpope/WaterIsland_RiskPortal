@@ -275,7 +275,7 @@ function initializeDatatableSummary(data, table_id) {
                 else {
                     $(api.column(j).footer()).html('<span class="green">' + pageTotal + '</span>');
                 }
-
+                
                 j++;
             }
         }
