@@ -3,9 +3,13 @@ import pandas as pd
 from django.shortcuts import render
 from .models import ArbitrageYTDPerformance
 from django_pandas.io import read_frame
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.db import connection
 import dbutils
 from holiday_utils import is_market_closed
+from django.conf import settings
+
+
 # Create your views here.
 
 
@@ -20,6 +24,11 @@ def live_tradegroup_pnl(request):
 
     final_live_df, final_daily_pnl, position_level_pnl, last_updated = get_data()
 
+    for cols in position_level_pnl.columns.values[2:]:
+
+        position_level_pnl[cols] = position_level_pnl[cols].apply(lambda x: '<td style="color:red">'+'{0:,.2f}'.format(x)+'</td>'
+                                                                  if x < 0 else '<td style="color:green">'+'{0:,.2f}'.format(x)+'</td>')
+
     if request.is_ajax():
         return_data = {'data': final_live_df.to_json(orient='records'),
                        'daily_pnl': final_daily_pnl.to_json(orient='records'),
@@ -28,7 +37,7 @@ def live_tradegroup_pnl(request):
 
         return HttpResponse(json.dumps(return_data), content_type='application/json')
 
-    return render(request, 'realtime_pnl_impacts.html', {'last_updated':last_updated})
+    return render(request, 'realtime_pnl_impacts.html', {'last_updated': last_updated})
 
 
 def get_data():
@@ -84,7 +93,7 @@ def get_data():
                                   zip(table_df['END_MKTVAL'], table_df['START_MKTVAL'], table_df['END_FX_RATE'],
                                       table_df['NP_SecType'])]
     table_df['PX_CHG_PCT'] = 100.0 * (
-                (table_df['END_ADJ_PX'].astype(float) / table_df['START_ADJ_PX'].astype(float)) - 1.0)
+            (table_df['END_ADJ_PX'].astype(float) / table_df['START_ADJ_PX'].astype(float)) - 1.0)
 
     position_level_pnl = table_df[['Group', 'TradeGroup', 'TICKER_x', 'START_ADJ_PX', 'END_ADJ_PX',
                                    'MKTVAL_CHG_USD']].copy()
@@ -92,13 +101,13 @@ def get_data():
     position_level_pnl = position_level_pnl[position_level_pnl['Group'].isin(['ARB', 'AED', 'LG', 'MACO', 'TAQ', 'CAM',
                                                                               'LEV', 'TACO', 'MALT', 'WED'])]
 
-    position_level_pnl = pd.pivot_table(position_level_pnl, index=['TradeGroup','TICKER_x', 'START_ADJ_PX',
+    position_level_pnl = pd.pivot_table(position_level_pnl, index=['TradeGroup', 'TICKER_x', 'START_ADJ_PX',
                                                                    'END_ADJ_PX'], columns=['Group'], aggfunc='first',
                                         fill_value=0).reset_index()
     position_level_pnl.columns = ["_".join((i, j)) for i, j in position_level_pnl.columns]
     position_level_pnl.reset_index(inplace=True)
     del position_level_pnl['index']
-    position_level_pnl = position_level_pnl.round(decimals=2)    # Round to 2 decimals
+    position_level_pnl = position_level_pnl.round(decimals=2)  # Round to 2 decimals
 
     table_df = table_df[['Group', 'TradeGroup', 'START_ADJ_PX', 'END_ADJ_PX', 'PX_CHG_PCT', 'Qty_x', 'Analyst',
                          'Capital($)_x', 'Capital(%)_x', 'START_MKTVAL', 'END_MKTVAL', 'MKTVAL_CHG_USD']]
@@ -154,5 +163,58 @@ def get_data():
         del final_daily_pnl['index']
     except:
         final_daily_pnl = pd.DataFrame()
-    
+
     return final_live_df, final_daily_pnl, position_level_pnl, last_updated
+
+
+def live_pnl_monitors(request):
+    if request.is_ajax():
+        df = pd.read_sql_query("SELECT * FROM " + settings.CURRENT_DATABASE + ".realtime_pnl_impacts_pnlmonitors"
+                                                                              " where last_updated = "
+                                                                              "(select max(last_updated) from "
+                               + settings.CURRENT_DATABASE+".realtime_pnl_impacts_pnlmonitors)",
+                               con=connection)
+        last_updated = df['last_updated'].max()
+        del df['last_updated']
+        df.rename(columns={'fund': 'Fund', 'ytd_active_deal_losses': 'YTD Active Deal Losses',
+                           'ytd_closed_deal_losses': 'YTD Closed Deal Losses', 'ann_loss_budget_perc': 'Loss Budget',
+                           'investable_assets': 'AUM', 'gross_ytd_pnl': 'Gross YTD P&L',
+                           'ann_gross_pnl_target_perc': 'Ann. Gross P&L Target %', 'time_passed': 'Time Passed',
+                           'gross_ytd_return': 'Gross YTD Return',
+                           'ann_gross_pnl_target_dollar': 'Ann. Gross P&L Target $',
+                           'ytd_pnl_perc_target': 'YTD P&L % of Target', 'ann_loss_budget_dollar': 'Ann Loss Budget $',
+                           'ytd_total_loss_perc_budget': 'YTD Total Loss % of Budget'}, inplace=True)
+
+        pivoted = pd.pivot_table(df, columns=['Fund'], aggfunc=lambda x: x, fill_value='')
+
+        pivoted = pivoted[['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV']]
+        pivoted = pivoted.reindex(['AUM',
+                                   'Ann. Gross P&L Target %',
+                                   'Gross YTD Return',
+                                   'YTD P&L % of Target',
+                                   'Time Passed',
+                                   'Ann. Gross P&L Target $',
+                                   'Gross YTD P&L',
+                                   'Loss Budget',
+                                   'YTD Total Loss % of Budget',
+                                   'Time Passed',
+                                   'Ann Loss Budget $',
+                                   'YTD Closed Deal Losses',
+                                   'YTD Active Deal Losses',
+                                   ])
+        df1 = pivoted.iloc[:7].copy()
+        df2 = pivoted.iloc[7:].copy()
+        df3 = pd.DataFrame([list(pivoted.columns.values)], columns=list(pivoted.columns.values))
+        df1 = df1.append(df3)
+        df1.index.values[7] = 'Loss Budgets'
+        df1 = df1.append(df2)
+        df1.index.values[8] = 'Ann Loss Budget %'
+        df1.index.values[0] = 'Investable Assets'
+        df1.index.values[4] = 'Time Passed%'
+        df1.index.values[10] = 'Time Passed %'
+
+        return JsonResponse({'data': df1.to_json(orient='index'),
+                             'last_updated': last_updated})
+        # return HttpResponse(json.dumps({'data': df1.to_json(orient='index'),
+        #                      'last_updated': last_updated}), content_type='application/json')
+

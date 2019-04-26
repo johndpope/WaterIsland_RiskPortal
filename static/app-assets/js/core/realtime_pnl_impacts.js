@@ -218,32 +218,33 @@ $(document).ready(function () {
         }
     }
     function format(d) {
-        console.log(d);
         let tradegroup = d['TradeGroup_'];
         let return_rows = '';
         // Get Equivalent Row from Positions Impacts
         for (var i = 0; i < position_level_pnl.length; i++) {
             if (position_level_pnl[i]['TradeGroup_'] === tradegroup) {
+                console.log(position_level_pnl[i])
                 // Return corresponding rows
                 return_rows += '<tr>' +
                     '<td></td>' +
                     '<td>' + position_level_pnl[i]['TradeGroup_'] + '</td>' +
                     '<td>' + position_level_pnl[i]['TICKER_x_'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['START_ADJ_PX_'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['END_ADJ_PX_'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['MKTVAL_CHG_USD_ARB'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['MKTVAL_CHG_USD_MACO'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['MKTVAL_CHG_USD_MALT'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['MKTVAL_CHG_USD_LEV'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['MKTVAL_CHG_USD_AED'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['MKTVAL_CHG_USD_CAM'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['MKTVAL_CHG_USD_LG'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['MKTVAL_CHG_USD_WED'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['MKTVAL_CHG_USD_TAQ'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['MKTVAL_CHG_USD_TACO'] + '</td>' +
+                    position_level_pnl[i]['START_ADJ_PX_']  +
+                    position_level_pnl[i]['END_ADJ_PX_'] +
+                    position_level_pnl[i]['MKTVAL_CHG_USD_ARB'] +
+                    position_level_pnl[i]['MKTVAL_CHG_USD_MACO'] +
+                    position_level_pnl[i]['MKTVAL_CHG_USD_MALT'] +
+                    position_level_pnl[i]['MKTVAL_CHG_USD_LEV'] +
+                    position_level_pnl[i]['MKTVAL_CHG_USD_AED'] +
+                    position_level_pnl[i]['MKTVAL_CHG_USD_CAM'] +
+                    position_level_pnl[i]['MKTVAL_CHG_USD_LG'] +
+                    position_level_pnl[i]['MKTVAL_CHG_USD_WED'] +
+                    position_level_pnl[i]['MKTVAL_CHG_USD_TAQ'] +
+                    position_level_pnl[i]['MKTVAL_CHG_USD_TACO'] +
                     '</tr>'
             }
         }
+        console.log(return_rows);
 
 
         // `d` is the original data object for the row

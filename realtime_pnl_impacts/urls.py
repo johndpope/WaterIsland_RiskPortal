@@ -5,6 +5,8 @@ app_name = 'realtime_pnl_impacts'
 
 urlpatterns = [
     url('live_tradegroup_pnl$',views.live_tradegroup_pnl,name='live_tradegroup_pnl'),
+    url('live_pnl_monitors$',views.live_pnl_monitors,name='live_pnl_monitors'),
+
 ]
 
 
