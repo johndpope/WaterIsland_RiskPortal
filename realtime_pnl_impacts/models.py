@@ -1,7 +1,5 @@
 from django.db import models
 
-# Create your models here.
-
 
 class ArbitrageYTDPerformance(models.Model):
     """ This Model is Deleted each night and refreshed with latest data """
@@ -16,3 +14,20 @@ class ArbitrageYTDPerformance(models.Model):
     ytd_dollar = models.FloatField(null=True)
     fund_aum = models.FloatField(null=True)
     pnl_bps = models.FloatField(null=True)
+
+
+class PnlMonitors(models.Model):
+    fund = models.CharField(max_length=50)
+    investable_assets = models.CharField(max_length=50)
+    ann_gross_pnl_target_perc = models.CharField(max_length=50)
+    gross_ytd_return = models.CharField(max_length=50)
+    ytd_pnl_perc_target = models.CharField(max_length=50)
+    time_passed = models.CharField(max_length=50)
+    ann_gross_pnl_target_dollar = models.CharField(max_length=50)
+    gross_ytd_pnl = models.CharField(max_length=50)
+    ann_loss_budget_perc = models.CharField(max_length=50)
+    ytd_total_loss_perc_budget = models.CharField(max_length=50)
+    ann_loss_budget_dollar = models.CharField(max_length=50)
+    ytd_closed_deal_losses = models.CharField(max_length=50)
+    ytd_active_deal_losses = models.CharField(max_length=50)
+    last_updated = models.DateField(auto_now_add=True)

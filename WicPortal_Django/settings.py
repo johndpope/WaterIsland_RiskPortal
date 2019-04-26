@@ -81,6 +81,10 @@ CELERYBEAT_SCHEDULE = {
     'EMAIL_PL_TARGET_LOSS_BUDGETS': {
         'task': 'risk_reporting.tasks.email_pl_target_loss_budgets',
         'schedule': crontab(minute="00", hour="08", day_of_week='mon-fri')
+    },
+    'CALCULATE_REALTIME_PNL_BUDGETS': {
+        'task': 'risk_reporting.tasks.calculate_realtime_pnl_budgets',
+        'schedule': crontab(minute='*/15', hour='10-4', day_of_week='mon-fri')
     }
 }
 

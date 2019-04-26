@@ -2,6 +2,7 @@
 import datetime
 import io
 import json
+from locale import atof
 from math import ceil
 import os
 import sys
@@ -551,7 +552,7 @@ def email_nav_impacts_report():
         df['(BaseCase)Impact Over Limit'] = df['(BaseCase)Impact Over Limit'].apply(lambda x: str(x) + '%')
         df = pd.merge(df, arb_ytd_pnl, how='left', on='TradeGroup')
 
-        df['(ARB) YTD $ P&L'] = df.apply(lambda x: "{:,}".format(int(x['(ARB) YTD $ P&L'])), axis=1)
+        df['(ARB) YTD $ P&L'] = format_with_commas(df, '(ARB) YTD $ P&L')
 
         # Get last Synced time
         last_calculated_on = PositionLevelNAVImpacts.objects.latest('CALCULATED_ON').CALCULATED_ON
@@ -693,12 +694,153 @@ def calculate_status(row):
 @shared_task
 def email_pl_target_loss_budgets():
 
-    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD
-                               + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
+    loss_budgets = calculate_pnl_budgets()
+    loss_budgets = loss_budgets.drop(columns=['Last Updated'])
+
+    pivoted = pd.pivot_table(loss_budgets, columns=['Fund'], aggfunc=lambda x: x, fill_value='')
+    pivoted = pivoted[['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV']]
+    pivoted = pivoted.reindex(['AUM',
+                               'Ann Gross P&L Target %',
+                               'Gross YTD Return',
+                               'YTD P&L % of Target',
+                               'Time Passed',
+                               'Ann Gross P&L Target $',
+                               'Gross YTD P&L',
+                               '',
+                               'Loss Budget',
+                               'YTD Total Loss % of Budget',
+                               'Time Passed',
+                               'Ann Loss Budget $',
+                               'YTD Closed Deal Losses',
+                               'YTD Active Deal Losses',
+                            ])
+    df1 = pivoted.iloc[:8].copy()
+    df2 = pivoted.iloc[8:].copy()
+    df3 = pd.DataFrame([list(pivoted.columns.values)], columns=list(pivoted.columns.values))
+    df1 = df1.append(df3)
+    df1.index.values[8] = 'Loss Budgets'
+    df1 = df1.append(df2)
+    df1.index.values[9] = 'Ann Loss Budget %'
+    df1.index.values[0] = 'Investable Assets'
+    df1.index.values[4] = 'Time Passed%'
+    df1.index.values[11] = 'Time Passed %'
+    df1 = df1.replace(np.nan, '', regex=True)
+
+    now_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
+
+    def excel_formatting(row):
+        ret = ["color:green" for _ in row.index]
+
+        ret[row.index.get_loc("Sleeve_")] = "color:black"
+        ret[row.index.get_loc("TradeGroup_")] = "color:black"
+        ret[row.index.get_loc("Catalyst_")] = "color:black"
+
+        if row['Total YTD PnL_AED'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_AED")] = "color:red"
+
+        if row['Total YTD PnL_ARB'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_ARB")] = "color:red"
+
+        if row['Total YTD PnL_CAM'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_CAM")] = "color:red"
+
+        if row['Total YTD PnL_LEV'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_LEV")] = "color:red"
+
+        if row['Total YTD PnL_LG'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_LG")] = "color:red"
+
+        if row['Total YTD PnL_MACO'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_MACO")] = "color:red"
+
+        if row['Total YTD PnL_MALT'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_MALT")] = "color:red"
+
+        if row['Total YTD PnL_TACO'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_TACO")] = "color:red"
+
+        if row['Total YTD PnL_TAQ'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_TAQ")] = "color:red"
+
+        if row['Total YTD PnL_WED'] < 0:
+            ret[row.index.get_loc("Total YTD PnL_WED")] = "color:red"
+
+        return ret
+
+    styles = [
+        hover(),
+        dict(selector="th", props=[("font-size", "125%"), ("text-align", "center")]),
+        dict(selector="tr", props=[("text-align", "center")]),
+        dict(selector="caption", props=[("caption-side", "bottom")]),
+        {'selector': 'tr:hover td', 'props': [('background-color', 'green')]},
+        {'selector': 'th, td', 'props': [('border', '1px solid black'), ('padding', '4px'), ('text-align', 'center')]},
+        {'selector': 'th', 'props': [('font-weight', 'bold')]},
+        {'selector': '', 'props': [('border-collapse', 'collapse'), ('border', '1px solid black'), ('text-align',
+                                                                                                    'center')]}
+    ]
+
+    styled_html = (df1.style.apply(style_funds).set_table_styles(styles).set_caption("PL Targets & Loss Budgets (" + now_date + ")"))
+
+    html = """ \
+                <html>
+                  <head>
+                  </head>
+                  <body>
+                    <p>PL Targets & Loss Budgets ({date})</p>
+                    <a href="http://192.168.0.16:8000">Click to visit Realtime PL Targets & Loss Budgets Page</a>
+                    <br><br>
+                    {table}
+                  </body>
+                </html>
+        """.format(table=styled_html.render(), date=now_date)
+
+    def export_excel(df_list):
+        with io.BytesIO() as buffer:
+            writer = pd.ExcelWriter(buffer)
+            workbook = writer.book
+            sheet_names = ['Fund P&L Monitor', 'TradeGroup P&L']
+            for i, df in enumerate(df_list):
+                sheet_name = sheet_names[i]
+                worksheet = workbook.add_worksheet(sheet_name)
+                writer.sheets[sheet_name] = worksheet
+                df.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
+            writer.save()
+            return buffer.getvalue()
+
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated = get_data()
+    final_live_df = final_live_df.style.apply(excel_formatting, axis=1)
+
+    exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
+    subject = 'PL Targets & Loss Budgets - ' + now_date
+    send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
+               recipients=['vaggarwal@wicfunds.com', 'kgorde@wicfunds.com', 'cplunkett@wicfunds.com'],
+               subject=subject, from_email='dispatch@wicfunds.com', html=html,
+               EXPORTERS=exporters, dataframe=[df1, final_live_df])
+
+
+def push_data_to_table(df):
+    df = df.rename(columns={'Fund': 'fund', 'YTD Active Deal Losses': 'ytd_active_deal_losses',
+                       'YTD Closed Deal Losses': 'ytd_closed_deal_losses', 'Loss Budget': 'ann_loss_budget_perc',
+                       'AUM': 'investable_assets', 'Gross YTD P&L': 'gross_ytd_pnl', 'Time Passed': 'time_passed',
+                       'Ann Gross P&L Target %': 'ann_gross_pnl_target_perc', 'Gross YTD Return': 'gross_ytd_return',
+                       'Ann Gross P&L Target $': 'ann_gross_pnl_target_dollar', 'YTD P&L % of Target': 'ytd_pnl_perc_target',
+                       'Ann Loss Budget $': 'ann_loss_budget_dollar', 'YTD Total Loss % of Budget': 'ytd_total_loss_perc_budget',
+                       'Last Updated': 'last_updated'})
+    df = df.applymap(str)
+    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD +
+                           "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
+    con = engine.connect()
+    df.to_sql(con=con, name='realtime_pnl_impacts_pnlmonitors', schema=settings.CURRENT_DATABASE,
+              if_exists='append', chunksize=10000, index=False)
+    con.close()
+
+
+def calculate_pnl_budgets():
+    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD +
+                           "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
     con = engine.connect()
 
-    raw_df = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_arbitrageytdperformance',
-                         con=con)
+    raw_df = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_arbitrageytdperformance', con=con)
     average_aum_df = pd.read_sql('select fund as Fund, avg(aum) as `Average YTD AUM` from wic.daily_flat_file_db '
                                  'where year(Flat_file_as_of) >= YEAR(CURDATE()) group by fund order by fund', con=con)
     flat_file_df = pd.read_sql('select TradeGroup as tradegroup, Fund as fund, LongShort as long_short, max(amount) '
@@ -761,7 +903,7 @@ def email_pl_target_loss_budgets():
     merged_df = pd.merge(merged_df, average_aum_df, on=['Fund'], how='left')
     float_cols = ['YTD Active Deal Losses', 'YTD Closed Deal Losses', 'Loss Budget', 'Ann Gross P&L Target %', 'AUM']
     merged_df[float_cols] = merged_df[float_cols].astype(float)
-    merged_df['Annualized Gross P&L Target $'] = merged_df['Ann Gross P&L Target %'] * merged_df['Average YTD AUM'] * \
+    merged_df['Ann Gross P&L Target $'] = merged_df['Ann Gross P&L Target %'] * merged_df['Average YTD AUM'] * \
                                                  0.01
     gross_ytd_pnl = df[['fund', 'ytd_dollar']].groupby('fund').agg('sum').reset_index()
     gross_ytd_pnl.columns = ['Fund', 'Gross YTD P&L']
@@ -771,9 +913,9 @@ def email_pl_target_loss_budgets():
 
     loss_budgets = merged_df[['Fund', 'YTD Active Deal Losses', 'YTD Closed Deal Losses', 'Loss Budget', 'AUM',
                               'Gross YTD P&L', 'Ann Gross P&L Target %', 'Gross YTD Return',
-                              'Annualized Gross P&L Target $', 'YTD P&L % of Target']]
+                              'Ann Gross P&L Target $', 'YTD P&L % of Target', 'Average YTD AUM']]
 
-    loss_budgets['Ann Loss Budget $'] = loss_budgets['Loss Budget'] * loss_budgets['AUM'] * 0.01
+    loss_budgets['Ann Loss Budget $'] = loss_budgets['Loss Budget'] * loss_budgets['Average YTD AUM'] * 0.01
 
     current_year = datetime.date.today().year
     ytd = datetime.date(current_year, 1, 1)
@@ -782,148 +924,67 @@ def email_pl_target_loss_budgets():
     time_passed_in_percentage = np.round((days_passed/365.0), decimals=2)*100
     loss_budgets['Time Passed'] = "{:.2f}%".format(time_passed_in_percentage)
 
-    loss_budgets['Ann Gross P&L Target %'] = loss_budgets.apply(lambda x: "{:,.2f}%".
-                                                                format(x['Ann Gross P&L Target %']), axis=1)
-    loss_budgets['Loss Budget'] = loss_budgets.apply(lambda x: "{:,.2f}%".format(x['Loss Budget']), axis=1)
-    loss_budgets['YTD Realized % of Loss Budget'] = (loss_budgets['YTD Closed Deal Losses']/
-                                                     loss_budgets['Ann Loss Budget $']) * 100
+    loss_budgets['Ann Gross P&L Target %'] = format_with_percentage_decimal(loss_budgets, 'Ann Gross P&L Target %')
+    loss_budgets['Loss Budget'] = format_with_percentage_decimal(loss_budgets, 'Loss Budget')
     loss_budgets['YTD Total Loss % of Budget'] = ((loss_budgets['YTD Active Deal Losses'] +
                                                    loss_budgets['YTD Closed Deal Losses']) /
                                                   loss_budgets['Ann Loss Budget $']) * 100
 
     # Rounding off to 2 decimal places for % values
-    loss_budgets['YTD Active Deal Losses'] = loss_budgets.apply(lambda x: "{:,}".
-                                                                format(int(x['YTD Active Deal Losses'])), axis=1)
-    loss_budgets['YTD Closed Deal Losses'] = loss_budgets.apply(lambda x: "{:,}".
-                                                                format(int(x['YTD Closed Deal Losses'])), axis=1)
-    loss_budgets['AUM'] = loss_budgets.apply(lambda x: "{:,}".format(int(x['AUM'])), axis=1)
-    loss_budgets['Gross YTD Return'] = loss_budgets.apply(lambda x: "{:,.2f}%".format(x['Gross YTD Return']), axis=1)
-    loss_budgets['YTD P&L % of Target'] = loss_budgets.apply(lambda x: "{:,.2f}%".
-                                                             format(x['YTD P&L % of Target']), axis=1)
-    loss_budgets['YTD Realized % of Loss Budget'] = loss_budgets.apply(lambda x: "{:,.2f}%".
-                                                                       format(x['YTD Realized % of Loss Budget']),
-                                                                       axis=1)
-    loss_budgets['Ann Loss Budget $'] = loss_budgets.apply(lambda x: "{:,}".format(int(x['Ann Loss Budget $'])), axis=1)
-    loss_budgets['YTD Total Loss % of Budget'] = loss_budgets.apply(lambda x: "{:,.2f}%".
-                                                                    format(x['YTD Total Loss % of Budget']), axis=1)
-    loss_budgets['Gross YTD P&L'] = loss_budgets.apply(lambda x: "{:,}".format(int(x['Gross YTD P&L'])), axis=1)
-    loss_budgets['Annualized Gross P&L Target $'] = loss_budgets.apply(lambda x: "{:,}".
-                                                                       format(int(x['Annualized Gross P&L Target $'])),
-                                                                       axis=1)
+    loss_budgets['YTD Active Deal Losses'] = format_with_commas(loss_budgets, 'YTD Active Deal Losses')
+    loss_budgets['YTD Closed Deal Losses'] = format_with_commas(loss_budgets, 'YTD Closed Deal Losses')
+    loss_budgets['AUM'] = format_with_commas(loss_budgets, 'AUM')
+    loss_budgets['Gross YTD Return'] = format_with_percentage_decimal(loss_budgets, 'Gross YTD Return')
+    loss_budgets['YTD P&L % of Target'] = format_with_percentage_decimal(loss_budgets, 'YTD P&L % of Target')
+    loss_budgets['Ann Loss Budget $'] = format_with_commas(loss_budgets, 'Ann Loss Budget $')
+    loss_budgets['YTD Total Loss % of Budget'] = format_with_percentage_decimal(loss_budgets, 'YTD Total Loss % of Budget')
+    loss_budgets['Gross YTD P&L'] = format_with_commas(loss_budgets, 'Gross YTD P&L')
+    loss_budgets['Ann Gross P&L Target $'] = format_with_commas(loss_budgets, 'Ann Gross P&L Target $')
+    loss_budgets['Last Updated'] = datetime.datetime.now()
+    loss_budgets.drop(columns=['Average YTD AUM'], inplace=True)
+    push_data = loss_budgets
+    push_data_to_table(push_data)
+    return loss_budgets
 
-    pivoted = pd.pivot_table(loss_budgets, columns=['Fund'], aggfunc=lambda x: x, fill_value='')
-    pivoted = pivoted[['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV']]
-    pivoted = pivoted.reindex(['AUM',
-                               'Ann Gross P&L Target %',
-                               'Gross YTD Return',
-                               'Annualized Gross P&L Target $',
-                               'Gross YTD P&L', 'YTD P&L % of Target',
-                               'Time Passed', 'Loss Budget',
-                               'Ann Loss Budget $',
-                               'YTD Closed Deal Losses',
-                               'YTD Active Deal Losses',
-                               'YTD Realized % of Loss Budget',
-                               'YTD Total Loss % of Budget',
-                               'Time Passed'])
-    df1 = pivoted.iloc[:7].copy()
-    df2 = pivoted.iloc[7:].copy()
-    df3 = pd.DataFrame([list(pivoted.columns.values)], columns=list(pivoted.columns.values))
-    df1 = df1.append(df3)
-    df1.index.values[7] = 'Loss Budgets'
-    df1 = df1.append(df2)
-    df1.index.values[8] = 'Ann Loss Budget %'
-    df1.index.values[0] = 'Investable Assets'
-    df1.index.values[6] = 'Time Passed%'
-    df1.index.values[14] = 'Time Passed %'
 
-    now_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
+@shared_task
+def calculate_realtime_pnl_budgets():
+    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD +
+                           "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
+    con = engine.connect()
 
-    def excel_formatting(row):
-        ret = ["color:green" for _ in row.index]
-
-        ret[row.index.get_loc("Sleeve_")] = "color:black"
-        ret[row.index.get_loc("TradeGroup_")] = "color:black"
-        ret[row.index.get_loc("Catalyst_")] = "color:black"
-
-        if row['Total YTD PnL_AED'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_AED")] = "color:red"
-
-        if row['Total YTD PnL_ARB'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_ARB")] = "color:red"
-
-        if row['Total YTD PnL_CAM'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_CAM")] = "color:red"
-
-        if row['Total YTD PnL_LEV'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_LEV")] = "color:red"
-
-        if row['Total YTD PnL_LG'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_LG")] = "color:red"
-
-        if row['Total YTD PnL_MACO'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_MACO")] = "color:red"
-
-        if row['Total YTD PnL_MALT'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_MALT")] = "color:red"
-
-        if row['Total YTD PnL_TACO'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_TACO")] = "color:red"
-
-        if row['Total YTD PnL_TAQ'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_TAQ")] = "color:red"
-
-        if row['Total YTD PnL_WED'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_WED")] = "color:red"
-
-        return ret
-
-    styles = [
-        hover(),
-        dict(selector="th", props=[("font-size", "125%"), ("text-align", "center")]),
-        dict(selector="tr", props=[("text-align", "center")]),
-        dict(selector="caption", props=[("caption-side", "bottom")]),
-        {'selector': 'tr:hover td', 'props': [('background-color', 'green')]},
-        {'selector': 'th, td', 'props': [('border', '1px solid black'), ('padding', '4px'), ('text-align', 'center')]},
-        {'selector': 'th', 'props': [('font-weight', 'bold')]},
-        {'selector': '', 'props': [('border-collapse', 'collapse'), ('border', '1px solid black'), ('text-align',
-                                                                                                    'center')]}
-    ]
-
-    styled_html = (df1.style.apply(style_funds).set_table_styles(styles).set_caption("PL Targets & Loss Budgets (" +
-                                                                                     now_date + ")"))
-
-    html = """ \
-                <html>
-                  <head>
-                  </head>
-                  <body>
-                    <p>PL Targets & Loss Budgets ({date})</p>
-                    
-                    <br><br>
-                    {table}
-                  </body>
-                </html>
-        """.format(table=styled_html.render(), date=now_date)
-
-    def export_excel(df_list):
-        with io.BytesIO() as buffer:
-            writer = pd.ExcelWriter(buffer)
-            workbook = writer.book
-            sheet_names = ['Fund P&L Monitor', 'TradeGroup P&L']
-            for i, df in enumerate(df_list):
-                sheet_name = sheet_names[i]
-                worksheet = workbook.add_worksheet(sheet_name)
-                writer.sheets[sheet_name] = worksheet
-                df.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0)
-            writer.save()
-            return buffer.getvalue()
-
+    pnl_budgets = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_pnlmonitors where ' \
+                               'last_updated = (Select max(last_updated) from ' + settings.CURRENT_DATABASE +
+                               '.realtime_pnl_impacts_pnlmonitors)', con=con)
     final_live_df, final_daily_pnl, position_level_pnl, last_updated = get_data()
-    final_live_df = final_live_df.style.apply(excel_formatting, axis=1)
+    fund_daily_pnl = pd.Series([])
+    fund_daily_pnl_sum = pd.Series([])
+    daily_pnl_df = pd.DataFrame()
+    columns = final_daily_pnl.columns.values
+    for i, column in enumerate(columns):
+        if "Daily" in column:
+            fund_daily_pnl[i] = column.split("_")[-1]
+            fund_daily_pnl_sum[i] = final_daily_pnl[column].sum()
+    daily_pnl_df['fund'] = fund_daily_pnl
+    daily_pnl_df['Daily P&L'] = fund_daily_pnl_sum
+    realtime_pl_budget_df = pd.merge(pnl_budgets, daily_pnl_df, on=['fund'], how='left')
+    realtime_pl_budget_df['gross_ytd_pnl'] = realtime_pl_budget_df['gross_ytd_pnl'].str.replace(',', '').apply(atof)
+    realtime_pl_budget_df['gross_ytd_pnl'] = realtime_pl_budget_df['gross_ytd_pnl'] + realtime_pl_budget_df['Daily P&L']
+    realtime_pl_budget_df['investable_assets'] = realtime_pl_budget_df['investable_assets'].str.replace(',', '').apply(atof)
+    realtime_pl_budget_df['gross_ytd_return'] = realtime_pl_budget_df['gross_ytd_return'].str.replace('%', '').apply(atof)
+    realtime_pl_budget_df['gross_ytd_return'] = realtime_pl_budget_df['gross_ytd_pnl']/realtime_pl_budget_df['investable_assets'] * 100
+    realtime_pl_budget_df['gross_ytd_return'] = format_with_percentage_decimal(realtime_pl_budget_df, 'gross_ytd_return')
+    realtime_pl_budget_df['investable_assets'] = format_with_commas(realtime_pl_budget_df, 'investable_assets')
+    realtime_pl_budget_df['gross_ytd_pnl'] = format_with_commas(realtime_pl_budget_df, 'gross_ytd_pnl')
+    realtime_pl_budget_df.drop(columns=['Daily P&L'], inplace=True)
+    realtime_pl_budget_df['last_updated'] = datetime.datetime.now()
+    push_data = realtime_pl_budget_df
+    push_data_to_table(push_data)
 
-    exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
-    subject = 'PL Targets & Loss Budgets - ' + now_date
-    send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-               recipients=['kgorde@wicfunds.com', 'cplunkett@wicfunds.com', 'vaggarwal@wicfunds.com'],
-               subject=subject, from_email='dispatch@wicfunds.com', html=html,
-               EXPORTERS=exporters, dataframe=[df1, final_live_df])
+
+def format_with_commas(df, column):
+    return df.apply(lambda x: "{:,}".format(int(x[column])), axis=1)
+
+
+def format_with_percentage_decimal(df, column):
+    return df.apply(lambda x: "{:,.2f}%".format(x[column]), axis=1)
