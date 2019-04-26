@@ -30,4 +30,4 @@ class PnlMonitors(models.Model):
     ann_loss_budget_dollar = models.CharField(max_length=50)
     ytd_closed_deal_losses = models.CharField(max_length=50)
     ytd_active_deal_losses = models.CharField(max_length=50)
-    last_updated = models.DateField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now_add=True)
