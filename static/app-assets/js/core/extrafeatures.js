@@ -185,8 +185,8 @@ $(document).ready(function () {
                 let last_updated = data['last_updated'];
 
                 let span = '<span class="badge badge-secondary">'+last_updated+'</span>';
-                $('#last_synced_pnl_monitors').text("Synced on: ");
-                $('#last_synced_pnl_monitors').append(span);
+                $('#synced_on_placeholder').text("Synced on: ");
+                $('#synced_on_placeholder').append(span);
                 // Collect Distinct Funds
                 let funds_order = ['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV'];
 
@@ -240,7 +240,7 @@ $(document).ready(function () {
                         "createdCell": function (td, cellData, rowData, rowIndex) {
                             if (rowIndex !== 7) {
                                 cellData = cellData.replace('%', '').replace(',', '');
-                                if (cellData < 0) {
+                                if (parseFloat(cellData) < 0) {
                                     $(td).css('color', 'red')
                                 }
                                 else {

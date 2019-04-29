@@ -19,10 +19,41 @@ def px_adjuster(bbg_sectype, northpoint_sectype, px, crncy, fx_rate, factor):
     return px * factor * fx_rate
 
 
+def fund_level_pnl(request):
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live = get_data()
+    fund_level_live = fund_level_live.groupby(['Group', 'TradeGroup']).sum().reset_index()
+    assets_df = pd.read_sql_query('SELECT DISTINCT Fund, aum from wic.daily_flat_file_db where flat_file_as_of ='
+                                  '(select max(flat_file_as_of) from wic.daily_flat_file_db)', con=connection)
+    fund_details = pd.merge(fund_level_live, assets_df, left_on='Group', right_on='Fund')
+    fund_details['ROC'] = 100.0 * (fund_details['MKTVAL_CHG_USD']/fund_details['Capital($)_x'])
+    fund_details['Contribution_to_NAV'] = 1e4* (fund_details['MKTVAL_CHG_USD']/fund_details['aum'])
+    del fund_details['Fund']
+    fund_details_dict = {}
+    funds = fund_details['Group'].unique()
+    for each_fund in funds:
+        fund_details_dict[each_fund] = fund_details[fund_details['Group'] == each_fund].to_json(orient='records')
+
+    if request.is_ajax():
+        return JsonResponse({
+            'fund_details': fund_details_dict
+        })
+
+
 def live_tradegroup_pnl(request):
     """ Returns the Live PnL and YTD PnL at the Tradegroup level """
 
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated = get_data()
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live = get_data()
+    # fund_level_live = fund_level_live.groupby(['Group', 'TradeGroup']).sum().reset_index()
+    # assets_df = pd.read_sql_query('SELECT DISTINCT Fund, aum from wic.daily_flat_file_db where flat_file_as_of ='
+    #                               '(select max(flat_file_as_of) from wic.daily_flat_file_db)', con=connection)
+    # fund_details = pd.merge(fund_level_live, assets_df, left_on='Group', right_on='Fund')
+    # fund_details['ROC'] = 100.0 * (fund_details['MKTVAL_CHG_USD']/fund_details['Capital($)_x'])
+    # fund_details['Contribution to NAV'] = 1e4* (fund_details['MKTVAL_CHG_USD']/fund_details['aum'])
+    # del fund_details['Fund']
+    # fund_details_dict = {}
+    # funds = fund_details['Group'].unique()
+    # for each_fund in funds:
+    #     fund_details_dict[each_fund] = fund_details[fund_details['Group'] == each_fund].to_json(orient='records')
 
     for cols in position_level_pnl.columns.values[2:]:
 
@@ -33,9 +64,11 @@ def live_tradegroup_pnl(request):
         return_data = {'data': final_live_df.to_json(orient='records'),
                        'daily_pnl': final_daily_pnl.to_json(orient='records'),
                        'position_level_pnl': position_level_pnl.to_json(orient='records'),
+
                        'last_synced_on': last_updated}
 
-        return HttpResponse(json.dumps(return_data), content_type='application/json')
+        return JsonResponse(return_data)
+        #return HttpResponse(json.dumps(return_data), content_type='application/json')
 
     return render(request, 'realtime_pnl_impacts.html', {'last_updated': last_updated})
 
@@ -117,6 +150,8 @@ def get_data():
     daily_live_pnl = daily_live_pnl[daily_live_pnl['Group'].isin(['ARB', 'AED', 'LG', 'MACO', 'TAQ', 'CAM', 'LEV',
                                                                   'TACO', 'MALT', 'WED'])]
     #  Daily P&L Calculations
+    fund_level_live = daily_live_pnl.copy()
+
     daily_live_pnl = daily_live_pnl[['Group', 'TradeGroup', 'MKTVAL_CHG_USD']]
     daily_live_pnl[['Group']] = daily_live_pnl[['Group']].fillna('NA')
     daily_live_pnl.fillna(0, inplace=True)
@@ -164,7 +199,7 @@ def get_data():
     except:
         final_daily_pnl = pd.DataFrame()
 
-    return final_live_df, final_daily_pnl, position_level_pnl, last_updated
+    return final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live
 
 
 def live_pnl_monitors(request):

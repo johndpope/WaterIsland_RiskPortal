@@ -1,8 +1,13 @@
 $(document).ready(function () {
+
     let last_synced_on = null;
     let realtime_pnl_table = $('#realtime_pnl_table').DataTable(get_pnl_table_initialization_configuration("live_tradegroup_pnl", "Total YTD", "data"));
     let realtime_daily_pnl_table = $('#realtime_daily_pnl_table').DataTable(get_pnl_table_initialization_configuration("live_tradegroup_pnl", "Daily", "daily_pnl"));
     let position_level_pnl = null;
+    let fund_level_pnl = null;
+    // Now create the Dynamic Fund Tabs for Fund level P&L
+    createFundPnLTables();
+
     // Column Alignment for the Tab Clicks
     $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
         $($.fn.dataTable.tables(true)).DataTable()
@@ -44,13 +49,96 @@ $(document).ready(function () {
 
     later.setInterval(refreshPnL, later.parse.text('every 10 mins on Mon, Tue, Weds, Thurs and Fri'));
 
-    function refreshPnL(){
+    function refreshPnL() {
         realtime_pnl_table.ajax.reload(null, true);
         realtime_daily_pnl_table.ajax.reload(null, true);
         console.log('Requesting Updated P&L..');
         $('#last_sycned').text(last_synced_on);
     }
 
+    function createFundPnLTables() {
+        // Fires Ajax and Retrieves the Fund Level JSON
+        $.ajax({
+            type: 'POST',
+            url: '../realtime_pnl_impacts/fund_level_pnl',
+            success: function (response) {
+                fund_level_pnl = response['fund_details'];
+                Object.keys(fund_level_pnl).forEach(function (fund) {
+                    addFundTab(fund, 'fundtabs', 'fund-tab-content', fund_level_pnl);
+
+                });
+            },
+            error: function (err) {
+                console.log(err);
+            }
+        });
+
+
+    }
+
+    function addFundTab(name, addToTab, addToContent, fund_level_pnl) {
+        // create the tab
+        if (name === 'ARB') {
+            $('<li class="nav-item"><a class="nav-link active" href="#tab' + name + '" data-toggle="tab">' + name + '</a></li>').appendTo('#' + addToTab);
+            $('<div class="tab-pane active" id="tab' + name + '"><br></div>').appendTo('#' + addToContent);
+        }
+        else {
+            $('<li class="nav-item"><a class="nav-link" href="#tab' + name + '" data-toggle="tab">' + name + '</a></li>').appendTo('#' + addToTab);
+            $('<div class="tab-pane" id="tab' + name + '"><br></div>').appendTo('#' + addToContent);
+        }
+
+
+        $('<div class="tab-content" id="fund_pnl' + name + '"></div>').appendTo('#tab' + name);
+
+        let fund_pnl = JSON.parse(fund_level_pnl[name]);
+
+        // Do this Iteratively for each fund
+        // Crete Active Tab for ARB
+        let data = fund_pnl;
+        $('<div class="tab-pane active" id="tabTable' + name + '"><table class="table table-striped text-dark" style="width:100%" id="table' + name + '">' +
+            '<tfoot><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tfoot></table><br><br><br>' +
+            '</div>' +
+            '').appendTo('#fund_pnl' + name);
+        initializeDatatableSummary(data, 'table' + name);
+
+
+    }
+
+    function initializeDatatableSummary(data, table_id) {
+        $('#' + table_id).DataTable({
+            data: data,
+            responsive: true,
+            scrollY: "580px",
+            scrollX: true,
+            paging:false,
+            columns: [
+                {title: 'TradeGroup', data: 'TradeGroup'},
+                {title: 'Quantity', data: 'Qty_x'},
+                {title: 'Start MktVal', data: 'START_MKTVAL'},
+                {title: 'End MktVal', data: 'END_MKTVAL'},
+                {title: 'MktVal Change', data: 'MKTVAL_CHG_USD'},
+                {title: 'Capital($)', data: 'Capital($)_x'},
+                {title: 'Capital(%)', data: 'Capital(%)_x'},
+                {title: 'AUM', data: 'aum'},
+                {title: 'Return on Capital', data: 'ROC'},
+                {title: 'Contribution to NAV', data: 'Contribution_to_NAV'},
+
+            ],
+            "columnDefs": [{
+                "targets": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                "createdCell": function (td, cellData, rowData, rowIndex) {
+                    //Check for % Float and %Shares Out
+                    if (cellData < 0) {
+                        $(td).css('color', 'red')
+                    }
+                    else {
+                        $(td).css('color', 'green')
+                    }
+                },
+                "render": $.fn.dataTable.render.number(',', '.', 2),
+            }],
+        })
+    }
 
     function get_pnl_table_initialization_configuration(url, total_or_daily_string, json_response_tag) {
 
@@ -117,12 +205,12 @@ $(document).ready(function () {
                 }
             },
             "columns": [
-               {
-                "className": 'details-control',
-                "orderable": false,
-                "data": null,
-                "defaultContent": ''
-            },
+                {
+                    "className": 'details-control',
+                    "orderable": false,
+                    "data": null,
+                    "defaultContent": ''
+                },
                 {"data": "TradeGroup_"},
                 {"data": "Sleeve_"},
                 {"data": "Catalyst_"},
@@ -152,18 +240,18 @@ $(document).ready(function () {
                 },
                 "render": $.fn.dataTable.render.number(',', '.', 2),
             },
-            {
-                "targets": [0],
-                "width": "2%",
-            },
-            {
-                "targets": [1],
-                "width": "5%",
-            },
-            {
-                "targets": [2, 3],
-                "width": "3%",
-            }],
+                {
+                    "targets": [0],
+                    "width": "2%",
+                },
+                {
+                    "targets": [1],
+                    "width": "5%",
+                },
+                {
+                    "targets": [2, 3],
+                    "width": "3%",
+                }],
             initComplete: function () {
                 this.api().columns([2, 3]).every(function () {
                     var column = this;
@@ -217,19 +305,19 @@ $(document).ready(function () {
 
         }
     }
+
     function format(d) {
         let tradegroup = d['TradeGroup_'];
         let return_rows = '';
         // Get Equivalent Row from Positions Impacts
         for (var i = 0; i < position_level_pnl.length; i++) {
             if (position_level_pnl[i]['TradeGroup_'] === tradegroup) {
-                console.log(position_level_pnl[i])
                 // Return corresponding rows
                 return_rows += '<tr>' +
                     '<td></td>' +
                     '<td>' + position_level_pnl[i]['TradeGroup_'] + '</td>' +
                     '<td>' + position_level_pnl[i]['TICKER_x_'] + '</td>' +
-                    position_level_pnl[i]['START_ADJ_PX_']  +
+                    position_level_pnl[i]['START_ADJ_PX_'] +
                     position_level_pnl[i]['END_ADJ_PX_'] +
                     position_level_pnl[i]['MKTVAL_CHG_USD_ARB'] +
                     position_level_pnl[i]['MKTVAL_CHG_USD_MACO'] +
@@ -244,8 +332,6 @@ $(document).ready(function () {
                     '</tr>'
             }
         }
-        console.log(return_rows);
-
 
         // `d` is the original data object for the row
         return '<div class="table-responsive" style="padding-left:3%"> <table class="table table-striped table-bordered" border="0">' +
@@ -262,5 +348,9 @@ $(document).ready(function () {
             '</table></div>';
     }
 
-});
 
+});
+$('body').on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
+    $($.fn.dataTable.tables(true)).DataTable()
+        .columns.adjust();
+});

@@ -461,6 +461,7 @@ def get_bearfile_path_filename(instance, filename):
     filename = '{filename}_{uuid}.{ext}'.format(filename=filename, uuid=str(uuid.uuid4()), ext=ext)
     return os.path.join(path, filename)
 
+
 class ESS_Idea_BearFileUploads(models.Model):
     ess_idea_id = models.ForeignKey('ESS_Idea', on_delete=models.CASCADE)
     deal_key = models.IntegerField(null=True)  # DealKey reflecting a deal

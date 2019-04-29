@@ -352,7 +352,6 @@
                                         <th>Source</th>
                                         <th>URL</th>
                                         <th>Author</th>
-                                        <th>Article</th>
                                         <th>Associated Tickers</th>
                                         <th>Options</th>
                                     </tr>
@@ -364,8 +363,7 @@
                                             <td>{{ news_item.title }}</td>
                                             <td>{{ news_item.source }}</td>
                                             <td><a href={{ news_item.url}} target="_blank">{{ news_item.url|slice:"0:25"|add:"..."  }}</a></td>
-                                            <td>{{ news_item.author }}</td>
-                                            <td><a data-value="{{ news_item.article}}"></a>{{ news_item.article|slice:"0:85"|add:"..."  }}</td>
+                                            <td data-value="{{ news_item.article }}">{{ news_item.author }}</td>
                                             <td>{{ news_item.tickers }}</td>
                                             <td>
                                                 <div class="btn-group">

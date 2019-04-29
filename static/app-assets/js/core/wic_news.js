@@ -6,12 +6,12 @@ $(document).ready(function(){
         });
     $('#wic_news_article').summernote({'height':250});
 
-
     $('#wic_news_url').on('focusout',function(){
        var url = $('#wic_news_url').val();
        if(url.length > 0){
            //Display a toast
-           toastr.info('Gathering Info from URL & automatically creating a short-summary!', 'Hang Tight!', {positionClass: 'toast-top-right', containerId: 'toast-top-right'});
+           toastr.info('Gathering Info from URL & automatically creating a short-summary!', 'Hang Tight!',
+               {positionClass: 'toast-top-right', containerId: 'toast-top-right'});
            var csrf_token = $('#wic_news_csrf_token').val();
             //Open an Ajax Request
            $.ajax({
@@ -27,9 +27,6 @@ $(document).ready(function(){
                    $('#wic_news_author').val(response.authors);
                }
            })
-
-
-
        }
     });
 
@@ -38,7 +35,7 @@ $(document).ready(function(){
     $('#submit_wic_news_form').on('submit',function(e){
         e.preventDefault(); //to Stop from Refreshing
         //Get all the fields and make an Ajax call. Wait for Response, if positive, show toaster and append this new row to the existing table
-        var article = $('#wic_news_article').summernote('code').replace(/<\/?[^>]+(>|$)/g, "");
+        var article = $('#wic_news_article').summernote('code');
         var date = $('#wic_news_date').val();
         var title = $('#wic_news_title').val();
         var source = $('#wic_news_source').val();
@@ -66,28 +63,10 @@ $(document).ready(function(){
                     swal("Error!", "Adding News Item Failed!", "error");
                 }
                 else{
-                    var monthNames = ["Jan", "Feb", "March", "April", "May", "June",
-                      "July", "August", "Sept", "Oct", "Nov", "Dec"
-                    ];
-                    //Response was Success. Append this row to the Existing DataTable
-                    var date_split = date.split('-');
-                    var year = date_split[0];
-                    var month = date_split[1];
-                    var day = date_split[2];
-                    var newRow = '<tr id="row_'+response+'"><td>'+monthNames[month-1]+' '+day+', '+year+'</td>'+'<td>'+title+'</td>'+'<td>'+source+'</td>'+'<td>'+url+'</td>'+'<td>'+author+'</td>'+'<td>'+article+'</td>'+'<td>'+tickers+'</td>'+
-                    '<td><div class="btn-group">' +
-                    '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
-                    '<i class="ft-settings"></i>' +
-                    '</button>' +
-                    '<ul class="dropdown-menu">' +
-                    '<li><a id="edit_'+response+'" data-value="{{ news_item.id }}" class=\'dropdown-item\' href="#"><i class="ft-edit-2"></i> Edit</a></li>' +
-                    '<li><a id="delete_'+response+'" data-value="{{ news_item.id }}" class=\'dropdown-item\' href="#"><i class="ft-trash-2"></i> Delete</a></li>' +
-                    '<li><a id="view_'+response+'" data-value="{{ news_item.id }}" class=\'dropdown-item\' href="#"><i class="ft-plus-circle primary"></i> View</a></li>' +
-                    '</ul>' +
-                    '</div></td></tr>';
-
-                //Re-initialize Datatable again
-                    wic_news_table.row.add($(newRow)).draw();
+                     toastr.success('Added', 'Please Refresh the page', {
+                        positionClass: 'toast-top-right',
+                        containerId: 'toast-top-right'
+                    });
                 }
 
 
@@ -123,7 +102,7 @@ $(document).ready(function(){
             var source = $tds.eq(2).text();
             var url = $tds.eq(3).children().attr('href');
             var author = $tds.eq(4).text();
-            var article = $tds.eq(5).children().attr('data-value');
+            var article = $tds.eq(4).attr('data-value');
             var tickers = $tds.eq(6).text();
             // Populate the Edit Modal Inputs with these values
             $('#wic_news_edit_id').val(news_id_to_edit);
@@ -204,7 +183,7 @@ $(document).ready(function(){
         e.preventDefault(); //to Stop from Refreshing
         //Get all the fields and make an Ajax call. Wait for Response, if positive, show toaster and append this new row to the existing table
         var id = $('#wic_news_edit_id').val();
-        var article = $('#wic_news_edit_article').summernote('code').replace(/<\/?[^>]+(>|$)/g, "");
+        var article = $('#wic_news_edit_article').summernote('code');
         var date = $('#wic_news_edit_date').val();
         var title = $('#wic_news_edit_title').val();
         var source = $('#wic_news_edit_source').val();

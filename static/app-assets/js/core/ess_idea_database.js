@@ -1,6 +1,7 @@
 $(document).ready(function () {
     var remove_file_ids = {BULL: [], OUR: [], BEAR: []};
-
+    $('#ess_idea_new_deal_situation_overview').summernote();
+    $('#ess_idea_new_deal_company_overview').summernote();
     var ess_idea_table = $('#ess_idea_table').DataTable({
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
             '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
@@ -230,8 +231,8 @@ $(document).ready(function () {
         }
 
 
-        var situation_overview = $('#ess_idea_new_deal_situation_overview').val();
-        var company_overview = $('#ess_idea_new_deal_company_overview').val();
+        var situation_overview = $('#ess_idea_new_deal_situation_overview').summernote('code');
+        var company_overview = $('#ess_idea_new_deal_company_overview').summernote('code');
         var pt_up = $('#ess_idea_new_deal_pt_up').val();
         var pt_down = $('#ess_idea_new_deal_pt_down').val();
         var pt_wic = $('#ess_idea_new_deal_pt_wic').val();
@@ -693,8 +694,8 @@ $(document).ready(function () {
 
                     // Fill Values in the Modal and Then OPEN the Modal
                     $('#ess_idea_new_deal_ticker').val(ticker);
-                    $('#ess_idea_new_deal_situation_overview').val(situation_overview);
-                    $('#ess_idea_new_deal_company_overview').val(company_overview);
+                    $('#ess_idea_new_deal_situation_overview').summernote('code',situation_overview);
+                    $('#ess_idea_new_deal_company_overview').summernote('code', company_overview);
                     $('#ess_idea_new_deal_pt_up').val(parseFloat(pt_up).toFixed(2));
                     $('#ess_idea_new_deal_pt_down').val(parseFloat(pt_down).toFixed(2));
                     $('#ess_idea_new_deal_pt_wic').val(parseFloat(pt_wic).toFixed(2));

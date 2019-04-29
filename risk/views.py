@@ -1381,7 +1381,7 @@ def show_ess_idea(request):
 
     # Show the latest Regresson calculations
     try:
-        calculations = EssIdeaAdjustmentsInformation.objects.get(deal_key=deal_key)
+        calculations = EssIdeaAdjustmentsInformation.objects.filter(deal_key=deal_key)[0]
         regression_calculations = calculations.regression_calculations
         cix_calculations = calculations.cix_calculations
     except EssIdeaAdjustmentsInformation.DoesNotExist:
@@ -1527,7 +1527,7 @@ def ess_idea_database(request):
                               "AND "
                               "A.version_number = B.max_version "
                               "LEFT JOIN "
-                              "(SELECT X.deal_key,X.pt_up as model_up, X.pt_down AS model_down, X.pt_wic "
+                              "(SELECT DISTINCT X.deal_key,X.pt_up as model_up, X.pt_down AS model_down, X.pt_wic "
                               "AS "
                               "model_wic FROM "+settings.CURRENT_DATABASE +
                               ".risk_ess_idea_upside_downside_change_records  AS X "
@@ -1541,22 +1541,6 @@ def ess_idea_database(request):
                               "X.date_updated = Y.MaxDate) AS ADJ  "
                               "ON "
                               "ADJ.deal_key = A.deal_key ")
-
-
-    # df = ESS_Idea.objects.raw("SELECT  * "
-    #                           "FROM  " + settings.CURRENT_DATABASE + " AS A "
-    #                           "INNER JOIN ("
-    #                           "SELECT   "
-    #                           "deal_key, max(version_number) as max_version "
-    #                           "from " + settings.CURRENT_DATABASE + ".risk_ess_idea "
-    #                           "group by deal_key "
-    #                           ") AS B ON A.deal_key = B.deal_key AND A.version_number = B.max_version"
-    #                           " LEFT JOIN (SELECT deal_key,pt_up as model_up, pt_down as model_down, pt_wic as "
-    #                           "model_wic from "+settings.CURRENT_DATABASE +
-    #                           ".risk_ess_idea_upside_downside_change_records "
-    #                           "where date_updated=(Select max(date_updated) from "+settings.CURRENT_DATABASE +
-    #                           ".risk_ess_idea_upside_downside_change_records)) as ADJ  on "
-    #                           " ADJ.deal_key = A.deal_key ")
 
     return render(request, 'ess_idea_database.html', context={'ess_idea_df': df})
 
