@@ -1385,7 +1385,8 @@ def show_ess_idea(request):
         calculations = EssIdeaAdjustmentsInformation.objects.filter(deal_key=deal_key)[0]
         regression_calculations = calculations.regression_calculations
         cix_calculations = calculations.cix_calculations
-    except EssIdeaAdjustmentsInformation.DoesNotExist:
+    except Exception as e:
+        print(e)
         calculations, regression_calculations, cix_calculations = None, None, None
 
     return render(request, 'show_ess_idea.html',
