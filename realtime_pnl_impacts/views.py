@@ -1,16 +1,16 @@
 import json
 import pandas as pd
-from django.shortcuts import render
-from .models import ArbitrageYTDPerformance
-from django_pandas.io import read_frame
-from django.http import HttpResponse, JsonResponse
+
+from django.conf import settings
 from django.db import connection
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
+from django_pandas.io import read_frame
+
 import dbutils
 from holiday_utils import is_market_closed
-from django.conf import settings
-
-
-# Create your views here.
+from realtime_pnl_impacts.models import ArbitrageYTDPerformance, PnlLossBudget, PnlProfitTarget
+from risk_reporting import tasks
 
 
 def px_adjuster(bbg_sectype, northpoint_sectype, px, crncy, fx_rate, factor):
@@ -251,6 +251,20 @@ def live_pnl_monitors(request):
 
         return JsonResponse({'data': df1.to_json(orient='index'),
                              'last_updated': last_updated})
-        # return HttpResponse(json.dumps({'data': df1.to_json(orient='index'),
-        #                      'last_updated': last_updated}), content_type='application/json')
 
+
+def update_profit_loss_targets(request):
+    response = 'Failed'
+    if request.POST:
+        is_profit_target = request.POST.get('is_profit_target') == 'true'
+        fund = request.POST.get('fund')
+        value = float(request.POST.get('value'))
+        if is_profit_target:
+            PnlProfitTarget(fund=fund, profit_target=value).save()
+        else:
+            if value > 0:
+                value = value * -1
+            PnlLossBudget(fund=fund, loss_budget=value).save()
+        calculated_pnl_budgets = tasks.calculate_pnl_budgets()
+        response = 'Success'
+    return HttpResponse(response)

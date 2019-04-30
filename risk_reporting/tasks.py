@@ -17,7 +17,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 from email_utilities import send_email
-from realtime_pnl_impacts.views import get_data
+from realtime_pnl_impacts import views
 from risk_reporting.models import DailyNAVImpacts, PositionLevelNAVImpacts, FormulaeBasedDownsides
 
 
@@ -807,13 +807,13 @@ def email_pl_target_loss_budgets():
             writer.save()
             return buffer.getvalue()
 
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated = get_data()
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live = views.get_data()
     final_live_df = final_live_df.style.apply(excel_formatting, axis=1)
 
     exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
     subject = 'PL Targets & Loss Budgets - ' + now_date
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-               recipients=['vaggarwal@wicfunds.com', 'kgorde@wicfunds.com', 'cplunkett@wicfunds.com'],
+               recipients=['vaggarwal@wicfunds.com',],# 'kgorde@wicfunds.com', 'cplunkett@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
                EXPORTERS=exporters, dataframe=[df1, final_live_df])
 
@@ -840,16 +840,27 @@ def calculate_pnl_budgets():
                            "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
     con = engine.connect()
 
-    raw_df = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_arbitrageytdperformance', con=con)
-    average_aum_df = pd.read_sql('select fund as Fund, avg(aum) as `Average YTD AUM` from wic.daily_flat_file_db '
-                                 'where year(Flat_file_as_of) >= YEAR(CURDATE()) group by fund order by fund', con=con)
+    raw_df = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_arbitrageytdperformance',
+                         con=con)
     flat_file_df = pd.read_sql('select TradeGroup as tradegroup, Fund as fund, LongShort as long_short, max(amount) '
                                'as max_amount, min(amount) as min_amount from wic.daily_flat_file_db where '
                                'Flat_file_as_of = (select max(Flat_file_as_of) from wic.daily_flat_file_db) '
                                'group by TradeGroup, Fund, LongShort;', con=con)
 
     sleeve_df = pd.read_sql('Select * from wic.sleeves_snapshot', con=con)
+    return_targets_df = pd.read_sql('SELECT DISTINCT t.fund as Fund, t.profit_target FROM ' + settings.CURRENT_DATABASE+
+                                    '.realtime_pnl_impacts_pnlprofittarget t INNER JOIN (SELECT fund, MAX(last_updated)'
+                                    ' AS Max_last_updated FROM ' + settings.CURRENT_DATABASE +
+                                    '.realtime_pnl_impacts_pnlprofittarget GROUP BY fund) groupedt ON t.fund = '
+                                    'groupedt.fund AND t.last_updated = groupedt.Max_last_updated;', con=con)
+
+    loss_budget_df = pd.read_sql('SELECT DISTINCT t.fund as Fund, t.loss_budget as `Loss Budget` FROM ' +
+                                 settings.CURRENT_DATABASE + '.realtime_pnl_impacts_pnllossbudget t INNER JOIN (SELECT '
+                                 'fund, MAX(last_updated) AS Max_last_updated FROM ' + settings.CURRENT_DATABASE +
+                                 '.realtime_pnl_impacts_pnllossbudget GROUP BY fund) groupedt ON t.fund = groupedt.fund'
+                                 ' AND t.last_updated = groupedt.Max_last_updated;', con=con)
     con.close()
+    return_targets_df.rename(columns={'profit_target': 'Ann Gross P&L Target %'}, inplace=True)
 
     raw_df.drop(columns=['id'], inplace=True)
 
@@ -889,22 +900,16 @@ def calculate_pnl_budgets():
     fund_realized_losses = closed_tradegroups[closed_tradegroups['ytd_dollar'] < 0][['fund', 'ytd_dollar']].\
         groupby(['fund']).agg('sum').reset_index()
     fund_realized_losses.columns = ['Fund', 'YTD Closed Deal Losses']
-    fund_pnl = pd.merge(fund_active_losers, fund_realized_losses, on = ['Fund'])
-    loss_budget_df = pd.DataFrame(columns=['Fund', 'Loss Budget'], data=[['ARB', '-1'], ['AED', '-2'], ['MACO', '-1'],
-                                                                         ['MALT', '-1'],
-                                                                         ['LEV', '-3'], ['LG', '-2'], ['CAM', '-2'], ])
-    return_targets_df = pd.DataFrame(columns=['Fund', 'Ann Gross P&L Target %'], data=[['ARB', '5'], ['AED', '8'],
-                                                                                       ['MACO', '5'], ['MALT', '5'],
-                                                                                       ['LEV', '12'], ['LG', '8'],
-                                                                                       ['CAM', '8'], ])
+    fund_pnl = pd.merge(fund_active_losers, fund_realized_losses, on=['Fund'])
+
     merged_df = pd.merge(fund_pnl, loss_budget_df, on=['Fund'])
     merged_df = pd.merge(merged_df, return_targets_df, on=['Fund'])
     merged_df = pd.merge(merged_df, investable_assets_df, on=['Fund'])
+    average_aum_df = get_average_ytd_aum()
     merged_df = pd.merge(merged_df, average_aum_df, on=['Fund'], how='left')
     float_cols = ['YTD Active Deal Losses', 'YTD Closed Deal Losses', 'Loss Budget', 'Ann Gross P&L Target %', 'AUM']
     merged_df[float_cols] = merged_df[float_cols].astype(float)
-    merged_df['Ann Gross P&L Target $'] = merged_df['Ann Gross P&L Target %'] * merged_df['Average YTD AUM'] * \
-                                                 0.01
+    merged_df['Ann Gross P&L Target $'] = merged_df['Ann Gross P&L Target %'] * merged_df['Average YTD AUM'] * 0.01
     gross_ytd_pnl = df[['fund', 'ytd_dollar']].groupby('fund').agg('sum').reset_index()
     gross_ytd_pnl.columns = ['Fund', 'Gross YTD P&L']
     merged_df = pd.merge(merged_df, gross_ytd_pnl, on='Fund')
@@ -953,10 +958,14 @@ def calculate_realtime_pnl_budgets():
                            "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
     con = engine.connect()
 
-    pnl_budgets = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_pnlmonitors where ' \
-                               'last_updated = (Select max(last_updated) from ' + settings.CURRENT_DATABASE +
-                               '.realtime_pnl_impacts_pnlmonitors)', con=con)
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated = get_data()
+    pnl_budgets = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_pnlmonitors where '\
+                              'last_updated = (Select max(last_updated) from ' + settings.CURRENT_DATABASE +
+                              '.realtime_pnl_impacts_pnlmonitors)', con=con)
+
+    if 'id' in pnl_budgets.columns.values:
+        pnl_budgets.drop(columns=['id'], inplace=True)
+
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live = views.get_data()
     fund_daily_pnl = pd.Series([])
     fund_daily_pnl_sum = pd.Series([])
     daily_pnl_df = pd.DataFrame()
@@ -983,8 +992,21 @@ def calculate_realtime_pnl_budgets():
 
 
 def format_with_commas(df, column):
-    return df.apply(lambda x: "{:,}".format(int(x[column])), axis=1)
+    try:
+        return df.apply(lambda x: "{:,}".format(int(x[column])) if (np.all(pd.notnull(x))) else x, axis=1)
+    except ValueError:
+        return df.apply(lambda x: "{:,}".format(x[column]), axis=1)
 
 
 def format_with_percentage_decimal(df, column):
     return df.apply(lambda x: "{:,.2f}%".format(x[column]), axis=1)
+
+
+def get_average_ytd_aum():
+    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD +
+                           "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
+    con = engine.connect()
+    average_aum_df = pd.read_sql('select fund as Fund, avg(aum) as `Average YTD AUM` from wic.daily_flat_file_db '
+                                 'where year(Flat_file_as_of) >= YEAR(CURDATE()) group by fund order by fund', con=con)
+    con.close()
+    return average_aum_df

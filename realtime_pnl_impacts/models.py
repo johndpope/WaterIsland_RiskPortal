@@ -31,3 +31,15 @@ class PnlMonitors(models.Model):
     ytd_closed_deal_losses = models.CharField(max_length=50)
     ytd_active_deal_losses = models.CharField(max_length=50)
     last_updated = models.DateTimeField(auto_now_add=True)
+
+
+class PnlProfitTarget(models.Model):
+    fund = models.CharField(max_length=50)
+    profit_target = models.FloatField(null=False, blank=False, default=None)
+    last_updated = models.DateTimeField(auto_now_add=True)
+
+
+class PnlLossBudget(models.Model):
+    fund = models.CharField(max_length=50)
+    loss_budget = models.FloatField(null=False, blank=False, default=None)
+    last_updated = models.DateTimeField(auto_now_add=True)

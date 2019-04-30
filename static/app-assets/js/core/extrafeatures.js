@@ -16,7 +16,7 @@ $(document).ready(function () {
 
                 for (var i = 0; i < news_data.articles.length; i++) {
                     if (news_data.articles[i].urlToImage != null && news_data.articles[i].description != null) {
-                        $('<div class="carousel-item carousel-news-image center" ><img src="' + news_data.articles[i].urlToImage + ' " alt="NO IMAGE FOUND"><div class="carousel-caption"><h3>' + news_data.articles[i].title + '</h3>' +
+                        $('<div class="carousel-item carousel-news-image center" ><img src="' + news_data.articles[i].urlToImage + ' " alt="NO IMAGE FOUND"><div class="carousel-caption"><h3><br>' + news_data.articles[i].title + '</h3>' +
                             '<p>' + news_data.articles[i].description + '</p></div></div>').appendTo('.carousel-inner');
                         $('<li data-target="#carousel-interval" data-slide-to=' + i + '></li>').appendTo('.carousel-indicators');
                         news_sources.push(news_data.articles[i].source.name.toString());
@@ -215,17 +215,29 @@ $(document).ready(function () {
                     pnl_rows += '<td>' + metric + '</td>';
                     for (var i = 0; i < funds_order.length; i++) {
                         // Append for each fund...
-                        pnl_rows += '<td>' + funds_dict[funds_order[i]] + '</td>'
+                        pnl_rows += '<td>' + funds_dict[funds_order[i]]
+                        if (metric == 'Ann. Gross P&L Target %') {
+                            edit_button = '<button type="button" class="btn btn-link btn-sm" id="edit_profit_' +
+                                          funds_order[i] + '"><span class="icon-fixed-width icon-pencil"></span></button>';
+                            pnl_rows += edit_button
+                        }
+                        else if (metric == 'Ann Loss Budget %') {
+                            edit_button = '<button type="button" class="btn btn-link btn-sm" id="edit_loss_' +
+                                          funds_order[i] + '"><span class="icon-fixed-width icon-pencil"></span></button>';
+                            pnl_rows += edit_button
+                        }
+                        pnl_rows += '</td>'
                     }
                     pnl_rows += '</tr>'
                 });
 
 
-                let table = "<table id='realtime_pnl_monitors_table' class=\"table table-striped text-dark\"><thead>" +
+                let table = "<table id='realtime_pnl_monitors_table' class=\"table table-striped table-hover text-dark table-sm\"><thead>" +
                     first_header +
                     "</thead>" + "<tbody>" +
                     pnl_rows +
-                    "</tbody></table>";
+                    "</tbody></table>" +
+                    "<p style='text-align: right'>* Above data has been calculated using Average YTD Investable Assets</p>";
 
 
                 // Append table
@@ -258,6 +270,59 @@ $(document).ready(function () {
         });
     }
 
+    $(document).on("click", "button", function(){
+        var button_id = this.id;
+        if (button_id.includes("edit_profit_") || button_id.includes("edit_loss_")) {
+            var fund = button_id.split("_").pop()
+            var is_profit_target = false;
+            var title = "Update Profit/Loss Target Percentage";
+            var text = "Enter a value";
+            var success = "The value has been updated"
+            if (button_id.includes("edit_profit_")) {
+                is_profit_target = true;
+                title = "Update Profit Target Percentage for " + fund.toUpperCase();
+                text = "Enter a new value for Profit Target %"
+                success = "The Profit Target has been updated to "
+            }
+            else if (button_id.includes("edit_loss_")) {
+                is_profit_target = false;
+                title = "Update Loss Budget Percentage for " + fund.toUpperCase();
+                text = "Enter a new value for Loss Budget %"
+                success = "The Loss Budget has been updated to "
+            }
+            swal({
+                title: title,
+                text: text,
+                content: 'input',
+                buttons: ["Cancel",
+                {text: "Save", closeModal: false}],
+            }).then((value) => {
+                if (value) {
+                    $.ajax({
+                        type:'POST',
+                        url: '../realtime_pnl_impacts/update_profit_loss_targets',
+                        data:{'fund': fund, 'is_profit_target': is_profit_target, 'value': value},
+                        success:function(response){
+                            if(response === "Success"){
+                                swal("Success! " + success + value + "% for " + fund, {icon: "success"});
+                                setPnlMonitors();
+
+                            }
+                            else{
+                                swal("Error!", "The value could not be updated", "error");
+                                console.log('Deletion failed', fund, value);
+                            }
+                        },
+                        error:function (error) {
+                            swal("Error!", "The value could not be updated", "error");
+                            console.log(error, fund, value);
+                        }
+                    });
+
+                }
+            });
+        }
+    });
 
     $('#breakfast-textarea').keyup(function () {
         if ($('#breakfast-textarea').val().length == 0) {

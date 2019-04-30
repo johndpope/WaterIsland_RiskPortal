@@ -17,8 +17,6 @@ WE WILL RELEASE FUTURE UPDATES SO IN ORDER TO NOT OVERWRITE YOUR STYLES IT'S BET
   height: 500px;
   text-align: center;
   margin-bottom: 2%;
-
-
 }
 .carousel-caption {
     position: relative;
@@ -38,6 +36,12 @@ WE WILL RELEASE FUTURE UPDATES SO IN ORDER TO NOT OVERWRITE YOUR STYLES IT'S BET
 .carousel-control-next-icon {
     background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23330000' viewBox='0 0 8 8'%3E%3Cpath d='M2.75 0l-1.5 1.5 2.5 2.5-2.5 2.5 1.5 1.5 4-4-4-4z'/%3E%3C/svg%3E");
 }
+
+.carousel-inner > .carousel-item > img,
+  .carousel-inner > .carousel-item > a > img {
+    width: 80%;
+    margin: auto;
+  }
 /* Below Customization used for news carousel description */
 p{
     color:#0a160a;
