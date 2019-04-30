@@ -684,11 +684,19 @@ def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                 new_downside = regression_down_price
 
         # Record this Upside downside change for the deal
-        ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                                pt_up=new_upside,
-                                                pt_wic=new_pt_wic, pt_down=new_downside,
-                                                date_updated=datetime.datetime.now().date()
-                                                .strftime('%Y-%m-%d')).save()
+        # First Check if it already exists
+        try:
+            ESS_Idea_Upside_Downside_Change_Records.objects.get(deal_key=new_deal.deal_key,
+                                                                date_updated=datetime.datetime.now().
+                                                                date().strftime('%Y-%m-%d'))
+
+        except ESS_Idea_Upside_Downside_Change_Records.DoesNotExist:
+            print('Existing Upside/Downside Record not found...Inserting new')
+            ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                                    pt_up=new_upside,
+                                                    pt_wic=new_pt_wic, pt_down=new_downside,
+                                                    date_updated=datetime.datetime.now().date()
+                                                    .strftime('%Y-%m-%d')).save()
 
         EssIdeaAdjustmentsInformation(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
                                       regression_results=json.dumps(result_dictionary['Regression Results']),
@@ -1033,10 +1041,15 @@ def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear
         #version_number = int(latest_deal_object.version_number) + 1
         latest_deal_key = latest_deal_object.deal_key
         print('Recording this Change in Upside/Downside Change records....')
-        ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=update_id, deal_key=latest_deal_key, pt_up=pt_up,
-                                                pt_wic=pt_wic, pt_down=pt_down,
-                                                date_updated=datetime.datetime.now().date()
-                                                .strftime('%Y-%m-%d')).save()
+        try:
+            ESS_Idea_Upside_Downside_Change_Records.objects.get(deal_key=latest_deal_key,
+                                                                date_updated=datetime.datetime.now().
+                                                                date().strftime('%Y-%m-%d'))
+        except ESS_Idea_Upside_Downside_Change_Records.DoesNotExist:
+            ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=update_id, deal_key=latest_deal_key, pt_up=pt_up,
+                                                    pt_wic=pt_wic, pt_down=pt_down,
+                                                    date_updated=datetime.datetime.now().date()
+                                                    .strftime('%Y-%m-%d')).save()
 
         print('Printing Version number & Deal Key of current deal..' + str(version_number)
               + " ->" + str(latest_deal_key))
@@ -1391,11 +1404,18 @@ def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear
                 new_downside = regression_down_price
 
         # Record this Upside downside change for the deal
-        ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
-                                                pt_up=new_upside,
-                                                pt_wic=new_pt_wic, pt_down=new_downside,
-                                                date_updated=datetime.datetime.now().date()
-                                                .strftime('%Y-%m-%d')).save()
+
+        try:
+            ESS_Idea_Upside_Downside_Change_Records.objects.get(deal_key=new_deal.deal_key,
+                                                                date_udpated=datetime.datetime.now().
+                                                                date().strftime('%Y-%m-%d'))
+
+        except ESS_Idea_Upside_Downside_Change_Records.DoesNotExist:
+            ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
+                                                    pt_up=new_upside,
+                                                    pt_wic=new_pt_wic, pt_down=new_downside,
+                                                    date_updated=datetime.datetime.now().date()
+                                                    .strftime('%Y-%m-%d')).save()
 
         EssIdeaAdjustmentsInformation(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
                                       regression_results=json.dumps(result_dictionary['Regression Results']),
