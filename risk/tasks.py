@@ -182,18 +182,12 @@ def premium_analysis_flagger():
                 deal_object.save()
 
                 # Record this Upside downside change for the deal
-                try:
-                    ESS_Idea_Upside_Downside_Change_Records.objects.get(deal_key=deal_object.deal_key,
-                                                                        date_updated=datetime.datetime.now().
-                                                                        date().strftime('%Y-%m-%d'))
-
-                except ESS_Idea_Upside_Downside_Change_Records.DoesNotExist:
-                    ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=deal_object.id,
-                                                            deal_key=deal_object.deal_key,
-                                                            pt_up=new_upside,
-                                                            pt_wic=new_pt_wic, pt_down=new_downside,
-                                                            date_updated=datetime.datetime.now().date()
-                                                            .strftime('%Y-%m-%d')).save()
+                ESS_Idea_Upside_Downside_Change_Records(ess_idea_id_id=deal_object.id,
+                                                        deal_key=deal_object.deal_key,
+                                                        pt_up=new_upside,
+                                                        pt_wic=new_pt_wic, pt_down=new_downside,
+                                                        date_updated=datetime.datetime.now().date()
+                                                        .strftime('%Y-%m-%d')).save()
 
                 EssIdeaAdjustmentsInformation(ess_idea_id_id=deal_object.id, deal_key=deal_object.deal_key,
                                               regression_results=json.dumps(result_dictionary['Regression Results']),

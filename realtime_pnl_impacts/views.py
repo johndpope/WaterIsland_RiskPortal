@@ -28,6 +28,7 @@ def fund_level_pnl(request):
     fund_details['ROC'] = 100.0 * (fund_details['MKTVAL_CHG_USD']/fund_details['Capital($)_x'])
     fund_details['Contribution_to_NAV'] = 1e4* (fund_details['MKTVAL_CHG_USD']/fund_details['aum'])
     del fund_details['Fund']
+    del fund_details['Qty_x']
     fund_details_dict = {}
     funds = fund_details['Group'].unique()
     for each_fund in funds:

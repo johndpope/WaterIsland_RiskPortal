@@ -96,7 +96,7 @@ $(document).ready(function () {
         // Crete Active Tab for ARB
         let data = fund_pnl;
         $('<div class="tab-pane active" id="tabTable' + name + '"><table class="table table-striped text-dark" style="width:100%" id="table' + name + '">' +
-            '<tfoot><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tfoot></table><br><br><br>' +
+            '<tfoot><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr></tfoot></table><br><br><br>' +
             '</div>' +
             '').appendTo('#fund_pnl' + name);
         initializeDatatableSummary(data, 'table' + name);
@@ -113,7 +113,6 @@ $(document).ready(function () {
             paging:false,
             columns: [
                 {title: 'TradeGroup', data: 'TradeGroup'},
-                {title: 'Quantity', data: 'Qty_x'},
                 {title: 'Start MktVal', data: 'START_MKTVAL'},
                 {title: 'End MktVal', data: 'END_MKTVAL'},
                 {title: 'MktVal Change', data: 'MKTVAL_CHG_USD'},
@@ -125,7 +124,7 @@ $(document).ready(function () {
 
             ],
             "columnDefs": [{
-                "targets": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                "targets": [1, 2, 3, 4, 5, 6, 7, 8],
                 "createdCell": function (td, cellData, rowData, rowIndex) {
                     //Check for % Float and %Shares Out
                     if (cellData < 0) {
@@ -137,6 +136,48 @@ $(document).ready(function () {
                 },
                 "render": $.fn.dataTable.render.number(',', '.', 2),
             }],
+            "footerCallback": function (row, data, start, end, display) {
+                var api = this.api(), data;
+
+                // Remove the formatting to get integer data for summation
+                var intVal = function (i) {
+                    return typeof i === 'string' ?
+                        i.replace(/[\$,]/g, '') * 1 :
+                        typeof i === 'number' ?
+                            i : 0;
+                };
+                // Iterate through Each column
+
+                $.each([1, 2, 3, 4, 6], function (index, value) {
+                    let pageTotal = api
+                        .column([value], {page: 'current'})
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+
+                    // Update footer
+                    $(api.column([value]).footer()).html(
+                        '$ ' + pageTotal.toLocaleString()
+                    );
+                });
+
+                $.each([7, 8], function (index, value) {
+                    let pageTotal = api
+                        .column([value], {page: 'current'})
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+
+                    // Update footer
+                    $(api.column([value]).footer()).html(
+                        pageTotal.toLocaleString() + ' (bips)'
+                    );
+                });
+
+
+            }
         })
     }
 
