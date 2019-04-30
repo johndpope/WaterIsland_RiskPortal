@@ -412,7 +412,7 @@ class ESS_Idea_Upside_Downside_Change_Records(models.Model):
     pt_up = models.FloatField(null=True)
     pt_wic = models.FloatField(null=True)
     pt_down = models.FloatField(null=True)
-    date_updated = models.DateField(null=False) #Updated Record shouldn't be Null
+    date_updated = models.DateTimeField(null=False) #Updated Record shouldn't be Null
 
 
 def get_bullfile_path_filename(instance, filename):

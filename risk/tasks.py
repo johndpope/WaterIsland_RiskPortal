@@ -186,8 +186,7 @@ def premium_analysis_flagger():
                                                         deal_key=deal_object.deal_key,
                                                         pt_up=new_upside,
                                                         pt_wic=new_pt_wic, pt_down=new_downside,
-                                                        date_updated=datetime.datetime.now().date()
-                                                        .strftime('%Y-%m-%d')).save()
+                                                        date_updated=datetime.datetime.now()).save()
 
                 EssIdeaAdjustmentsInformation(ess_idea_id_id=deal_object.id, deal_key=deal_object.deal_key,
                                               regression_results=json.dumps(result_dictionary['Regression Results']),
