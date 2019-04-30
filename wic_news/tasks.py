@@ -72,7 +72,7 @@ def email_news_additions():
         subject = '(Risk Automation) Situation Logs - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                    recipients=['kgorde@wicfunds.com', 'cwatkins@wicfunds.com', 'vaggarwal@wicfunds.com',
-                               'kkeung@wicfunds.com', 'tchen@wicufunds.com', 'rlogan@wicfunds.com',
+                               'kkeung@wicfunds.com', 'tchen@wicfunds.com', 'rlogan@wicfunds.com',
                                'bmoore@wicfunds.com', 'gloprete@wicfunds.com'],
                    subject=subject, from_email='dispatch@wicfunds.com', html=html,
                    EXPORTERS=exporters, dataframe=news_attachment
