@@ -983,7 +983,7 @@ def show_ess_idea(request):
 
     upside_downside_records_df = read_frame(upside_downside_records)
     upside_downside_records_df['date_updated'] = upside_downside_records_df['date_updated'].\
-        apply(lambda x: x.strfftime('%Y-%m-%d'))
+        apply(lambda x: x.strftime('%Y-%m-%d'))
 
     ev_ebitda_chart_ltm = []
     ev_ebitda_chart_1bf = []
