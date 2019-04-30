@@ -44,17 +44,6 @@ def live_tradegroup_pnl(request):
     """ Returns the Live PnL and YTD PnL at the Tradegroup level """
 
     final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live = get_data()
-    # fund_level_live = fund_level_live.groupby(['Group', 'TradeGroup']).sum().reset_index()
-    # assets_df = pd.read_sql_query('SELECT DISTINCT Fund, aum from wic.daily_flat_file_db where flat_file_as_of ='
-    #                               '(select max(flat_file_as_of) from wic.daily_flat_file_db)', con=connection)
-    # fund_details = pd.merge(fund_level_live, assets_df, left_on='Group', right_on='Fund')
-    # fund_details['ROC'] = 100.0 * (fund_details['MKTVAL_CHG_USD']/fund_details['Capital($)_x'])
-    # fund_details['Contribution to NAV'] = 1e4* (fund_details['MKTVAL_CHG_USD']/fund_details['aum'])
-    # del fund_details['Fund']
-    # fund_details_dict = {}
-    # funds = fund_details['Group'].unique()
-    # for each_fund in funds:
-    #     fund_details_dict[each_fund] = fund_details[fund_details['Group'] == each_fund].to_json(orient='records')
 
     for cols in position_level_pnl.columns.values[2:]:
 
@@ -75,6 +64,7 @@ def live_tradegroup_pnl(request):
 
 
 def get_data():
+    import ipdb; ipdb.set_trace()
     ytd_performance = read_frame(ArbitrageYTDPerformance.objects.all())
 
     ytd_performance.columns = ['id', 'Fund', 'Sleeve', 'Catalyst', 'TradeGroup', 'LongShort', 'InceptionDate',

@@ -147,6 +147,7 @@ $(document).ready(function () {
             $('#wic_notes_edit_date').val(formatted_date.toString()); //Todo: Date not setting
             $('#wic_notes_edit_title').val(title);
             $('#wic_notes_edit_author').val(author);
+            $('#wic_notes_edit_article').summernote({'height': "100px"});
             $('#wic_notes_edit_article').summernote('code', article);
             $('#wic_notes_edit_tickers').val(tickers);
 
@@ -272,7 +273,7 @@ $(document).ready(function () {
                     var month = date_split[1];
                     var day = date_split[2];
 
-                    var newRow = '<tr id="row_' + id + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + article + '</td>' + '<td>' + tickers + '</td>' +
+                    var newRow = '<tr id="row_' + id + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + tickers + '</td>' +
                         '<td><div class="btn-group">' +
                         '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
                         '<i class="ft-settings"></i>' +
