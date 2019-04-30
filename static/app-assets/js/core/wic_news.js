@@ -103,7 +103,7 @@ $(document).ready(function(){
             var url = $tds.eq(3).children().attr('href');
             var author = $tds.eq(4).text();
             var article = $tds.eq(4).attr('data-value');
-            var tickers = $tds.eq(6).text();
+            var tickers = $tds.eq(5).text();
             // Populate the Edit Modal Inputs with these values
             $('#wic_news_edit_id').val(news_id_to_edit);
             $('#wic_news_edit_date').val(date);
@@ -111,9 +111,9 @@ $(document).ready(function(){
             $('#wic_news_edit_source').val(source);
             $('#wic_news_edit_url').val(url);
             $('#wic_news_edit_author').val(author);
-            $('#wic_news_edit_article').summernote();
-            $('#wic_news_edit_article').summernote('code',article);
             $('#wic_news_edit_tickers').val(tickers);
+            $('#wic_news_edit_article').summernote();
+            $('#wic_news_edit_article').summernote('code', article);
 
             // Display the Modal
             $('#wic_news_edit_modal').modal('show');
@@ -224,7 +224,7 @@ $(document).ready(function(){
                     var month = date_split[1];
                     var day = date_split[2];
 
-                    var newRow = '<tr id="row_'+id+'"><td>'+monthNames[month-1]+' '+day+', '+year+'</td>'+'<td>'+title+'</td>'+'<td>'+source+'</td>'+'<td>'+url+'</td>'+'<td>'+author+'</td>'+'<td>'+article+'</td>'+'<td>'+tickers+'</td>'+
+                    var newRow = '<tr id="row_'+id+'"><td>'+monthNames[month-1]+' '+day+', '+year+'</td>'+'<td>'+title+'</td>'+'<td>'+source+'</td>'+'<td>'+url+'</td>'+'<td>'+author+'</td>' + '<td>'+tickers+'</td>'+
                     '<td><div class="btn-group">' +
                     '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
                     '<i class="ft-settings"></i>' +
