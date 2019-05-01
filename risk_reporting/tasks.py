@@ -628,6 +628,28 @@ def email_daily_formulae_linked_downsides():
             'SELECT * FROM ' + settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides ', con=con)
         time.sleep(3)
 
+        alert_message = ''
+        null_risk_limits = downsides_df[(downsides_df['RiskLimit'] == 0) | (pd.isna(downsides_df['RiskLimit']) |
+                                                                            (downsides_df['RiskLimit'].astype(str) == ''
+                                                                             ))]['TradeGroup'].unique()
+
+        null_base_case_downsides = downsides_df[(downsides_df['base_case'] == 0) | (pd.isna(downsides_df['base_case']))
+                                                | (downsides_df['base_case'] == '')]['TradeGroup'].unique()
+        null_outlier_downsides = downsides_df[(downsides_df['outlier'] == 0) | (pd.isna(downsides_df['outlier'])
+                                              | (downsides_df['outlier'] == ''))]['TradeGroup'].unique()
+
+        if len(null_risk_limits) > 0:
+            alert_message += '<strong>Following have Undefined or Zero Risk Limits</strong>: <div class="bg-warning">'+\
+                             ' , '.join(null_risk_limits) + "</div>"
+
+        if len(null_base_case_downsides) > 0:
+            alert_message += '<strong><br><br> Following have Undefined or Zero Base case</strong>: ' \
+                             '<div class="bg-warning">' + ' , '.join(null_base_case_downsides) + "</div>"
+
+        if len(null_outlier_downsides) > 0:
+            alert_message += '<strong><br><br> Following have Undefined or Zero Outlier</strong>: ' \
+                             '<div class="bg-warning">' + ' , '.join(null_outlier_downsides) + "</div>"
+
         def export_excel(df):
             with io.BytesIO() as buffer:
                 writer = pd.ExcelWriter(buffer)
@@ -640,18 +662,19 @@ def email_daily_formulae_linked_downsides():
                   <head>
                   </head>
                   <body>
-                    PFA Daily Backup for Formulae Linked Downsides
+                    PFA Daily Backup for Formulae Linked Downsides<br><br>
+                    {0}
                   </body>
                 </html>
-        """
+        """.format(alert_message)
 
         exporters = {'FormulaeLinkedDownsides (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
                          export_excel}
 
         subject = '(Risk Automation) FormulaeLinkedDownsides - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-                   recipients=['risk@wicfunds.com'], subject=subject, from_email='dispatch@wicfunds.com', html=html,
-                   EXPORTERS=exporters, dataframe=downsides_df)
+                   recipients=['risk@wicfunds.com', 'rlogan@wicfunds.com'], subject=subject,
+                   from_email='dispatch@wicfunds.com', html=html, EXPORTERS=exporters, dataframe=downsides_df)
 
     except Exception as e:
         print('Error Occured....')

@@ -72,7 +72,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'EMAIL_DAILY_FORMULAE_LINKED_DOWNSIDES': {
         'task': 'risk_reporting.tasks.email_daily_formulae_linked_downsides',
-        'schedule': crontab(minute="45", hour='17', day_of_week='mon-fri'),  # Execute weekdays morning at 6.40am
+        'schedule': crontab(minute="30", hour='16', day_of_week='mon-fri'),  # Execute weekdays morning at 6.40am
     },
     'CLEAN_UP_AWS_S3': {
         'task': 'cleanup.tasks.clean_up_aws_s3',
