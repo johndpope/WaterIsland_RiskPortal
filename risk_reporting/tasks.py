@@ -813,7 +813,7 @@ def email_pl_target_loss_budgets():
     exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
     subject = 'PL Targets & Loss Budgets - ' + now_date
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-               recipients=['vaggarwal@wicfunds.com',],# 'kgorde@wicfunds.com', 'cplunkett@wicfunds.com'],
+               recipients=['vaggarwal@wicfunds.com', 'kgorde@wicfunds.com', 'cplunkett@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
                EXPORTERS=exporters, dataframe=[df1, final_live_df])
 
