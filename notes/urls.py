@@ -8,5 +8,5 @@ urlpatterns = [
     url('update_note/', views.update_note, name='update_note'),
     url('delete_note/', views.delete_note, name='delete_note'),
     url('list_notes/', views.ListNotes.as_view(), name='list_notes'),
-    url('get_attachments/', views.get_attachments, name='get_attachments')
+    url('get_note_details/', views.get_note_details, name='get_note_details')
 ]
