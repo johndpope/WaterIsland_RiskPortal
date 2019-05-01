@@ -64,7 +64,6 @@ def live_tradegroup_pnl(request):
 
 
 def get_data():
-    import ipdb; ipdb.set_trace()
     ytd_performance = read_frame(ArbitrageYTDPerformance.objects.all())
 
     ytd_performance.columns = ['id', 'Fund', 'Sleeve', 'Catalyst', 'TradeGroup', 'LongShort', 'InceptionDate',
