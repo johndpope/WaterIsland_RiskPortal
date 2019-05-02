@@ -20,7 +20,7 @@ def px_adjuster(bbg_sectype, northpoint_sectype, px, crncy, fx_rate, factor):
 
 
 def fund_level_pnl(request):
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live = get_data()
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl = get_data()
     fund_level_live = fund_level_live.groupby(['Group', 'TradeGroup']).sum().reset_index()
     assets_df = pd.read_sql_query('SELECT DISTINCT Fund, aum from wic.daily_flat_file_db where flat_file_as_of ='
                                   '(select max(flat_file_as_of) from wic.daily_flat_file_db)', con=connection)
@@ -40,30 +40,43 @@ def fund_level_pnl(request):
         })
 
 
+def apply_red_green_formatting(dataframe):
+    for cols in dataframe.columns.values[2:]:
+        dataframe[cols] = dataframe[cols].apply(lambda x: '<td style="color:red">'+'{0:,.2f}'.format(x)+'</td>'
+                                                if x < 0 else '<td style="color:green">'+'{0:,.2f}'.format(x)+'</td>')
+    return dataframe
+
+
 def live_tradegroup_pnl(request):
     """ Returns the Live PnL and YTD PnL at the Tradegroup level """
 
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live = get_data()
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl = get_data()
 
-    for cols in position_level_pnl.columns.values[2:]:
-
-        position_level_pnl[cols] = position_level_pnl[cols].apply(lambda x: '<td style="color:red">'+'{0:,.2f}'.format(x)+'</td>'
-                                                                  if x < 0 else '<td style="color:green">'+'{0:,.2f}'.format(x)+'</td>')
+    position_level_pnl = apply_red_green_formatting(position_level_pnl)
+    final_position_level_ytd_pnl = apply_red_green_formatting(final_position_level_ytd_pnl)
 
     if request.is_ajax():
         return_data = {'data': final_live_df.to_json(orient='records'),
                        'daily_pnl': final_daily_pnl.to_json(orient='records'),
                        'position_level_pnl': position_level_pnl.to_json(orient='records'),
-
+                       'final_position_level_ytd_pnl': final_position_level_ytd_pnl.to_json(orient='records'),
                        'last_synced_on': last_updated}
 
         return JsonResponse(return_data)
-        #return HttpResponse(json.dumps(return_data), content_type='application/json')
 
     return render(request, 'realtime_pnl_impacts.html', {'last_updated': last_updated})
 
 
 def get_data():
+    position_level_ytd_pnl = pd.read_sql_query('select Fund, TradeGroup, Ticker, SUM(Ticker_PnL_Dollar) as '
+                                               'YtdTickerPnlDollar from wic.ticker_pnl_breakdown where YEAR(`Date`) = '
+                                               'YEAR(current_timestamp()) GROUP BY Fund, TradeGroup, Ticker',
+                                               con=connection)
+    ytd_options = pd.read_sql_query('select Fund, TradeGroup, SUM(Options_PnL_Dollar) as YtdOptionsDollar from '
+                                    'wic.tradegroup_overall_pnl where YEAR(`Date`) = YEAR(current_timestamp())'
+                                    ' GROUP BY Fund, TradeGroup;', con=connection)
+    ytd_options['Options'] = 'Options'
+
     ytd_performance = read_frame(ArbitrageYTDPerformance.objects.all())
 
     ytd_performance.columns = ['id', 'Fund', 'Sleeve', 'Catalyst', 'TradeGroup', 'LongShort', 'InceptionDate',
@@ -120,17 +133,41 @@ def get_data():
 
     position_level_pnl = table_df[['Group', 'TradeGroup', 'TICKER_x', 'START_ADJ_PX', 'END_ADJ_PX',
                                    'MKTVAL_CHG_USD']].copy()
+    funds_list = ['ARB', 'AED', 'LG', 'MACO', 'TAQ', 'CAM', 'LEV', 'TACO', 'MALT', 'WED']
+    position_level_pnl = position_level_pnl[position_level_pnl['Group'].isin(funds_list)]
+    final_position_level_ytd_pnl = pd.merge(position_level_pnl, position_level_ytd_pnl,
+                                            left_on=['Group', 'TradeGroup', 'TICKER_x'],
+                                            right_on=['Fund', 'TradeGroup', 'Ticker'])
+    final_position_level_ytd_pnl['MKTVAL_CHG_USD'] = (final_position_level_ytd_pnl['MKTVAL_CHG_USD'] +
+                                                      final_position_level_ytd_pnl['YtdTickerPnlDollar'])
+    final_ytd_options = pd.merge(final_position_level_ytd_pnl, ytd_options, on=['Fund', 'TradeGroup'], how='right')
+    final_ytd_options = final_ytd_options[['Group', 'TradeGroup', 'YtdOptionsDollar', 'Options']].copy()
+    final_ytd_options['START_ADJ_PX'] = 0
+    final_ytd_options['END_ADJ_PX'] = 0
+    final_ytd_options.rename(columns={'YtdOptionsDollar': 'MKTVAL_CHG_USD', 'Options': 'TICKER_x'}, inplace=True)
+    final_ytd_options = pd.pivot_table(final_ytd_options,
+                                       index=['TradeGroup', 'TICKER_x', 'START_ADJ_PX', 'END_ADJ_PX'],
+                                       columns=['Group'], aggfunc='first', fill_value=0).reset_index()
+    final_ytd_options.columns = ["_".join((i, j)) for i, j in final_ytd_options.columns]
 
-    position_level_pnl = position_level_pnl[position_level_pnl['Group'].isin(['ARB', 'AED', 'LG', 'MACO', 'TAQ', 'CAM',
-                                                                              'LEV', 'TACO', 'MALT', 'WED'])]
-
+    final_position_level_ytd_pnl = final_position_level_ytd_pnl[['TradeGroup', 'TICKER_x', 'START_ADJ_PX',
+                                                                 'END_ADJ_PX', 'Group', 'MKTVAL_CHG_USD']].copy()
+    final_position_level_ytd_pnl = pd.pivot_table(final_position_level_ytd_pnl,
+                                                  index=['TradeGroup', 'TICKER_x', 'START_ADJ_PX', 'END_ADJ_PX'],
+                                                  columns=['Group'], aggfunc='first',
+                                                  fill_value=0).reset_index()
+    final_position_level_ytd_pnl.columns = ["_".join((i, j)) for i, j in final_position_level_ytd_pnl.columns]
+    final_position_level_ytd_pnl = final_position_level_ytd_pnl.append(final_ytd_options)
+    final_position_level_ytd_pnl.reset_index(inplace=True)
+    del final_position_level_ytd_pnl['index']
     position_level_pnl = pd.pivot_table(position_level_pnl, index=['TradeGroup', 'TICKER_x', 'START_ADJ_PX',
                                                                    'END_ADJ_PX'], columns=['Group'], aggfunc='first',
                                         fill_value=0).reset_index()
     position_level_pnl.columns = ["_".join((i, j)) for i, j in position_level_pnl.columns]
     position_level_pnl.reset_index(inplace=True)
     del position_level_pnl['index']
-    position_level_pnl = position_level_pnl.round(decimals=2)  # Round to 2 decimals
+    position_level_pnl = position_level_pnl.round(decimals=2)
+    final_position_level_ytd_pnl = final_position_level_ytd_pnl.round(decimals=2)  # Round to 2 decimals
 
     table_df = table_df[['Group', 'TradeGroup', 'START_ADJ_PX', 'END_ADJ_PX', 'PX_CHG_PCT', 'Qty_x', 'Analyst',
                          'Capital($)_x', 'Capital(%)_x', 'START_MKTVAL', 'END_MKTVAL', 'MKTVAL_CHG_USD']]
@@ -189,7 +226,7 @@ def get_data():
     except:
         final_daily_pnl = pd.DataFrame()
 
-    return final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live
+    return final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl
 
 
 def live_pnl_monitors(request):

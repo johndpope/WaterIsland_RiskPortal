@@ -838,7 +838,7 @@ def email_pl_target_loss_budgets():
             writer.save()
             return buffer.getvalue()
 
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live = views.get_data()
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl = views.get_data()
     final_live_df = final_live_df.style.apply(excel_formatting, axis=1)
 
     exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
@@ -996,7 +996,7 @@ def calculate_realtime_pnl_budgets():
     if 'id' in pnl_budgets.columns.values:
         pnl_budgets.drop(columns=['id'], inplace=True)
 
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live = views.get_data()
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl = views.get_data()
     fund_daily_pnl = pd.Series([])
     fund_daily_pnl_sum = pd.Series([])
     daily_pnl_df = pd.DataFrame()

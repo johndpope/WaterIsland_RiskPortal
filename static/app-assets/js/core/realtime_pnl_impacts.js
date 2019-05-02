@@ -4,6 +4,7 @@ $(document).ready(function () {
     let realtime_pnl_table = $('#realtime_pnl_table').DataTable(get_pnl_table_initialization_configuration("live_tradegroup_pnl", "Total YTD", "data"));
     let realtime_daily_pnl_table = $('#realtime_daily_pnl_table').DataTable(get_pnl_table_initialization_configuration("live_tradegroup_pnl", "Daily", "daily_pnl"));
     let position_level_pnl = null;
+    let final_position_level_ytd_pnl = null;
     let fund_level_pnl = null;
     // Now create the Dynamic Fund Tabs for Fund level P&L
     createFundPnLTables();
@@ -26,7 +27,7 @@ $(document).ready(function () {
         }
         else {
             // Open this row
-            row.child(format(row.data())).show();
+            row.child(format(row.data(), true)).show();
             tr.addClass('shown');
         }
     });
@@ -42,7 +43,7 @@ $(document).ready(function () {
         }
         else {
             // Open this row
-            row.child(format(row.data())).show();
+            row.child(format(row.data(), false)).show();
             tr.addClass('shown');
         }
     });
@@ -244,6 +245,7 @@ $(document).ready(function () {
                 dataSrc: function (json) {
                     let obj = JSON.parse(json[[json_response_tag]]);
                     position_level_pnl = JSON.parse(json[['position_level_pnl']]);
+                    final_position_level_ytd_pnl = JSON.parse(json[['final_position_level_ytd_pnl']]);
                     last_synced_on = json[['last_synced_on']];
                     return obj;
                 }
@@ -350,34 +352,40 @@ $(document).ready(function () {
         }
     }
 
-    function format(d) {
-        let tradegroup = d['TradeGroup_'];
+    function format(data, is_ytd) {
+        let tradegroup = data['TradeGroup_'];
         let return_rows = '';
+        if (is_ytd == true) {
+            dataframe = final_position_level_ytd_pnl;
+        }
+        else {
+            dataframe = position_level_pnl;
+        }
         // Get Equivalent Row from Positions Impacts
-        for (var i = 0; i < position_level_pnl.length; i++) {
-            if (position_level_pnl[i]['TradeGroup_'] === tradegroup) {
+        for (var i = 0; i < dataframe.length; i++) {
+            dataframe_row = dataframe[i];
+            if (dataframe_row['TradeGroup_'] === tradegroup) {
                 // Return corresponding rows
                 return_rows += '<tr>' +
                     '<td></td>' +
-                    '<td>' + position_level_pnl[i]['TradeGroup_'] + '</td>' +
-                    '<td>' + position_level_pnl[i]['TICKER_x_'] + '</td>' +
-                    position_level_pnl[i]['START_ADJ_PX_'] +
-                    position_level_pnl[i]['END_ADJ_PX_'] +
-                    position_level_pnl[i]['MKTVAL_CHG_USD_ARB'] +
-                    position_level_pnl[i]['MKTVAL_CHG_USD_MACO'] +
-                    position_level_pnl[i]['MKTVAL_CHG_USD_MALT'] +
-                    position_level_pnl[i]['MKTVAL_CHG_USD_LEV'] +
-                    position_level_pnl[i]['MKTVAL_CHG_USD_AED'] +
-                    position_level_pnl[i]['MKTVAL_CHG_USD_CAM'] +
-                    position_level_pnl[i]['MKTVAL_CHG_USD_LG'] +
-                    position_level_pnl[i]['MKTVAL_CHG_USD_WED'] +
-                    position_level_pnl[i]['MKTVAL_CHG_USD_TAQ'] +
-                    position_level_pnl[i]['MKTVAL_CHG_USD_TACO'] +
+                    '<td>' + dataframe_row['TradeGroup_'] + '</td>' +
+                    '<td>' + dataframe_row['TICKER_x_'] + '</td>' +
+                    dataframe_row['START_ADJ_PX_'] +
+                    dataframe_row['END_ADJ_PX_'] +
+                    dataframe_row['MKTVAL_CHG_USD_ARB'] +
+                    dataframe_row['MKTVAL_CHG_USD_MACO'] +
+                    dataframe_row['MKTVAL_CHG_USD_MALT'] +
+                    dataframe_row['MKTVAL_CHG_USD_LEV'] +
+                    dataframe_row['MKTVAL_CHG_USD_AED'] +
+                    dataframe_row['MKTVAL_CHG_USD_CAM'] +
+                    dataframe_row['MKTVAL_CHG_USD_LG'] +
+                    dataframe_row['MKTVAL_CHG_USD_WED'] +
+                    dataframe_row['MKTVAL_CHG_USD_TAQ'] +
+                    dataframe_row['MKTVAL_CHG_USD_TACO'] +
                     '</tr>'
             }
         }
 
-        // `d` is the original data object for the row
         return '<div class="table-responsive" style="padding-left:3%"> <table class="table table-striped table-bordered" border="0">' +
             '<thead>' +
             '<tr>' +
