@@ -199,6 +199,13 @@ def refresh_base_case_and_outlier_downsides():
             con=con)
         # Drop the Last Price
         time.sleep(2)
+
+        # Todo Improve this
+        nav_impacts_positions_df = nav_impacts_positions_df[~(nav_impacts_positions_df['FundCode'].isin(['INDEX1',
+                                                                                                         'INDEX2',
+                                                                                                         'ETF1',
+                                                                                                         'ETF2']))]
+
         nav_impacts_positions_df.drop(columns=['LastPrice', 'RiskLimit'], inplace=True)
 
         ytd_performances = pd.read_sql_query(
@@ -629,6 +636,7 @@ def email_daily_formulae_linked_downsides():
         time.sleep(3)
 
         alert_message = ''
+        downsides_df = downsides_df[downsides_df['IsExcluded'] == 'No']
         null_risk_limits = downsides_df[(downsides_df['RiskLimit'] == 0) | (pd.isna(downsides_df['RiskLimit']) |
                                                                             (downsides_df['RiskLimit'].astype(str) == ''
                                                                              ))]['TradeGroup'].unique()
