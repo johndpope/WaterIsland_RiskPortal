@@ -12,7 +12,7 @@ $(document).ready(function () {
         "aaSorting": [[0,'desc']],
         "pageLength": 25,
     });
-    $('#wic_note_article').summernote({'height': 200});
+    $('#wic_note_article').summernote({'height': '450px'});
 
     $('#submit_wic_notes_form').on('submit', function (e) {
         e.preventDefault(); //to Stop from Refreshing
@@ -144,7 +144,7 @@ $(document).ready(function () {
                     $('#wic_notes_edit_date').val(date.toString()); //Todo: Date not setting
                     $('#wic_notes_edit_title').val(title);
                     $('#wic_notes_edit_author').val(author);
-                    $('#wic_notes_edit_article').summernote({'height': "100px"});
+                    $('#wic_notes_edit_article').summernote({'height': "400px"});
                     $('#wic_notes_edit_article').summernote('code', article);
                     $('#wic_notes_edit_tickers').val(tickers);
                 },

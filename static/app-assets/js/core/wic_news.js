@@ -4,7 +4,7 @@ $(document).ready(function(){
         "aaSorting": [[0,'desc']],
         "pageLength": 100,
         });
-    $('#wic_news_article').summernote({'height':250});
+    $('#wic_news_article').summernote({'height':450});
 
     $('#wic_news_url').on('focusout',function(){
        var url = $('#wic_news_url').val();
@@ -112,7 +112,7 @@ $(document).ready(function(){
             $('#wic_news_edit_url').val(url);
             $('#wic_news_edit_author').val(author);
             $('#wic_news_edit_tickers').val(tickers);
-            $('#wic_news_edit_article').summernote();
+            $('#wic_news_edit_article').summernote({'height':'450px'});
             $('#wic_news_edit_article').summernote('code', article);
 
             // Display the Modal

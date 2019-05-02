@@ -52,12 +52,15 @@ $(document).ready(function () {
     function refreshPnL() {
         realtime_pnl_table.ajax.reload(null, true);
         realtime_daily_pnl_table.ajax.reload(null, true);
+        createFundPnLTables()
         console.log('Requesting Updated P&L..');
         $('#last_sycned').text(last_synced_on);
     }
 
     function createFundPnLTables() {
         // Fires Ajax and Retrieves the Fund Level JSON
+        $('#fundtabs').empty();
+        $('#fund-tab-content').empty();
         $.ajax({
             type: 'POST',
             url: '../realtime_pnl_impacts/fund_level_pnl',

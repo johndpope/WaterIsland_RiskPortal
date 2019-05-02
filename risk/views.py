@@ -1846,6 +1846,7 @@ def delete_ess_idea(request):
 
     return HttpResponse(response)
 
+
 def get_attachments(request):
     """ Retreives the uploaded attachement for the ESS """
     bull_attachments = None
@@ -1872,6 +1873,7 @@ def get_attachments(request):
 
     return JsonResponse({'bull_attachments': bull_attachments, 'our_attachments': our_attachments,
                          'bear_attachments': bear_attachments})
+
 
 def ess_idea_download_handler(request):
     """
