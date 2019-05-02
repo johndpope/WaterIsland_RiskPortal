@@ -8,10 +8,11 @@ $(document).ready(function () {
             targets: [0], render: function (data) {
                 return moment(data).format('YYYY-MM-DD');
             }
-        }]
+        }],
+        "aaSorting": [[0,'desc']],
+        "pageLength": 25,
     });
     $('#wic_note_article').summernote({'height': 200});
-
 
     $('#submit_wic_notes_form').on('submit', function (e) {
         e.preventDefault(); //to Stop from Refreshing
@@ -21,6 +22,7 @@ $(document).ready(function () {
         var title = $('#wic_notes_title').val();
         var author = $('#wic_notes_author').val();
         var tickers = $('#wic_notes_tickers').val();
+        var emails = $('#wic_notes_emails').val();
         var csrf_token = $('#wic_notes_csrf_token').val();
 
         var data = new FormData();
@@ -35,6 +37,7 @@ $(document).ready(function () {
         data.append('title', title);
         data.append('author', author);
         data.append('tickers', tickers);
+        data.append('emails', emails);
 
         //POST The Data to be Inserted into the Database
 
@@ -49,8 +52,6 @@ $(document).ready(function () {
                 $('body').removeClass('modal-open');
                 $('.modal-backdrop').remove();
                 // Reset the Notes Submission Form
-
-
                 // Reset the SummerNote
                 $('#wic_note_article').summernote('code', '');
 
@@ -66,7 +67,7 @@ $(document).ready(function () {
                     var year = date_split[0];
                     var month = date_split[1];
                     var day = date_split[2];
-                    var newRow = '<tr id="row_' + response + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + article + '</td>' + '<td>' + tickers + '</td>' +
+                    var newRow = '<tr id="row_' + response + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + tickers + '</td>' +
                         '<td><div class="btn-group">' +
                         '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
                         '<i class="ft-settings"></i>' +
@@ -106,50 +107,51 @@ $(document).ready(function () {
             // Steps. Populate Edit Modal with existing fields. Show Modal. Make changes through Ajax. Get Response.
             // Display success Alert
             var notes_id_to_edit = current_note.split('_')[1]; //Get the ID
-            var edit_row = $('#row_' + notes_id_to_edit);
             remove_file_ids = [];
             $('#submit_wic_notes_edit_form').trigger('reset');
             $('#edit_selected_notes_attachments').empty();
             $('#edit_notes_attachments').empty();
 
-            var $tds = edit_row.find('td');
-            var date = $tds.eq(0).text();
-            var title = $tds.eq(1).text();
-            var author = $tds.eq(2).text();
-            var article = edit_row.data('article');
-            var tickers = $tds.eq(3).text();
-            var formatted_date = moment(new Date(date)).format('YYYY-MM-DD');
+            var date = '';
+            var title = '';
+            var author = '';
+            var article = '';
+            var tickers = '';
             $('#edit_selected_notes_attachments').text('');
-            // Collect Uploaded Files through Ajax
+            // Collect Note Details and Attachments through Ajax
             $.ajax({
-                url: "../notes/get_attachments/",
+                url: "../notes/get_note_details/",
                 type: 'POST',
                 data: {'notes_id': notes_id_to_edit},
                 success: function (response) {
                     let attachments = response['attachments'];
+                    let note_details = response['note_details'];
                     if (attachments.length > 0) {
                         let files = "";
                         for (var i = 0; i < attachments.length; i++) {
-                            console.log(attachments[i])
-                            files += "<a href=" + attachments[i].url + ">" + attachments[i].filename + "</a> <a class='remove_file' data-id='remove_notes_" + notes_id_to_edit + "_file_" + attachments[i].id + "' href='#'><i class='ft-trash-2'></i></a><br />";
+                            files += "<a href=" + attachments[i].url + " target='_blank'>" + attachments[i].filename +
+                                     "</a> <a class='remove_file' data-id='remove_notes_" + notes_id_to_edit +
+                                     "_file_" + attachments[i].id + "' href='#'><i class='ft-trash-2'></i></a><br />";
                         }
                         $('#edit_notes_attachments').html(files);
                     }
+                    date = moment(new Date(note_details.date)).format('YYYY-MM-DD');
+                    tickers = note_details.tickers;
+                    author = note_details.author;
+                    article = note_details.article;
+                    title = note_details.title;
+                    $('#wic_notes_edit_id').val(notes_id_to_edit);
+                    $('#wic_notes_edit_date').val(date.toString()); //Todo: Date not setting
+                    $('#wic_notes_edit_title').val(title);
+                    $('#wic_notes_edit_author').val(author);
+                    $('#wic_notes_edit_article').summernote({'height': "100px"});
+                    $('#wic_notes_edit_article').summernote('code', article);
+                    $('#wic_notes_edit_tickers').val(tickers);
                 },
                 error: function (err) {
                     console.log(err);
                 }
             });
-
-
-            // Populate the Edit Modal Inputs with these values
-            $('#wic_notes_edit_id').val(notes_id_to_edit);
-            $('#wic_notes_edit_date').val(formatted_date.toString()); //Todo: Date not setting
-            $('#wic_notes_edit_title').val(title);
-            $('#wic_notes_edit_author').val(author);
-            $('#wic_notes_edit_article').summernote({'height': "100px"});
-            $('#wic_notes_edit_article').summernote('code', article);
-            $('#wic_notes_edit_tickers').val(tickers);
 
             // Display the Modal
             $('#wic_note_edit_modal').modal('show');
@@ -202,13 +204,31 @@ $(document).ready(function () {
         else {
             //Logic to View the Deal
             //Just take the URL and redirect to the page. Front-end handling
+            $('#view_notes_attachments').empty();
             var note_to_view = current_note.split('_')[1];
-            var edit_row = $('#row_' + note_to_view);
-            var $tds = edit_row.find('td');
-            var article = edit_row.attr('data-article');
-            // Just populate WicNote View Article
-            $('#wic_note_view_article').summernote({'height': "400px"});
-            $('#wic_note_view_article').summernote('code', article);
+
+            $.ajax({
+                url: "../notes/get_note_details/",
+                type: 'POST',
+                data: {'notes_id': note_to_view},
+                success: function (response) {
+                    let attachments = response['attachments'];
+                    let note_details = response['note_details'];
+                    if (attachments.length > 0) {
+                        let files = "";
+                        for (var i = 0; i < attachments.length; i++) {
+                            files += "<a href=" + attachments[i].url + " target='_blank'>" + attachments[i].filename + "</a><br />";
+                        }
+                        $('#view_notes_attachments').html(files);
+                    }
+                    var article = note_details.article;
+                    $('#wic_note_view_article').summernote({'height': "400px"});
+                    $('#wic_note_view_article').summernote('code', article);
+                },
+                error: function (err) {
+                    console.log(err);
+                }
+            });
             $('#wic_notes_view_modal').modal('show');
         }
     });
