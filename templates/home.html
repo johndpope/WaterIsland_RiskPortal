@@ -5,8 +5,6 @@
 {% endblock %}
 {% block content %}
 
-    <!-- ////////////////////////////////////////////////////////////////////////////-->
-
     <div class="app-content content">
         <!-- TradingView Widget BEGIN -->
         <div class="tradingview-widget-container">
@@ -75,19 +73,24 @@
                     <!-- Carousel for Finance News -->
                     <div class="col-lg-5 col-md-12 col-sm-12" >
                         <div class="card">
+                            <div class="card-header"></div>
                             <div class="card-content " >
+                                <div class="row" >
+                                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">
+                                        <h3 class="card-title center bold">Trending News</h3>
+                                    </div>
+                                </div>
                                 <div id='news-card-body' class="card-body col-lg-12" >
-                                    <h4 class="card-title center">Trending News</h4>
                                     <div id="carousel-interval" class="carousel " data-ride="carousel">
                                         <ol id='carousel-indicators' class="carousel-indicators"></ol>
                                         <div id='carousel-inner' class="carousel-inner" role="listbox"></div>
-                                        <a class="carousel-control-prev carousel-control" href="#carousel-interval" role="button"
-                                           data-slide="prev">
+                                        <a class="carousel-control-prev carousel-control" href="#carousel-interval"
+                                           role="button" data-slide="prev">
                                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                                             <span class="sr-only">Previous</span>
                                         </a>
-                                        <a class="carousel-control-next carousel-control" href="#carousel-interval" role="button"
-                                           data-slide="next">
+                                        <a class="carousel-control-next carousel-control" href="#carousel-interval"
+                                           role="button" data-slide="next">
                                             <span class="carousel-control-next-icon" aria-hidden="true"></span>
                                             <span class="sr-only">Next</span>
                                         </a>
@@ -106,20 +109,22 @@
                             </div>
                             <div class="card-content ">
                                 <div class="row" >
-                                    <div class="col-lg-6 offset-3">
+                                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">
                                         <h3 class="card-title center bold">Realtime P&L Monitors</h3>
                                     </div>
-                                    <div class="col-lg-3" id="synced_on_placeholder"></div>
+                                </div>
+                                <div class="row" >
+                                    <div class="col-lg-12 col-md-12 col-sm-12 text-center" id="synced_on_placeholder"></div>
                                 </div>
                                 <h5 class="center" id="last_synced_pnl_monitors"> </h5>
-                                <div id='pnl_monitors_card' class="card-body col-lg-12 col-md-12 col-sm-12 table-responsive" >
+                                <div id='pnl_monitors_card' class="card-body col-lg-12 col-md-12 col-sm-12" >
                                     <p style="text-align: right">* Above data has been calculated using Average YTD Investable Assets</p>
                                 </div>
-                                
                             </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="row">
                     <div class="col-lg-3 col-md-12">
                         <div class="card no-border box-shadow-0" style="height: 400px">
@@ -146,7 +151,6 @@
 
                                         </svg>
                                     </div>
-
                                 </div>
                                 <div class="card-footer bg-info">
                                     <div class="row">

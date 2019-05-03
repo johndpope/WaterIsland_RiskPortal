@@ -184,11 +184,11 @@ $(document).ready(function () {
                 let pnl_monitors_data = $.parseJSON(data['data']);
                 let last_updated = data['last_updated'];
 
-                let span = '<span class="badge badge-secondary">'+last_updated+'</span>';
+                let span = '<span class="badge badge-secondary">' + moment(last_updated).format('MMMM Do YYYY, h:mm a') + '</span>';
                 $('#synced_on_placeholder').text("Synced on: ");
                 $('#synced_on_placeholder').append(span);
                 // Collect Distinct Funds
-                let funds_order = ['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV'];
+                let funds_order = ['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV', 'TACO', 'TAQ'];
 
 
                 let first_header = '<tr class="' + "border border-dark" + '">';
@@ -212,10 +212,10 @@ $(document).ready(function () {
                         class_ = "border border-dark";
                     }
                     pnl_rows += '<tr class="' + class_ + '"style="' + style + '">';
-                    pnl_rows += '<td>' + metric + '</td>';
+                    pnl_rows += '<td style="white-space:nowrap;">' + metric + '</td>';
                     for (var i = 0; i < funds_order.length; i++) {
                         // Append for each fund...
-                        pnl_rows += '<td>' + funds_dict[funds_order[i]]
+                        pnl_rows += '<td style="white-space:nowrap;">' + funds_dict[funds_order[i]]
                         if (metric == 'Ann. Gross P&L Target %') {
                             edit_button = '<button type="button" class="btn btn-link btn-sm" id="edit_profit_' +
                                           funds_order[i] + '"><span class="icon-fixed-width icon-pencil"></span></button>';
@@ -231,24 +231,26 @@ $(document).ready(function () {
                     pnl_rows += '</tr>'
                 });
 
-
-                let table = "<table id='realtime_pnl_monitors_table' class=\"table table-striped table-hover text-dark table-sm\"><thead>" +
-                    first_header +
-                    "</thead>" + "<tbody>" +
-                    pnl_rows +
-                    "</tbody></table>" +
-                    "<p style='text-align: right'>* Above data has been calculated using Average YTD Investable Assets</p>";
+                let table = "<table id='realtime_pnl_monitors_table'" +
+                            "class=\"table table-striped table-hover text-dark table-sm table-responsive\"><thead>" +
+                            first_header + "</thead>" + "<tbody>" + pnl_rows + "</tbody></table>" +
+                            "<p style='text-align: right'>" +
+                            "* Above data has been calculated using Average YTD Investable Assets</p>";
 
 
                 // Append table
                 $('#pnl_monitors_card').append(table);
+                var target_index = [];
+                for (var i = 1; i <= funds_order.length; i++) {
+                    target_index.push(i);
+                }
                 $('#realtime_pnl_monitors_table').DataTable({
                     'bInfo': false,
                     'searching': false,
                     'paging': false,
                     'ordering': false,
                     "columnDefs": [{
-                        "targets": [1, 2, 3, 4, 5, 6, 7],
+                        "targets": target_index,
                         "createdCell": function (td, cellData, rowData, rowIndex) {
                             if (rowIndex !== 7) {
                                 cellData = cellData.replace('%', '').replace(',', '');

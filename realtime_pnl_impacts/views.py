@@ -249,7 +249,7 @@ def live_pnl_monitors(request):
 
         pivoted = pd.pivot_table(df, columns=['Fund'], aggfunc=lambda x: x, fill_value='')
 
-        pivoted = pivoted[['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV']]
+        pivoted = pivoted[['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV', 'TACO', 'TAQ']]
         pivoted = pivoted.reindex(['AUM',
                                    'Ann. Gross P&L Target %',
                                    'Gross YTD Return',
@@ -268,12 +268,14 @@ def live_pnl_monitors(request):
         df2 = pivoted.iloc[7:].copy()
         df3 = pd.DataFrame([list(pivoted.columns.values)], columns=list(pivoted.columns.values))
         df1 = df1.append(df3)
+        df1.index.values[5] = '* Ann. Gross P&L Target $'
         df1.index.values[7] = 'Loss Budgets'
         df1 = df1.append(df2)
         df1.index.values[8] = 'Ann Loss Budget %'
         df1.index.values[0] = 'Investable Assets'
         df1.index.values[4] = 'Time Passed%'
         df1.index.values[10] = 'Time Passed %'
+        df1.index.values[11] = '* Ann Loss Budget $'
 
         return JsonResponse({'data': df1.to_json(orient='index'),
                              'last_updated': last_updated})

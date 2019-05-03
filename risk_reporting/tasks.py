@@ -729,7 +729,7 @@ def email_pl_target_loss_budgets():
     loss_budgets = loss_budgets.drop(columns=['Last Updated'])
 
     pivoted = pd.pivot_table(loss_budgets, columns=['Fund'], aggfunc=lambda x: x, fill_value='')
-    pivoted = pivoted[['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV']]
+    pivoted = pivoted[['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV', 'TACO', 'TAQ']]
     pivoted = pivoted.reindex(['AUM',
                                'Ann Gross P&L Target %',
                                'Gross YTD Return',
@@ -749,12 +749,14 @@ def email_pl_target_loss_budgets():
     df2 = pivoted.iloc[8:].copy()
     df3 = pd.DataFrame([list(pivoted.columns.values)], columns=list(pivoted.columns.values))
     df1 = df1.append(df3)
+    df1.index.values[5] = '* Ann Gross P&L Target $'
     df1.index.values[8] = 'Loss Budgets'
     df1 = df1.append(df2)
     df1.index.values[9] = 'Ann Loss Budget %'
     df1.index.values[0] = 'Investable Assets'
     df1.index.values[4] = 'Time Passed%'
     df1.index.values[11] = 'Time Passed %'
+    df1.index.values[12] = '* Ann Loss Budget $'
     df1 = df1.replace(np.nan, '', regex=True)
 
     now_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
@@ -819,8 +821,14 @@ def email_pl_target_loss_budgets():
                   <body>
                     <p>PL Targets & Loss Budgets ({date})</p>
                     <a href="http://192.168.0.16:8000">Click to visit Realtime PL Targets & Loss Budgets Page</a>
+                    <br>
+                    <a href="http://192.168.0.16:8000/realtime_pnl_impacts/live_tradegroup_pnl">
+                        Click to visit Realtime TradeGroup PL Page
+                    </a>
                     <br><br>
                     {table}
+                    <br>
+                    <p>* Above data has been calculated using Average YTD Investable Assets</p>
                   </body>
                 </html>
         """.format(table=styled_html.render(), date=now_date)
@@ -839,6 +847,9 @@ def email_pl_target_loss_budgets():
             return buffer.getvalue()
 
     final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl = views.get_data()
+    final_live_df = final_live_df[['TradeGroup_', 'Sleeve_', 'Catalyst_', 'Total YTD PnL_ARB', 'Total YTD PnL_MACO',
+                                   'Total YTD PnL_MALT', 'Total YTD PnL_LEV', 'Total YTD PnL_AED', 'Total YTD PnL_CAM',
+                                   'Total YTD PnL_LG', 'Total YTD PnL_WED', 'Total YTD PnL_TAQ', 'Total YTD PnL_TACO']]
     final_live_df = final_live_df.style.apply(excel_formatting, axis=1)
 
     exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
@@ -851,12 +862,12 @@ def email_pl_target_loss_budgets():
 
 def push_data_to_table(df):
     df = df.rename(columns={'Fund': 'fund', 'YTD Active Deal Losses': 'ytd_active_deal_losses',
-                       'YTD Closed Deal Losses': 'ytd_closed_deal_losses', 'Loss Budget': 'ann_loss_budget_perc',
-                       'AUM': 'investable_assets', 'Gross YTD P&L': 'gross_ytd_pnl', 'Time Passed': 'time_passed',
-                       'Ann Gross P&L Target %': 'ann_gross_pnl_target_perc', 'Gross YTD Return': 'gross_ytd_return',
-                       'Ann Gross P&L Target $': 'ann_gross_pnl_target_dollar', 'YTD P&L % of Target': 'ytd_pnl_perc_target',
-                       'Ann Loss Budget $': 'ann_loss_budget_dollar', 'YTD Total Loss % of Budget': 'ytd_total_loss_perc_budget',
-                       'Last Updated': 'last_updated'})
+                            'YTD Closed Deal Losses': 'ytd_closed_deal_losses', 'Loss Budget': 'ann_loss_budget_perc',
+                            'AUM': 'investable_assets', 'Gross YTD P&L': 'gross_ytd_pnl', 'Time Passed': 'time_passed',
+                            'Ann Gross P&L Target %': 'ann_gross_pnl_target_perc', 'Last Updated': 'last_updated',
+                            'Ann Gross P&L Target $': 'ann_gross_pnl_target_dollar', 'YTD P&L % of Target': 'ytd_pnl_perc_target',
+                            'Ann Loss Budget $': 'ann_loss_budget_dollar', 'Gross YTD Return': 'gross_ytd_return',
+                            'YTD Total Loss % of Budget': 'ytd_total_loss_perc_budget'})
     df = df.applymap(str)
     engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD +
                            "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
