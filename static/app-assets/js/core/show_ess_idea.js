@@ -19,8 +19,22 @@ $(document).ready(function () {
      ***********************************************************/
     $('.premium-analysis').hide();
     $('.premium-analysis-table').hide();
-    $('#show_ess_idea_news_items').DataTable();
-    $('#show_ess_idea_notes_table').DataTable();
+    $('#show_ess_idea_news_items').DataTable({
+        "aaSorting": [[0,'desc']],
+        columnDefs: [{
+            targets: [0], render: function (data) {
+                return moment(data).format('YYYY-MM-DD');
+            }
+        }],
+    });
+    $('#show_ess_idea_notes_table').DataTable({
+        "aaSorting": [[0,'desc']],
+        columnDefs: [{
+            targets: [0], render: function (data) {
+                return moment(data).format('YYYY-MM-DD');
+            }
+        }],
+    });
     var peer_valution_table = $('#peer_valuation_table').DataTable({
         "aoColumnDefs": [{
             "aTargets": [4, 5, 6, 7, 8, 9],
@@ -542,9 +556,24 @@ $(document).ready(function () {
     function generateUpsideDownsideTrackRecordData() {
         let upside_downside_records = JSON.parse($('#upside_downside_records_df').val());
         let chartData = [];
-        $('#model-upside').html("Upside: "+parseFloat(upside_downside_records[upside_downside_records.length-1].pt_up).toFixed(2));
-        $('#model-downside').html("Downside: "+parseFloat(upside_downside_records[upside_downside_records.length-1].pt_down).toFixed(2));
-        $('#model-ptwic').html("PT WIC: "+parseFloat(upside_downside_records[upside_downside_records.length-1].pt_wic).toFixed(2));
+
+        let model_upside = parseFloat(upside_downside_records[upside_downside_records.length-1].pt_up).toFixed(2);
+        let model_downside = parseFloat(upside_downside_records[upside_downside_records.length-1].pt_down).toFixed(2);
+        let model_pt_wic = parseFloat(upside_downside_records[upside_downside_records.length-1].pt_wic).toFixed(2);
+
+        if(model_upside === 0){
+            model_upside = $('#analyst_upside').val();
+        }
+        if(model_downside === 0){
+            model_downside = $('#analyst_downside').val();
+        }
+        if(model_pt_wic === 0){
+            model_pt_wic = $('#analyst_pt_wic').val();
+        }
+
+        $('#model-upside').html("Upside: "+ model_upside);
+        $('#model-downside').html("Downside: "+ model_downside);
+        $('#model-ptwic').html("PT WIC: "+ model_pt_wic);
         for (let i = 0; i < upside_downside_records.length; i++) {
             chartData.push({
                 date: upside_downside_records[i].date_updated,

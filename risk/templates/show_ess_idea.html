@@ -22,6 +22,12 @@
             <input type="hidden" id="regression_calcs_latest" value="{{ regression_calculations }}">
             <input type="hidden" id="cix_calcs_latest" value="{{ cix_calculations }}">
 
+            <input type="hidden" id="analyst_upside" value="{{ ess_idea_object.pt_up }}">
+            <input type="hidden" id="analyst_downside" value="{{ ess_idea_object.pt_down }}">
+            <input type="hidden" id="analyst_pt_wic" value="{{ ess_idea_object.pt_wic }}">
+
+
+
             <div class="modal animated lightSpeedIn text-left" id="ess_idea_calculations_modal" tabindex="-1"
                  role="dialog"
                  aria-labelledby="myModalLabel42" aria-hidden="true">
