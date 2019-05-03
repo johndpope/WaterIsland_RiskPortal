@@ -561,13 +561,13 @@ $(document).ready(function () {
         let model_downside = parseFloat(upside_downside_records[upside_downside_records.length-1].pt_down).toFixed(2);
         let model_pt_wic = parseFloat(upside_downside_records[upside_downside_records.length-1].pt_wic).toFixed(2);
 
-        if(model_upside === 0){
+        if(parseFloat(model_upside) === 0){
             model_upside = $('#analyst_upside').val();
         }
-        if(model_downside === 0){
+        if(parseFloat(model_downside) === 0){
             model_downside = $('#analyst_downside').val();
         }
-        if(model_pt_wic === 0){
+        if(parseFloat(model_pt_wic) === 0){
             model_pt_wic = $('#analyst_pt_wic').val();
         }
 
@@ -788,11 +788,11 @@ $(document).ready(function () {
     });
 
 
-    $('#ess_bull_thesis').summernote({toolbar: [], height: 360});
+    $('#ess_bull_thesis').summernote({toolbar: [], height: 700});
     $('#ess_bull_thesis').summernote('disable');
-    $('#ess_bear_thesis').summernote({toolbar: [], height: 360});
+    $('#ess_bear_thesis').summernote({toolbar: [], height: 700});
     $('#ess_bear_thesis').summernote('disable');
-    $('#ess_our_thesis').summernote({toolbar: [], height: 360});
+    $('#ess_our_thesis').summernote({toolbar: [], height: 700});
     $('#ess_our_thesis').summernote('disable');
 
 

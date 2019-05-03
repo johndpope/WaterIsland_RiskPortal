@@ -89,9 +89,9 @@ $(document).ready(function () {
     });
 
 
-    $('#ess_bull_thesis').summernote({dialogsInBody: true, height: 360});
-    $('#ess_our_thesis').summernote({dialogsInBody: true, height: 360});
-    $('#ess_bear_thesis').summernote({dialogsInBody: true, height: 360});
+    $('#ess_bull_thesis').summernote({dialogsInBody: true, height: 700});
+    $('#ess_our_thesis').summernote({dialogsInBody: true, height: 700});
+    $('#ess_bear_thesis').summernote({dialogsInBody: true, height: 700});
 
 
 // ----------------- Auto Population of GICS Sector -------------------------
