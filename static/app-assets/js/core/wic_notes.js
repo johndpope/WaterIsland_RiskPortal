@@ -17,6 +17,13 @@ $(document).ready(function () {
     $('#submit_wic_notes_form').on('submit', function (e) {
         e.preventDefault(); //to Stop from Refreshing
         //Get all the fields and make an Ajax call. Wait for Response, if positive, show toaster and append this new row to the existing table
+        swal({
+            title: "Saving",
+            text: "Hold on!",
+            buttons: false,
+            icon: "info",
+            closeOnClickOutside: false,
+        });
         var article = $('#wic_note_article').summernote('code');
         var date = $('#wic_notes_date').val();
         var title = $('#wic_notes_title').val();
@@ -55,10 +62,10 @@ $(document).ready(function () {
                 // Reset the SummerNote
                 $('#wic_note_article').summernote('code', '');
 
-                if (response === 'failed') {
+                if (response.note_created == 'false') {
                     swal("Error!", "Adding Note Failed!", "error");
                 }
-                else {
+                else if (response.note_created == 'true') {
                     var monthNames = ["Jan", "Feb", "March", "April", "May", "June",
                         "July", "August", "Sept", "Oct", "Nov", "Dec"
                     ];
@@ -67,20 +74,26 @@ $(document).ready(function () {
                     var year = date_split[0];
                     var month = date_split[1];
                     var day = date_split[2];
-                    var newRow = '<tr id="row_' + response + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + tickers + '</td>' +
+                    var newRow = '<tr id="row_' + response.notes_id + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + tickers + '</td>' +
                         '<td><div class="btn-group">' +
                         '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
                         '<i class="ft-settings"></i>' +
                         '</button>' +
                         '<ul class="dropdown-menu">' +
-                        '<li><a id="edit_' + response + '" data-value="{{ notes_item.id }}" class=\'dropdown-item\' href="#"><i class="ft-edit-2"></i> Edit</a></li>' +
-                        '<li><a id="delete_' + response + '" data-value="{{ notes_item.id }}" class=\'dropdown-item\' href="#"><i class="ft-trash-2"></i> Delete</a></li>' +
-                        '<li><a id="view_' + response + '" data-value="{{ notes_item.id }}" class=\'dropdown-item\' href="#"><i class="ft-plus-circle primary"></i> View</a></li>' +
+                        '<li><a id="edit_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-edit-2"></i> Edit</a></li>' +
+                        '<li><a id="delete_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-trash-2"></i> Delete</a></li>' +
+                        '<li><a id="view_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-plus-circle primary"></i> View</a></li>' +
                         '</ul>' +
                         '</div></td></tr>';
 
                     //Re-initialize Datatable again
                     wic_notes_table.row.add($(newRow)).draw();
+                    if (response.email_sent == 'false') {
+                        swal("Email not sent", "Your note has been saved but email has not been sent to the recipients.", "warning");
+                    }
+                    else {
+                        swal("Good job! " + author, "Your note has been saved.", "success");
+                    }
                 }
 
 
@@ -238,6 +251,13 @@ $(document).ready(function () {
     $('#submit_wic_notes_edit_form').on('submit', function (e) {
         e.preventDefault(); //to Stop from Refreshing
         //Get all the fields and make an Ajax call. Wait for Response, if positive, show toaster and append this new row to the existing table
+        swal({
+            title: "Saving",
+            text: "Hold on!",
+            buttons: false,
+            icon: "info",
+            closeOnClickOutside: false,
+        });
         var id = $('#wic_notes_edit_id').val();
         var article = $('#wic_notes_edit_article').summernote('code').toString();
         var date = $('#wic_notes_edit_date').val();
@@ -280,6 +300,7 @@ $(document).ready(function () {
                     swal("Error!", "Updating Notes Item Failed!", "error");
                 }
                 else {
+                    swal("Good job! " + author, "Your note has been updated.", "success");
                     var monthNames = ["Jan", "Feb", "March", "April", "May", "June",
                         "July", "August", "Sept", "Oct", "Nov", "Dec"
                     ];
@@ -293,15 +314,15 @@ $(document).ready(function () {
                     var month = date_split[1];
                     var day = date_split[2];
 
-                    var newRow = '<tr id="row_' + id + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + tickers + '</td>' +
+                    var newRow = '<tr id="row_' + response + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + tickers + '</td>' +
                         '<td><div class="btn-group">' +
                         '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
                         '<i class="ft-settings"></i>' +
                         '</button>' +
                         '<ul class="dropdown-menu">' +
-                        '<li><a id="edit_' + id + '" data-value="{{ notes_item.id }}" class=\'dropdown-item\' href="#"><i class="ft-edit-2"></i> Edit</a></li>' +
-                        '<li><a id="delete_' + id + '" data-value="{{ notes_item.id }}" class=\'dropdown-item\' href="#"><i class="ft-trash-2"></i> Delete</a></li>' +
-                        '<li><a id="view_' + id + '" data-value="{{ notes_item.id }}" class=\'dropdown-item\' href="#"><i class="ft-plus-circle primary"></i> View</a></li>' +
+                        '<li><a id="edit_' + response + '" data-value=' + response + ' class=\'dropdown-item\' href="#"><i class="ft-edit-2"></i> Edit</a></li>' +
+                        '<li><a id="delete_' + response + '" data-value=' + response + ' class=\'dropdown-item\' href="#"><i class="ft-trash-2"></i> Delete</a></li>' +
+                        '<li><a id="view_' + response + '" data-value=' + response + ' class=\'dropdown-item\' href="#"><i class="ft-plus-circle primary"></i> View</a></li>' +
                         '</ul>' +
                         '</div></td></tr>';
 

@@ -47,7 +47,7 @@ def get_note_details(request):
 
 def create_note(request):
     """ Async. To add a new Notes Item """
-    response = None
+    response = {'note_created': 'false', 'email_sent': 'true', 'notes_id': ''}
 
     if request.method == 'POST':
         try:
@@ -56,12 +56,6 @@ def create_note(request):
             title = request.POST['title']
             article = request.POST['article']
             tickers = request.POST['tickers']
-            emails = request.POST.get('emails')
-            emails = re.sub("[ ]", "", emails)
-            emails = re.sub("[,:;]", ",", emails)
-            email_list = emails.split(",")
-            if email_list:
-                email_list += ['vaggarwal@wicfunds.com', 'kgorde@wicfunds.com']
             file_urls = ""
             new_notes_item = NotesMaster.objects.create(author=author, date=date, title=title,
                                                         article=article, tickers=tickers)
@@ -73,39 +67,54 @@ def create_note(request):
                                                                     uploaded_on=datetime.datetime.now().strftime('%Y-%m-%d'),
                                                                     notes_attachment=file)
                     file_urls += "{index}) <a href='{url}' target='_blank'>{name}</a>".format(index=index+1,
-                                    url=uploaded_file.notes_attachment.url, name=file.name)
-
-            content = ""
-            if title:
-                content += "<p><strong>Title:</strong> {title}</p>".format(title=title)
-            if author:
-                content += "<p><strong>Author:</strong> {author}</p>".format(author=author)
-            if tickers:
-                content += "<p><strong>Tickers:</strong> {tickers}</p>".format(tickers=tickers)
-            if article:
-                content += "<p><strong>Article:</strong> {article}</p>".format(article=article)
-            if file_urls:
-                content += "<p><strong>Attachment URLs:</strong> {file_urls}</p>".format(file_urls=file_urls)
-
-            subject = '(Risk Automation) Note Created for {tickers} ({date})'.format(tickers=tickers, date=date)
-            html = """ \
-                    <html>
-                        <head>
-                        </head>
-                        <body>
-                            {content}
-                        </body>
-                    </html>
-                    """.format(content=content)
-            send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-                       recipients=email_list,
-                       subject=subject, from_email='dispatch@wicfunds.com', html=html)
-            response = new_notes_item.id
+                                                                                              name=file.name,
+                                                                                              url=uploaded_file.notes_attachment.url)
+            response['note_created'] = 'true'
+            response['notes_id'] = str(new_notes_item.id)
         except Exception as e:
             print(e)
-            response = 'failed'
+            response['note_created'] = 'false'
+            return JsonResponse(response)
+        try:
+            emails = request.POST.get('emails')
+            emails = re.sub("[ ]", "", emails)
+            emails = re.sub("[,:;]", ",", emails)
+            email_list = []
+            if emails:
+                email_list = emails.split(",")
+                if email_list:
+                    email_list += ['vaggarwal@wicfunds.com', 'kgorde@wicfunds.com']
+            if email_list:
+                content = ""
+                if title:
+                    content += "<p><strong>Title:</strong> {title}</p>".format(title=title)
+                if author:
+                    content += "<p><strong>Author:</strong> {author}</p>".format(author=author)
+                if tickers:
+                    content += "<p><strong>Tickers:</strong> {tickers}</p>".format(tickers=tickers)
+                if article:
+                    content += "<p><strong>Article:</strong> {article}</p>".format(article=article)
+                if file_urls:
+                    content += "<p><strong>Attachment URLs:</strong> {file_urls}</p>".format(file_urls=file_urls)
 
-    return HttpResponse(response)
+                subject = '(Risk Automation) Note Created for {tickers} ({date})'.format(tickers=tickers, date=date)
+                html = """ \
+                        <html>
+                            <head>
+                            </head>
+                            <body>
+                                {content}
+                            </body>
+                        </html>
+                        """.format(content=content)
+                send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
+                           recipients=email_list, subject=subject, from_email='dispatch@wicfunds.com', html=html)
+            response['email_sent'] = 'true'
+        except Exception as e:
+            print(e)
+            response['email_sent'] = 'false'
+
+    return JsonResponse(response)
 
 
 def update_note(request):
