@@ -3,7 +3,25 @@ $(document).ready(function () {
     setTweets();
     setPnlMonitors();
     setInterval(setPnlMonitors, 150000);
-
+    let aum_df = JSON.parse($('#aum_df').val());
+    console.log(aum_df);
+    Morris.Bar({
+       element: 'monthly-sales',
+        data: aum_df,
+        xkey: 'fund',
+        xLabelAngle: '70',
+        ykeys: ['aum'],
+        labels: ['Assets'],
+        barGap: 4,
+        barSizeRatio: 0.3,
+        gridTextColor: '#fff',
+        gridLineColor: '#fff',
+        numLines: 5,
+        gridtextSize: 14,
+        resize: true,
+        barColors: ['#fff'],
+        hideHover: 'auto',
+    });
     function populateNewsCarousels(url_address) {
         $.ajax({
             type: 'GET',
