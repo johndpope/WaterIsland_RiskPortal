@@ -173,6 +173,7 @@ def get_data():
                          'Capital($)_x', 'Capital(%)_x', 'START_MKTVAL', 'END_MKTVAL', 'MKTVAL_CHG_USD']]
 
     table_df = table_df.groupby(['Group', 'TradeGroup']).sum().reset_index()
+    table_df['TradeGroup'] = table_df['TradeGroup'].str.upper()
     daily_live_pnl = table_df.copy()
     daily_live_pnl = daily_live_pnl[daily_live_pnl['Group'].isin(['ARB', 'AED', 'LG', 'MACO', 'TAQ', 'CAM', 'LEV',
                                                                   'TACO', 'MALT', 'WED'])]
@@ -182,8 +183,15 @@ def get_data():
     daily_live_pnl = daily_live_pnl[['Group', 'TradeGroup', 'MKTVAL_CHG_USD']]
     daily_live_pnl[['Group']] = daily_live_pnl[['Group']].fillna('NA')
     daily_live_pnl.fillna(0, inplace=True)
+
+    daily_live_pnl['TradeGroup'] = daily_live_pnl['TradeGroup'].str.upper()
+    ytd_performance['TradeGroup'] = ytd_performance['TradeGroup'].str.upper()
+    daily_live_pnl['Group'] = daily_live_pnl['Group'].str.upper()
+    ytd_performance['Fund'] = ytd_performance['Fund'].str.upper()
+
     daily_live_pnl = pd.merge(daily_live_pnl, ytd_performance[['TradeGroup', 'Fund', 'Sleeve', 'Catalyst']],
                               left_on=['TradeGroup', 'Group'], right_on=['TradeGroup', 'Fund'])
+
     del daily_live_pnl['Fund']
     daily_live_pnl.columns = ['Fund', 'TradeGroup', 'Daily PnL', 'Sleeve', 'Catalyst']
 
@@ -218,6 +226,7 @@ def get_data():
     del final_live_df['index']
 
     try:
+        daily_live_pnl.fillna(0, inplace=True)
         final_daily_pnl = pd.pivot_table(daily_live_pnl, index=['TradeGroup', 'Sleeve', 'Catalyst'],
                                          columns='Fund', fill_value=0).reset_index()
         final_daily_pnl.columns = ["_".join((i, j)) for i, j in final_daily_pnl.columns]
