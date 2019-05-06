@@ -104,35 +104,38 @@ $(document).ready(function () {
                 }
 
                 $('#weather-temp').text(data.temperature.temp + " F");
+                let url = "https://images.icanvas.com/2d/TEO86.jpg";
 
                 if (data.status.toString().toLowerCase().search('clouds') != -1) {
                     //Set cloudy background image
-                    $('#weather-background-image').css({"background-image": "url('http://mcny.org/sites/default/files/New-York-14-10-2489.jpg')"});
+                    url = 'http://mcny.org/sites/default/files/New-York-14-10-2489.jpg';
                 }
 
                 else if (data.status.toString().toLowerCase().search('rain') != -1) {
                     //Set rainy background image
-                    $('#weather-background-image').css({"background-image": "url('https://ak9.picdn.net/shutterstock/videos/13897619/thumb/1.jpg?i10c=img.resize(height:160)')"});
+                    url = 'https://ak9.picdn.net/shutterstock/videos/13897619/thumb/1.jpg?i10c=img.resize(height:160)';
                 }
 
                 else if (data.status.toString().toLowerCase().search('snow') != -1) {
                     //Set snowy background image
-                    $('#weather-background-image').css({"background-image": "url('https://c1.staticflickr.com/9/8361/8327626299_0c9b5df9e9_b.jpg')"});
+                    url = 'https://c1.staticflickr.com/9/8361/8327626299_0c9b5df9e9_b.jpg';
                 }
 
                 else if (data.status.toString().toLowerCase().search('mist') != -1) {
                     //Set Misty background image
-                    $('#weather-background-image').css({"background-image": "url('https://www.travel-holiday.net/wp-content/uploads/2015/05/Misty-looking-New-York-Skyline-1024x586.jpg')"});
+                    url = 'https://www.travel-holiday.net/wp-content/uploads/2015/05/Misty-looking-New-York-Skyline-1024x586.jpg';
                 }
 
                 else if (data.status.toString().toLowerCase().search('thunder') != -1) {
                     //Set Misty background image
-                    $('#weather-background-image').css({"background-image": "url('https://isardasorensen.files.wordpress.com/2012/05/tp-tuesday-storm-5-29-12.jpg')"});
+                    url = 'https://isardasorensen.files.wordpress.com/2012/05/tp-tuesday-storm-5-29-12.jpg';
                 }
                 else {
                     //Set normal background
-                    $('#weather-background-image').css({"background-image": "url('https://images.icanvas.com/2d/TEO86.jpg')"});
+                    url = 'https://images.icanvas.com/2d/TEO86.jpg';
                 }
+                let css = {"background-image": "url(" + url + ")", "background-repeat": "no-repeat", "background-size": "100% 100%"};
+                $('#weather-background-image').css(css);
 
             }
         }).then(function () {
@@ -231,11 +234,11 @@ $(document).ready(function () {
                     pnl_rows += '</tr>'
                 });
 
-                let table = "<table id='realtime_pnl_monitors_table'" +
-                            "class=\"table table-striped table-hover text-dark table-sm table-responsive\"><thead>" +
+                let table = "<div class='table-responsive'><table id='realtime_pnl_monitors_table' style='width: 100%;' " +
+                            "class=\"table table-striped table-hover text-dark\"><thead>" +
                             first_header + "</thead>" + "<tbody>" + pnl_rows + "</tbody></table>" +
                             "<p style='text-align: right'>" +
-                            "* Above data has been calculated using Average YTD Investable Assets</p>";
+                            "* Above data has been calculated using Average YTD Investable Assets</p></div>";
 
 
                 // Append table

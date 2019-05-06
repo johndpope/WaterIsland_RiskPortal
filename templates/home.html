@@ -69,44 +69,11 @@
             <div class="content-body">
 
 
-                <div class="row match-height">
+                <div class="row">
                     <!-- Carousel for Finance News -->
-                    <div class="col-lg-5 col-md-12 col-sm-12" >
+                    <div class="col-lg-12 col-md-12 col-sm-12" >
                         <div class="card">
                             <div class="card-header"></div>
-                            <div class="card-content " >
-                                <div class="row" >
-                                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">
-                                        <h3 class="card-title center bold">Trending News</h3>
-                                    </div>
-                                </div>
-                                <div id='news-card-body' class="card-body col-lg-12" >
-                                    <div id="carousel-interval" class="carousel " data-ride="carousel">
-                                        <ol id='carousel-indicators' class="carousel-indicators"></ol>
-                                        <div id='carousel-inner' class="carousel-inner" role="listbox"></div>
-                                        <a class="carousel-control-prev carousel-control" href="#carousel-interval"
-                                           role="button" data-slide="prev">
-                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                            <span class="sr-only">Previous</span>
-                                        </a>
-                                        <a class="carousel-control-next carousel-control" href="#carousel-interval"
-                                           role="button" data-slide="next">
-                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                            <span class="sr-only">Next</span>
-                                        </a>
-                                    </div>
-                                    <footer id="news-source-footer" class="blockquote-footer">Source: 
-                                        <cite id='news-footer-cite' title="Source Title"></cite>
-                                    </footer>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-7 col-md-12 col-sm-12" >
-                        <div class="card">
-                            <div class="card-header">
-                            </div>
                             <div class="card-content ">
                                 <div class="row" >
                                     <div class="col-lg-12 col-md-12 col-sm-12 text-center">
@@ -126,67 +93,109 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-lg-3 col-md-12">
-                        <div class="card no-border box-shadow-0" style="height: 400px">
+                    <div class="col-lg-7 col-md-12 col-sm-12" >
+                        <div class="card" style="height: 845px;">
+                            <div class="card-header"></div>
                             <div class="card-content">
-                                <div class="weather-date position-relative">
-                                    <div class="date-info position-absolute bg-amber bg-lighten-1 white mt-3 p-1 text-center">
-                                        <span id='weather-current-day' class="date block"></span>
-                                        <span id='weather-current-month' class="month"></span>
+                                <div class="row" >
+                                    <div class="col-lg-12 col-md-12 col-sm-12 text-center">
+                                        <h3 class="card-title center bold">Trending News</h3>
                                     </div>
                                 </div>
-                                <div id='weather-background-image' class="card-body bg-white bg-lighten-2 ">
-                                    <ul class="list-inline text-right">
-                                        <li><a id='weather-reload' data-action="reload"><i
-                                                class="ft-rotate-cw font-medium-4 amber"></i></a></li>
-                                    </ul>
-                                    <div class="weather-details text-center">
-                                        <span id='weather-detailed-status' class="my-2 block white darken-2"></span>
-                                        <span class="font-medium-4 text-bold-650 white darken-4">New York City</span>
+                                <div id='news-card-body' class="card-body col-lg-12" >
+                                    <div id="carousel-interval" class="carousel " data-ride="carousel">
+                                        <ol id='carousel-indicators' class="carousel-indicators"></ol>
+                                        <div id='carousel-inner' class="carousel-inner" role="listbox"></div>
+                                        <a class="carousel-control-prev carousel-control" href="#carousel-interval"
+                                            role="button" data-slide="prev">
+                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                            <span class="sr-only">Previous</span>
+                                        </a>
+                                        <a class="carousel-control-next carousel-control" href="#carousel-interval"
+                                            role="button" data-slide="next">
+                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                            <span class="sr-only">Next</span>
+                                        </a>
                                     </div>
-                                    <div class="animated-weather-icons text-center">
-                                        <svg version="1.1" id="wind"
-                                             class="climacon climacon_wind climacon-amber climacon-darken-2 height-200"
-                                             viewBox="15 15 70 70">
+                                    <footer id="news-source-footer" class="blockquote-footer">Source: 
+                                        <cite id='news-footer-cite' title="Source Title"></cite>
+                                    </footer>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5 col-md-12">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="card no-border box-shadow-0" style="height: 400px">
+                                    <div class="card-content">
+                                        <div class="weather-date position-relative">
+                                            <div class="date-info position-absolute bg-amber bg-lighten-1 white mt-3 p-1 text-center">
+                                                <span id='weather-current-day' class="date block"></span>
+                                                <span id='weather-current-month' class="month"></span>
+                                            </div>
+                                        </div>
+                                        <div id='weather-background-image' class="card-body bg-white bg-lighten-2 ">
+                                            <ul class="list-inline text-right">
+                                                <li>
+                                                    <a id='weather-reload' data-action="reload">
+                                                        <i class="ft-rotate-cw font-medium-4 amber"></i>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                            <div class="weather-details text-center">
+                                                <span id='weather-detailed-status' class="my-2 block white darken-2"></span>
+                                                <span class="font-medium-4 text-bold-650 white darken-4">New York City</span>
+                                            </div>
+                                            <div class="animated-weather-icons text-center">
+                                                <svg version="1.1" id="wind"
+                                                    class="climacon climacon_wind climacon-amber climacon-darken-2 height-200"
+                                                    viewBox="15 15 70 70">
 
-                                        </svg>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-info">
-                                    <div class="row">
-                                        <div class="col-4 text-center display-table-cell">
-                                            <i class="me-weather3 font-large-1 white lighten-3 valign-middle"></i>
-                                            <span id='weather-sunset' class="white valign-middle"></span>
+                                                </svg>
+                                            </div>
                                         </div>
-                                        <div class="col-4 text-center display-table-cell">
-                                            <i class="me-snowy3 font-large-1 white lighten-3 valign-middle"></i>
-                                            <span id='weather-snow' class="white valign-middle"></span>
-                                        </div>
-                                        <div class="col-4 text-center display-table-cell">
-                                            <i class="me-thermometer font-large-1 white lighten-3 valign-middle"></i>
-                                            <span id='weather-temp' class="white valign-middle">13.0&deg;</span>
+                                        <div class="card-footer bg-info">
+                                            <div class="row">
+                                                <div class="col-4 text-center display-table-cell">
+                                                    <i class="me-weather3 font-large-1 white lighten-3 valign-middle"></i>
+                                                    <span id='weather-sunset' class="white valign-middle"></span>
+                                                </div>
+                                                <div class="col-4 text-center display-table-cell">
+                                                    <i class="me-snowy3 font-large-1 white lighten-3 valign-middle"></i>
+                                                    <span id='weather-snow' class="white valign-middle"></span>
+                                                </div>
+                                                <div class="col-4 text-center display-table-cell">
+                                                    <i class="me-thermometer font-large-1 white lighten-3 valign-middle"></i>
+                                                    <span id='weather-temp' class="white valign-middle">13.0&deg;</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-lg-3 col-md-3 col-sm-12">
-                        <div class="card bg-twitter white" style="height: 435px">
-                            <div class="card-content p-2">
-                                <ul class="list-inline text-right">
-                                    <li><a id='tweet-reload' data-action="reload"><i
-                                            class="ft-rotate-cw font-medium-4 amber"></i></a></li>
-                                </ul>
-                                <div class="card-body">
-                                    <div class="text-center mb-1">
-                                        <i class="ft-twitter font-large-3"></i>
-                                    </div>
-
-                                    <div class="tweet-slider" id="tweet-slider">
-                                        <ul id='tweets-list' class="text-center">
-
+                        <br>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="card bg-twitter white" style="height: 400px">
+                                    <div class="card-content p-2">
+                                        <ul class="list-inline text-right">
+                                            <li>
+                                                <a id='tweet-reload' data-action="reload">
+                                                    <i class="ft-rotate-cw font-medium-4 amber"></i>
+                                                </a>
+                                            </li>
                                         </ul>
+                                        <div class="card-body">
+                                            <div class="text-center mb-1">
+                                                <i class="ft-twitter font-large-3"></i>
+                                            </div>
+                                            <div class="tweet-slider" id="tweet-slider">
+                                                <ul id='tweets-list' class="text-center">
+                                                </ul>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
