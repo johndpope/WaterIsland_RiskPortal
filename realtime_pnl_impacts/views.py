@@ -131,10 +131,14 @@ def get_data():
     table_df['PX_CHG_PCT'] = 100.0 * (
             (table_df['END_ADJ_PX'].astype(float) / table_df['START_ADJ_PX'].astype(float)) - 1.0)
 
-    position_level_pnl = table_df[['Group', 'TradeGroup', 'TICKER_x', 'START_ADJ_PX', 'END_ADJ_PX',
+    position_level_pnl = table_df[['Group', 'TradeGroup', 'TICKER_x', 'Qty_x', 'START_ADJ_PX', 'END_ADJ_PX',
                                    'MKTVAL_CHG_USD']].copy()
+
+    position_level_pnl = position_level_pnl[position_level_pnl['Qty_x'] != 0] # Drop 0 quantities
     funds_list = ['ARB', 'AED', 'LG', 'MACO', 'TAQ', 'CAM', 'LEV', 'TACO', 'MALT', 'WED']
     position_level_pnl = position_level_pnl[position_level_pnl['Group'].isin(funds_list)]
+    position_level_pnl['TradeGroup'] = position_level_pnl['TradeGroup'].str.upper()
+
     final_position_level_ytd_pnl = pd.merge(position_level_pnl, position_level_ytd_pnl,
                                             left_on=['Group', 'TradeGroup', 'TICKER_x'],
                                             right_on=['Fund', 'TradeGroup', 'Ticker'])
@@ -160,7 +164,7 @@ def get_data():
     final_position_level_ytd_pnl = final_position_level_ytd_pnl.append(final_ytd_options)
     final_position_level_ytd_pnl.reset_index(inplace=True)
     del final_position_level_ytd_pnl['index']
-    position_level_pnl = pd.pivot_table(position_level_pnl, index=['TradeGroup', 'TICKER_x', 'START_ADJ_PX',
+    position_level_pnl = pd.pivot_table(position_level_pnl, index=['TradeGroup', 'TICKER_x', 'Qty_x', 'START_ADJ_PX',
                                                                    'END_ADJ_PX'], columns=['Group'], aggfunc='first',
                                         fill_value=0).reset_index()
     position_level_pnl.columns = ["_".join((i, j)) for i, j in position_level_pnl.columns]
@@ -201,6 +205,7 @@ def get_data():
     # Merge Only if Market is open...
     if is_market_closed():
         table_df = table_df.iloc[0:0]
+
     final_live_df = pd.merge(table_df, ytd_performance, how='outer', left_on=['Group', 'TradeGroup'],
                              right_on=['Fund', 'TradeGroup'])
 

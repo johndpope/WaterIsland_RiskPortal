@@ -114,7 +114,7 @@ $(document).ready(function () {
             responsive: true,
             scrollY: "580px",
             scrollX: true,
-            paging:false,
+            paging: false,
             columns: [
                 {title: 'TradeGroup', data: 'TradeGroup'},
                 {title: 'Start MktVal', data: 'START_MKTVAL'},
@@ -357,47 +357,86 @@ $(document).ready(function () {
         let return_rows = '';
         if (is_ytd == true) {
             dataframe = final_position_level_ytd_pnl;
+            // Get Equivalent Row from Positions Impacts
+            for (var i = 0; i < dataframe.length; i++) {
+                dataframe_row = dataframe[i];
+                if (dataframe_row['TradeGroup_'] === tradegroup) {
+                    // Return corresponding rows
+                    return_rows += '<tr>' +
+                        '<td></td>' +
+                        '<td>' + dataframe_row['TradeGroup_'] + '</td>' +
+                        '<td>' + dataframe_row['TICKER_x_'] + '</td>' +
+                        dataframe_row['START_ADJ_PX_'] +
+                        dataframe_row['END_ADJ_PX_'] +
+                        dataframe_row['MKTVAL_CHG_USD_ARB'] +
+                        dataframe_row['MKTVAL_CHG_USD_MACO'] +
+                        dataframe_row['MKTVAL_CHG_USD_MALT'] +
+                        dataframe_row['MKTVAL_CHG_USD_LEV'] +
+                        dataframe_row['MKTVAL_CHG_USD_AED'] +
+                        dataframe_row['MKTVAL_CHG_USD_CAM'] +
+                        dataframe_row['MKTVAL_CHG_USD_LG'] +
+                        dataframe_row['MKTVAL_CHG_USD_WED'] +
+                        dataframe_row['MKTVAL_CHG_USD_TAQ'] +
+                        dataframe_row['MKTVAL_CHG_USD_TACO'] +
+                        '</tr>'
+                }
+            }
+
+            return '<div class="table-responsive" style="padding-left:3%"> <table class="table table-striped table-bordered" border="0">' +
+                '<thead>' +
+                '<tr>' +
+                '<th></th><th>TradeGroup</th>' + '<th>Ticker</th>' + '<th>Start PX</th>' + '<th>End PX</th>' + '<th>P&L ARB</th>' + '<th>P&L MACO</th>' +
+                '<th>P&L MALT</th>' + '<th>P&L LEV</th>' + '<th>P&L AED</th>' + '<th>P&L CAM</th>' + '<th>P&L LG</th>' + '<th>P&L WED</th>'
+                + '<th>P&L TAQ</th>' +
+                '<th>P&L TACO</th>' +
+                '</tr>' +
+                '</thead>' + '<tbody>' + return_rows +
+                '</tbody>' +
+
+                '</table></div>';
         }
         else {
             dataframe = position_level_pnl;
-        }
-        // Get Equivalent Row from Positions Impacts
-        for (var i = 0; i < dataframe.length; i++) {
-            dataframe_row = dataframe[i];
-            if (dataframe_row['TradeGroup_'] === tradegroup) {
-                // Return corresponding rows
-                return_rows += '<tr>' +
-                    '<td></td>' +
-                    '<td>' + dataframe_row['TradeGroup_'] + '</td>' +
-                    '<td>' + dataframe_row['TICKER_x_'] + '</td>' +
-                    dataframe_row['START_ADJ_PX_'] +
-                    dataframe_row['END_ADJ_PX_'] +
-                    dataframe_row['MKTVAL_CHG_USD_ARB'] +
-                    dataframe_row['MKTVAL_CHG_USD_MACO'] +
-                    dataframe_row['MKTVAL_CHG_USD_MALT'] +
-                    dataframe_row['MKTVAL_CHG_USD_LEV'] +
-                    dataframe_row['MKTVAL_CHG_USD_AED'] +
-                    dataframe_row['MKTVAL_CHG_USD_CAM'] +
-                    dataframe_row['MKTVAL_CHG_USD_LG'] +
-                    dataframe_row['MKTVAL_CHG_USD_WED'] +
-                    dataframe_row['MKTVAL_CHG_USD_TAQ'] +
-                    dataframe_row['MKTVAL_CHG_USD_TACO'] +
-                    '</tr>'
+            // Get Equivalent Row from Positions Impacts
+            for (var i = 0; i < dataframe.length; i++) {
+                dataframe_row = dataframe[i];
+                if (dataframe_row['TradeGroup_'] === tradegroup) {
+                    // Return corresponding rows
+                    return_rows += '<tr>' +
+                        '<td></td>' +
+                        '<td>' + dataframe_row['TradeGroup_'] + '</td>' +
+                        '<td>' + dataframe_row['TICKER_x_'] + '</td>' +
+                        dataframe_row['Qty_x_'] +
+                        dataframe_row['START_ADJ_PX_'] +
+                        dataframe_row['END_ADJ_PX_'] +
+                        dataframe_row['MKTVAL_CHG_USD_ARB'] +
+                        dataframe_row['MKTVAL_CHG_USD_MACO'] +
+                        dataframe_row['MKTVAL_CHG_USD_MALT'] +
+                        dataframe_row['MKTVAL_CHG_USD_LEV'] +
+                        dataframe_row['MKTVAL_CHG_USD_AED'] +
+                        dataframe_row['MKTVAL_CHG_USD_CAM'] +
+                        dataframe_row['MKTVAL_CHG_USD_LG'] +
+                        dataframe_row['MKTVAL_CHG_USD_WED'] +
+                        dataframe_row['MKTVAL_CHG_USD_TAQ'] +
+                        dataframe_row['MKTVAL_CHG_USD_TACO'] +
+                        '</tr>'
+                }
             }
+
+            return '<div class="table-responsive" style="padding-left:3%"> <table class="table table-striped table-bordered" border="0">' +
+                '<thead>' +
+                '<tr>' +
+                '<th></th><th>TradeGroup</th>' + '<th>Ticker</th>' + '<th>Qty</th>' + '<th>Start PX</th>' + '<th>End PX</th>' + '<th>P&L ARB</th>' + '<th>P&L MACO</th>' +
+                '<th>P&L MALT</th>' + '<th>P&L LEV</th>' + '<th>P&L AED</th>' + '<th>P&L CAM</th>' + '<th>P&L LG</th>' + '<th>P&L WED</th>'
+                + '<th>P&L TAQ</th>' +
+                '<th>P&L TACO</th>' +
+                '</tr>' +
+                '</thead>' + '<tbody>' + return_rows +
+                '</tbody>' +
+
+                '</table></div>';
         }
 
-        return '<div class="table-responsive" style="padding-left:3%"> <table class="table table-striped table-bordered" border="0">' +
-            '<thead>' +
-            '<tr>' +
-            '<th></th><th>TradeGroup</th>' + '<th>Ticker</th>' + '<th>Start PX</th>' + '<th>End PX</th>' + '<th>P&L ARB</th>' + '<th>P&L MACO</th>' +
-            '<th>P&L MALT</th>' + '<th>P&L LEV</th>' + '<th>P&L AED</th>' + '<th>P&L CAM</th>' + '<th>P&L LG</th>' + '<th>P&L WED</th>'
-            + '<th>P&L TAQ</th>' +
-            '<th>P&L TACO</th>' +
-            '</tr>' +
-            '</thead>' + '<tbody>' + return_rows +
-            '</tbody>' +
-
-            '</table></div>';
     }
 
 
