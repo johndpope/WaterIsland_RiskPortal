@@ -13,13 +13,11 @@ $(document).ready(function () {
         ykeys: ['aum'],
         labels: ['Assets'],
         barGap: 4,
-        barSizeRatio: 0.3,
+        barSizeRatio: 0.5,
         gridTextColor: '#fff',
         gridLineColor: '#fff',
-        numLines: 5,
-        gridtextSize: 14,
         resize: true,
-        barColors: ['#fff'],
+        barColors: ['#000'],
         hideHover: 'auto',
     });
     function populateNewsCarousels(url_address) {
