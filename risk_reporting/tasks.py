@@ -768,34 +768,34 @@ def email_pl_target_loss_budgets():
         ret[row.index.get_loc("TradeGroup_")] = "color:black"
         ret[row.index.get_loc("Catalyst_")] = "color:black"
 
-        if row['Total YTD PnL_AED'] != '-' and int(row['Total YTD PnL_AED'].replace(',', '')) < 0:
+        if row['Total YTD PnL_AED'] != '-' and row['Total YTD PnL_AED'] < 0:
             ret[row.index.get_loc("Total YTD PnL_AED")] = "color:red"
 
-        if row['Total YTD PnL_ARB'] != '-' and int(row['Total YTD PnL_ARB'].replace(',', '')) < 0:
+        if row['Total YTD PnL_ARB'] != '-' and row['Total YTD PnL_ARB'] < 0:
             ret[row.index.get_loc("Total YTD PnL_ARB")] = "color:red"
 
-        if  row['Total YTD PnL_CAM'] != '-' and int(row['Total YTD PnL_CAM'].replace(',', '')) < 0:
+        if  row['Total YTD PnL_CAM'] != '-' and row['Total YTD PnL_CAM'] < 0:
             ret[row.index.get_loc("Total YTD PnL_CAM")] = "color:red"
 
-        if  row['Total YTD PnL_LEV'] != '-' and int(row['Total YTD PnL_LEV'].replace(',', '')) < 0:
+        if  row['Total YTD PnL_LEV'] != '-' and row['Total YTD PnL_LEV'] < 0:
             ret[row.index.get_loc("Total YTD PnL_LEV")] = "color:red"
 
-        if  row['Total YTD PnL_LG'] != '-' and int(row['Total YTD PnL_LG'].replace(',', '')) < 0:
+        if  row['Total YTD PnL_LG'] != '-' and row['Total YTD PnL_LG'] < 0:
             ret[row.index.get_loc("Total YTD PnL_LG")] = "color:red"
 
-        if  row['Total YTD PnL_MACO'] != '-' and int(row['Total YTD PnL_MACO'].replace(',', '')) < 0:
+        if  row['Total YTD PnL_MACO'] != '-' and row['Total YTD PnL_MACO'] < 0:
             ret[row.index.get_loc("Total YTD PnL_MACO")] = "color:red"
 
-        if  row['Total YTD PnL_MALT'] != '-' and int(row['Total YTD PnL_MALT'].replace(',', '')) < 0:
+        if  row['Total YTD PnL_MALT'] != '-' and row['Total YTD PnL_MALT'] < 0:
             ret[row.index.get_loc("Total YTD PnL_MALT")] = "color:red"
 
-        if  row['Total YTD PnL_TACO'] != '-' and int(row['Total YTD PnL_TACO'].replace(',', '')) < 0:
+        if  row['Total YTD PnL_TACO'] != '-' and row['Total YTD PnL_TACO'] < 0:
             ret[row.index.get_loc("Total YTD PnL_TACO")] = "color:red"
 
-        if  row['Total YTD PnL_TAQ'] != '-' and int(row['Total YTD PnL_TAQ'].replace(',', '')) < 0:
+        if  row['Total YTD PnL_TAQ'] != '-' and row['Total YTD PnL_TAQ'] < 0:
             ret[row.index.get_loc("Total YTD PnL_TAQ")] = "color:red"
 
-        if  row['Total YTD PnL_WED'] != '-' and int(row['Total YTD PnL_WED'].replace(',', '')) < 0:
+        if  row['Total YTD PnL_WED'] != '-' and row['Total YTD PnL_WED'] < 0:
             ret[row.index.get_loc("Total YTD PnL_WED")] = "color:red"
 
         return ret
@@ -843,7 +843,11 @@ def email_pl_target_loss_budgets():
                 worksheet = workbook.add_worksheet(sheet_name)
                 writer.sheets[sheet_name] = worksheet
                 df.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0, index=False)
-                worksheet.set_column('A:M', 20)
+                worksheet.set_column('A:I', 20)
+            format1 = workbook.add_format({'num_format': '#,###'})
+            worksheet = writer.sheets['TradeGroup P&L']
+            worksheet.set_column('A:C', 20)
+            worksheet.set_column('D:M', 20, format1)
             writer.save()
             return buffer.getvalue()
 
@@ -851,22 +855,22 @@ def email_pl_target_loss_budgets():
     final_live_df = final_live_df[['TradeGroup_', 'Sleeve_', 'Catalyst_', 'Total YTD PnL_ARB', 'Total YTD PnL_MACO',
                                    'Total YTD PnL_MALT', 'Total YTD PnL_LEV', 'Total YTD PnL_AED', 'Total YTD PnL_CAM',
                                    'Total YTD PnL_LG', 'Total YTD PnL_WED', 'Total YTD PnL_TAQ', 'Total YTD PnL_TACO']]
-    # Sort the dataframe according to Sleeve in the following mentioned order
+    # Sort the dataframe according to Sleeve followed by TradeGroup in alphabetical order 
     sleeve_sorting = ['M&A', 'CREDIT', 'ESS', 'OPP ']
     for sleeve in final_live_df.Sleeve_.unique():
         if sleeve not in sleeve_sorting:
             sleeve_sorting.append(sleeve)
     final_live_df['Sleeve_'] = pd.Categorical(final_live_df['Sleeve_'], sleeve_sorting)
-    final_live_df = final_live_df.sort_values('Sleeve_')
+    final_live_df = final_live_df.sort_values(by=['Sleeve_', 'TradeGroup_'], ascending=[True, True])
 
-    # Format the numbers with comma separated for the following columns and replace '0' with '-'
+    # Replace '0' with '-' and convert all numbers to int
     final_live_df_columns = list(final_live_df.columns.values)
     final_live_df_columns.remove('TradeGroup_')
     final_live_df_columns.remove('Sleeve_')
     final_live_df_columns.remove('Catalyst_')
     for column in final_live_df_columns:
-        final_live_df[column] = format_with_commas(final_live_df, column)
-        final_live_df = final_live_df.replace({column: '0'}, '-')
+        final_live_df[column] = final_live_df[column].astype(int)
+        final_live_df = final_live_df.replace({column: 0}, '-')
 
     final_live_df = final_live_df.style.apply(excel_formatting, axis=1)
 
