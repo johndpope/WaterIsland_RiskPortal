@@ -353,8 +353,12 @@
                 <li></li>
                 <li class=" nav-item"><a href="#"><i class="icon-doc"></i><span class="menu-title"
                                                                                 data-i18n="nav.invoice.main">Securities</span></a>
+{#                    <ul class="menu-content">#}
+{#                        <li><a class="menu-item" href="{% url 'securities:securitiy_master' %}">WIC Security Master</a>#}
+{#                        </li>#}
+{#                    </ul>#}
                     <ul class="menu-content">
-                        <li><a class="menu-item" href="{% url 'securities:securitiy_master' %}">WIC Security Master</a>
+                        <li><a class="menu-item" href="{% url 'securities:wic_positions' %}">WIC Positions</a>
                         </li>
                     </ul>
 

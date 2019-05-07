@@ -120,7 +120,6 @@ def deal_info_download(request):
     return response
 
 
-
 def security_info_download(request):
     # Get the Deal Level and Security Level files in the required format.
     position_level = pd.DataFrame.from_records(

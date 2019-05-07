@@ -1,9 +1,35 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from .models import SecurityMaster
-
+from django.db import connection
+import pandas as pd
 
 # Create your views here.
+
+
+def wic_positions(request):
+    # Populate Daily WIC Positions and Historical WIC Positions as of Certain date..
+    as_of = "(SELECT MAX(Flat_file_as_of) from wic.daily_flat_file_db)"
+    if 'as_of' in request.GET:
+        as_of = "'" + request.GET['as_of'] + "'"
+
+    df = SecurityMaster.objects.raw("SELECT 1 as id, flat_file_as_of, fund, Sleeve, Bucket, AlphaHedge, "
+                                    "CatalystTypeWIC, CatalystRating, TradeGroup, Ticker, amount, Price, "
+                                    "CurrentMktVal, aum, CurrentMktVal_Pct, CCY FROM wic.daily_flat_file_db "
+                                    "where Flat_file_as_of = "+as_of)
+
+    return render(request, 'wic_positions.html', {'positions': df, 'as_of': as_of})
+
+
+def wic_positions_detailed_report_download(request):
+    as_of = "'" + request.GET['as_of'] +"'"
+
+    query = "SELECT * FROM wic.daily_flat_file_db where flat_file_as_of = "+as_of
+    positions_df = pd.read_sql_query(query, con=connection)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=WicPositions.csv'
+    positions_df.to_csv(path_or_buf=response, index=False)
+    return response
 
 
 def securitiy_master(request):
