@@ -925,47 +925,45 @@ def show_risk_factors(request, deal_id):
         risk_factors = MA_Deals_Risk_Factors.objects.get(deal__id=deal_id)
     except MA_Deals_Risk_Factors.DoesNotExist:
         risk_factors = None
-    return render(request, 'arb_risk_factors.html', {'deal_name': deal_name, 'risk_factors': risk_factors, 'deal_id':deal_id})
+    return render(request, 'arb_risk_factors.html', {'deal_name': deal_name, 'risk_factors': risk_factors,
+                                                     'deal_id':deal_id})
 
 
+def get_matching_ticker_queryset(master_list, alpha_ticker):
+    result_list = []
+    for item in master_list:
+        tickers = item.tickers or ""
+        tickers_list = [ticker.strip().upper() for ticker in tickers.split(",")]
+        for ticker in tickers_list:
+            if ticker == alpha_ticker:
+                result_list.append(item)
+    return result_list
 
-# endregion
-
-
-# region ESS IDEA Database
 
 def show_ess_idea(request):
     """
         :param request: Request Object containing ID for the ESS IDEA to be displayed
         :return: JSON encoded Object with IDEA Sections to be displayed on the front-end
     """
-    # try:
+    deal_id = request.GET['ess_idea_id']
+    deal_key = ESS_Idea.objects.get(id=deal_id).deal_key
 
     if 'version' in request.GET.keys():
-        # Use POST for a different Version Request...
         version_requested = request.GET['version']
-        deal_id = request.GET['ess_idea_id']
-        # First get the deal key and then get the request version
-        deal_key = ESS_Idea.objects.get(id=deal_id).deal_key
-        # Use this deal key and version no. combination to find the right deal_object
         ess_idea = ESS_Idea.objects.get(deal_key=deal_key, version_number=version_requested)
         latest_version = ess_idea.version_number
-        version_numbers = ESS_Idea.objects.filter(deal_key=deal_key).values_list('version_number', 'created_on')
     else:
-
-        deal_id = request.GET['ess_idea_id']
-
-        latest_version = ESS_Idea.objects.filter(id=deal_id).latest(
-            'version_number'
-        ).version_number
-
-        # First Retrieve DealKey
-        deal_key = ESS_Idea.objects.get(id=deal_id).deal_key
-        version_numbers = ESS_Idea.objects.filter(deal_key=deal_key).values_list('version_number', 'created_on')
+        latest_version = ESS_Idea.objects.filter(id=deal_id).latest('version_number').version_number
         ess_idea = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
 
-    news_master = NewsMaster.objects.filter(tickers__contains=ess_idea.alpha_ticker.split(' ')[0])
-    notes_master = NotesMaster.objects.filter(tickers__contains=ess_idea.alpha_ticker.split(' ')[0])
+    version_numbers = ESS_Idea.objects.filter(deal_key=deal_key).values_list('version_number', 'created_on')
+    alpha_ticker = ess_idea.alpha_ticker.replace('EQUITY', "").strip().upper()
+
+    news_master_list = NewsMaster.objects.filter(tickers__contains=alpha_ticker)
+    news_master = get_matching_ticker_queryset(news_master_list, alpha_ticker)
+    notes_master_list = NotesMaster.objects.filter(tickers__contains=alpha_ticker)
+    notes_master = get_matching_ticker_queryset(notes_master_list, alpha_ticker)
+
     alpha_chart = ess_idea.alpha_chart.replace("\'", "\"")
     hedge_chart = ess_idea.hedge_chart.replace("\'", "\"")
     event_premium_chart = ess_idea.event_premium_chart.replace("\'", "\"")
