@@ -120,6 +120,45 @@ function addFundMainTab(name, addToTab, addToContent, sleeve, exposures) {
         $('#' + table_id).DataTable({
             data: data,
             lengthChange: false,
+            dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
+                '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
+                '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+
+            buttons: {
+                buttons: [{
+                    extend: 'print',
+                    text: '<i class="fa fa-print"></i> Print',
+                    title: 'Realtime P&L',
+                    customize: function (win) {
+                        $(win.document.body)
+                            .css('font-size', '10pt')
+                            .prepend(
+                                '<p> Water Island Capital, Risk Portal</p>'
+                            );
+
+                        $(win.document.body).find('table')
+                            .addClass('compact')
+                            .css('font-size', 'inherit');
+                    },
+                    autoPrint: true,
+                }, {
+                    extend: 'copy',
+                    text: '<i class="fa fa-copy"></i> Copy',
+
+                }, {
+                    extend: 'csv',
+                    text: '<i class="fa fa-book"></i> CSV',
+
+                }],
+                dom: {
+                    container: {
+                        className: 'dt-buttons'
+                    },
+                    button: {
+                        className: 'btn btn-default'
+                    }
+                }
+            },
             paginate: false,
             columns: [
                 {title: 'Date', data: '.date'},
@@ -201,6 +240,45 @@ function addFundMainTab(name, addToTab, addToContent, sleeve, exposures) {
             lengthChange: false,
             paginate: false,
             columns: columns_structure,
+            dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
+                '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
+                '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+
+            buttons: {
+                buttons: [{
+                    extend: 'print',
+                    text: '<i class="fa fa-print"></i> Print',
+                    title: 'Realtime P&L',
+                    customize: function (win) {
+                        $(win.document.body)
+                            .css('font-size', '10pt')
+                            .prepend(
+                                '<p> Water Island Capital, Risk Portal</p>'
+                            );
+
+                        $(win.document.body).find('table')
+                            .addClass('compact')
+                            .css('font-size', 'inherit');
+                    },
+                    autoPrint: true,
+                }, {
+                    extend: 'copy',
+                    text: '<i class="fa fa-copy"></i> Copy',
+
+                }, {
+                    extend: 'csv',
+                    text: '<i class="fa fa-book"></i> CSV',
+
+                }],
+                dom: {
+                    container: {
+                        className: 'dt-buttons'
+                    },
+                    button: {
+                        className: 'btn btn-default'
+                    }
+                }
+            },
             "columnDefs": [{
                 "targets": column_targets,
                 "createdCell": function (td, cellData, rowData, rowIndex) {
