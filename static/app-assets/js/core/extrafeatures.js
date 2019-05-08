@@ -4,7 +4,6 @@ $(document).ready(function () {
     setPnlMonitors();
     setInterval(setPnlMonitors, 150000);
     let aum_df = JSON.parse($('#aum_df').val());
-    console.log(aum_df);
     Morris.Bar({
        element: 'monthly-sales',
         data: aum_df,
