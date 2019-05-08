@@ -37,7 +37,7 @@ $(document).ready(function () {
                 let tradegroup_story_chart = AmCharts.makeChart("mna_idea_tradegroup_story", createLineChartConfigs(exposures_and_pnl, datasets, graphs, title, '$$', 'light'));
             }
             else {
-                AmCharts.makeChart("mna_idea_tradegroup_story", createLineChartConfigs(exposures_and_pnl, [], [],'The chart contains no data', '', 'light', 0, '50%'));
+                AmCharts.makeChart("mna_idea_tradegroup_story", createLineChartConfigs(exposures_and_pnl, [], [], 'The chart contains no data', '', 'light', 0, '50%'));
             }
         },
         error: function (err) {
@@ -255,22 +255,23 @@ $(document).ready(function () {
     /**
      *  Routine for Populating the Target and Acquirer Charts
      */
-    var historical_pxs = $('#historical_px_last').val();
-    var historical_px = $.parseJSON(historical_pxs);
-    var hist_prices_dates = historical_px['fields']['PX_LAST'];
-
-
-    var dates = historical_px['fields']['date'];
-    var target_ticker = $('#target_ticker').val();
-    var acquirer_ticker = $('#acquirer_ticker').val();
-    var acquirer_error_flag = 0;
-    //Try to get Acquirer Data
     try {
+        var historical_pxs = $('#historical_px_last').val();
+        var historical_px = $.parseJSON(historical_pxs);
+        var hist_prices_dates = historical_px['fields']['PX_LAST'];
+        var dates = historical_px['fields']['date'];
+        var target_ticker = $('#target_ticker').val();
+        var acquirer_ticker = $('#acquirer_ticker').val();
+        var acquirer_error_flag = 0;
+        //Try to get Acquirer Data
+
         var acq_historical_pxs = $('#historical_px_last_acquirer').val();
         if (acq_historical_pxs != "" && acq_historical_pxs != "undefined" && acq_historical_pxs != "None") {
+
             var acq_historical_px = $.parseJSON(acq_historical_pxs)
             var hist_prices_dates_acquirer = acq_historical_px['fields']['PX_LAST'];
             var hist_dates_acquirer = acq_historical_px['fields']['date'];
+
         }
         else {
             var hist_prices_dates_acquirer = [];
@@ -280,8 +281,9 @@ $(document).ready(function () {
             acquirer_error_flag = 1;
         }
     }
-    catch (err) {
-        acquirer_error_flag = 1;
+
+    catch
+        (err) {
         console.log(err);
     }
 
@@ -590,7 +592,7 @@ $(document).ready(function () {
 
 // ************** END ******** SECTION FOR SCENARIO ANALYSIS
 
-    // Save MnA IDEA Overviews
+// Save MnA IDEA Overviews
     $('#save_mna_idea_overviews').on('click', function () {
 
         //Get the code from Summernote
@@ -1504,4 +1506,5 @@ $(document).ready(function () {
 
     $('.show_1bf_dataset').trigger('click'); // Show 1BF dataset by Default..
 
-});
+})
+;
