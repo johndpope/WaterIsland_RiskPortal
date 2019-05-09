@@ -1,4 +1,75 @@
 $(document).ready(function(){
+    var file = "";
+    var ticker_index = -1;
+    var selectedTickerValue = "";
+    var selected_ticker_list = {};
+
+    var options = {
+        url: function(phrase) {
+          return "../news/search/";
+        },
+        getValue: function(element) {
+          return element;
+        },
+        list: {
+            maxNumberOfElements: 10,
+            onSelectItemEvent: function() {
+                selectedTickerValue = $("#wic_news_tickers").val();
+            },
+            onClickEvent: function() {
+                ticker_index += 1;
+                $("#wic_news_tickers").val();
+                file = $('#wic_news_tickers_id').html();
+                selected_ticker_list[ticker_index] = selectedTickerValue;
+                file += "<big class='badge badge-pill badge-info'>" + selectedTickerValue + " <a class='remove_ticker' data-id='remove_ticker_" + ticker_index.toString() +
+                        "' href='#'><i class='ft-trash-2'></i></a></big>  "
+                $("#wic_news_tickers_id").html(file);
+                var requiredElement = document.getElementById("wic_news_tickers_id");
+                if (requiredElement.innerHTML.trim().length > 0) {
+                    if ($("#wic_news_tickers").parent().next().attr('class') == 'ticker_error_div') {
+                        $("#wic_news_tickers").parent().next().css("display", "none");
+                    }
+                    document.getElementById("wic_news_tickers_div").style.display = "block";
+                    $("#wic_news_tickers").removeAttr("required");
+                }
+                else {
+                    document.getElementById("wic_news_tickers_div").style.display = "none";
+                    if (document.getElementById("tickerCheckbox").checked) {
+                        $("#wic_news_tickers").removeAttr("required");
+                    }
+                    else {
+                        $("#wic_news_tickers").prop("required", true);
+                    }
+                }
+            }
+        },
+        ajaxSettings: {
+          dataType: "json",
+          method: "POST",
+          data: {dataType: "json"}
+        },
+        preparePostData: function(data) {
+          data.phrase = $("#wic_news_tickers").val();
+          return data;
+        },
+        requestDelay: 400
+    };
+    $("#wic_news_tickers").easyAutocomplete(options)
+
+    $('.tickerCheckbox').on("click", function () {
+        var checkBox = document.getElementById("tickerCheckbox");
+        var text = document.getElementById("wic_news_other_tickers_div");
+        if (checkBox.checked == true){
+            text.style.display = "block";
+            $("#wic_news_tickers").removeAttr("required");
+            $("#wic_news_other_tickers").prop('required', true);
+        } else {
+            text.style.display = "none";
+            $("#wic_news_tickers").prop('required', true);
+            $("#wic_news_other_tickers").removeAttr("required");
+        }
+    });
+    
     //Create a Datatable out of retrieved Values
     var wic_news_table = $('#wic_news_table').DataTable({
         "aaSorting": [[0,'desc']],
@@ -33,55 +104,80 @@ $(document).ready(function(){
 
 
     $('#submit_wic_news_form').on('submit',function(e){
-        e.preventDefault(); //to Stop from Refreshing
-        //Get all the fields and make an Ajax call. Wait for Response, if positive, show toaster and append this new row to the existing table
-        var article = $('#wic_news_article').summernote('code');
-        var date = $('#wic_news_date').val();
-        var title = $('#wic_news_title').val();
-        var source = $('#wic_news_source').val();
-        var author = $('#wic_news_author').val();
-        var tickers = $('#wic_news_tickers').val();
-        var csrf_token = $('#wic_news_csrf_token').val();
-        var url = $('#wic_news_url').val();
-        //POST The Data to be Inserted into the Database
-
-        $.ajax({
-            type:'POST',
-            url:'../news/add_new_wic_news_item',
-            data:{'csrfmiddlewaretoken':csrf_token, 'article':article, 'date':date, 'title':title, 'source':source, 'author':author, 'tickers':tickers, 'url':url},
-            success:function(response){
-                $('#wic_news_modal').modal('hide');
-                $('body').removeClass('modal-open');
-                $('.modal-backdrop').remove();
-                // Reset the News Submission Form
-                $('#submit_wic_news_form')[0].reset();
-
-                // Reset the SummerNote
-                $('#wic_news_article').summernote('code','');
-
-                if(response === 'failed'){
-                    swal("Error!", "Adding News Item Failed!", "error");
-                }
-                else{
-                     toastr.success('Added', 'Please Refresh the page', {
-                        positionClass: 'toast-top-right',
-                        containerId: 'toast-top-right'
-                    });
-                }
-
-
-
-            },
-            error:function(err_response){
-                console.log(err_response+' in wic_news.js while trying to save new News Item');
+        var continue_form_submit = true;
+        if ($("#wic_news_tickers").parent().next().attr('class') == 'ticker_error_div') {
+            $("#wic_news_tickers").parent().next().css("display", "none");
+        }
+        if (document.getElementById("tickerCheckbox").checked == false) {
+            var requiredElement = document.getElementById("wic_news_tickers_id");
+            if (requiredElement.innerHTML.trim().length == 0) {
+                $("#wic_news_tickers").parent().after("<div class='ticker_error_div' "+
+                    "style='color:red;margin-bottom: 20px;'>Please select a ticker from the search bar. If you can not find it, click on `Other Tickers` checkbox and type it there.</div>");
+                e.preventDefault();
+                continue_form_submit = false;
             }
+        }
+        if (continue_form_submit == true) {
+            e.preventDefault(); //to Stop from Refreshing
+            //Get all the fields and make an Ajax call. Wait for Response, if positive, show toaster and append this new row to the existing table
+            var article = $('#wic_news_article').summernote('code');
+            var date = $('#wic_news_date').val();
+            var title = $('#wic_news_title').val();
+            var source = $('#wic_news_source').val();
+            var author = $('#wic_news_author').val();
+            var tickers = "";
+            var ticker_list = [];
+            var keys = Object.keys(selected_ticker_list);
+            keys.forEach(function(key){
+                ticker_list.push(selected_ticker_list[key].trim());
+            });
+            tickers = ticker_list.join(", ");
+            var other_tickers = $('#wic_news_other_tickers').val();
+            var all_tickers = "";
+            if (tickers != "" && other_tickers != "") {
+                all_tickers = tickers + ", " + other_tickers
+            }
+            else if (tickers != "") {
+                all_tickers = tickers;
+            }
+            else {
+                all_tickers = other_tickers;
+            }
+            var csrf_token = $('#wic_news_csrf_token').val();
+            var url = $('#wic_news_url').val();
+            //POST The Data to be Inserted into the Database
+            var data2 = {'csrfmiddlewaretoken':csrf_token, 'other_tickers':other_tickers, 'article':article, 'date':date, 'title':title, 'source':source, 'author':author, 'tickers':tickers, 'url':url};
+            console.log(data2);
+            $.ajax({
+                type:'POST',
+                url:'../news/add_new_wic_news_item',
+                data:data2,
+                success:function(response){
+                    $('#wic_news_modal').modal('hide');
+                    $('body').removeClass('modal-open');
+                    $('.modal-backdrop').remove();
+                    // Reset the News Submission Form
+                    $('#submit_wic_news_form')[0].reset();
 
-        });
+                    // Reset the SummerNote
+                    $('#wic_news_article').summernote('code','');
 
-
-
+                    if(response === 'failed'){
+                        swal("Error!", "Adding News Item Failed!", "error");
+                    }
+                    else{
+                        toastr.success('Added', 'Please Refresh the page', {
+                            positionClass: 'toast-top-right',
+                            containerId: 'toast-top-right'
+                        });
+                    }
+                },
+                error:function(err_response){
+                    console.log(err_response+' in wic_news.js while trying to save new News Item');
+                }
+            });
+        }
     });
-
 
     /* Function to delete a News Item */
      // Event Delegation for Dynamically added elements
@@ -246,12 +342,41 @@ $(document).ready(function(){
             error:function(err_response){
                 console.log(err_response+' in wic_news.js while trying to save new News Item');
             }
-
         });
-
-
-
     });
-
-
+    var wrapper = $(".display_tickers");
+    $(wrapper).on("click", ".remove_ticker", function (e) {
+        var index = -1;
+        ticker_index -= 1;
+        var ticker_id = $(this).attr('data-id');
+        remove_ticker_id = ticker_id.split("_").pop()
+        delete selected_ticker_list[remove_ticker_id];
+        var tickerList = $('#wic_news_tickers_id').html().split("  ")
+        for (var i = 0; i < tickerList.length; i++) {
+            if (tickerList[i].includes(ticker_id)) {
+                index = i;
+                break;
+            }
+        }
+        tickerList.splice(index, 1);
+        tickerList = tickerList.join("  ")
+        $('#wic_news_tickers_id').html(tickerList);
+        var requiredElement = document.getElementById("wic_news_tickers_id");
+        if (requiredElement.innerHTML.trim().length > 0) {
+            if ($("#wic_news_tickers").parent().next().attr('class') == 'ticker_error_div') {
+                $("#wic_news_tickers").parent().next().css("display", "none");
+            }
+            document.getElementById("wic_news_tickers_div").style.display = "block";
+            $("#wic_news_tickers").removeAttr("required");
+        }
+        else {
+            document.getElementById("wic_news_tickers_div").style.display = "none";
+            if (document.getElementById("tickerCheckbox").checked) {
+                $("#wic_news_tickers").removeAttr("required");
+            }
+            else {
+                $("#wic_news_tickers").prop("required", true);
+            }
+        }
+    });
 });

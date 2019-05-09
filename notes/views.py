@@ -1,4 +1,6 @@
 import datetime
+from itertools import chain
+import json
 import re
 
 from django.conf import settings
@@ -8,6 +10,7 @@ from django.http import HttpResponse, JsonResponse
 from cleanup.models import DeleteFile
 from email_utilities import send_email
 from notes.models import NotesMaster, NotesAttachments
+from wic_news.models import NewsMaster
 
 
 class ListNotes(ListView):
@@ -15,6 +18,26 @@ class ListNotes(ListView):
     model = NotesMaster
     template_name = 'wic_notes_list.html'
     queryset = NotesMaster.objects.all().order_by('-date')
+
+
+def autocompleteModel(request):
+    if request.is_ajax():
+        phrase = request.POST.get('phrase', '').strip().upper()
+        news_search_qs = NewsMaster.objects.filter(tickers__contains=phrase)
+        notes_search_qs = NotesMaster.objects.filter(tickers__contains=phrase)
+        search_qs = list(chain(notes_search_qs, news_search_qs))
+        results = set()
+        for item in search_qs:
+            tickers = item.tickers or ""
+            ticker_list = [i.strip().upper() for i in tickers.split(",")]
+            results.add(tickers)
+            for ticker in ticker_list:
+                results.add(ticker)
+        data = json.dumps(list(results))
+    else:
+        data = 'fail'
+    mimetype = 'application/json'
+    return HttpResponse(data, mimetype)
 
 
 def get_note_details(request):
@@ -45,6 +68,21 @@ def get_note_details(request):
     return JsonResponse({'attachments': attachments, 'note_details': note_details})
 
 
+def get_cleaned_ticker_string(selected_ticker, other_ticker):
+    selected_ticker = [ticker.strip().upper() for ticker in selected_ticker.split(",") if ticker.strip()]
+    other_ticker = [ticker.strip().upper() for ticker in other_ticker.split(",") if ticker.strip()]
+    for index, ticker in enumerate(other_ticker):
+        ticker = ticker.strip()
+        ticker_split = ticker.split(' ')
+        ticker_split = [item.strip() for item in ticker_split]
+        if len(ticker_split) == 1:
+            ticker = ticker.upper() + ' US'
+            other_ticker[index] = ticker
+    ticker_list = selected_ticker + other_ticker
+    tickers = ", ".join(str(ticker) for ticker in ticker_list)
+    return tickers
+
+
 def create_note(request):
     """ Async. To add a new Notes Item """
     response = {'note_created': 'false', 'email_sent': 'true', 'notes_id': ''}
@@ -55,7 +93,9 @@ def create_note(request):
             date = request.POST['date']
             title = request.POST['title']
             article = request.POST['article']
-            tickers = request.POST['tickers']
+            selected_tickers = request.POST['tickers']
+            other_tickers = request.POST['other_tickers']
+            tickers = get_cleaned_ticker_string(selected_tickers, other_tickers)
             file_urls = ""
             new_notes_item = NotesMaster.objects.create(author=author, date=date, title=title,
                                                         article=article, tickers=tickers)
@@ -130,6 +170,7 @@ def update_note(request):
         title = request.POST['title']
         article = request.POST['article']
         tickers = request.POST['tickers']
+        tickers = get_cleaned_ticker_string("", tickers)
         remove_file_ids = request.POST.get('remove_file_ids')
         try:
             if remove_file_ids:

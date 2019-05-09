@@ -1,4 +1,5 @@
 from . import views
+from notes.views import autocompleteModel
 from django.conf.urls import url
 app_name = 'news'
 
@@ -9,5 +10,6 @@ urlpatterns = [
     url('delete_wic_news_item',views.delete_wic_news_item, name='delete_wic_news_item'),
     url('update_wic_news_item',views.update_wic_news_item, name='update_wic_news_item'),
     url('get_article_from_url',views.get_article_from_url, name='get_article_from_url'),
+    url('search/', autocompleteModel, name='autocompleteModel')
 
 ]

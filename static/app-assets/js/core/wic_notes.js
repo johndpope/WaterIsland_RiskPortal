@@ -1,5 +1,76 @@
 $(document).ready(function () {
 
+    var file = "";
+    var ticker_index = -1;
+    var selectedTickerValue = "";
+    var selected_ticker_list = {};
+
+    var options = {
+        url: function(phrase) {
+          return "../search/";
+        },
+        getValue: function(element) {
+          return element;
+        },
+        list: {
+            maxNumberOfElements: 10,
+            onSelectItemEvent: function() {
+                selectedTickerValue = $("#wic_notes_tickers").val();
+            },
+            onClickEvent: function() {
+                ticker_index += 1;
+                $("#wic_notes_tickers").val();
+                file = $('#wic_notes_tickers_id').html();
+                selected_ticker_list[ticker_index] = selectedTickerValue;
+                file += "<big class='badge badge-pill badge-info'>" + selectedTickerValue + " <a class='remove_ticker' data-id='remove_ticker_" + ticker_index.toString() +
+                        "' href='#'><i class='ft-trash-2'></i></a></big>  "
+                $("#wic_notes_tickers_id").html(file);
+                var requiredElement = document.getElementById("wic_notes_tickers_id");
+                if (requiredElement.innerHTML.trim().length > 0) {
+                    if ($("#wic_notes_tickers").parent().next().attr('class') == 'ticker_error_div') {
+                        $("#wic_notes_tickers").parent().next().css("display", "none");
+                    }
+                    document.getElementById("wic_notes_tickers_div").style.display = "block";
+                    $("#wic_notes_tickers").removeAttr("required");
+                }
+                else {
+                    document.getElementById("wic_notes_tickers_div").style.display = "none";
+                    if (document.getElementById("tickerCheckbox").checked) {
+                        $("#wic_notes_tickers").removeAttr("required");
+                    }
+                    else {
+                        $("#wic_notes_tickers").prop("required", true);
+                    }
+                }
+            }
+        },
+        ajaxSettings: {
+          dataType: "json",
+          method: "POST",
+          data: {dataType: "json"}
+        },
+        preparePostData: function(data) {
+          data.phrase = $("#wic_notes_tickers").val();
+          return data;
+        },
+        requestDelay: 400
+    };
+    $("#wic_notes_tickers").easyAutocomplete(options)
+
+    $('.tickerCheckbox').on("click", function () {
+        var checkBox = document.getElementById("tickerCheckbox");
+        var text = document.getElementById("wic_notes_other_tickers_div");
+        if (checkBox.checked == true){
+            text.style.display = "block";
+            $("#wic_notes_tickers").removeAttr("required");
+            $("#wic_notes_other_tickers").prop('required', true);
+        } else {
+            text.style.display = "none";
+            $("#wic_notes_tickers").prop('required', true);
+            $("#wic_notes_other_tickers").removeAttr("required");
+        }
+    });
+
     var remove_file_ids = [];
 
     //Create a Datatable out of retrieved Values
@@ -15,98 +86,128 @@ $(document).ready(function () {
     $('#wic_note_article').summernote({'height': '450px'});
 
     $('#submit_wic_notes_form').on('submit', function (e) {
-        e.preventDefault(); //to Stop from Refreshing
-        //Get all the fields and make an Ajax call. Wait for Response, if positive, show toaster and append this new row to the existing table
-        swal({
-            title: "Saving",
-            text: "Hold on!",
-            buttons: false,
-            icon: "info",
-            closeOnClickOutside: false,
-        });
-        var article = $('#wic_note_article').summernote('code');
-        var date = $('#wic_notes_date').val();
-        var title = $('#wic_notes_title').val();
-        var author = $('#wic_notes_author').val();
-        var tickers = $('#wic_notes_tickers').val();
-        var emails = $('#wic_notes_emails').val();
-        var csrf_token = $('#wic_notes_csrf_token').val();
-
-        var data = new FormData();
-        var notes_files = $('#notes_attachments_model')[0].files;
-
-        for (var i = 0; i < notes_files.length; i++) {
-            var file = notes_files[i];
-            data.append('filesNotes[]', file, file.name);
+        var continue_form_submit = true;
+        if ($("#wic_notes_tickers").parent().next().attr('class') == 'ticker_error_div') {
+            $("#wic_notes_tickers").parent().next().css("display", "none");
         }
-        data.append('article', article);
-        data.append('date', date);
-        data.append('title', title);
-        data.append('author', author);
-        data.append('tickers', tickers);
-        data.append('emails', emails);
-
-        //POST The Data to be Inserted into the Database
-
-        $.ajax({
-            type: 'POST',
-            url: '../notes/create_note/',
-            processData: false,
-            contentType: false,
-            data: data,
-            success: function (response) {
-                $('#wic_notes_modal').modal('hide');
-                $('body').removeClass('modal-open');
-                $('.modal-backdrop').remove();
-                // Reset the Notes Submission Form
-                // Reset the SummerNote
-                $('#wic_note_article').summernote('code', '');
-
-                if (response.note_created == 'false') {
-                    swal("Error!", "Adding Note Failed!", "error");
-                }
-                else if (response.note_created == 'true') {
-                    var monthNames = ["Jan", "Feb", "March", "April", "May", "June",
-                        "July", "August", "Sept", "Oct", "Nov", "Dec"
-                    ];
-                    //Response was Success. Append this row to the Existing DataTable
-                    var date_split = date.split('-');
-                    var year = date_split[0];
-                    var month = date_split[1];
-                    var day = date_split[2];
-                    var newRow = '<tr id="row_' + response.notes_id + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + tickers + '</td>' +
-                        '<td><div class="btn-group">' +
-                        '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
-                        '<i class="ft-settings"></i>' +
-                        '</button>' +
-                        '<ul class="dropdown-menu">' +
-                        '<li><a id="edit_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-edit-2"></i> Edit</a></li>' +
-                        '<li><a id="delete_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-trash-2"></i> Delete</a></li>' +
-                        '<li><a id="view_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-plus-circle primary"></i> View</a></li>' +
-                        '</ul>' +
-                        '</div></td></tr>';
-
-                    //Re-initialize Datatable again
-                    wic_notes_table.row.add($(newRow)).draw();
-                    if (response.email_sent == 'false') {
-                        swal("Email not sent", "Your note has been saved but email has not been sent to the recipients.", "warning");
-                    }
-                    else {
-                        swal("Good job! " + author, "Your note has been saved.", "success");
-                    }
-                }
-
-
-            },
-            error: function (err_response) {
-                console.log(err_response + ' in wic_notes.js while trying to save new Notes Item');
+        if (document.getElementById("tickerCheckbox").checked == false) {
+            var requiredElement = document.getElementById("wic_notes_tickers_id");
+            if (requiredElement.innerHTML.trim().length == 0) {
+                $("#wic_notes_tickers").parent().after("<div class='ticker_error_div' "+
+                    "style='color:red;margin-bottom: 20px;'>Please select a ticker from the search bar. If you can not find it, click on `Other Tickers` checkbox and type it there.</div>");
+                e.preventDefault();
+                continue_form_submit = false;
             }
+        }
+        if (continue_form_submit == true) {
+            e.preventDefault(); //to Stop from Refreshing
+            //Get all the fields and make an Ajax call. Wait for Response, if positive, show toaster and append this new row to the existing table
+            swal({
+                title: "Saving",
+                text: "Hold on!",
+                buttons: false,
+                icon: "info",
+                closeOnClickOutside: false,
+            });
+            var article = $('#wic_note_article').summernote('code');
+            var date = $('#wic_notes_date').val();
+            var title = $('#wic_notes_title').val();
+            var author = $('#wic_notes_author').val();
+            var tickers = "";
+            var ticker_list = [];
+            var keys = Object.keys(selected_ticker_list);
+            keys.forEach(function(key){
+                ticker_list.push(selected_ticker_list[key].trim());
+            });
+            tickers = ticker_list.join(", ");
+            var other_tickers = $('#wic_notes_other_tickers').val();
+            var all_tickers = "";
+            if (tickers != "" && other_tickers != "") {
+                all_tickers = tickers + ", " + other_tickers
+            }
+            else if (tickers != "") {
+                all_tickers = tickers;
+            }
+            else {
+                all_tickers = other_tickers;
+            }
+            var emails = $('#wic_notes_emails').val();
+            var csrf_token = $('#wic_notes_csrf_token').val();
 
-        });
+            var data = new FormData();
+            var notes_files = $('#notes_attachments_model')[0].files;
+
+            for (var i = 0; i < notes_files.length; i++) {
+                var file = notes_files[i];
+                data.append('filesNotes[]', file, file.name);
+            }
+            data.append('article', article);
+            data.append('date', date);
+            data.append('title', title);
+            data.append('author', author);
+            data.append('tickers', tickers);
+            data.append('other_tickers', other_tickers);
+            data.append('emails', emails);
+
+            //POST The Data to be Inserted into the Database
+
+            $.ajax({
+                type: 'POST',
+                url: '../notes/create_note/',
+                processData: false,
+                contentType: false,
+                data: data,
+                success: function (response) {
+                    $('#wic_notes_modal').modal('hide');
+                    $('body').removeClass('modal-open');
+                    $('.modal-backdrop').remove();
+                    // Reset the Notes Submission Form
+                    // Reset the SummerNote
+                    $('#wic_note_article').summernote('code', '');
+
+                    if (response.note_created == 'false') {
+                        swal("Error!", "Adding Note Failed!", "error");
+                    }
+                    else if (response.note_created == 'true') {
+                        var monthNames = ["Jan", "Feb", "March", "April", "May", "June",
+                            "July", "August", "Sept", "Oct", "Nov", "Dec"
+                        ];
+                        //Response was Success. Append this row to the Existing DataTable
+                        var date_split = date.split('-');
+                        var year = date_split[0];
+                        var month = date_split[1];
+                        var day = date_split[2];
+                        var newRow = '<tr id="row_' + response.notes_id + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + all_tickers + '</td>' +
+                            '<td><div class="btn-group">' +
+                            '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
+                            '<i class="ft-settings"></i>' +
+                            '</button>' +
+                            '<ul class="dropdown-menu">' +
+                            '<li><a id="edit_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-edit-2"></i> Edit</a></li>' +
+                            '<li><a id="delete_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-trash-2"></i> Delete</a></li>' +
+                            '<li><a id="view_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-plus-circle primary"></i> View</a></li>' +
+                            '</ul>' +
+                            '</div></td></tr>';
+
+                        //Re-initialize Datatable again
+                        wic_notes_table.row.add($(newRow)).draw();
+                        if (response.email_sent == 'false') {
+                            swal("Email not sent", "Your note has been saved but email has not been sent to the recipients.", "warning");
+                        }
+                        else {
+                            swal("Good job! " + author, "Your note has been saved.", "success");
+                        }
+                    }
 
 
+                },
+                error: function (err_response) {
+                    console.log(err_response + ' in wic_notes.js while trying to save new Notes Item');
+                }
+
+            });
+        }
     });
-
 
     /* Function to delete a Note Item */
     // Event Delegation for Dynamically added elements
@@ -370,11 +471,45 @@ $(document).ready(function () {
                 break;
             }
         }
-        console.log(remove_file_ids);
         fileList.splice(index, 1);
         fileList = fileList.join("<br>")
         $('#edit_notes_attachments').html(fileList);
 
     });
 
+    var wrapper = $(".display_tickers");
+    $(wrapper).on("click", ".remove_ticker", function (e) {
+        var index = -1;
+        ticker_index -= 1;
+        var ticker_id = $(this).attr('data-id');
+        remove_ticker_id = ticker_id.split("_").pop()
+        delete selected_ticker_list[remove_ticker_id];
+        var tickerList = $('#wic_notes_tickers_id').html().split("  ")
+        for (var i = 0; i < tickerList.length; i++) {
+            if (tickerList[i].includes(ticker_id)) {
+                index = i;
+                break;
+            }
+        }
+        tickerList.splice(index, 1);
+        tickerList = tickerList.join("  ")
+        $('#wic_notes_tickers_id').html(tickerList);
+        var requiredElement = document.getElementById("wic_notes_tickers_id");
+        if (requiredElement.innerHTML.trim().length > 0) {
+            if ($("#wic_notes_tickers").parent().next().attr('class') == 'ticker_error_div') {
+                $("#wic_notes_tickers").parent().next().css("display", "none");
+            }
+            document.getElementById("wic_notes_tickers_div").style.display = "block";
+            $("#wic_notes_tickers").removeAttr("required");
+        }
+        else {
+            document.getElementById("wic_notes_tickers_div").style.display = "none";
+            if (document.getElementById("tickerCheckbox").checked) {
+                $("#wic_notes_tickers").removeAttr("required");
+            }
+            else {
+                $("#wic_notes_tickers").prop("required", true);
+            }
+        }
+    });
 });

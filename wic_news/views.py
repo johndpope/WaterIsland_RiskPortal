@@ -1,13 +1,12 @@
-from django.http import JsonResponse
-from django.http import HttpResponse
-# Create your views here.
-from django.views.generic import ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from newsapi import NewsApiClient
-from .models import NewsMaster
 import newspaper
 
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponse, JsonResponse
+from django.views.generic import ListView
+from newsapi import NewsApiClient
 
+from .models import NewsMaster
+from notes.views import get_cleaned_ticker_string
 
 news_api_key = '9ff06fee3b654053b9396245ad9faabe'
 #Initialize
@@ -56,8 +55,11 @@ def add_new_wic_news_item(request):
             source = request.POST['source']
             url = request.POST['url']
             article = request.POST['article']
-            tickers = request.POST['tickers']
-            new_news_item = NewsMaster.objects.create(author=author, date=date,title=title,source=source,url=url,article=article,tickers=tickers)
+            selected_tickers = request.POST.get('tickers', "")
+            other_tickers = request.POST.get('other_tickers', "")
+            tickers = get_cleaned_ticker_string(selected_tickers, other_tickers)
+            new_news_item = NewsMaster.objects.create(author=author, date=date, title=title, source=source, url=url,
+                                                      article=article, tickers=tickers)
             response = new_news_item.id
         except Exception as e:
             print(e)
@@ -81,8 +83,9 @@ def update_wic_news_item(request):
         url = request.POST['url']
         article = request.POST['article']
         tickers = request.POST['tickers']
+        tickers = get_cleaned_ticker_string("", tickers)
         NewsMaster.objects.filter(id=id).update(author=author, date=date, title=title, source=source, url=url,
-                                                  article=article, tickers=tickers)
+                                                article=article, tickers=tickers)
 
         response = id
 

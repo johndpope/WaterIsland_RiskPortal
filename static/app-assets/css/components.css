@@ -3512,6 +3512,10 @@ table.dataTable {
 .DTFC_LeftBodyLiner {
   top: -1px !important; }
 
+.easy-autocomplete{
+  width:70% !important
+}
+
 div.dataTables_wrapper {
   width: 100%;
   margin: 0 auto; }

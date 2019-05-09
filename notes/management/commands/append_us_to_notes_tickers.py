@@ -24,7 +24,7 @@ class Command(BaseCommand):
                 for index, ticker in enumerate(ticker_list):
                     ticker = ticker.strip()
                     ticker_split = ticker.split(' ')
-                    ticker_split = [item.split() for item in ticker_split]
+                    ticker_split = [item.strip() for item in ticker_split]
                     if len(ticker_split) == 1:
                         ticker = ticker.upper() + ' US'
                         ticker_list[index] = ticker
