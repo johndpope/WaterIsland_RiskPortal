@@ -623,8 +623,8 @@ def mna_idea_database(request):
     :param request: Request Object with no fields
     :return: All Deals in the Merger Arb IDEA Database
     """
-    deals_df = MA_Deals.objects.all().filter(archived=False)
-    archived_deals_df = MA_Deals.objects.all().filter(archived=True)
+    deals_df = MA_Deals.objects.filter(archived=False)
+    archived_deals_df = MA_Deals.objects.filter(archived=True)
 
     return render(request, 'mna_idea_database.html', {'deals_df': deals_df, 'archived_deals_df': archived_deals_df})
 

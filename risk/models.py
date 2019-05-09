@@ -9,6 +9,7 @@ from django.db import models
 class MA_Deals(models.Model):
     ''' Model to hold Merger ARb Deals '''
     id = models.AutoField(primary_key=True)
+    action_id = models.CharField(max_length=20, null=True)
     deal_name = models.CharField(max_length=100)
     target_ticker = models.CharField(max_length=50)
     acquirer_ticker = models.CharField(max_length=50)
