@@ -20,7 +20,7 @@ $(document).ready(function () {
     $('.premium-analysis').hide();
     $('.premium-analysis-table').hide();
     $('#show_ess_idea_news_items').DataTable({
-        "aaSorting": [[0,'desc']],
+        "aaSorting": [[0, 'desc']],
         columnDefs: [{
             targets: [0], render: function (data) {
                 return moment(data).format('YYYY-MM-DD');
@@ -28,7 +28,7 @@ $(document).ready(function () {
         }],
     });
     $('#show_ess_idea_notes_table').DataTable({
-        "aaSorting": [[0,'desc']],
+        "aaSorting": [[0, 'desc']],
         columnDefs: [{
             targets: [0], render: function (data) {
                 return moment(data).format('YYYY-MM-DD');
@@ -557,23 +557,23 @@ $(document).ready(function () {
         let upside_downside_records = JSON.parse($('#upside_downside_records_df').val());
         let chartData = [];
 
-        let model_upside = parseFloat(upside_downside_records[upside_downside_records.length-1].pt_up).toFixed(2);
-        let model_downside = parseFloat(upside_downside_records[upside_downside_records.length-1].pt_down).toFixed(2);
-        let model_pt_wic = parseFloat(upside_downside_records[upside_downside_records.length-1].pt_wic).toFixed(2);
+        let model_upside = parseFloat(upside_downside_records[upside_downside_records.length - 1].pt_up).toFixed(2);
+        let model_downside = parseFloat(upside_downside_records[upside_downside_records.length - 1].pt_down).toFixed(2);
+        let model_pt_wic = parseFloat(upside_downside_records[upside_downside_records.length - 1].pt_wic).toFixed(2);
 
-        if(parseFloat(model_upside) === 0){
+        if (parseFloat(model_upside) === 0) {
             model_upside = $('#analyst_upside').val();
         }
-        if(parseFloat(model_downside) === 0){
+        if (parseFloat(model_downside) === 0) {
             model_downside = $('#analyst_downside').val();
         }
-        if(parseFloat(model_pt_wic) === 0){
+        if (parseFloat(model_pt_wic) === 0) {
             model_pt_wic = $('#analyst_pt_wic').val();
         }
 
-        $('#model-upside').html("Upside: "+ model_upside);
-        $('#model-downside').html("Downside: "+ model_downside);
-        $('#model-ptwic').html("PT WIC: "+ model_pt_wic);
+        $('#model-upside').html("Upside: " + model_upside);
+        $('#model-downside').html("Downside: " + model_downside);
+        $('#model-ptwic').html("PT WIC: " + model_pt_wic);
         for (let i = 0; i < upside_downside_records.length; i++) {
             chartData.push({
                 date: upside_downside_records[i].date_updated,
@@ -846,90 +846,96 @@ $('#show_premium_analysis').on('click', function (e) {
                         let cix_calculations = response['cix_calculations'];
                         let calculations_array = [];
                         // Fill Calculations Dictionary
-                        calculations_array = fill_calculations_dictionary(regression_calculations);
-                        set_global_calculations_array(calculations_array); // Calculations Array is Set here. Will respond to event listeners
-                        // Create Required Modals dynamically 3 multiples
-                        let multiples = Object.keys(regression_results);
-                        for (var i = 0; i < multiples.length; i++) {
-                            let multiple = multiples[i];
-                            let id = '';
-                            if (multiple === 'EV/EBITDA') {
-                                id = 'ev_ebitda'
+                        try {
+                            calculations_array = fill_calculations_dictionary(regression_calculations);
+                            set_global_calculations_array(calculations_array); // Calculations Array is Set here. Will respond to event listeners
+                            // Create Required Modals dynamically 3 multiples
+                            let multiples = Object.keys(regression_results);
+                            for (var i = 0; i < multiples.length; i++) {
+                                let multiple = multiples[i];
+                                let id = '';
+                                if (multiple === 'EV/EBITDA') {
+                                    id = 'ev_ebitda'
+                                }
+                                else if (multiple === 'P/E') {
+                                    id = 'p_e'
+                                }
+                                else if (multiple === 'EV/Sales') {
+                                    id = 'ev_sales'
+                                }
+                                else if (multiple === 'DVD Yield') {
+                                    id = 'dvd_yield'
+                                }
+                                else if (multiple === 'FCF Yield') {
+                                    id = 'fcf_yield'
+                                }
+                                // Append Multiple
+                                let currernt_row = '<tr>';
+                                let row_cell = currernt_row + '<td>' + multiple + '</td>';
+
+                                let coefficients = regression_results[multiples[i]]['Coefficients'];
+                                // Iterate throught coeffieicent and create a Table
+                                let coefficients_table = '<table class=\"table table-striped\"><thead><tr><th>Peer/Intercept</th><th>Coefficients</th></tr></thead><tbody>';
+
+                                for (var peer in coefficients) {
+                                    coefficients_table += '<tr><td>' + peer + '</td><td>' + parseFloat(coefficients[peer]).toFixed(4) +
+                                        '</td></tr>'
+                                }
+                                coefficients_table += '</table>';
+                                // Create a Bootstrap Modal
+                                get_regression_analysis_modal(id + '_coefficients', coefficients_table, 'Regression Coefficients');
+
+                                row_cell += '<td>' + get_modal_launch_button('id', id + '_coefficients', 'View Coefficients') +
+                                    '</td>';
+
+                                let peer_multiples_at_price_target_date = regression_results[multiples[i]]['Peers Multiples @ Price Target Date'];
+                                // Iterate throught Peer Multiples at PT Date
+                                let peer_multiples_at_pt_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
+
+                                for (var peer in peer_multiples_at_price_target_date) {
+                                    peer_multiples_at_pt_table += '<tr><td>' + peer + '</td><td>' + parseFloat(peer_multiples_at_price_target_date[peer]).toFixed(2) +
+                                        '</td></tr>'
+                                }
+                                peer_multiples_at_pt_table += '</table>';
+
+                                get_regression_analysis_modal(id + '_peer_multiples_at_pt', peer_multiples_at_pt_table, 'Peer Multiples at Price Target Date');
+
+                                row_cell += '<td>' + get_modal_launch_button('id', id + '_peer_multiples_at_pt', 'Peers Multiple Drilldown') +
+                                    '</td>';
+
+                                row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Implied Multiple @ Price Target Date']).toFixed(2) + '</td>';
+                                row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bear Multiple @ Price Target Date']).toFixed(2) + '</td>';
+                                row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha PT WIC Multiple @ Price Target Date']).toFixed(2) + '</td>';
+                                row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bull Multiple @ Price Target Date']).toFixed(2) + '</td>';
+
+                                // Repeat the Above for Now Section
+                                let peer_multiples_at_now = regression_results[multiples[i]]['Peers Multiples @ Now'];
+                                // Iterate throught Peer Multiples at PT Date
+                                let peer_multiples_at_now_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
+
+                                for (var peer in peer_multiples_at_now) {
+                                    peer_multiples_at_now_table += '<tr><td>' + peer + '</td><td>' + parseFloat(peer_multiples_at_now[peer]).toFixed(2) +
+                                        '</td></tr>'
+                                }
+                                peer_multiples_at_now_table += '</table>';
+
+                                get_regression_analysis_modal(id + '_peer_multiples_at_now', peer_multiples_at_now_table, 'Peer Multiples (Now)');
+
+                                row_cell += '<td>' + get_modal_launch_button('id', id + '_peer_multiples_at_now', 'Peers Multiple Drilldown') +
+                                    '</td>';
+
+                                row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Implied Multiple @ Now']).toFixed(2) + '</td>';
+                                row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bear Multiple @ Now']).toFixed(2) + '</td>';
+                                row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha PT WIC Multiple @ Now']).toFixed(2) + '</td>';
+                                row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bull Multiple @ Now']).toFixed(2) + '</td>';
+                                row_cell += '</tr>';
+                                $('#premium_analysis_regression_breakdown_table tbody').append(row_cell);
                             }
-                            else if (multiple === 'P/E') {
-                                id = 'p_e'
-                            }
-                            else if (multiple === 'EV/Sales') {
-                                id = 'ev_sales'
-                            }
-                            else if (multiple === 'DVD Yield') {
-                                id = 'dvd_yield'
-                            }
-                            else if (multiple === 'FCF Yield') {
-                                id = 'fcf_yield'
-                            }
-                            // Append Multiple
-                            let currernt_row = '<tr>';
-                            let row_cell = currernt_row + '<td>' + multiple + '</td>';
-
-                            let coefficients = regression_results[multiples[i]]['Coefficients'];
-                            // Iterate throught coeffieicent and create a Table
-                            let coefficients_table = '<table class=\"table table-striped\"><thead><tr><th>Peer/Intercept</th><th>Coefficients</th></tr></thead><tbody>';
-
-                            for (var peer in coefficients) {
-                                coefficients_table += '<tr><td>' + peer + '</td><td>' + parseFloat(coefficients[peer]).toFixed(4) +
-                                    '</td></tr>'
-                            }
-                            coefficients_table += '</table>';
-                            // Create a Bootstrap Modal
-                            get_regression_analysis_modal(id + '_coefficients', coefficients_table, 'Regression Coefficients');
-
-                            row_cell += '<td>' + get_modal_launch_button('id', id + '_coefficients', 'View Coefficients') +
-                                '</td>';
-
-                            let peer_multiples_at_price_target_date = regression_results[multiples[i]]['Peers Multiples @ Price Target Date'];
-                            // Iterate throught Peer Multiples at PT Date
-                            let peer_multiples_at_pt_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
-
-                            for (var peer in peer_multiples_at_price_target_date) {
-                                peer_multiples_at_pt_table += '<tr><td>' + peer + '</td><td>' + parseFloat(peer_multiples_at_price_target_date[peer]).toFixed(2) +
-                                    '</td></tr>'
-                            }
-                            peer_multiples_at_pt_table += '</table>';
-
-                            get_regression_analysis_modal(id + '_peer_multiples_at_pt', peer_multiples_at_pt_table, 'Peer Multiples at Price Target Date');
-
-                            row_cell += '<td>' + get_modal_launch_button('id', id + '_peer_multiples_at_pt', 'Peers Multiple Drilldown') +
-                                '</td>';
-
-                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Implied Multiple @ Price Target Date']).toFixed(2) + '</td>';
-                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bear Multiple @ Price Target Date']).toFixed(2) + '</td>';
-                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha PT WIC Multiple @ Price Target Date']).toFixed(2) + '</td>';
-                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bull Multiple @ Price Target Date']).toFixed(2) + '</td>';
-
-                            // Repeat the Above for Now Section
-                            let peer_multiples_at_now = regression_results[multiples[i]]['Peers Multiples @ Now'];
-                            // Iterate throught Peer Multiples at PT Date
-                            let peer_multiples_at_now_table = '<table class=\"table table-striped\"><thead><tr><th>Peer</th><th>Multiples</th></tr></thead><tbody>';
-
-                            for (var peer in peer_multiples_at_now) {
-                                peer_multiples_at_now_table += '<tr><td>' + peer + '</td><td>' + parseFloat(peer_multiples_at_now[peer]).toFixed(2) +
-                                    '</td></tr>'
-                            }
-                            peer_multiples_at_now_table += '</table>';
-
-                            get_regression_analysis_modal(id + '_peer_multiples_at_now', peer_multiples_at_now_table, 'Peer Multiples (Now)');
-
-                            row_cell += '<td>' + get_modal_launch_button('id', id + '_peer_multiples_at_now', 'Peers Multiple Drilldown') +
-                                '</td>';
-
-                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Implied Multiple @ Now']).toFixed(2) + '</td>';
-                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bear Multiple @ Now']).toFixed(2) + '</td>';
-                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha PT WIC Multiple @ Now']).toFixed(2) + '</td>';
-                            row_cell += '<td class="text-info">' + parseFloat(regression_results[multiples[i]]['Alpha Bull Multiple @ Now']).toFixed(2) + '</td>';
-                            row_cell += '</tr>';
-                            $('#premium_analysis_regression_breakdown_table tbody').append(row_cell);
                         }
+                        catch (err) {
+                            console.log(err);
+                        }
+
 
                         $('#show_premium_analysis').prop('disabled', false);
                         //Show the table

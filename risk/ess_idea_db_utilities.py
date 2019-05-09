@@ -647,13 +647,19 @@ def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                                                   progress_recorder=progress_recorder)
 
         df = result_dictionary['Final Results']
+        regression_up_price = 0
+        regression_down_price = 0
+        regression_calculations = None
+        pt_wic_price_regression = 0
+        if 'Up Price (Regression)' in df:
+            regression_up_price = df['Up Price (Regression)']
+            regression_down_price = df['Down Price (Regression)']
+            regression_calculations = result_dictionary['Regression Calculations']
+            pt_wic_price_regression = df['PT WIC Price (Regression)']
+
         cix_down_price = df['Down Price (CIX)']
         cix_up_price = df['Up Price (CIX)']
-        regression_up_price = df['Up Price (Regression)']
-        regression_down_price = df['Down Price (Regression)']
         pt_wic_price_cix = df['PT WIC Price (CIX)']
-        pt_wic_price_regression = df['PT WIC Price (Regression)']
-        regression_calculations = result_dictionary['Regression Calculations']
         cix_calculations = result_dictionary['CIX Calculations']
 
         new_upside = 0
@@ -690,9 +696,6 @@ def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
                                                 pt_up=new_upside,
                                                 pt_wic=new_pt_wic, pt_down=new_downside,
                                                 date_updated=datetime.datetime.now()).save()
-
-
-
 
         EssIdeaAdjustmentsInformation(ess_idea_id_id=new_deal.id, deal_key=new_deal.deal_key,
                                       regression_results=json.dumps(result_dictionary['Regression Results']),
@@ -1362,13 +1365,19 @@ def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear
                                                   progress_recorder=progress_recorder)
 
         df = result_dictionary['Final Results']
+        regression_up_price = 0
+        regression_down_price = 0
+        regression_calculations = None
+        pt_wic_price_regression = 0
+        if 'Up Price (Regression)' in df:
+            regression_up_price = df['Up Price (Regression)']
+            regression_down_price = df['Down Price (Regression)']
+            regression_calculations = result_dictionary['Regression Calculations']
+            pt_wic_price_regression = df['PT WIC Price (Regression)']
+
         cix_down_price = df['Down Price (CIX)']
         cix_up_price = df['Up Price (CIX)']
-        regression_up_price = df['Up Price (Regression)']
-        regression_down_price = df['Down Price (Regression)']
         pt_wic_price_cix = df['PT WIC Price (CIX)']
-        pt_wic_price_regression = df['PT WIC Price (Regression)']
-        regression_calculations = result_dictionary['Regression Calculations']
         cix_calculations = result_dictionary['CIX Calculations']
 
         new_upside = 0

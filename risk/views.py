@@ -1722,10 +1722,15 @@ def get_premium_analysis_results_from_worker(request):
 
         cix_down_price = np.round(final_results['Down Price (CIX)'], decimals=2)
         cix_up_price = np.round(final_results['Up Price (CIX)'], decimals=2)
-        regression_up_price = np.round(final_results['Up Price (Regression)'], decimals=2)
-        regression_down_price = np.round(final_results['Down Price (Regression)'], decimals=2)
         wic_cix_price = np.round(final_results['PT WIC Price (CIX)'], decimals=2)
-        wic_regression_price = np.round(final_results['PT WIC Price (Regression)'], decimals=2)
+        regression_up_price = 0
+        regression_down_price = 0
+        wic_regression_price = 0
+
+        if 'Up Price (Regression)' in final_results:
+            regression_up_price = np.round(final_results['Up Price (Regression)'], decimals=2)
+            regression_down_price = np.round(final_results['Down Price (Regression)'], decimals=2)
+            wic_regression_price = np.round(final_results['PT WIC Price (Regression)'], decimals=2)
 
     return JsonResponse(
         {'cix_down_price': cix_down_price, 'cix_up_price': cix_up_price, 'regression_up_price': regression_up_price,
