@@ -3,7 +3,7 @@ import json
 from urllib.parse import urlencode
 from django.shortcuts import render
 from django.db import connection
-from django_pandas.io import read_frame
+import numpy as np
 from django.http import JsonResponse
 # Create your views here.
 
@@ -80,11 +80,13 @@ def get_tradegroup_story(request):
     tradegroup = request.GET['TradeGroup']
     fund = request.GET['Fund']
     tradegroup_overall_pnl = pd.read_sql_query("SELECT * FROM wic.tradegroup_overall_pnl where tradegroup "
-                                               " like '"+tradegroup+"' and Fund like '"+fund+"'", con=connection)
+                                               " like '"+tradegroup+"' and Fund like '"+fund+"' order by `Date`",
+                                               con=connection)
 
     tradegroup_exposures_info = pd.read_sql_query("SELECT * FROM wic.tradegroup_exposure_nav_info where tradegroup "
                                                   " like '"+tradegroup+"' and Fund like '"+fund+"'", con=connection)
 
+    tradegroup_overall_pnl = tradegroup_overall_pnl.ix[np.trim_zeros(tradegroup_overall_pnl['Daily_PnL_Dollar']).index].copy()
     if not tradegroup_overall_pnl.empty:
         tradegroup_overall_pnl = tradegroup_overall_pnl.sort_values(by='Date')
         tradegroup_overall_pnl['Cumulative_pnl_dollar'] = tradegroup_overall_pnl['Daily_PnL_Dollar'].cumsum()
