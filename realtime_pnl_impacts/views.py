@@ -20,13 +20,14 @@ def px_adjuster(bbg_sectype, northpoint_sectype, px, crncy, fx_rate, factor):
 
 
 def fund_level_pnl(request):
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl = get_data()
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl, \
+    fund_drilldown_details = get_data()
     fund_level_live = fund_level_live.groupby(['Group', 'TradeGroup']).sum().reset_index()
     assets_df = pd.read_sql_query('SELECT DISTINCT Fund, aum from wic.daily_flat_file_db where flat_file_as_of ='
                                   '(select max(flat_file_as_of) from wic.daily_flat_file_db)', con=connection)
     fund_details = pd.merge(fund_level_live, assets_df, left_on='Group', right_on='Fund')
-    fund_details['ROC'] = 100.0 * (fund_details['MKTVAL_CHG_USD']/fund_details['Capital($)_x'])
-    fund_details['Contribution_to_NAV'] = 1e4* (fund_details['MKTVAL_CHG_USD']/fund_details['aum'])
+    fund_details['ROC'] = 100.0 * (fund_details['MKTVAL_CHG_USD'] / fund_details['Capital($)_x'])
+    fund_details['Contribution_to_NAV'] = 1e4 * (fund_details['MKTVAL_CHG_USD'] / fund_details['aum'])
     del fund_details['Fund']
     del fund_details['Qty_x']
     fund_details_dict = {}
@@ -40,26 +41,29 @@ def fund_level_pnl(request):
         })
 
 
-def apply_red_green_formatting(dataframe):
-    for cols in dataframe.columns.values[2:]:
-        dataframe[cols] = dataframe[cols].apply(lambda x: '<td style="color:red">'+'{0:,.2f}'.format(x)+'</td>'
-                                                if x < 0 else '<td style="color:green">'+'{0:,.2f}'.format(x)+'</td>')
+def apply_red_green_formatting(dataframe, start_from_col=2):
+    for cols in dataframe.columns.values[start_from_col:]:
+        dataframe[cols] = dataframe[cols].apply(lambda x: '<td style="color:red">' + '{0:,.2f}'.format(x) + '</td>'
+        if x < 0 else '<td style="color:green">' + '{0:,.2f}'.format(x) + '</td>')
     return dataframe
 
 
 def live_tradegroup_pnl(request):
     """ Returns the Live PnL and YTD PnL at the Tradegroup level """
 
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl = get_data()
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl, \
+    fund_drilldown_details = get_data()
 
     position_level_pnl = apply_red_green_formatting(position_level_pnl)
     final_position_level_ytd_pnl = apply_red_green_formatting(final_position_level_ytd_pnl)
+    fund_drilldown_details = apply_red_green_formatting(fund_drilldown_details, 7)
 
     if request.is_ajax():
         return_data = {'data': final_live_df.to_json(orient='records'),
                        'daily_pnl': final_daily_pnl.to_json(orient='records'),
                        'position_level_pnl': position_level_pnl.to_json(orient='records'),
                        'final_position_level_ytd_pnl': final_position_level_ytd_pnl.to_json(orient='records'),
+                       'fund_drilldown_details': fund_drilldown_details.to_json(orient='records'),
                        'last_synced_on': last_updated}
 
         return JsonResponse(return_data)
@@ -131,13 +135,17 @@ def get_data():
     table_df['PX_CHG_PCT'] = 100.0 * (
             (table_df['END_ADJ_PX'].astype(float) / table_df['START_ADJ_PX'].astype(float)) - 1.0)
 
-    position_level_pnl = table_df[['Group', 'TradeGroup', 'TICKER_x', 'Qty_x', 'START_ADJ_PX', 'END_ADJ_PX',
+    position_level_pnl = table_df[['Group', 'TradeGroup', 'TICKER_x', 'START_ADJ_PX', 'END_ADJ_PX',
                                    'MKTVAL_CHG_USD']].copy()
 
-    position_level_pnl = position_level_pnl[position_level_pnl['Qty_x'] != 0] # Drop 0 quantities
     funds_list = ['ARB', 'AED', 'LG', 'MACO', 'TAQ', 'CAM', 'LEV', 'TACO', 'MALT', 'WED']
     position_level_pnl = position_level_pnl[position_level_pnl['Group'].isin(funds_list)]
     position_level_pnl['TradeGroup'] = position_level_pnl['TradeGroup'].str.upper()
+    fund_drilldown_details = table_df[['Group', 'TradeGroup','Sleeve', 'Bucket', 'AlphaHedge', 'LongShort', 'TICKER_x',
+                                       'Qty_x', 'START_ADJ_PX', 'END_ADJ_PX', 'PX_CHG_PCT', 'START_MKTVAL',
+                                       'END_MKTVAL', 'MKTVAL_CHG_USD']].copy()
+    fund_drilldown_details['TradeGroup'] = fund_drilldown_details['TradeGroup'].str.upper()
+    fund_drilldown_details['Group'] = fund_drilldown_details['Group'].str.upper()
 
     final_position_level_ytd_pnl = pd.merge(position_level_pnl, position_level_ytd_pnl,
                                             left_on=['Group', 'TradeGroup', 'TICKER_x'],
@@ -164,7 +172,7 @@ def get_data():
     final_position_level_ytd_pnl = final_position_level_ytd_pnl.append(final_ytd_options)
     final_position_level_ytd_pnl.reset_index(inplace=True)
     del final_position_level_ytd_pnl['index']
-    position_level_pnl = pd.pivot_table(position_level_pnl, index=['TradeGroup', 'TICKER_x', 'Qty_x', 'START_ADJ_PX',
+    position_level_pnl = pd.pivot_table(position_level_pnl, index=['TradeGroup', 'TICKER_x', 'START_ADJ_PX',
                                                                    'END_ADJ_PX'], columns=['Group'], aggfunc='first',
                                         fill_value=0).reset_index()
     position_level_pnl.columns = ["_".join((i, j)) for i, j in position_level_pnl.columns]
@@ -240,7 +248,8 @@ def get_data():
     except:
         final_daily_pnl = pd.DataFrame()
 
-    return final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl
+    return final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, \
+           final_position_level_ytd_pnl, fund_drilldown_details
 
 
 def live_pnl_monitors(request):
@@ -248,7 +257,7 @@ def live_pnl_monitors(request):
         df = pd.read_sql_query("SELECT * FROM " + settings.CURRENT_DATABASE + ".realtime_pnl_impacts_pnlmonitors"
                                                                               " where last_updated = "
                                                                               "(select max(last_updated) from "
-                               + settings.CURRENT_DATABASE+".realtime_pnl_impacts_pnlmonitors)",
+                               + settings.CURRENT_DATABASE + ".realtime_pnl_impacts_pnlmonitors)",
                                con=connection)
         last_updated = df['last_updated'].max()
         del df['last_updated']

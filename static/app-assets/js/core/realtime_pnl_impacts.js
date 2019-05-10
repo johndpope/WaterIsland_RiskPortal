@@ -6,6 +6,7 @@ $(document).ready(function () {
     let position_level_pnl = null;
     let final_position_level_ytd_pnl = null;
     let fund_level_pnl = null;
+    let fund_drilldown_details = null;
     // Now create the Dynamic Fund Tabs for Fund level P&L
     createFundPnLTables();
 
@@ -47,6 +48,28 @@ $(document).ready(function () {
             tr.addClass('shown');
         }
     });
+
+
+    // let funds_list = ['ARB', 'MACO', 'MALT', 'LEV', 'AED', 'CAM', 'LG', 'WED', 'TAQ', 'TACO'];
+    // for (var fund in funds_list) {
+    //     $('#fund-tab-content').find('#tabARB table tbody').on('click', 'td.details-control', function () {
+    //         var tr = $(this).closest('tr');
+    //         console.log(tr);
+    //         // var row = realtime_daily_pnl_table.row(tr);
+    //         //
+    //         // if (row.child.isShown()) {
+    //         //     // This row is already open - close it
+    //         //     row.child.hide();
+    //         //     tr.removeClass('shown');
+    //         // }
+    //         // else {
+    //         //     // Open this row
+    //         //     row.child(format(row.data(), false)).show();
+    //         //     tr.addClass('shown');
+    //         // }
+    //     })
+    // }
+
 
     later.setInterval(refreshPnL, later.parse.text('every 10 mins on Mon, Tue, Weds, Thurs and Fri'));
 
@@ -100,15 +123,15 @@ $(document).ready(function () {
         // Crete Active Tab for ARB
         let data = fund_pnl;
         $('<div class="tab-pane active" id="tabTable' + name + '"><table class="table table-striped text-dark" style="width:100%" id="table' + name + '">' +
-            '<tfoot><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr></tfoot></table><br><br><br>' +
+            '<tfoot><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr></tfoot></table><br><br><br>' +
             '</div>' +
             '').appendTo('#fund_pnl' + name);
-        initializeDatatableSummary(data, 'table' + name);
+        initializeDatatableSummary(data, 'table' + name, name);
 
 
     }
 
-    function initializeDatatableSummary(data, table_id) {
+    function initializeDatatableSummary(data, table_id, fundName) {
         $('#' + table_id).DataTable({
             data: data,
             responsive: true,
@@ -116,6 +139,12 @@ $(document).ready(function () {
             scrollX: true,
             paging: false,
             columns: [
+                {
+                    "className": 'details-control',
+                    "orderable": false,
+                    "data": null,
+                    "defaultContent": ''
+                },
                 {title: 'TradeGroup', data: 'TradeGroup'},
                 {title: 'Start MktVal', data: 'START_MKTVAL'},
                 {title: 'End MktVal', data: 'END_MKTVAL'},
@@ -128,7 +157,7 @@ $(document).ready(function () {
 
             ],
             "columnDefs": [{
-                "targets": [1, 2, 3, 4, 5, 6, 7, 8],
+                "targets": [2, 3, 4, 5, 6, 7, 8, 9],
                 "createdCell": function (td, cellData, rowData, rowIndex) {
                     //Check for % Float and %Shares Out
                     if (cellData < 0) {
@@ -152,7 +181,7 @@ $(document).ready(function () {
                 };
                 // Iterate through Each column
 
-                $.each([1, 2, 3, 4, 6], function (index, value) {
+                $.each([ 2, 3, 4, 5, 6, 9], function (index, value) {
                     let pageTotal = api
                         .column([value], {page: 'current'})
                         .data()
@@ -181,6 +210,25 @@ $(document).ready(function () {
                 });
 
 
+            },
+            "initComplete": function (settings, json) {
+                var api = this.api();
+
+                $(this).on('click', 'td.details-control', function(){
+                    var tr = $(this).closest('tr');
+                    var row = api.row(tr);
+
+                    if (row.child.isShown()) {
+                        // This row is already open - close it
+                        row.child.hide();
+                        tr.removeClass('shown');
+                    }
+                    else {
+                        // Open this row
+                        row.child(format(row.data(), false, true, fundName)).show();
+                        tr.addClass('shown');
+                    }
+                })
             }
         })
     }
@@ -246,6 +294,7 @@ $(document).ready(function () {
                     let obj = JSON.parse(json[[json_response_tag]]);
                     position_level_pnl = JSON.parse(json[['position_level_pnl']]);
                     final_position_level_ytd_pnl = JSON.parse(json[['final_position_level_ytd_pnl']]);
+                    fund_drilldown_details = JSON.parse(json[['fund_drilldown_details']]);
                     last_synced_on = json[['last_synced_on']];
                     return obj;
                 }
@@ -352,95 +401,104 @@ $(document).ready(function () {
         }
     }
 
-    function format(data, is_ytd) {
+    function format(data, is_ytd, fund_drilldown = false, current_fund = null) {
         let tradegroup = data['TradeGroup_'];
+
         let return_rows = '';
-        if (is_ytd == true) {
+        let dataframe = null;
+        if (is_ytd) {
             dataframe = final_position_level_ytd_pnl;
-            // Get Equivalent Row from Positions Impacts
-            for (var i = 0; i < dataframe.length; i++) {
-                dataframe_row = dataframe[i];
-                if (dataframe_row['TradeGroup_'] === tradegroup) {
-                    // Return corresponding rows
-                    return_rows += '<tr>' +
-                        '<td></td>' +
-                        '<td>' + dataframe_row['TradeGroup_'] + '</td>' +
-                        '<td>' + dataframe_row['TICKER_x_'] + '</td>' +
-                        dataframe_row['START_ADJ_PX_'] +
-                        dataframe_row['END_ADJ_PX_'] +
-                        dataframe_row['MKTVAL_CHG_USD_ARB'] +
-                        dataframe_row['MKTVAL_CHG_USD_MACO'] +
-                        dataframe_row['MKTVAL_CHG_USD_MALT'] +
-                        dataframe_row['MKTVAL_CHG_USD_LEV'] +
-                        dataframe_row['MKTVAL_CHG_USD_AED'] +
-                        dataframe_row['MKTVAL_CHG_USD_CAM'] +
-                        dataframe_row['MKTVAL_CHG_USD_LG'] +
-                        dataframe_row['MKTVAL_CHG_USD_WED'] +
-                        dataframe_row['MKTVAL_CHG_USD_TAQ'] +
-                        dataframe_row['MKTVAL_CHG_USD_TACO'] +
-                        '</tr>'
-                }
-            }
-
-            return '<div class="table-responsive" style="padding-left:3%"> <table class="table table-striped table-bordered" border="0">' +
-                '<thead>' +
-                '<tr>' +
-                '<th></th><th>TradeGroup</th>' + '<th>Ticker</th>' + '<th>Start PX</th>' + '<th>End PX</th>' + '<th>P&L ARB</th>' + '<th>P&L MACO</th>' +
-                '<th>P&L MALT</th>' + '<th>P&L LEV</th>' + '<th>P&L AED</th>' + '<th>P&L CAM</th>' + '<th>P&L LG</th>' + '<th>P&L WED</th>'
-                + '<th>P&L TAQ</th>' +
-                '<th>P&L TACO</th>' +
-                '</tr>' +
-                '</thead>' + '<tbody>' + return_rows +
-                '</tbody>' +
-
-                '</table></div>';
         }
         else {
             dataframe = position_level_pnl;
-            // Get Equivalent Row from Positions Impacts
+        }
+
+        if (fund_drilldown) {
+            // Return Fund Specifics
+            tradegroup = data['TradeGroup'];
+            dataframe = fund_drilldown_details;
+
+            let fund = current_fund;
             for (var i = 0; i < dataframe.length; i++) {
-                dataframe_row = dataframe[i];
-                if (dataframe_row['TradeGroup_'] === tradegroup) {
-                    // Return corresponding rows
+                let dataframe_row = dataframe[i];
+                if (dataframe_row['TradeGroup'] === tradegroup && dataframe_row['Group'] === fund) {
                     return_rows += '<tr>' +
-                        '<td></td>' +
-                        '<td>' + dataframe_row['TradeGroup_'] + '</td>' +
-                        '<td>' + dataframe_row['TICKER_x_'] + '</td>' +
-                        dataframe_row['Qty_x_'] +
-                        dataframe_row['START_ADJ_PX_'] +
-                        dataframe_row['END_ADJ_PX_'] +
-                        dataframe_row['MKTVAL_CHG_USD_ARB'] +
-                        dataframe_row['MKTVAL_CHG_USD_MACO'] +
-                        dataframe_row['MKTVAL_CHG_USD_MALT'] +
-                        dataframe_row['MKTVAL_CHG_USD_LEV'] +
-                        dataframe_row['MKTVAL_CHG_USD_AED'] +
-                        dataframe_row['MKTVAL_CHG_USD_CAM'] +
-                        dataframe_row['MKTVAL_CHG_USD_LG'] +
-                        dataframe_row['MKTVAL_CHG_USD_WED'] +
-                        dataframe_row['MKTVAL_CHG_USD_TAQ'] +
-                        dataframe_row['MKTVAL_CHG_USD_TACO'] +
+                        '<td>' + dataframe_row['Group'] + '</td>' +
+                        '<td>' + dataframe_row['TradeGroup'] + '</td>' +
+                        '<td>' + dataframe_row['Sleeve'] + '</td>' +
+                        '<td>' + dataframe_row['Bucket'] + '</td>' +
+                        '<td><strong>' + dataframe_row['TICKER_x'] + '</strong></td>' +
+                        '<td>' + dataframe_row['AlphaHedge'] + '</td>' +
+                        '<td>' + dataframe_row['LongShort'] + '</td>' +
+                        dataframe_row['Qty_x'] +
+                        dataframe_row['START_ADJ_PX'] +
+                        dataframe_row['END_ADJ_PX'] +
+                        dataframe_row['PX_CHG_PCT'] +
+                        dataframe_row['START_MKTVAL'] +
+                        dataframe_row['END_MKTVAL'] +
+                        dataframe_row['MKTVAL_CHG_USD'] +
                         '</tr>'
                 }
+
             }
 
             return '<div class="table-responsive" style="padding-left:3%"> <table class="table table-striped table-bordered" border="0">' +
                 '<thead>' +
                 '<tr>' +
-                '<th></th><th>TradeGroup</th>' + '<th>Ticker</th>' + '<th>Qty</th>' + '<th>Start PX</th>' + '<th>End PX</th>' + '<th>P&L ARB</th>' + '<th>P&L MACO</th>' +
-                '<th>P&L MALT</th>' + '<th>P&L LEV</th>' + '<th>P&L AED</th>' + '<th>P&L CAM</th>' + '<th>P&L LG</th>' + '<th>P&L WED</th>'
-                + '<th>P&L TAQ</th>' +
-                '<th>P&L TACO</th>' +
+                '<th>Fund</th>' + '<th>TradeGroup</th>' +'<th>Sleeve</th>' +'<th>Bucket</th>' + '<th>Ticker</th>' +'<th>AlphaHedge</th>' +'<th>LongShort</th>'
+                + '<th>Qty</th>' + '<th>Start PX</th>' + '<th>End PX</th>' + '<th>PX Change(%)</th>' +
+                '<th>Start MktVal</th>' +'<th>EndMktVal</th>' +'<th>MktVal Change</th>' +
                 '</tr>' +
                 '</thead>' + '<tbody>' + return_rows +
                 '</tbody>' +
-
                 '</table></div>';
         }
+
+
+        // Get Equivalent Row from Positions Impacts
+        for (var i = 0; i < dataframe.length; i++) {
+            let dataframe_row = dataframe[i];
+            if (dataframe_row['TradeGroup_'] === tradegroup) {
+                // Return corresponding rows
+                return_rows += '<tr>' +
+                    '<td></td>' +
+                    '<td>' + dataframe_row['TradeGroup_'] + '</td>' +
+                    '<td>' + dataframe_row['TICKER_x_'] + '</td>' +
+                    dataframe_row['START_ADJ_PX_'] +
+                    dataframe_row['END_ADJ_PX_'] +
+                    dataframe_row['MKTVAL_CHG_USD_ARB'] +
+                    dataframe_row['MKTVAL_CHG_USD_MACO'] +
+                    dataframe_row['MKTVAL_CHG_USD_MALT'] +
+                    dataframe_row['MKTVAL_CHG_USD_LEV'] +
+                    dataframe_row['MKTVAL_CHG_USD_AED'] +
+                    dataframe_row['MKTVAL_CHG_USD_CAM'] +
+                    dataframe_row['MKTVAL_CHG_USD_LG'] +
+                    dataframe_row['MKTVAL_CHG_USD_WED'] +
+                    dataframe_row['MKTVAL_CHG_USD_TAQ'] +
+                    dataframe_row['MKTVAL_CHG_USD_TACO'] +
+                    '</tr>'
+            }
+        }
+
+        return '<div class="table-responsive" style="padding-left:3%"> <table class="table table-striped table-bordered" border="0">' +
+            '<thead>' +
+            '<tr>' +
+            '<th></th><th>TradeGroup</th>' + '<th>Ticker</th>' + '<th>Start PX</th>' + '<th>End PX</th>' + '<th>P&L ARB</th>' + '<th>P&L MACO</th>' +
+            '<th>P&L MALT</th>' + '<th>P&L LEV</th>' + '<th>P&L AED</th>' + '<th>P&L CAM</th>' + '<th>P&L LG</th>' + '<th>P&L WED</th>'
+            + '<th>P&L TAQ</th>' +
+            '<th>P&L TACO</th>' +
+            '</tr>' +
+            '</thead>' + '<tbody>' + return_rows +
+            '</tbody>' +
+
+            '</table></div>';
+
 
     }
 
 
 });
+
 $('body').on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
     $($.fn.dataTable.tables(true)).DataTable()
         .columns.adjust();

@@ -50,6 +50,7 @@ def refresh_base_case_and_outlier_downsides():
                                                     ['OutlierReferenceDataPoint'].unique())
 
     all_unique_tickers += all_unique_base_case_reference_data_points + all_unique_outlier_reference_data_points
+
     live_price_df = pd.DataFrame.from_dict(
         bbgclient.bbgclient.get_secid2field(all_unique_tickers, 'tickers', ['PX_LAST'], req_type='refdata',
                                             api_host=api_host), orient='index').reset_index()
@@ -107,6 +108,7 @@ def refresh_base_case_and_outlier_downsides():
             return row['LastPrice']  # Reference Price is refreshed Last price...
 
         if row['BaseCaseDownsideType'] == 'Reference Security':
+            print(row['BaseCaseReferenceDataPoint'])
             return float(
                 live_price_df[live_price_df['Underlying'] == row['BaseCaseReferenceDataPoint']]['PX_LAST'].iloc[0])
 
@@ -860,7 +862,8 @@ def email_pl_target_loss_budgets():
             writer.save()
             return buffer.getvalue()
 
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl = views.get_data()
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl, \
+    fund_drilldown_details = views.get_data()
     final_live_df = final_live_df[['TradeGroup_', 'Sleeve_', 'Catalyst_', 'Total YTD PnL_ARB', 'Total YTD PnL_MACO',
                                    'Total YTD PnL_MALT', 'Total YTD PnL_LEV', 'Total YTD PnL_AED', 'Total YTD PnL_CAM',
                                    'Total YTD PnL_LG', 'Total YTD PnL_WED', 'Total YTD PnL_TAQ', 'Total YTD PnL_TACO']]
@@ -1038,7 +1041,8 @@ def calculate_realtime_pnl_budgets():
     if 'id' in pnl_budgets.columns.values:
         pnl_budgets.drop(columns=['id'], inplace=True)
 
-    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl = views.get_data()
+    final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl, \
+    fund_drilldown_details = views.get_data()
     fund_daily_pnl = pd.Series([])
     fund_daily_pnl_sum = pd.Series([])
     daily_pnl_df = pd.DataFrame()
