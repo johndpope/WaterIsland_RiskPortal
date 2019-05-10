@@ -210,10 +210,6 @@ def get_data():
     ytd_performance['TradeGroup'] = ytd_performance['TradeGroup'].apply(lambda x: x.strip())
     ytd_performance.loc[ytd_performance['TradeGroup'] == 'BEL -  MC FP', ['TradeGroup']] = 'BEL - MC FP'  # Todo: Update
 
-    # Merge Only if Market is open...
-    if is_market_closed():
-        table_df = table_df.iloc[0:0]
-
     final_live_df = pd.merge(table_df, ytd_performance, how='outer', left_on=['Group', 'TradeGroup'],
                              right_on=['Fund', 'TradeGroup'])
 
@@ -221,7 +217,7 @@ def get_data():
     final_live_df.fillna(0, inplace=True)
     final_live_df['YTD($)'] = final_live_df['YTD($)'].apply(round)
     final_live_df['MKTVAL_CHG_USD'] = final_live_df['MKTVAL_CHG_USD'].apply(round)
-
+    final_live_df.to_csv('MKKKKKKK.csv')
     final_live_df['Total YTD PnL'] = final_live_df['YTD($)'] + final_live_df['MKTVAL_CHG_USD']
 
     final_live_df['InceptionDate'] = final_live_df['InceptionDate'].apply(str)
