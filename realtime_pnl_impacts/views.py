@@ -217,7 +217,6 @@ def get_data():
     final_live_df.fillna(0, inplace=True)
     final_live_df['YTD($)'] = final_live_df['YTD($)'].apply(round)
     final_live_df['MKTVAL_CHG_USD'] = final_live_df['MKTVAL_CHG_USD'].apply(round)
-    final_live_df.to_csv('MKKKKKKK.csv')
     final_live_df['Total YTD PnL'] = final_live_df['YTD($)'] + final_live_df['MKTVAL_CHG_USD']
 
     final_live_df['InceptionDate'] = final_live_df['InceptionDate'].apply(str)
