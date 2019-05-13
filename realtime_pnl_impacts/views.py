@@ -312,6 +312,6 @@ def update_profit_loss_targets(request):
             if value > 0:
                 value = value * -1
             PnlLossBudget(fund=fund, loss_budget=value).save()
-        calculated_pnl_budgets = tasks.calculate_pnl_budgets()
+        calculated_pnl_budgets, ytd_return_sleeve_df = tasks.calculate_pnl_budgets()
         response = 'Success'
     return HttpResponse(response)

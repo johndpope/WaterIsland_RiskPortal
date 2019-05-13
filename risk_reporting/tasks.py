@@ -24,6 +24,14 @@ from risk_reporting.models import DailyNAVImpacts, PositionLevelNAVImpacts, Form
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 django.setup()
 
+SLEEVE_DICT = {
+    'Credit Opportunities': 'CREDIT',
+    'Equity Special Situations': 'ESS',
+    'Merger Arbitrage': 'M&A',
+    'Opportunistic': 'OPP',
+    'Break': 'CASH'
+}
+
 
 @shared_task
 def refresh_base_case_and_outlier_downsides():
@@ -736,7 +744,7 @@ def calculate_status(row):
 @shared_task
 def email_pl_target_loss_budgets():
 
-    loss_budgets = calculate_pnl_budgets()
+    loss_budgets, ytd_return_sleeve_df = calculate_pnl_budgets()
     loss_budgets = loss_budgets.drop(columns=['Last Updated'])
 
     pivoted = pd.pivot_table(loss_budgets, columns=['Fund'], aggfunc=lambda x: x, fill_value='')
@@ -754,8 +762,7 @@ def email_pl_target_loss_budgets():
                                'Time Passed',
                                'Ann Loss Budget $',
                                'YTD Closed Deal Losses',
-                               'YTD Active Deal Losses',
-                            ])
+                               'YTD Active Deal Losses',])
     df1 = pivoted.iloc[:8].copy()
     df2 = pivoted.iloc[8:].copy()
     df3 = pd.DataFrame([list(pivoted.columns.values)], columns=list(pivoted.columns.values))
@@ -773,43 +780,61 @@ def email_pl_target_loss_budgets():
     now_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
 
     def excel_formatting(row):
-        ret = ["color:green" for _ in row.index]
+        bold = False
+        if row.index.contains('Sleeve_'):
+            if row['Sleeve_'] == 'Total' or row['Sleeve_'] == 'Sleeve_':
+                bold = True
+        if bold:
+            ret = ["color:green; font-weight:bold" for _ in row.index]
+        else:
+            ret = ["color:green" for _ in row.index]
+        if row.index.contains('Sleeve_'):
+            if bold:
+                ret[row.index.get_loc("Sleeve_")] = "color:black; font-weight:bold"
+            else:
+                ret[row.index.get_loc("Sleeve_")] = "color:black"
+        if row.index.contains('TradeGroup_'):
+            ret[row.index.get_loc("TradeGroup_")] = "color:black"
+        if row.index.contains('Catalyst_'):
+            ret[row.index.get_loc("Catalyst_")] = "color:black"
 
-        ret[row.index.get_loc("Sleeve_")] = "color:black"
-        ret[row.index.get_loc("TradeGroup_")] = "color:black"
-        ret[row.index.get_loc("Catalyst_")] = "color:black"
+        columns = ['Total YTD PnL_ARB', 'Total YTD PnL_MACO', 'Total YTD PnL_MALT', 'Total YTD PnL_LEV',
+                   'Total YTD PnL_AED', 'Total YTD PnL_CAM', 'Total YTD PnL_LG', 'Total YTD PnL_WED',
+                   'Total YTD PnL_TAQ', 'Total YTD PnL_TACO']
 
-        if row['Total YTD PnL_AED'] != '-' and row['Total YTD PnL_AED'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_AED")] = "color:red"
-
-        if row['Total YTD PnL_ARB'] != '-' and row['Total YTD PnL_ARB'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_ARB")] = "color:red"
-
-        if  row['Total YTD PnL_CAM'] != '-' and row['Total YTD PnL_CAM'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_CAM")] = "color:red"
-
-        if  row['Total YTD PnL_LEV'] != '-' and row['Total YTD PnL_LEV'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_LEV")] = "color:red"
-
-        if  row['Total YTD PnL_LG'] != '-' and row['Total YTD PnL_LG'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_LG")] = "color:red"
-
-        if  row['Total YTD PnL_MACO'] != '-' and row['Total YTD PnL_MACO'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_MACO")] = "color:red"
-
-        if  row['Total YTD PnL_MALT'] != '-' and row['Total YTD PnL_MALT'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_MALT")] = "color:red"
-
-        if  row['Total YTD PnL_TACO'] != '-' and row['Total YTD PnL_TACO'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_TACO")] = "color:red"
-
-        if  row['Total YTD PnL_TAQ'] != '-' and row['Total YTD PnL_TAQ'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_TAQ")] = "color:red"
-
-        if  row['Total YTD PnL_WED'] != '-' and row['Total YTD PnL_WED'] < 0:
-            ret[row.index.get_loc("Total YTD PnL_WED")] = "color:red"
+        for column in columns:
+            if isinstance(row[column], (int, float)) and row[column] < 0:
+                if bold:
+                    ret[row.index.get_loc(column)] = "color:red; font-weight:bold"
+                else:
+                    ret[row.index.get_loc(column)] = "color:red"
+            elif isinstance(row[column], (str)) and row[column] == column:
+                ret[row.index.get_loc(column)] = "color:black; font-weight:bold"
 
         return ret
+    
+    def sleeve_excel_formatting(row):
+        bold = False
+        if row.index.contains('Sleeve'):
+            if row['Sleeve'] == 'Total':
+                bold = True
+        if bold:
+            ret = ["color:green; font-weight:bold" for _ in row.index]
+        else:
+            ret = ["color:green" for _ in row.index]
+        columns = ['ARB', 'MACO', 'MALT', 'LEV', 'AED', 'CAM', 'LG', 'WED', 'TAQ', 'TACO']
+        for column in columns:
+            if row.index.contains(column):
+                if isinstance(row[column], (int, float)) and row[column] < 0:
+                    if bold:
+                        ret[row.index.get_loc(column)] = "color:red; font-weight:bold"
+                    else:
+                        ret[row.index.get_loc(column)] = "color:red"
+                elif isinstance(row[column], (str)) and row[column] == column:
+                    ret[row.index.get_loc(column)] = "color:black; font-weight:bold"
+
+        return ret
+
 
     styles = [
         hover(),
@@ -848,13 +873,26 @@ def email_pl_target_loss_budgets():
         with io.BytesIO() as buffer:
             writer = pd.ExcelWriter(buffer)
             workbook = writer.book
-            sheet_names = ['TradeGroup P&L', 'Fund P&L Monitor']
+            sheet_names = ['TradeGroup P&L', 'Sleeve P&L %', 'Sleeve P&L $', 'Fund P&L Monitor']
             for i, df in enumerate(df_list):
                 sheet_name = sheet_names[i]
                 worksheet = workbook.add_worksheet(sheet_name)
                 writer.sheets[sheet_name] = worksheet
-                df.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0, index=False)
-                worksheet.set_column('A:I', 20)
+                if sheet_name == 'Fund P&L Monitor':
+                    df.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0, index=True)
+                elif sheet_name == 'Sleeve P&L %':
+                    worksheet.write(0, 0, 'Profit PL % Breakdown by Sleeves')
+                    df[0].to_excel(writer, sheet_name=sheet_name, startrow=1, startcol=0, index=False)
+                    worksheet.write(10, 0, 'Loss PL % Breakdown by Sleeves')
+                    df[1].to_excel(writer, sheet_name=sheet_name, startrow=11, startcol=0, index=False)
+                elif sheet_name == 'Sleeve P&L $':
+                    worksheet.write(0, 0, 'Profit PL $ Breakdown by Sleeves')
+                    df[0].to_excel(writer, sheet_name=sheet_name, startrow=1, startcol=0, index=False)
+                    worksheet.write(12, 0, 'Loss PL $ Breakdown by Sleeves')
+                    df[1].to_excel(writer, sheet_name=sheet_name, startrow=13, startcol=0, index=False)
+                else:
+                    df.to_excel(writer, sheet_name=sheet_name, startrow=0, startcol=0, index=False)
+                worksheet.set_column('A:L', 20)
             format1 = workbook.add_format({'num_format': '#,###'})
             worksheet = writer.sheets['TradeGroup P&L']
             worksheet.set_column('A:C', 20)
@@ -867,31 +905,133 @@ def email_pl_target_loss_budgets():
     final_live_df = final_live_df[['TradeGroup_', 'Sleeve_', 'Catalyst_', 'Total YTD PnL_ARB', 'Total YTD PnL_MACO',
                                    'Total YTD PnL_MALT', 'Total YTD PnL_LEV', 'Total YTD PnL_AED', 'Total YTD PnL_CAM',
                                    'Total YTD PnL_LG', 'Total YTD PnL_WED', 'Total YTD PnL_TAQ', 'Total YTD PnL_TACO']]
-    # Sort the dataframe according to Sleeve followed by TradeGroup in alphabetical order 
-    sleeve_sorting = ['M&A', 'CREDIT', 'ESS', 'OPP ']
+    final_live_df_columns = list(final_live_df.columns.values)
+    final_live_df_columns.remove('TradeGroup_')
+    final_live_df_columns.remove('Sleeve_')
+    final_live_df_columns.remove('Catalyst_')
+    fund_list = []
+    for column in final_live_df_columns:
+        fund = column.split("_")[1]
+        fund_list.append(fund)
+    final_live_df.reset_index(inplace=True)
+    cash_index = final_live_df[final_live_df['TradeGroup_'] == 'CASH'].index
+    if not cash_index.empty:
+        # Change Sleeve for CASH TradeGroup to CASH
+        final_live_df.at[cash_index, 'Sleeve_'] = 'CASH'
+    unique_sleeves = final_live_df['Sleeve_'].unique()
+    ytd_return_unique_funds = ytd_return_sleeve_df.Fund.unique().tolist()
+    ytd_return_unique_sleeves = ytd_return_sleeve_df.Sleeve.unique().tolist()
+    if 'Risk' in ytd_return_unique_sleeves:
+        ytd_return_unique_sleeves.remove('Risk')
+    if 'Forwards' in ytd_return_unique_sleeves:
+        ytd_return_unique_sleeves.remove('Forwards')
+
+    profit_sleeve_ytd = pd.DataFrame(columns=['Sleeve'] + fund_list)
+    loss_sleeve_ytd = pd.DataFrame(columns=['Sleeve'] + fund_list)
+    profit_sleeve_ytd_perc = pd.DataFrame(columns=['Sleeve'] + ytd_return_unique_funds)
+    loss_sleeve_ytd_perc = pd.DataFrame(columns=['Sleeve'] + ytd_return_unique_funds)
+
+    ytd_return_sleeve_df['Gross YTD Return'] = ytd_return_sleeve_df['Gross YTD Return'].apply(round_bps)
+    for sleeve in ytd_return_unique_sleeves:
+        profit_row_dict = {'Sleeve': SLEEVE_DICT.get(sleeve, sleeve)}
+        for fund in ytd_return_unique_funds:
+            gross_ytd_return_index = ytd_return_sleeve_df[(ytd_return_sleeve_df['Fund'] == fund) & (ytd_return_sleeve_df['Sleeve'] == sleeve)].index
+            if not gross_ytd_return_index.empty:
+                gross_ytd_return_index = gross_ytd_return_index[0]
+                gross_ytd_return = ytd_return_sleeve_df.at[gross_ytd_return_index, 'Gross YTD Return']
+                if not np.isnan(gross_ytd_return):
+                    loss_budget_row_index = loss_budgets[loss_budgets['Fund'] == fund].index
+                    if not loss_budget_row_index.empty:
+                        loss_budget_row_index = loss_budget_row_index[0]
+                        ann_gross_pl_target_perc = float(float(loss_budgets.at[loss_budget_row_index, 'Ann Gross P&L Target %'].replace("%", "")) * 0.01)
+                        ytd_sleeve_perc_target = float(gross_ytd_return / ann_gross_pl_target_perc)
+                else:
+                    ytd_sleeve_perc_target = 0.00
+            else:
+                ytd_sleeve_perc_target = 0.00
+            profit_row_dict[fund] = ytd_sleeve_perc_target
+        profit_sleeve_ytd_perc = profit_sleeve_ytd_perc.append(profit_row_dict, ignore_index=True)
+
+    for sleeve in unique_sleeves:
+        if sleeve == 0 or sleeve == 0.0 or isinstance(sleeve, (int, float)):
+            sleeve = 'UNLISTED'
+        profit_row_dict = {'Sleeve': sleeve}
+        loss_row_dict = {'Sleeve': sleeve}
+        loss_percentage_row_dict = {'Sleeve': sleeve}
+        for column in final_live_df_columns:
+            fund = column.split("_")[1]
+            profit_value = final_live_df[(final_live_df['Sleeve_'] == sleeve) & (final_live_df[column] > 0)][column].sum()
+            profit_row_dict[fund] = int(profit_value)
+            loss_value = final_live_df[(final_live_df['Sleeve_'] == sleeve) & (final_live_df[column] < 0)][column].sum()
+            loss_row_dict[fund] = int(loss_value)
+            loss_budget_row_index = loss_budgets[loss_budgets['Fund'] == fund].index
+            if not loss_budget_row_index.empty:
+                loss_budget_row_index = loss_budget_row_index[0]
+                ann_loss_budget_dollar = int(loss_budgets.at[loss_budget_row_index, 'Ann Loss Budget $'].replace(",", ""))
+                loss_percentage_row_dict[fund] = float((loss_value / ann_loss_budget_dollar) * 100)
+            else:
+                loss_percentage_row_dict[fund] = 0
+        profit_sleeve_ytd = profit_sleeve_ytd.append(profit_row_dict, ignore_index=True)
+        loss_sleeve_ytd = loss_sleeve_ytd.append(loss_row_dict, ignore_index=True)
+        loss_sleeve_ytd_perc = loss_sleeve_ytd_perc.append(loss_percentage_row_dict, ignore_index=True)
+
+    total_profit_dict = {'Sleeve': 'Total'}
+    total_loss_dict = {'Sleeve': 'Total'}
+    total_loss_perc_dict = {'Sleeve': 'Total'}
+    for fund in fund_list:
+        total_profit_dict[fund] = profit_sleeve_ytd[fund].sum()
+        total_loss_dict[fund] = loss_sleeve_ytd[fund].sum()
+        total_loss_perc_dict[fund] = str(round(loss_sleeve_ytd_perc[fund].sum(), 2)) + "%"
+        loss_sleeve_ytd_perc[fund] = format_with_percentage_decimal(loss_sleeve_ytd_perc, fund)
+    profit_sleeve_ytd = profit_sleeve_ytd.append(total_profit_dict, ignore_index=True)
+    loss_sleeve_ytd = loss_sleeve_ytd.append(total_loss_dict, ignore_index=True)
+    loss_sleeve_ytd_perc = loss_sleeve_ytd_perc.append(total_loss_perc_dict, ignore_index=True)
+
+    total_profit_perc_dict = {'Sleeve': 'Total'}
+    for fund in ytd_return_unique_funds:
+        total_profit_perc_dict[fund] = str(round(profit_sleeve_ytd_perc[fund].sum(), 2)) + "%"
+        profit_sleeve_ytd_perc[fund] = format_with_percentage_decimal(profit_sleeve_ytd_perc, fund)
+    profit_sleeve_ytd_perc = profit_sleeve_ytd_perc.append(total_profit_perc_dict, ignore_index=True)
+
+    column_order = ['Sleeve', 'ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV', 'TACO', 'TAQ']
+    loss_sleeve_ytd_perc = loss_sleeve_ytd_perc[column_order]
+    profit_sleeve_ytd_perc = profit_sleeve_ytd_perc[column_order]
+    profit_sleeve_ytd_perc = sort_by_sleeve(profit_sleeve_ytd_perc, 'Sleeve')
+    loss_sleeve_ytd_perc = sort_by_sleeve(loss_sleeve_ytd_perc, 'Sleeve')
+
+    # Revert the changing of Sleeve name for CASH TradeGroup
+    final_live_df.at[cash_index, 'Sleeve_'] = 0
+    final_live_df.drop(columns=['index'], inplace=True)
+
+    # Sort the dataframe according to Sleeve followed by TradeGroup in alphabetical order
+    sleeve_sorting = ['M&A', 'CREDIT', 'ESS', 'OPP']
     for sleeve in final_live_df.Sleeve_.unique():
+        if isinstance(sleeve, str):
+            sleeve = sleeve.strip()
         if sleeve not in sleeve_sorting:
             sleeve_sorting.append(sleeve)
     final_live_df['Sleeve_'] = pd.Categorical(final_live_df['Sleeve_'], sleeve_sorting)
     final_live_df = final_live_df.sort_values(by=['Sleeve_', 'TradeGroup_'], ascending=[True, True])
 
     # Replace '0' with '-' and convert all numbers to int
-    final_live_df_columns = list(final_live_df.columns.values)
-    final_live_df_columns.remove('TradeGroup_')
-    final_live_df_columns.remove('Sleeve_')
-    final_live_df_columns.remove('Catalyst_')
     for column in final_live_df_columns:
         final_live_df[column] = final_live_df[column].astype(int)
         final_live_df = final_live_df.replace({column: 0}, '-')
 
     final_live_df = final_live_df.style.apply(excel_formatting, axis=1)
+    profit_sleeve_ytd = profit_sleeve_ytd.style.apply(sleeve_excel_formatting, axis=1)
+    loss_sleeve_ytd = loss_sleeve_ytd.style.apply(sleeve_excel_formatting, axis=1)
+    profit_sleeve_ytd_perc = profit_sleeve_ytd_perc.style.apply(sleeve_excel_formatting, axis=1)
+    loss_sleeve_ytd_perc = loss_sleeve_ytd_perc.style.apply(sleeve_excel_formatting, axis=1)
 
     exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
     subject = 'PL Targets & Loss Budgets - ' + now_date
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                recipients=['vaggarwal@wicfunds.com', 'kgorde@wicfunds.com', 'cplunkett@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
-               EXPORTERS=exporters, dataframe=[final_live_df, df1])
+               EXPORTERS=exporters,
+               dataframe=[final_live_df, [profit_sleeve_ytd_perc, loss_sleeve_ytd_perc],
+                          [profit_sleeve_ytd, loss_sleeve_ytd], df1])
 
 
 def push_data_to_table(df):
@@ -954,10 +1094,11 @@ def calculate_pnl_budgets():
     c_list = list(c_load)
     c_dat = json.dumps(c_list)
     sleeve_df = sleeve_df.join(pd.read_json(c_dat))
-    sleeve_df = sleeve_df.drop('Metrics in NAV JSON' , axis=1)
+    sleeve_df = sleeve_df.drop('Metrics in NAV JSON', axis=1)
 
     sleeve_df['Gross YTD Return'] = sleeve_df.apply(get_bps_value, axis=1)
 
+    gross_ytd_return_sleeve_df = sleeve_df[['Fund', 'Sleeve', 'Gross YTD Return']].copy()
     new_sleeve_df = sleeve_df[['Fund', 'Gross YTD Return']].copy()
 
     new_sleeve_df = new_sleeve_df.groupby(['Fund']).sum()
@@ -1025,7 +1166,7 @@ def calculate_pnl_budgets():
     loss_budgets.drop(columns=['Average YTD AUM'], inplace=True)
     push_data = loss_budgets
     push_data_to_table(push_data)
-    return loss_budgets
+    return loss_budgets, gross_ytd_return_sleeve_df
 
 
 @shared_task
@@ -1043,26 +1184,29 @@ def calculate_realtime_pnl_budgets():
 
     final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl, \
     fund_drilldown_details = views.get_data()
-    fund_daily_pnl = pd.Series([])
-    fund_daily_pnl_sum = pd.Series([])
-    daily_pnl_df = pd.DataFrame()
-    columns = final_daily_pnl.columns.values
+    live_ytd_pnl = pd.Series([])
+    ytd_live_pnl_sum = pd.Series([])
+    ytd_pnl_df = pd.DataFrame()
+    columns = final_live_df.columns.values
     for i, column in enumerate(columns):
-        if "Daily" in column:
-            fund_daily_pnl[i] = column.split("_")[-1]
-            fund_daily_pnl_sum[i] = final_daily_pnl[column].sum()
-    daily_pnl_df['fund'] = fund_daily_pnl
-    daily_pnl_df['Daily P&L'] = fund_daily_pnl_sum
-    realtime_pl_budget_df = pd.merge(pnl_budgets, daily_pnl_df, on=['fund'], how='left')
-    realtime_pl_budget_df['gross_ytd_pnl'] = realtime_pl_budget_df['gross_ytd_pnl'].str.replace(',', '').apply(atof)
-    realtime_pl_budget_df['gross_ytd_pnl'] = realtime_pl_budget_df['gross_ytd_pnl'] + realtime_pl_budget_df['Daily P&L']
+        if "Total YTD PnL_" in column:
+            live_ytd_pnl[i] = column.split("_")[-1]
+            ytd_live_pnl_sum[i] = final_live_df[column].sum()
+    ytd_pnl_df['fund'] = live_ytd_pnl
+    ytd_pnl_df['Live P&L'] = ytd_live_pnl_sum
+    realtime_pl_budget_df = pd.merge(pnl_budgets, ytd_pnl_df, on=['fund'], how='left')
+    realtime_pl_budget_df['gross_ytd_pnl'] = realtime_pl_budget_df['Live P&L']
     realtime_pl_budget_df['investable_assets'] = realtime_pl_budget_df['investable_assets'].str.replace(',', '').apply(atof)
     realtime_pl_budget_df['gross_ytd_return'] = realtime_pl_budget_df['gross_ytd_return'].str.replace('%', '').apply(atof)
     realtime_pl_budget_df['gross_ytd_return'] = realtime_pl_budget_df['gross_ytd_pnl']/realtime_pl_budget_df['investable_assets'] * 100
+    realtime_pl_budget_df['ann_gross_pnl_target_perc'] = realtime_pl_budget_df['ann_gross_pnl_target_perc'].str.replace('%', '').apply(atof)
+    realtime_pl_budget_df['ytd_pnl_perc_target'] = realtime_pl_budget_df['gross_ytd_return'] / realtime_pl_budget_df['ann_gross_pnl_target_perc'] * 100
     realtime_pl_budget_df['gross_ytd_return'] = format_with_percentage_decimal(realtime_pl_budget_df, 'gross_ytd_return')
     realtime_pl_budget_df['investable_assets'] = format_with_commas(realtime_pl_budget_df, 'investable_assets')
     realtime_pl_budget_df['gross_ytd_pnl'] = format_with_commas(realtime_pl_budget_df, 'gross_ytd_pnl')
-    realtime_pl_budget_df.drop(columns=['Daily P&L'], inplace=True)
+    realtime_pl_budget_df['ann_gross_pnl_target_perc'] = format_with_percentage_decimal(realtime_pl_budget_df, 'ann_gross_pnl_target_perc')
+    realtime_pl_budget_df['ytd_pnl_perc_target'] = format_with_percentage_decimal(realtime_pl_budget_df, 'ytd_pnl_perc_target')
+    realtime_pl_budget_df.drop(columns=['Live P&L'], inplace=True)
     realtime_pl_budget_df['last_updated'] = datetime.datetime.now()
     push_data = realtime_pl_budget_df
     push_data_to_table(push_data)
@@ -1087,3 +1231,15 @@ def get_average_ytd_aum():
                                  'where year(Flat_file_as_of) >= YEAR(CURDATE()) group by fund order by fund', con=con)
     con.close()
     return average_aum_df
+
+
+def sort_by_sleeve(given_df, sleeve_column):
+    sleeve_sorting = ['M&A', 'CREDIT', 'ESS', 'OPP']
+    for sleeve in given_df[sleeve_column].unique():
+        if isinstance(sleeve, str):
+            sleeve = sleeve.strip()
+        if sleeve not in sleeve_sorting:
+            sleeve_sorting.append(sleeve)
+    given_df['Sleeve'] = pd.Categorical(given_df['Sleeve'], sleeve_sorting)
+    given_df = given_df.sort_values(by=['Sleeve'])
+    return given_df
