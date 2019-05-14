@@ -223,7 +223,9 @@ def refresh_base_case_and_outlier_downsides():
         nav_impacts_positions_df = nav_impacts_positions_df[~(nav_impacts_positions_df['FundCode'].isin(['INDEX1',
                                                                                                          'INDEX2',
                                                                                                          'ETF1',
-                                                                                                         'ETF2']))]
+                                                                                                         'ETF2',
+                                                                                                         'INDEX3',
+                                                                                                         'ETF3']))]
 
         nav_impacts_positions_df.drop(columns=['LastPrice', 'RiskLimit'], inplace=True)
 
