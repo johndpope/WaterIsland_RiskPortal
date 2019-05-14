@@ -16,6 +16,7 @@
 {% endblock %}
 {% block datatables_bootstrap_css %}
     {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.bootstrap.min.css">
 {% endblock %}
 
 {% block content %}
@@ -47,7 +48,7 @@
                             <p class="lead h6 text-center font-size-small">As of <mark>{{ as_of }}</mark></p>
                             {% if not error %}
                             {% else %}
-                                <p class="lead text-danger text-center font-size-small">{{ error }}</p>
+                                <p class="lead text-danger text-center font-size-small">{{ error|safe }}</p>
                             {% endif %}
                         </div>
                         <div class="card-body">

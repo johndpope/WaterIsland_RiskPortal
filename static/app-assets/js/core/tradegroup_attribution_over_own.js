@@ -37,7 +37,7 @@ function addFundMainTab(name, addToTab, addToContent, sleeve, tradegroup_perform
     // Do this Iteratively for each fund
     // Crete Active Tab for ARB
     let data = tradegroup_performances;
-    $('<div class="tab-pane active" id="tabTable' + name + '"><table class="table table-striped text-dark" style="width:100%" id="table' + name + '">' +
+    $('<div class="tab-pane active" id="tabTable' + name + '"><table class="table table-bordered" style="font-size:12px;" id="table' + name + '">' +
         '<tfoot><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>' +
         '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tfoot></table><br><br><br>' +
         '<div style="background-color: #30303d; color: #fff; width:100%;height:500px" id="ColumnChart' + name + '"></div></div>' +
@@ -150,9 +150,6 @@ function createVolCharts(fund_data, chart_id, fund) {
 
         }
     });
-
-    //chart.write(chart_id);
-//});
 }
 
 // function which resets the chart back to yearly data
@@ -218,10 +215,17 @@ function initializeDatatableSummary(data, table_id) {
                 }
             }
         },
-        "order": [[1, "asc"]],
+        fixedHeader: {
+            header: true,
+            footer: true
+        },fixedColumns: {
+            leftColumns: 2,
+            heightMatch: 'auto'
+        },
+        "order": [[0, "asc"]],
         columns: [
-            {title: 'Sleeve', data: 'Sleeve'},
             {title: 'TradeGroup', data: 'TradeGroup'},
+            {title: 'Sleeve', data: 'Sleeve'},
             {title: 'LongShort', data: 'LongShort'},
             {title: 'InceptionDate', data: 'InceptionDate'},
             {title: 'EndDate', data: 'EndDate'},
@@ -260,32 +264,44 @@ function initializeDatatableSummary(data, table_id) {
 
             var api = this.api();
             nb_cols = api.columns().nodes().length;
-            var j = 13;
-            while (j < nb_cols) {
-                var pageTotal = api
-                    .column(j, {page: 'current'})
-                    .data()
-                    .reduce(function (a, b) {
-                        return parseFloat(Number(a) + Number(b)).toFixed(2);
-                    }, 0);
-                // Update footer
-                if (pageTotal < 0) {
-                    $(api.column(j).footer()).html('<span class="red">' + pageTotal + '</span>');
+            var j = 6;
+            while (j < nb_cols - 1) {
+                if (j != 8 && j != 10 && j != 18) {
+                    var pageTotal = api
+                        .column(j, {page: 'current'})
+                        .data()
+                        .reduce(function (a, b) {
+                            return parseFloat(Number(a) + Number(b)).toFixed(2);
+                        }, 0);
+                    // Update footer
+                    if (pageTotal < 0) {
+                        pageTotal = parseFloat(pageTotal).toLocaleString('en-US');
+                        $(api.column(j).footer()).html('<span class="red">' + pageTotal + '</span>');
+                    }
+                    else {
+                        pageTotal = parseFloat(pageTotal).toLocaleString('en-US');
+                        $(api.column(j).footer()).html('<span class="green">' + pageTotal + '</span>');
+                    }
+                    
+                    j++;
                 }
-                else {
-                    $(api.column(j).footer()).html('<span class="green">' + pageTotal + '</span>');
-                }
-                
-                j++;
+                else { j++; }
             }
         }
     })
 }
 
+document.onload = function () {
+    $($.fn.dataTable.tables(true)).DataTable()
+        .columns.adjust()
+        .fixedColumns().update()
+};
+
 // Below Function to adjust columns for dynamically created Tabs
 $('body').on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
     $($.fn.dataTable.tables(true)).DataTable()
-        .columns.adjust();
+        .columns.adjust()
+        .fixedColumns().update();
 });
 
 $('#submit_tg_performance_as_of').on('click', function () {

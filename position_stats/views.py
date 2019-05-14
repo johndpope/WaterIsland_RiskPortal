@@ -1,3 +1,4 @@
+import datetime
 import pandas as pd
 import json
 from urllib.parse import urlencode
@@ -63,6 +64,9 @@ def get_tradegroup_performance_main_page(request):
         for fund in tradegroup_performance_bips['Fund'].unique():
             perf_dict_bips[fund] = tradegroup_performance_bips[tradegroup_performance_bips['Fund'] == fund].to_json(orient='records')
         as_of = tradegroup_performance_dollars['Date'].max()
+        date_today = datetime.date.today().strftime("%Y-%m-%d")
+        if as_of != date_today:
+            error = "<mark class='bg-danger text-white'>The following data is outdated. It is as of {as_of}</mark>".format(as_of=as_of)
     except ValueError:
         error = "No Data Found! Have you tried the legacy portal?"
         as_of = request.GET['as_of']
@@ -205,6 +209,9 @@ def get_tradegroup_attribution_over_own_capital(request):
             perf_dict[fund] = tradegroup_performance_over_own_capital[
                 tradegroup_performance_over_own_capital['Fund'] == fund].to_json(orient='records')
         as_of = tradegroup_performance_over_own_capital['Date'].max()
+        date_today = datetime.date.today().strftime("%Y-%m-%d")
+        if as_of != date_today:
+            error = "<mark class='bg-danger text-white'>The following data is outdated. It is as of {as_of}</mark>".format(as_of=as_of)
     except ValueError:
         error = "No Data available. Have you tried the legacy portal?"
         as_of = request.GET['as_of']

@@ -54,20 +54,17 @@ function addFundMainTab(name, addToTab, addToContent, sleeve, tradegroup_perform
     let bips_data = tradegroup_performances_in_bps;
 
 
-    $('<div class="tab-pane active" id="performance_metric_tabs_bips' + name + '"><table class="table table-striped text-dark" style="width:100%" id="table' + name + 'bips' + '">' +
-        '<tfoot><tr><td></td><td></td><td></td><td></td><td></td><td></td><td><td></td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tfoot></table></div>' +
+    $('<div class="tab-pane active" id="performance_metric_tabs_bips' + name + '"><table class="table table-bordered" style="width: 100%" id="table' + name + 'bips' + '">' +
+        '<tfoot><tr><td></td><td></td><td></td><td></td><td></td><td><td></td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tfoot></table></div>' +
         '').appendTo('#performance_metric_tabs_dollar_and_bips' + name);
     initializeDatatableSummary(bips_data, 'table' + name + 'bips', '_bps');
 
 
-    $('<div class="tab-pane" id="performance_metric_tabs_dollar' + name + '"><table class="table table-striped text-dark" style="width:100%" id="table' + name + 'dollar' + '">' +
-        '<tfoot><tr><td></td><td></td><td></td><td></td><td></td><td></td><td><td></td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tfoot></table></div>' +
+    $('<div class="tab-pane" id="performance_metric_tabs_dollar' + name + '"><table class="table table-bordered" style="width: 100%" id="table' + name + 'dollar' + '">' +
+        '<tfoot><tr><td></td><td></td><td></td><td></td><td></td><td><td></td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></tfoot></table></div>' +
         '').appendTo('#performance_metric_tabs_dollar_and_bips' + name);
     initializeDatatableSummary(data, 'table' + name + 'dollar', '_Dollar');
-
-
 }
-
 
 function initializeDatatableSummary(data, table_id, column) {
     $('#' + table_id).DataTable({
@@ -119,11 +116,14 @@ function initializeDatatableSummary(data, table_id, column) {
         fixedHeader: {
             header: true,
             footer: true
+        },fixedColumns: {
+            leftColumns: 2,
+            heightMatch: 'auto'
         },
+        "order": [[0, "asc"]],
         columns: [
-            {title: 'Date', data: 'Date'},
-            {title: 'Sleeve', data: 'Sleeve'},
             {title: 'TradeGroup', data: 'TradeGroup'},
+            {title: 'Sleeve', data: 'Sleeve'},
             {title: 'Catalyst', data: 'CatalystTypeWIC'},
             {title: 'Rating', data: 'CatalystRating'},
             {title: 'LongShort', data: 'LongShort'},
@@ -141,7 +141,7 @@ function initializeDatatableSummary(data, table_id, column) {
 
         ],
         "columnDefs": [{
-            "targets": [9, 10, 11, 12, 13, 14, 15],
+            "targets": [8, 9, 10, 11, 12, 13, 14],
             "createdCell": function (td, cellData, rowData, rowIndex) {
                 //Check for % Float and %Shares Out
                 if (cellData < 0) {
@@ -157,8 +157,8 @@ function initializeDatatableSummary(data, table_id, column) {
 
             var api = this.api();
             nb_cols = api.columns().nodes().length;
-            var j = 9;
-            while (j < nb_cols) {
+            var j = 8;
+            while (j < nb_cols - 1) {
                 var pageTotal = api
                     .column(j, {page: 'current'})
                     .data()
@@ -167,9 +167,11 @@ function initializeDatatableSummary(data, table_id, column) {
                     }, 0);
                 // Update footer
                 if (pageTotal < 0) {
+                    pageTotal = parseFloat(pageTotal).toLocaleString('en-US');
                     $(api.column(j).footer()).html('<span class="red">' + pageTotal + '</span>');
                 }
                 else {
+                    pageTotal = parseFloat(pageTotal).toLocaleString('en-US');
                     $(api.column(j).footer()).html('<span class="green">' + pageTotal + '</span>');
                 }
 
@@ -178,11 +180,17 @@ function initializeDatatableSummary(data, table_id, column) {
         }
     })
 }
+document.onload = function () {
+    $($.fn.dataTable.tables(true)).DataTable()
+        .columns.adjust()
+        .fixedColumns().update()
+};
 
 // Below Function to adjust columns for dynamically created Tabs
 $('body').on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
     $($.fn.dataTable.tables(true)).DataTable()
-        .columns.adjust();
+        .columns.adjust()
+        .fixedColumns().update()
 });
 
 $('#submit_tg_performance_as_of').on('click', function () {
