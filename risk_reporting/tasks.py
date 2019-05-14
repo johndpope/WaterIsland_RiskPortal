@@ -812,7 +812,7 @@ def email_pl_target_loss_budgets():
                 ret[row.index.get_loc(column)] = "color:black; font-weight:bold"
 
         return ret
-    
+
     def sleeve_excel_formatting(row):
         bold = False
         if row.index.contains('Sleeve'):
@@ -822,16 +822,32 @@ def email_pl_target_loss_budgets():
             ret = ["color:green; font-weight:bold" for _ in row.index]
         else:
             ret = ["color:green" for _ in row.index]
-        columns = ['ARB', 'MACO', 'MALT', 'LEV', 'AED', 'CAM', 'LG', 'WED', 'TAQ', 'TACO']
+        columns = row.index.tolist()
         for column in columns:
             if row.index.contains(column):
-                if isinstance(row[column], (int, float)) and row[column] < 0:
+                if column == 'Sleeve':
+                    ret[row.index.get_loc("Sleeve")] = "color:black; font-weight:bold"
+                elif isinstance(row[column], (int, float)) and row[column] < 0:
                     if bold:
                         ret[row.index.get_loc(column)] = "color:red; font-weight:bold"
                     else:
                         ret[row.index.get_loc(column)] = "color:red"
                 elif isinstance(row[column], (str)) and row[column] == column:
                     ret[row.index.get_loc(column)] = "color:black; font-weight:bold"
+                elif isinstance(row[column], (str)) and row[column].find("%") > -1:
+                    value = row[column]
+                    value = float(value.replace("%", ""))
+                    if value >= 0:
+                        if bold:
+                            ret[row.index.get_loc(column)] = "color:green; font-weight:bold"
+                        else:
+                            ret[row.index.get_loc(column)] = "color:green"
+                    else:
+                        if bold:
+                            ret[row.index.get_loc(column)] = "color:red; font-weight:bold"
+                        else:
+                            ret[row.index.get_loc(column)] = "color:red"
+
 
         return ret
 
@@ -975,6 +991,7 @@ def email_pl_target_loss_budgets():
         loss_sleeve_ytd = loss_sleeve_ytd.append(loss_row_dict, ignore_index=True)
         loss_sleeve_ytd_perc = loss_sleeve_ytd_perc.append(loss_percentage_row_dict, ignore_index=True)
 
+    # Calculate total of the columns in all dataframes
     total_profit_dict = {'Sleeve': 'Total'}
     total_loss_dict = {'Sleeve': 'Total'}
     total_loss_perc_dict = {'Sleeve': 'Total'}
@@ -993,9 +1010,16 @@ def email_pl_target_loss_budgets():
         profit_sleeve_ytd_perc[fund] = format_with_percentage_decimal(profit_sleeve_ytd_perc, fund)
     profit_sleeve_ytd_perc = profit_sleeve_ytd_perc.append(total_profit_perc_dict, ignore_index=True)
 
+    # Display in the following Fund order
     column_order = ['Sleeve', 'ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV', 'TACO', 'TAQ']
     loss_sleeve_ytd_perc = loss_sleeve_ytd_perc[column_order]
     profit_sleeve_ytd_perc = profit_sleeve_ytd_perc[column_order]
+    loss_sleeve_ytd = loss_sleeve_ytd[column_order]
+    profit_sleeve_ytd = profit_sleeve_ytd[column_order]
+
+    # Sort according to the ['M&A', 'CREDIT', 'ESS', 'OPP'] sleeve order
+    profit_sleeve_ytd = sort_by_sleeve(profit_sleeve_ytd, 'Sleeve')
+    loss_sleeve_ytd = sort_by_sleeve(loss_sleeve_ytd, 'Sleeve')
     profit_sleeve_ytd_perc = sort_by_sleeve(profit_sleeve_ytd_perc, 'Sleeve')
     loss_sleeve_ytd_perc = sort_by_sleeve(loss_sleeve_ytd_perc, 'Sleeve')
 
