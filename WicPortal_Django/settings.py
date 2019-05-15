@@ -126,6 +126,7 @@ INSTALLED_APPS = [
     'celeryprogressmonitor',
     'position_stats',
     'cleanup',
+    'risk_drawdown'
 ]
 
 MIDDLEWARE = [

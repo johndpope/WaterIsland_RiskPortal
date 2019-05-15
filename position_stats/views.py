@@ -79,6 +79,7 @@ def get_tradegroup_performance_main_page(request):
 def get_tradegroup_story(request):
     """ Retrieve story charts and render in a template... """
     unique_tickers, tradegroup_name, exposures_and_pnl_df, fund_code = None, None, pd.DataFrame(), None
+    security_pnl_breakdown = None
     options_pnl_contribution = {}
     tradegroup = request.GET['TradeGroup']
     fund = request.GET['Fund']

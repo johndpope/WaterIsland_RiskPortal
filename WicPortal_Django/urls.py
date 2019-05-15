@@ -44,6 +44,7 @@ urlpatterns = [
     url('exposures/', include('exposures.urls')),
     url('position_stats/', include('position_stats.urls')),
     url(r'^celeryprogressmonitor/', include('celeryprogressmonitor.urls')),
+    url(r'^risk_drawdown/', include('risk_drawdown.urls')),
 ]
 
 

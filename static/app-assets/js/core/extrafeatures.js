@@ -5,7 +5,7 @@ $(document).ready(function () {
     setInterval(setPnlMonitors, 150000);
     let aum_df = JSON.parse($('#aum_df').val());
     Morris.Bar({
-       element: 'monthly-sales',
+        element: 'monthly-sales',
         data: aum_df,
         xkey: 'fund',
         xLabelAngle: '70',
@@ -19,6 +19,7 @@ $(document).ready(function () {
         barColors: ['#000'],
         hideHover: 'auto',
     });
+
     function populateNewsCarousels(url_address) {
         $.ajax({
             type: 'GET',
@@ -75,10 +76,6 @@ $(document).ready(function () {
 
     $('#weather-reload').click(function () {
         setWeather();
-    });
-
-    $('#tweet-reload').click(function () {
-        //setTweets();
     });
 
     function setWeather() {
@@ -149,7 +146,11 @@ $(document).ready(function () {
                     //Set normal background
                     url = 'https://images.icanvas.com/2d/TEO86.jpg';
                 }
-                let css = {"background-image": "url(" + url + ")", "background-repeat": "no-repeat", "background-size": "100% 100%"};
+                let css = {
+                    "background-image": "url(" + url + ")",
+                    "background-repeat": "no-repeat",
+                    "background-size": "100% 100%"
+                };
                 $('#weather-background-image').css(css);
 
             }
@@ -175,7 +176,13 @@ $(document).ready(function () {
                 }
 
                 if (!flag) {
-                    $('#tweet-slider').unslider('calculateSlides');
+                    $('#tweet-slider').unslider({
+                        speed: 500,
+                        delay: 2000,
+                        keys: true,
+                        dots: true,
+                        fluid:false
+                    });
                     flag = true;
                 }
 
@@ -236,12 +243,12 @@ $(document).ready(function () {
                         pnl_rows += '<td style="white-space:nowrap;">' + funds_dict[funds_order[i]]
                         if (metric == 'Ann. Gross P&L Target %') {
                             edit_button = '<button type="button" class="btn btn-link btn-sm" id="edit_profit_' +
-                                          funds_order[i] + '"><span class="icon-fixed-width icon-pencil"></span></button>';
+                                funds_order[i] + '"><span class="icon-fixed-width icon-pencil"></span></button>';
                             pnl_rows += edit_button
                         }
                         else if (metric == 'Ann Loss Budget %') {
                             edit_button = '<button type="button" class="btn btn-link btn-sm" id="edit_loss_' +
-                                          funds_order[i] + '"><span class="icon-fixed-width icon-pencil"></span></button>';
+                                funds_order[i] + '"><span class="icon-fixed-width icon-pencil"></span></button>';
                             pnl_rows += edit_button
                         }
                         pnl_rows += '</td>'
@@ -250,10 +257,10 @@ $(document).ready(function () {
                 });
 
                 let table = "<div class='table-responsive'><table id='realtime_pnl_monitors_table' style='width: 100%;' " +
-                            "class=\"table table-striped table-hover text-dark\"><thead>" +
-                            first_header + "</thead>" + "<tbody>" + pnl_rows + "</tbody></table>" +
-                            "<p style='text-align: right'>" +
-                            "* Above data has been calculated using Average YTD Investable Assets</p></div>";
+                    "class=\"table table-striped table-hover text-dark\"><thead>" +
+                    first_header + "</thead>" + "<tbody>" + pnl_rows + "</tbody></table>" +
+                    "<p style='text-align: right'>" +
+                    "* Above data has been calculated using Average YTD Investable Assets</p></div>";
 
 
                 // Append table
@@ -290,7 +297,7 @@ $(document).ready(function () {
         });
     }
 
-    $(document).on("click", "button", function(){
+    $(document).on("click", "button", function () {
         var button_id = this.id;
         if (button_id.includes("edit_profit_") || button_id.includes("edit_loss_")) {
             var fund = button_id.split("_").pop()
@@ -315,25 +322,25 @@ $(document).ready(function () {
                 text: text,
                 content: 'input',
                 buttons: ["Cancel",
-                {text: "Save", closeModal: false}],
+                    {text: "Save", closeModal: false}],
             }).then((value) => {
                 if (value) {
                     $.ajax({
-                        type:'POST',
+                        type: 'POST',
                         url: '../realtime_pnl_impacts/update_profit_loss_targets',
-                        data:{'fund': fund, 'is_profit_target': is_profit_target, 'value': value},
-                        success:function(response){
-                            if(response === "Success"){
+                        data: {'fund': fund, 'is_profit_target': is_profit_target, 'value': value},
+                        success: function (response) {
+                            if (response === "Success") {
                                 swal("Success! " + success + value + "% for " + fund, {icon: "success"});
                                 setPnlMonitors();
 
                             }
-                            else{
+                            else {
                                 swal("Error!", "The value could not be updated", "error");
                                 console.log('Deletion failed', fund, value);
                             }
                         },
-                        error:function (error) {
+                        error: function (error) {
                             swal("Error!", "The value could not be updated", "error");
                             console.log(error, fund, value);
                         }

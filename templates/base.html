@@ -422,6 +422,11 @@
                     </ul>
                 </li>
 
+                <li class=" nav-item"><a href="{% url 'risk_drawdown:all_drawdowns' %}"><i class="icon-drawer"></i><span class="menu-title"
+                                                                                data-i18n="nav.invoice.main">Drawdowns</span></a>
+                </li>
+
+
                 <li class=" nav-item"><a href="#"><i class="icon-feed"></i><span class="menu-title">News & Notes</span></a>
                     <ul class="menu-content">
                         <li><a class="menu-item" href="{% url 'news:list_news_from_wic' %}"
@@ -433,9 +438,6 @@
                     </ul>
                 </li>
 
-                <li class=" nav-item"><a href="{% url 'statpro:get_attribution' %}"><i class="icon-layers"></i><span
-                        class="menu-title">StatPro Attribution</span></a>
-                </li>
             </ul>
         </div>
     </div>
