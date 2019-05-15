@@ -255,7 +255,7 @@ $(document).ready(function () {
                     article = note_details.article;
                     title = note_details.title;
                     $('#wic_notes_edit_id').val(notes_id_to_edit);
-                    $('#wic_notes_edit_date').val(date.toString()); //Todo: Date not setting
+                    $('#wic_notes_edit_date').val(date.toString());
                     $('#wic_notes_edit_title').val(title);
                     $('#wic_notes_edit_author').val(author);
                     $('#wic_notes_edit_article').summernote({'height': "400px"});

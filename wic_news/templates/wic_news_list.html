@@ -390,12 +390,12 @@
                                     <tbody>
                                     {% for news_item in newsmaster_list %}
                                         <tr id="row_{{ news_item.id }}">
-                                            <td>{{ news_item.date|date:'Y-m-d' }}</td>
-                                            <td>{{ news_item.title }}</td>
-                                            <td>{{ news_item.source }}</td>
-                                            <td><a href={{ news_item.url}} target="_blank">{{ news_item.url|slice:"0:25"|add:"..."  }}</a></td>
-                                            <td data-value="{{ news_item.article }}">{{ news_item.author }}</td>
-                                            <td>{{ news_item.tickers }}</td>
+                                            <td nowrap class="align-middle text-center">{{ news_item.date|date:'Y-m-d' }}</td>
+                                            <td class="align-middle">{{ news_item.title }}</td>
+                                            <td class="align-middle">{{ news_item.source }}</td>
+                                            <td class="align-middle"><a href={{ news_item.url}} target="_blank">{{ news_item.url|slice:"0:25"|add:"..."  }}</a></td>
+                                            <td class="align-middle">{{ news_item.author }}</td>
+                                            <td class="align-middle">{{ news_item.tickers }}</td>
                                             <td>
                                                 <div class="btn-group">
                                                     <button type="button" class="btn btn-primary dropdown-toggle"

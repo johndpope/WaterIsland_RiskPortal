@@ -193,27 +193,42 @@ $(document).ready(function(){
             var edit_row = $('#row_'+news_id_to_edit);
 
             var $tds = edit_row.find('td');
-            var date = $tds.eq(0).text();
-            var title = $tds.eq(1).text();
-            var source = $tds.eq(2).text();
-            var url = $tds.eq(3).children().attr('href');
-            var author = $tds.eq(4).text();
-            var article = $tds.eq(4).attr('data-value');
-            var tickers = $tds.eq(5).text();
-            // Populate the Edit Modal Inputs with these values
-            $('#wic_news_edit_id').val(news_id_to_edit);
-            $('#wic_news_edit_date').val(date);
-            $('#wic_news_edit_title').val(title);
-            $('#wic_news_edit_source').val(source);
-            $('#wic_news_edit_url').val(url);
-            $('#wic_news_edit_author').val(author);
-            $('#wic_news_edit_tickers').val(tickers);
-            $('#wic_news_edit_article').summernote({'height':'450px'});
-            $('#wic_news_edit_article').summernote('code', article);
-
+            var date = '';
+            var title = '';
+            var source = '';
+            var url = '';
+            var author = '';
+            var article = '';
+            var tickers = '';
+            $.ajax({
+                url: "../news/get_news_details/",
+                type: 'POST',
+                data: {'news_id': news_id_to_edit},
+                success: function (response) {
+                    let news_details = response['news_details'];
+                    date = moment(new Date(news_details.date)).format('YYYY-MM-DD');
+                    tickers = news_details.tickers;
+                    author = news_details.author;
+                    article = news_details.article;
+                    title = news_details.title;
+                    source = news_details.source;
+                    url = news_details.url;
+                    $('#wic_news_edit_id').val(news_id_to_edit);
+                    $('#wic_news_edit_date').val(date.toString());
+                    $('#wic_news_edit_title').val(title);
+                    $('#wic_news_edit_source').val(source);
+                    $('#wic_news_edit_url').val(url);
+                    $('#wic_news_edit_author').val(author);
+                    $('#wic_news_edit_tickers').val(tickers);
+                    $('#wic_news_edit_article').summernote({'height':'450px'});
+                    $('#wic_news_edit_article').summernote('code', article);
+                },
+                error: function (err) {
+                    console.log(err);
+                }
+            });
             // Display the Modal
             $('#wic_news_edit_modal').modal('show');
-
         }
         else if(current_news.search('delete_')!=-1){
             //Logic for Deleting a deal
@@ -263,14 +278,20 @@ $(document).ready(function(){
             //Logic to View the Deal
             //Just take the URL and redirect to the page. Front-end handling
             news_to_view = current_news.split('_')[1];
-            var edit_row = $('#row_'+news_to_view);
-            var $tds = edit_row.find('td');
-            var url = $tds.eq(3).children().attr('href');
-            window.open(url, 'Water Island', 'WIC Sets');
+            $.ajax({
+                url: "../news/get_news_details/",
+                type: 'POST',
+                data: {'news_id': news_to_view},
+                success: function (response) {
+                    let news_details = response['news_details'];
+                    url = news_details.url;
+                    window.open(url, 'Water Island', 'WIC Sets');
+                },
+                error: function (err) {
+                    console.log(err);
+                }
+            });
         }
-
-
-
     });
 
 

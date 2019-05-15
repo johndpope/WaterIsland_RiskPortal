@@ -425,10 +425,10 @@
                                     <tbody>
                                     {% for notes_item in notesmaster_list %}
                                         <tr id="row_{{ notes_item.id }}" data-article="{{ notes_item.article }}">
-                                            <td>{{ notes_item.date }}</td>
-                                            <td>{{ notes_item.title }}</td>
-                                            <td>{{ notes_item.author }}</td>
-                                            <td>{{ notes_item.tickers }}</td>
+                                            <td nowrap class="align-middle text-center">{{ notes_item.date }}</td>
+                                            <td class="align-middle">{{ notes_item.title }}</td>
+                                            <td class="align-middle">{{ notes_item.author }}</td>
+                                            <td class="align-middle">{{ notes_item.tickers }}</td>
                                             <td>
                                                 <div class="btn-group">
                                                     <button type="button" class="btn btn-primary dropdown-toggle"

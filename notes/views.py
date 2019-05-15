@@ -41,7 +41,7 @@ def autocompleteModel(request):
 
 
 def get_note_details(request):
-    """ Retreives the uploaded attachement for the Note """
+    """ Retreives all the details for the requested Note """
     attachments = None
     if request.method == 'POST':
         notes_id = request.POST['notes_id']

@@ -68,6 +68,29 @@ def add_new_wic_news_item(request):
     return HttpResponse(response)
 
 
+def get_news_details(request):
+    """ Retreives all the details for the requested News """
+    if request.method == 'POST':
+        news_id = request.POST.get('news_id')
+        news_details = []
+        if news_id:
+            news_details = {}
+            try:
+                note = NewsMaster.objects.get(id=news_id)
+                news_details['article'] = note.article
+                news_details['id'] = note.id
+                news_details['date'] = note.date
+                news_details['title'] = note.title
+                news_details['author'] = note.author
+                news_details['tickers'] = note.tickers
+                news_details['url'] = note.url
+                news_details['source'] = note.source
+            except NewsMaster.DoesNotExist:
+                news_details = []
+
+    return JsonResponse({'news_details': news_details})
+
+
 def update_wic_news_item(request):
     ''' Async. Update News Item based on ID '''
     response = None
