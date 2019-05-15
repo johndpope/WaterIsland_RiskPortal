@@ -39,7 +39,7 @@
                             </p>
                             {% if not error %}
                             {% else %}
-                                <p class="lead text-danger text-center font-size-small">{{ error }}</p>
+                                <p class="lead text-danger text-center font-size-small">{{ error|safe }}</p>
                             {% endif %}
 
                         </div>

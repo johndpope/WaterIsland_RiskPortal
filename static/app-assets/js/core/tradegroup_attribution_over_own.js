@@ -168,8 +168,8 @@ function resetChart() {
 }
 
 function initializeDatatableSummary(data, table_id) {
-    $('#' + table_id).DataTable({
-        scrollY: "680px",
+    var dataTableSummary = $('#' + table_id).DataTable({
+        scrollY: "500px",
         scrollX: true,
         scrollCollapse: true,
         data: data,
@@ -257,8 +257,24 @@ function initializeDatatableSummary(data, table_id) {
                 else {
                     $(td).css('color', 'green')
                 }
+                $(td).attr('nowrap', 'true');
+                $(td).attr('class', 'align-middle text-center');
             },
             "render": $.fn.dataTable.render.number(',', '.', 2),
+        },
+        {
+            "targets": [1, 2, 3, 4, 5, 20],
+            "createdCell": function(td, cellData, rowData, row, col) {
+                $(td).attr('nowrap', 'true');
+                $(td).attr('class', 'align-middle text-center');
+            }
+        },
+        {
+            "targets": 0, 
+            "createdCell": function(td, cellData, rowData, row, col) {
+                $(td).attr('nowrap', 'true');
+                $(td).attr('class', 'align-middle');
+            }
         }],
         "footerCallback": function (row, data, start, end, display) {
 
@@ -289,6 +305,7 @@ function initializeDatatableSummary(data, table_id) {
             }
         }
     })
+    $(dataTableSummary.table().header()).addClass('align-middle text-center');
 }
 
 document.onload = function () {

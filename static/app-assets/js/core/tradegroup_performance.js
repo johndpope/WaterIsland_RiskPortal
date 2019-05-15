@@ -67,13 +67,13 @@ function addFundMainTab(name, addToTab, addToContent, sleeve, tradegroup_perform
 }
 
 function initializeDatatableSummary(data, table_id, column) {
-    $('#' + table_id).DataTable({
-        scrollY: "680px",
+    var dataTableSummary = $('#' + table_id).DataTable({
+        scrollY: "500px",
         scrollX: true,
         scrollCollapse: true,
         data: data,
         lengthChange: false,
-        paginate: false,
+        paging: false,
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
             '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
             '<"row"<"col-sm-5"i><"col-sm-7"p>>',
@@ -152,6 +152,20 @@ function initializeDatatableSummary(data, table_id, column) {
                 }
             },
             "render": $.fn.dataTable.render.number(',', '.', 2),
+        },
+        {
+            "targets": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            "createdCell": function(td, cellData, rowData, row, col) {
+                $(td).attr('nowrap', 'true');
+                $(td).attr('class', 'align-middle text-center');
+            }
+        },
+        {
+            "targets": 0, 
+            "createdCell": function(td, cellData, rowData, row, col) {
+                $(td).attr('nowrap', 'true');
+                $(td).attr('class', 'align-middle');
+            }
         }],
         "footerCallback": function (row, data, start, end, display) {
 
@@ -179,12 +193,19 @@ function initializeDatatableSummary(data, table_id, column) {
             }
         }
     })
+    $(dataTableSummary.table().header()).addClass('align-middle text-center');
 }
 document.onload = function () {
     $($.fn.dataTable.tables(true)).DataTable()
         .columns.adjust()
         .fixedColumns().update()
 };
+
+setInterval(function(){
+    $($.fn.dataTable.tables(true)).DataTable()
+        .columns.adjust()
+        .fixedColumns().relayout()
+},500);
 
 // Below Function to adjust columns for dynamically created Tabs
 $('body').on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
