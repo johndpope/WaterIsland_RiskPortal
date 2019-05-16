@@ -1506,5 +1506,45 @@ $(document).ready(function () {
 
     $('.show_1bf_dataset').trigger('click'); // Show 1BF dataset by Default..
 
+    $(document).on("click", "button", function () {
+        var button_id = this.id;
+        if (button_id.includes("edit_action_id_")) {
+            var deal_id = button_id.split("_").pop()
+            var title = "Update Action ID";
+            var text = "Enter the value for action ID for deal ID " + deal_id.toString();
+            var success = "The action ID has been updated to "
+            swal({
+                title: title,
+                text: text,
+                content: 'input',
+                buttons: ["Cancel",
+                    {text: "Save", closeModal: false}],
+            }).then((action_id) => {
+                if (action_id) {
+                    $.ajax({
+                        type: 'POST',
+                        url: '../risk/edit_mna_idea_action_id',
+                        data: {'deal_id': deal_id, 'action_id': action_id},
+                        success: function (response) {
+                            if (response === "Success") {
+                                $("#action_id_" + deal_id.toString()).html("Action ID: " + action_id);
+                                swal("Success! " + success + action_id + " for " + deal_id.toString(), {icon: "success"});
+                            }
+                            else {
+                                swal("Error!", "The action ID could not be updated", "error");
+                                console.log('Deletion failed', deal_id, action_id);
+                            }
+                        },
+                        error: function (error) {
+                            swal("Error!", "The action ID could not be updated", "error");
+                            console.log(error, deal_id, action_id);
+                        }
+                    });
+
+                }
+            });
+        }
+    });
+
 })
 ;

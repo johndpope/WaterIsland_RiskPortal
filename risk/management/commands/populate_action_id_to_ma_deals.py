@@ -1,5 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 import pandas as pd
+
+from bbgclient import bbgclient
 from risk.models import MA_Deals
 
 class Command(BaseCommand):
@@ -24,6 +26,7 @@ class Command(BaseCommand):
         dry_run = options.get('dry_run')
         file_path = options.get('file_path')
         skip_rows = options.get('skip_rows', 0)
+        action_id_list = []
         try:
             skip_rows = [i for i in range(skip_rows[0])]
             file_path = file_path[0]
@@ -42,6 +45,7 @@ class Command(BaseCommand):
                 if not df_row.empty:
                     action_id = df_row['Action ID'].item()
                     if action_id:
+                        action_id_list.append(str(action_id) + ' Action')
                         count += 1
                         if dry_run:
                             print('{deal_name} -> {action_id}'.format(deal_name=deal_name, action_id=action_id))
@@ -52,10 +56,23 @@ class Command(BaseCommand):
                         remaining.append(deal_name)
                 else:
                     remaining.append(deal_name)
-            print('{count} deals out of {total} deals updated.'.format(count=count, total=len(ma_deals)))
+            if not dry_run:
+                print('{count} deals out of {total} deals updated.'.format(count=count, total=len(ma_deals)))
+            else:
+                print('{count} deals out of {total} deals will be updated.'.format(count=count, total=len(ma_deals)))
             if remaining:
                 print('Following deals did not have a matching row in the given file.')
                 print(remaining)
+            # fields = ['CA052', 'CA054', 'CA057']
+            # result = bbgclient.get_secid2field(action_id_list, 'tickers', fields, req_type='refdata')
+            # if dry_run:
+            #     print(result)
+            # else:
+            #     for ma_deal in ma_deals:
+            #         action_id = str(ma_deal.action_id) + ' Action'
+            #         if result.get(action):
+            #             data = result[action_id]
+
             print("Successfully completed.")
         except Exception as e:
             print("Error occurred", e)

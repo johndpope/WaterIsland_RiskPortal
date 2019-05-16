@@ -32,6 +32,7 @@ urlpatterns = [
     url('calculate_mna_idea_deal_value$',views.calculate_mna_idea_deal_value,name = 'calculate_mna_idea_deal_value'),
     url('delete_mna_idea$',views.delete_mna_idea,name = 'delete_mna_idea'),
     url('mna_idea_add_unaffected_date$',views.mna_idea_add_unaffected_date,name = 'mna_idea_add_unaffected_date'),
+    url('edit_mna_idea_action_id$',views.edit_mna_idea_action_id,name = 'edit_mna_idea_action_id'),
     url('retrieve_cix_index$',views.retrieve_cix_index,name = 'retrieve_cix_index'),
     url('retrieve_spread_index$',views.retrieve_spread_index,name = 'retrieve_spread_index'),
     #Credit Section

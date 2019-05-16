@@ -64,8 +64,8 @@ def get_tradegroup_performance_main_page(request):
         for fund in tradegroup_performance_bips['Fund'].unique():
             perf_dict_bips[fund] = tradegroup_performance_bips[tradegroup_performance_bips['Fund'] == fund].to_json(orient='records')
         as_of = tradegroup_performance_dollars['Date'].max()
-        if not request.GET.get('as_of') and as_of != datetime.date.today().strftime("%Y-%m-%d"):
-            error = "<mark class='bg-danger text-white'>The following data is outdated. It is as of {as_of}</mark>".format(as_of=as_of)
+        # if not request.GET.get('as_of') and as_of != datetime.date.today().strftime("%Y-%m-%d"):
+        #     error = "<mark class='bg-danger text-white'>The following data is outdated. It is as of {as_of}</mark>".format(as_of=as_of)
     except ValueError:
         error = "<mark class='bg-danger text-white'>No Data Found! Have you tried the legacy portal?</mark>"
         as_of = request.GET['as_of']
@@ -209,8 +209,8 @@ def get_tradegroup_attribution_over_own_capital(request):
             perf_dict[fund] = tradegroup_performance_over_own_capital[
                 tradegroup_performance_over_own_capital['Fund'] == fund].to_json(orient='records')
         as_of = tradegroup_performance_over_own_capital['Date'].max()
-        if not request.GET.get('as_of') and as_of != datetime.date.today().strftime("%Y-%m-%d"):
-            error = "<mark class='bg-danger text-white'>The following data is outdated. It is as of {as_of}</mark>".format(as_of=as_of)
+        # if not request.GET.get('as_of') and as_of != datetime.date.today().strftime("%Y-%m-%d"):
+        #     error = "<mark class='bg-danger text-white'>The following data is outdated. It is as of {as_of}</mark>".format(as_of=as_of)
     except ValueError:
         error = "<mark class='bg-danger text-white'>No Data available. Have you tried the legacy portal?</mark>"
         as_of = request.GET['as_of']

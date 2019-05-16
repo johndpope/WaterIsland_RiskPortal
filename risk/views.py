@@ -79,6 +79,22 @@ def mna_idea_add_unaffected_date(request):
     return HttpResponse(response)
 
 
+def edit_mna_idea_action_id(request):
+    response = 'Failed'
+    if request.method == 'POST':
+        try:
+            deal_id = request.POST.get('deal_id')
+            action_id = request.POST.get('action_id')
+            if deal_id and action_id:
+                deal_object = MA_Deals.objects.get(id=deal_id)
+                deal_object.action_id = action_id
+                deal_object.save()
+                response = 'Success'
+        except Exception as exception:
+            print(exception)
+    return HttpResponse(response)
+
+
 def retrieve_spread_index(request):
     response = 'Failed'
     if request.method == 'POST':
