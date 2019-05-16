@@ -971,11 +971,12 @@ def email_pl_target_loss_budgets():
         profit_sleeve_ytd_perc = profit_sleeve_ytd_perc.append(profit_row_dict, ignore_index=True)
 
     for sleeve in unique_sleeves:
+        row_sleeve = sleeve
         if sleeve == 0 or sleeve == 0.0 or isinstance(sleeve, (int, float)):
-            sleeve = 'UNLISTED'
-        profit_row_dict = {'Sleeve': sleeve}
-        loss_row_dict = {'Sleeve': sleeve}
-        loss_percentage_row_dict = {'Sleeve': sleeve}
+            row_sleeve = 'UNLISTED'
+        profit_row_dict = {'Sleeve': row_sleeve}
+        loss_row_dict = {'Sleeve': row_sleeve}
+        loss_percentage_row_dict = {'Sleeve': row_sleeve}
         for column in final_live_df_columns:
             fund = column.split("_")[1]
             profit_value = final_live_df[(final_live_df['Sleeve_'] == sleeve) & (final_live_df[column] > 0)][column].sum()
