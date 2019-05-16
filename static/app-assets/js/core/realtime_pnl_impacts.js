@@ -181,7 +181,7 @@ $(document).ready(function () {
                 };
                 // Iterate through Each column
 
-                $.each([ 2, 3, 4, 5, 6, 9], function (index, value) {
+                $.each([ 2, 3, 4, 5], function (index, value) {
                     let pageTotal = api
                         .column([value], {page: 'current'})
                         .data()
@@ -195,7 +195,22 @@ $(document).ready(function () {
                     );
                 });
 
-                $.each([7, 8], function (index, value) {
+                $.each([6], function (index, value) {
+                    let pageTotal = api
+                        .column([value], {page: 'current'})
+                        .data()
+                        .reduce(function (a, b) {
+                            return intVal(a) + intVal(b);
+                        }, 0);
+
+                    // Update footer
+                    $(api.column([value]).footer()).html(
+                        pageTotal.toLocaleString() + '%'
+                    );
+                });
+
+
+                $.each([8, 9], function (index, value) {
                     let pageTotal = api
                         .column([value], {page: 'current'})
                         .data()
