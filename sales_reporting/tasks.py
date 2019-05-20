@@ -44,7 +44,7 @@ def email_weekly_sales_report():
 
             return 'color: %s' % color
         except Exception:
-            return 'color: yellow'
+            return 'color: black'
     styles = [
         {'selector': 'tr:hover td', 'props': [('background-color', 'yellow')]},
         {'selector': 'th, td', 'props': [('border', '1px solid black'),
