@@ -8,6 +8,8 @@ from email_utilities import send_email2
 from celery import shared_task
 from sqlalchemy import create_engine
 from .render import *
+import dbutils
+import dfutils
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 django.setup()
 
@@ -174,19 +176,64 @@ def email_weekly_sales_report():
     df1.index.values[11] = '* Ann Loss Budget $'
 
     df1 = df1.style.set_table_styles(styles)
+
+    # Winners/Losers
+    tg_snapshot_df = dbutils.Wic.get_tradegroups_snapshot()
+
+    aed_qtd_winners, aed_qtd_losers, aed_ytd_winners, aed_ytd_losers, aed_ytd_active_winners, aed_ytd_active_losers = get_fund_winners_losers(tg_snapshot_df, 'AED')
+
+    arb_qtd_winners, arb_qtd_losers, arb_ytd_winners, arb_ytd_losers, arb_ytd_active_winners, arb_ytd_active_losers = get_fund_winners_losers(tg_snapshot_df, 'ARB')
+
+    taco_qtd_winners, taco_qtd_losers, taco_ytd_winners, taco_ytd_losers, taco_ytd_active_winners, taco_ytd_active_losers = get_fund_winners_losers(tg_snapshot_df, 'TACO')
+
+
+
+
+
     params = {'bps_attributions': pivoted_bps_attributions.render(),
               'dollar_attributions': pivoted_dollar_attributions.render(),
               'aed_bucket_weightings': pivoted_aed_bucket_weightings.render(),
               'pnl_monitors': df1.render(),
               'buckets_contribution_bps': pivoted_aed_buckets_bps_df.render(),
-              'buckets_contribution_dollar': pivoted_aed_buckets_dollar_df.render()
+              'buckets_contribution_dollar': pivoted_aed_buckets_dollar_df.render(),
+              'aed_qtd_winners':aed_qtd_winners.to_html(), 'aed_qtd_losers':aed_qtd_losers.to_html(),'aed_ytd_winners':aed_ytd_winners.to_html(),
+              'aed_ytd_losers':aed_ytd_losers.to_html(),'aed_ytd_active_winners':aed_ytd_active_winners.to_html(),
+              'aed_ytd_active_losers':aed_ytd_active_losers.to_html(),'arb_qtd_winners':arb_qtd_winners.to_html(),
+              'arb_qtd_losers':arb_qtd_losers.to_html(),'arb_ytd_winners':arb_ytd_winners.to_html(),'arb_ytd_losers':arb_ytd_losers.to_html(),
+              'arb_ytd_active_winners':arb_ytd_active_winners.to_html(),'arb_ytd_active_losers':arb_ytd_active_losers.to_html(),
+              'taco_qtd_winners':taco_qtd_winners.to_html(),'taco_qtd_losers':taco_qtd_losers.to_html(),'taco_ytd_winners':taco_ytd_winners.to_html(),
+              'taco_ytd_losers':taco_ytd_losers.to_html(),'taco_ytd_active_winners':taco_ytd_active_winners.to_html(),
+              'taco_ytd_active_losers':taco_ytd_active_losers.to_html(),
              }
 
     file = Render.render_to_file('sales_weekly_template.html', params)
     thread = Thread(target=send_email2, args=(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD,
-                   ['jcoburn@wicfunds.com', 'risk@wicfunds.com'],
+                   ['kgorde@wicfunds.com'],
                    "Weekly Sales Report - " + datetime.datetime.now().strftime('%Y-%m-%d'), 'dispatch@wicfunds.com',
                    'Please find attached Weekly Sales Report!', file))
     thread.start()
 
     return "Completed Task - (Weekly Sales Reporting)"
+
+
+def get_fund_winners_losers(tg_snapshot_df, fund_code):
+    f_df = tg_snapshot_df[tg_snapshot_df['Fund'] == fund_code].copy()
+    metrics_df = pd.DataFrame([dfutils.json2row(json) for json in f_df['Metrics in NAV JSON']])
+    metrics_df .index = f_df.index
+    f_df['YTD(bps)'] = metrics_df['P&L(bps)|YTD']; f_df['YTD($)'] = metrics_df['P&L($)|YTD']
+    f_df['QTD(bps)'] = metrics_df['P&L(bps)|QTD']; f_df['QTD($)'] = metrics_df['P&L($)|QTD']
+
+    tg_ytd_df = f_df[~pd.isnull(f_df['YTD(bps)'])][['TradeGroup','InceptionDate','EndDate','Status','YTD(bps)','YTD($)']].sort_values(by='YTD(bps)',ascending=False).rename(columns={'YTD(bps)':'bps','YTD($)':'$'})
+    active_tg_ytd_df = tg_ytd_df[tg_ytd_df['Status']=='ACTIVE'].sort_values(by='bps',ascending=False)
+    tg_qtd_df = f_df[~pd.isnull(f_df['QTD(bps)'])][['TradeGroup','InceptionDate','EndDate','Status','QTD(bps)','QTD($)']] .sort_values(by='QTD(bps)',ascending=False).rename(columns={'QTD(bps)':'bps','QTD($)':'$'})
+
+    qtd_winners = tg_qtd_df.head(5)
+    qtd_losers = tg_qtd_df.tail(5)
+
+    ytd_winners = tg_ytd_df.head(5)
+    ytd_losers = tg_ytd_df.tail(5)
+
+    ytd_active_winners = active_tg_ytd_df.head(5)
+    ytd_active_losers = active_tg_ytd_df.tail(5)
+
+    return qtd_winners, qtd_losers, ytd_winners, ytd_losers, ytd_active_winners, ytd_active_losers
