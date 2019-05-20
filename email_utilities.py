@@ -36,3 +36,28 @@ def send_email(from_addr, pswd, recipients, subject, from_email, html='', EXPORT
     server.starttls()
     server.login(login, pswd)
     server.sendmail(msg['From'], emaillist, msg.as_string())
+
+
+def send_email2(from_addr, pswd, recipients, subject, from_email, html='', filestoAttach=[], dataframe=None):
+    from_addr = from_addr
+    login = from_addr
+    pswd = pswd
+    recipients = recipients
+    emaillist = [elem.strip().split(',') for elem in recipients]
+    msg = MIMEMultipart()
+    msg['Subject'] = subject
+    msg['From'] = from_email
+    msg['To'] = ', '.join(recipients)
+    part1 = MIMEText(html, 'html')
+    msg.attach(part1)
+    print(filestoAttach)
+
+    attachment = MIMEApplication(open(filestoAttach[1], "rb").read())
+    attachment['Content-Disposition'] = 'attachment; filename="{}"'.format(filestoAttach[1])
+    msg.attach(attachment)
+
+    server = smtplib.SMTP('smtp.office365.com', 587)
+    server.ehlo()
+    server.starttls()
+    server.login(login, pswd)
+    server.sendmail(msg['From'], emaillist, msg.as_string())

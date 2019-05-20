@@ -1,0 +1,72 @@
+
+{% load staticfiles %}
+
+    <section class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-head">
+                    <div class="card-header card-head-inverse bg-dark">
+                        <h2 class="card-title text-white center">Weekly Sales Report (Data as of)
+                            2019-05-17</h2>
+                        <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
+                    </div>
+                </div>
+                <br>
+                <div class="card-content">
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-5 offset-1">
+                                <h4 class="text-center">Attribution across the board (bps)</h4>
+                                {{ bps_attributions|safe }}
+                            </div>
+
+                            <div class="col-lg-6">
+                                <h4 class="text-center">Attribution across the board ($)</h4>
+                                {{ dollar_attributions|safe }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <br><br><br>
+                    <div class="col-lg-12">
+                            <h4 class="text-center">AED Bucket Attribution (bps)</h4>
+                            <div class="col-lg-12">
+
+                                {{ buckets_contribution_bps|safe }}
+                            </div><br><br>
+
+                            <h4 class="text-center">AED Bucket Attribution ($)</h4>
+                            <div class="col-lg-12">
+
+                                {{ buckets_contribution_dollar|safe }}
+                            </div>
+                        </div>
+                    </div>
+                    <br><br><br>
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-6 offset-3">
+                                <h4 class="text-center">AED Bucket Weightings</h4>
+                                {{ aed_bucket_weightings|safe }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <br><br><br><br>
+                   <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+                    <div class="col-lg-12">
+                        <div class="row">
+                            <div class="col-lg-6 offset-3">
+                                <h4 class="text-center">P&L Monitors</h4>
+                                {{ pnl_monitors|safe }}
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+
