@@ -89,6 +89,10 @@ CELERYBEAT_SCHEDULE = {
     'SEND_DAILY_SITUATIONS_LOG': {
         'task': 'wic_news.tasks.email_news_additions',
         'schedule': crontab(minute="15", hour='19', day_of_week='mon-fri'),  # Execute weekdays morning at 6.40am
+    },
+    'EMAIL_SALES_WEEKLY_REPORT': {
+        'task': 'sales_reporting.tasks.email_weekly_sales_report',
+        'schedule': crontab(minute="15", hour='00', day_of_week='fri'),
     }
 }
 

@@ -184,8 +184,8 @@ def email_weekly_sales_report():
 
     file = Render.render_to_file('sales_weekly_template.html', params)
     thread = Thread(target=send_email2, args=(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD,
-                   ['kgorde@wicfunds.com'],
-                   "Weekly Sales Report" + datetime.datetime.now().strftime('%Y-%m-%d'), 'dispatch@wicfunds.com',
+                   ['jcoburn@wicfunds.com', 'risk@wicfunds.com'],
+                   "Weekly Sales Report - " + datetime.datetime.now().strftime('%Y-%m-%d'), 'dispatch@wicfunds.com',
                    'Please find attached Weekly Sales Report!', file))
     thread.start()
 
