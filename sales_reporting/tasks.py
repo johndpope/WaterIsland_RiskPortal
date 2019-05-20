@@ -183,8 +183,8 @@ def email_weekly_sales_report():
     aed_qtd_losers = aed_qtd_losers.style.applymap(color_negative_red).set_table_styles(styles)
     aed_ytd_winners = aed_ytd_winners.style.applymap(color_negative_red).set_table_styles(styles)
     aed_ytd_losers = aed_ytd_losers.style.applymap(color_negative_red).set_table_styles(styles)
-    aed_ytd_active_winners = aed_ytd_active_winners.applymap(color_negative_red).set_table_styles(styles)
-    aed_ytd_active_losers = aed_ytd_active_losers.applymap(color_negative_red).set_table_styles(styles)
+    aed_ytd_active_winners = aed_ytd_active_winners.style.applymap(color_negative_red).set_table_styles(styles)
+    aed_ytd_active_losers = aed_ytd_active_losers.style.applymap(color_negative_red).set_table_styles(styles)
 
     arb_qtd_winners = arb_qtd_winners.style.applymap(color_negative_red).set_table_styles(styles)
     arb_qtd_losers = arb_qtd_losers.style.applymap(color_negative_red).set_table_styles(styles)
