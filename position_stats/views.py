@@ -30,9 +30,12 @@ def get_tradegroup_performance_main_page(request):
                                                         " FROM wic.tradegroup_attribution_to_fund_nav_bps LIMIT 1)",
                                                         con=connection)
 
-        catalyst_df = pd.read_sql_query("SELECT DISTINCT TradeGroup, Fund, CatalystTypeWIC, CatalystRating FROM "
-                                        "wic.daily_flat_file_db WHERE Flat_file_as_of = (select max(flat_file_as_of) "
-                                        " FROM wic.daily_flat_file_db)", con=connection)
+        catalyst_df = pd.read_sql_query("SELECT DISTINCT X.Fund, X.TradeGroup, X.CatalystTypeWIC, X.CatalystRating "
+                                        "FROM wic.daily_flat_file_db AS X INNER JOIN (SELECT MAX(flat_file_as_of) "
+                                        "AS max_date, TradeGroup, CatalystTypeWIC, CatalystRating FROM "
+                                        "wic.daily_flat_file_db GROUP BY TradeGroup) AS Y "
+                                        "ON (X.TradeGroup = Y.TradeGroup AND X.Flat_file_as_of = Y.max_date) "
+                                        , con=connection)
 
         tradegroup_performance_bips['Date'] = tradegroup_performance_bips['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
         tradegroup_performance_dollars['Date'] = tradegroup_performance_dollars['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
