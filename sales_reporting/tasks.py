@@ -250,13 +250,17 @@ def get_fund_winners_losers(tg_snapshot_df, fund_code):
         columns={'QTD(bps)': 'bps', 'QTD($)': '$'})
 
     string_cols = ['bps', '$']
-    qtd_winners = tg_qtd_df.head(5)[string_cols].astype(str)
-    qtd_losers = tg_qtd_df.tail(5)[string_cols].astype(str)
+    tg_qtd_df[string_cols] = tg_qtd_df[string_cols].astype(str)
+    active_tg_ytd_df[string_cols] = active_tg_ytd_df[string_cols].astype(str)
+    tg_qtd_df[string_cols] = tg_qtd_df[string_cols].astype(str)
 
-    ytd_winners = tg_ytd_df.head(5)[string_cols].astype(str)
-    ytd_losers = tg_ytd_df.tail(5)[string_cols].astype(str)
+    qtd_winners = tg_qtd_df.head(5)
+    qtd_losers = tg_qtd_df.tail(5)
 
-    ytd_active_winners = active_tg_ytd_df.head(5)[string_cols].astype(str)
-    ytd_active_losers = active_tg_ytd_df.tail(5)[string_cols].astype(str)
+    ytd_winners = tg_ytd_df.head(5)
+    ytd_losers = tg_ytd_df.tail(5)
+
+    ytd_active_winners = active_tg_ytd_df.head(5)
+    ytd_active_losers = active_tg_ytd_df.tail(5)
 
     return qtd_winners, qtd_losers, ytd_winners, ytd_losers, ytd_active_winners, ytd_active_losers
