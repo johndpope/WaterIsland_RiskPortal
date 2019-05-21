@@ -802,7 +802,7 @@ def email_pl_target_loss_budgets():
 
         columns = ['Total YTD PnL_ARB', 'Total YTD PnL_MACO', 'Total YTD PnL_MALT', 'Total YTD PnL_LEV',
                    'Total YTD PnL_AED', 'Total YTD PnL_CAM', 'Total YTD PnL_LG', 'Total YTD PnL_WED',
-                   'Total YTD PnL_TAQ', 'Total YTD PnL_TACO']
+                   'Total YTD PnL_TACO']
 
         for column in columns:
             if isinstance(row[column], (int, float)) and row[column] < 0:
@@ -865,7 +865,7 @@ def email_pl_target_loss_budgets():
         {'selector': '', 'props': [('border-collapse', 'collapse'), ('border', '1px solid black'), ('text-align',
                                                                                                     'center')]}
     ]
-
+    df1.drop(columns=['TAQ'], inplace=True)
     styled_html = (df1.style.apply(style_funds).set_table_styles(styles).set_caption("PL Targets & Loss Budgets (" + now_date + ")"))
 
     html = """ \
@@ -922,7 +922,7 @@ def email_pl_target_loss_budgets():
     fund_drilldown_details = views.get_data()
     final_live_df = final_live_df[['TradeGroup_', 'Sleeve_', 'Catalyst_', 'Total YTD PnL_ARB', 'Total YTD PnL_MACO',
                                    'Total YTD PnL_MALT', 'Total YTD PnL_LEV', 'Total YTD PnL_AED', 'Total YTD PnL_CAM',
-                                   'Total YTD PnL_LG', 'Total YTD PnL_WED', 'Total YTD PnL_TAQ', 'Total YTD PnL_TACO']]
+                                   'Total YTD PnL_LG', 'Total YTD PnL_WED', 'Total YTD PnL_TACO']]
     final_live_df_columns = list(final_live_df.columns.values)
     final_live_df_columns.remove('TradeGroup_')
     final_live_df_columns.remove('Sleeve_')
@@ -1014,7 +1014,7 @@ def email_pl_target_loss_budgets():
     profit_sleeve_ytd_perc = profit_sleeve_ytd_perc.append(total_profit_perc_dict, ignore_index=True)
 
     # Display in the following Fund order
-    column_order = ['Sleeve', 'ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV', 'TACO', 'TAQ']
+    column_order = ['Sleeve', 'ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV', 'TACO']
     loss_sleeve_ytd_perc = loss_sleeve_ytd_perc[column_order]
     profit_sleeve_ytd_perc = profit_sleeve_ytd_perc[column_order]
     loss_sleeve_ytd = loss_sleeve_ytd[column_order]
@@ -1054,7 +1054,7 @@ def email_pl_target_loss_budgets():
     exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
     subject = 'PL Targets & Loss Budgets - ' + now_date
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-               recipients=['vaggarwal@wicfunds.com', 'kgorde@wicfunds.com', 'cplunkett@wicfunds.com'],
+               recipients=['iteam@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
                EXPORTERS=exporters,
                dataframe=[final_live_df, [profit_sleeve_ytd_perc, loss_sleeve_ytd_perc],
