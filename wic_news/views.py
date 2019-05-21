@@ -1,6 +1,6 @@
 import newspaper
-
-from django.contrib.auth.mixins import LoginRequiredMixin
+import datetime
+import pandas as pd
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView
 from newsapi import NewsApiClient
@@ -124,3 +124,17 @@ def delete_wic_news_item(request):
         response = 'wic_news_deleted'
 
     return HttpResponse(response)
+
+
+def export_wic_news(request):
+    wic_news_export = pd.DataFrame.from_records(NewsMaster.objects.all().values())
+    del wic_news_export['id']
+    del wic_news_export['article']
+    wic_news_export.columns = ["Author", "Date", "Source", "Tickers", "Title", "URL"]
+    wic_news_export = wic_news_export[["Date", "Title", "URL", "Author", "Source", "Tickers"]]
+    now = datetime.datetime.now().strftime('%Y-%m-%d')
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=WIC_News_Repository_'+now+'.csv'
+    wic_news_export.to_csv(path_or_buf=response, index=False)
+
+    return response
