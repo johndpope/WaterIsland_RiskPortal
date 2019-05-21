@@ -12,5 +12,6 @@ urlpatterns = [
     url('get_article_from_url', views.get_article_from_url, name='get_article_from_url'),
     url('search/', autocompleteModel, name='autocompleteModel'),
     url('get_news_details', views.get_news_details, name='get_news_details'),
+    url('export_wic_news$', views.export_wic_news, name='export_wic_news'),
 
 ]

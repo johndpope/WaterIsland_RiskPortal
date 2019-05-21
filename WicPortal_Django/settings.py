@@ -92,7 +92,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'EMAIL_SALES_WEEKLY_REPORT': {
         'task': 'sales_reporting.tasks.email_weekly_sales_report',
-        'schedule': crontab(minute="15", hour='00', day_of_week='fri'),
+        'schedule': crontab(minute="9", hour='00', day_of_week='mon'),
     }
 }
 
