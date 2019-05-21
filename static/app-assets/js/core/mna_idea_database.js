@@ -66,6 +66,7 @@ $(document).ready(function () {
                 return moment(data).format('YYYY-MM-DD');
             }
         }],
+        "aaSorting": [[3, 'desc']],
         buttons: {
             buttons: [{
                 extend: 'print',
@@ -263,106 +264,4 @@ $(document).ready(function () {
 
 
     });
-
-    //Deal Value Client-side Calculation
-    $('#calculate_deal_value').on('click', function () {
-        //Formula is ((cash terms)+(acquirer ticker last price*share terms)+(target dividends)-(acquirer dividends) + (short rebate)+(stub/cvr value))
-        var acquirer_ticker = $('#mna_idea_simulate_acquirer_ticker').val();
-        var deal_cash_terms = $('#mna_idea_simulate_cash_terms').val();
-        var deal_stock_terms = $('#mna_idea_simulate_share_terms').val();
-        var target_dividends = $('#mna_idea_simulate_target_dividends').val();
-        var acquirer_dividends = $('#mna_idea_simulate_acquirer_dividends').val();
-        var short_rebate = $('#mna_idea_simulate_short_rebate').val();
-        var stub_cvr_value = $('#mna_idea_simulate_stub_cvr_value').val();
-
-        //Get the Deal Value from Server....
-        $.ajax({
-            'type': 'POST',
-            'url': '../risk/calculate_mna_idea_deal_value',
-            'data': {
-                'acquirer_ticker': acquirer_ticker,
-                'deal_cash_terms': deal_cash_terms,
-                'deal_stock_terms': deal_stock_terms,
-                'target_dividends': target_dividends,
-                'acquirer_dividends': acquirer_dividends,
-                'short_rebate': short_rebate,
-                'stub_cvr_value': stub_cvr_value
-            },
-            success: function (response) {
-                console.log(response);
-                //Set the Deal Value parameter....
-                $('#mna_idea_simulate_deal_value').val(response); //To be Calculated Automatically
-            },
-            error: function (err) {
-                alert(err);
-            }
-        })
-
-
-    });
-
-
-    //New Deal Addition
-    $('#submit_mna_idea_new_deal_request').on('click', function () {
-
-        //Get the Required Data
-        var deal_name = $('#mna_idea_simulate_dealname').val();
-        var analyst = $('#mna_idea_simulate_analyst').val();
-        var target_ticker = $('#mna_idea_simulate_target_ticker').val();
-        var acquirer_ticker = $('#mna_idea_simulate_acquirer_ticker').val();
-        var deal_cash_terms = $('#mna_idea_simulate_cash_terms').val();
-        var deal_stock_terms = $('#mna_idea_simulate_share_terms').val();
-        var deal_value = $('#mna_idea_simulate_deal_value').val(); //To be Calculated Automatically
-        var csrf_token = $('#mna_idea_csrf_token').val();
-        var expected_close = $('#mna_idea_simulate_expected_close').val();
-        var target_dividends = $('#mna_idea_simulate_target_dividends').val();
-        var acquirer_dividends = $('#mna_idea_simulate_acquirer_dividends').val();
-        var short_rebate = $('#mna_idea_simulate_short_rebate').val();
-        var fx_carry = $('#mna_idea_simulate_fx_carry_percentage').val();
-        var stub_cvr_value = $('#mna_idea_simulate_stub_cvr_value').val();
-        var target_downside = $('#mna_idea_simulate_target_downside').val();
-        var acquirer_upside = $('#mna_idea_simulate_acquirer_upside').val();
-        var loss_tolerance = $('#mna_idea_simulate_loss_tolerance').val();
-
-        $.ajax({
-            url: "../risk/add_new_mna_idea",
-            type: "POST",
-            data: {
-                'deal_name': deal_name,
-                'analyst': analyst,
-                'target_ticker': target_ticker,
-                'acquirer_ticker': acquirer_ticker,
-                'deal_cash_terms': deal_cash_terms,
-                'deal_stock_terms': deal_stock_terms,
-                'deal_value': deal_value,
-                'csrfmiddlewaretoken': csrf_token,
-                'expected_close': expected_close,
-                'target_dividends': target_dividends,
-                'acquirer_dividends': acquirer_dividends,
-                'short_rebate': short_rebate,
-                'fx_carry': fx_carry,
-                'stub_cvr_value': stub_cvr_value,
-                'target_downside': target_downside,
-                'acquirer_upside': acquirer_upside,
-                'loss_tolerance': loss_tolerance
-            },
-            success: function (response) {
-                $('#mna_idea_new_deal_modal').modal('hide');
-                if (response === 'Failed') {
-                    toastr.error('Adding IDEA Failed', 'Please check your Inputs or contact support', {
-                        positionClass: 'toast-top-right',
-                        containerId: 'toast-top-right'
-                    });
-                }
-                else {
-                    toastr.success('Added New IDEA', 'Please Refresh the page', {
-                        positionClass: 'toast-top-right',
-                        containerId: 'toast-top-right'
-                    });
-                }
-            }
-        });
-    });
-
-
 });

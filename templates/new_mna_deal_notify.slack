@@ -1,0 +1,22 @@
+{% extends django_slack %}
+
+{% block text %}
+    {{ message }}
+    Deal Name: {{ deal_name }}
+    Analyst: {{ analyst }}
+    Target Ticker: {{ target_ticker }}
+    Acquirer Ticker: {{ acquirer_ticker }}
+    Action ID: {{ action_id  }}
+    Deal Cash Terms: {{ deal_cash_terms }}
+    Deal Share Terms: {{ deal_share_terms }}
+    Deal Value: {{ deal_value }}
+    Target Dividends: {{ target_dividends }}
+    Acquirer Dividends: {{ acquirer_dividends }}
+    Short Rebate: {{ short_rebate }}
+    FX Carry %: {{ fx_carry_percent }}
+    Stub/CVR Value: {{ stub_cvr_value }}
+    Acquirer Upside: {{ acquirer_upside }}
+    Loss Tolerance % of Limit: {{ loss_tolerance_percentage_of_limit }}
+    Risk Limit: {{ risk_limit }}
+    Position in Acquirer: {{ position_in_acquirer }}
+{% endblock %}

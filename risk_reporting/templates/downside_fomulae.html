@@ -18,158 +18,6 @@
 
 {% block content %}
     {% csrf_token %}
-    {# DOWNSIDES FORMULAE NEW DEAL ADD MODAL#}
-    <div class="modal animated fadeInDown text-left" id="downsides_formulae_new_deal_modal" tabindex="-1"
-         role="dialog"
-         aria-labelledby="myModalLabel42" aria-hidden="true">
-        <div class="modal-lg modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title" id="myModalLabel42">Add a new Deal</h4>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-
-                <div class="modal-body">
-
-                    <div class="container">
-                        <div class="col-lg-12">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-2 block-tag">
-                                    <small class="badge badge-default badge-success">TradeGroup</small>
-                                </div>
-                                <div class="col-lg-6">
-                                    <input type="text" placeholder="eg. RHT - IBM" class="form-control"
-                                           id="formulae_tradegroup"/>
-                                </div>
-
-                            </div>
-                        </div>
-                        <br>
-
-
-                        <div class="col-lg-12">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-2 block-tag">
-                                    <small class="badge badge-default badge-success">Underlying Security</small>
-                                </div>
-                                <div class="col-lg-6">
-                                    <input type="text" placeholder="eg. RHT US EQUITY" class="form-control"
-                                           id="formulae_underlying"/>
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-
-
-                        <div class="col-lg-12">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-2 block-tag">
-                                    <small class="badge badge-default badge-success">Analyst</small>
-                                </div>
-                                <div class="col-lg-6">
-                                    <input type="text" placeholder="eg. JSO" class="form-control"
-                                           id="formulae_analyst"/>
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-
-
-                        <div class="col-lg-12">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-2 block-tag">
-                                    <small class="badge badge-default badge-success">Risk Limit</small>
-                                </div>
-                                <div class="col-lg-6">
-                                    <input type="text" placeholder="eg. -0.25" class="form-control"
-                                           id="formulae_risklimit"/>
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-
-
-                        <div class="col-lg-12">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-2 block-tag">
-                                    <small class="badge badge-default badge-success">Origination Date</small>
-                                </div>
-                                <div class="col-lg-6">
-                                    <input type="date" placeholder="eg. JSO" class="form-control"
-                                           id="formulae_origination_date"/>
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-
-                        <div class="col-lg-12">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-2 block-tag">
-                                    <small class="badge badge-default badge-success">Position in Acquirer</small>
-                                </div>
-                                <!-- Default unchecked -->
-                                <div class="col-lg-6">
-                                    <fieldset class="form-group">
-                                        <select id="formulae_position_in_acquirer" class="custom-select">
-                                            <option selected value="No">No</option>
-                                            <option value="Yes">Yes</option>
-                                        </select>
-                                    </fieldset>
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-
-                        <div class="col-lg-12">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-2 block-tag">
-                                    <small class="badge badge-default badge-success">Acquirer Security</small>
-                                </div>
-                                <div class="col-lg-6">
-                                    <input type="text" placeholder="eg. IBM US EQUITY" class="form-control"
-                                           id="formulae_acquirer_security"/>
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-
-
-                        <div class="col-lg-12">
-                            <div class="row justify-content-center">
-                                <div class="col-lg-2 block-tag">
-                                    <small class="badge badge-default badge-success">Deal Value</small>
-                                </div>
-                                <div class="col-lg-6">
-                                    <input type="text" placeholder="eg. 190.00" class="form-control"
-                                           id="formulae_deal_value"/>
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-                    </div>
-
-                    <div class="modal-footer">
-                        <input id='downsides_formulae_save_new_deal' type="button"
-                               class="btn btn-success" value="Save Deal">
-
-                        <button type="button"
-                                class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    {# DOWNSIDES FORMULAE NEW DEAL ADDITION END#}
-
-
-
-
     {# Show a Button to Add a new Deal#}
     <div class="app-content content">
         <div class="content-wrapper">
@@ -185,13 +33,10 @@
                                         downside..</h4>
                                     <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
                                     <div class="heading-elements">
-                                        <button id='ess_idea_add_new_deal' class="btn btn-primary btn-sm"
-                                                data-toggle="modal"
-                                                data-target="#downsides_formulae_new_deal_modal"><i
-                                                class="ft-plus white"></i> Add
-                                            New
-                                            Deal
-                                        </button>
+                                        <a id='ess_idea_add_new_deal' class="btn btn-primary btn-sm"
+                                           href="{% url 'mna_deal:create_mna_deal' %}">
+                                            <i class="ft-plus white"></i> Add New Deal
+                                        </a>
                                     </div>
                                 </div>
                             </div>

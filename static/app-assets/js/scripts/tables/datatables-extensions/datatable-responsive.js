@@ -8,52 +8,6 @@
 $(document).ready(function() {
 
     var mna_idea_table = $('#mna_idea_table').DataTable({});
-
-    // Submit a New Deal on Modal Click Event
-    $('#submit_mna_idea_new_deal_request').click(function (e) {
-        //Get the selector values and submit an ajax request
-        var alpha_ticker = $('#mna_idea_new_deal_ticker').val();
-        $.ajax({
-        type: "POST",
-        url: "../risk/add_new_mna_idea_deal",
-        data:{'ticker':alpha_ticker, 'csrfmiddlewaretoken':$('#mna_idea_csrf_token').val()},
-        success: function(response) {
-        $('#mna_idea_new_deal_modal').modal('hide');
-        $('body').removeClass('modal-open');
-        $('.modal-backdrop').remove();
-        if(response == 'failed'){
-            swal("Error!", "Adding Deal Failed!", "error");
-        }
-        else{
-            //Append the New Row to Existing Table
-            var newRow = '<tr id="row_'+response+'"><td>'+alpha_ticker+'</td><td></td><td></td><td></td><td></td><td></td>' +
-                '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>' +
-                '<td><div class="btn-group">' +
-                '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
-                '<i class="ft-settings"></i>' +
-                '</button>' +
-                '<ul class="dropdown-menu">' +
-                '<li><a id="edit_'+response+'" data-value="{{ row.DealKey }}" class=\'dropdown-item\' href="#"><i class="ft-edit-2"></i> Edit</a></li>' +
-                '<li><a id="delete_'+response+'" data-value="{{ row.DealKey }}" class=\'dropdown-item\' href="#"><i class="ft-trash-2"></i> Delete</a></li>' +
-                '<li><a id="view_'+response+'" data-value="{{ row.DealKey }}" class=\'dropdown-item\' href="#"><i class="ft-plus-circle primary"></i> View</a></li>' +
-                '</ul>' +
-                '</div></td></tr>';
-
-            //Re-initialize Datatable again
-            mna_idea_table.row.add($(newRow)).draw();
-        }
-    },
-    error: function(err) {
-      console.log(err);
-    }
-    }).then(function() {
-    //setTimeout(setTweets, 8000); //Todo: Check how to do this async (dynamic adding of points)
-    });
-
-    });
-
-
-
     // Event Delegation for Dynamically added elements
 
     $('.table-responsive').on("click","#mna_idea_table tr td li a", function(){

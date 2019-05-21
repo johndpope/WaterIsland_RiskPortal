@@ -351,17 +351,6 @@ class MA_Deals_PeerSet(models.Model):
     fcf_yield_chart = models.TextField()    #JSON representaion of charts
 
 
-class MA_Deals_Scenario_Analysis(models.Model):
-    deal = models.OneToOneField(MA_Deals, on_delete=models.CASCADE)
-    break_scenario_df = models.TextField()
-    scenario_75_25 = models.TextField()
-    scenario_change = models.FloatField()
-    break_change = models.FloatField()
-    scenario_change_55_45 = models.FloatField()
-    scenario_55_45 = models.TextField()
-
-
-
 class MA_Deals_Notes(models.Model):
     deal = models.OneToOneField(MA_Deals, on_delete=models.CASCADE)
     note = models.TextField()

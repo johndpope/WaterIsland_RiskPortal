@@ -566,22 +566,13 @@ $(document).ready(function () {
                         containerId: 'toast-top-right'
                     });
                 }
-
-
-                response = $.parseJSON(response);
-
-                if (response == 'Failed') {
-                    toastr.error('Failed Running Analysis!', 'Please check logs!', {
-                        positionClass: 'toast-top-right',
-                        containerId: 'toast-top-right'
-                    });
-                }
                 else {
-                    fill_analysis_tables(response['break_change'], response['scenario_change'], response['scenario_change_55_45'], $.parseJSON(response['break_scenario']), $.parseJSON(response['scenario_75_25']), $.parseJSON(response['scenario_55_45']));
-                    toastr.success('Analysis Complete!', 'You may export to Pdf!', {
-                        positionClass: 'toast-top-right',
-                        containerId: 'toast-top-right'
-                    });
+                    response = $.parseJSON(response);
+                    fill_analysis_tables(response['break_change'], response['scenario_change'],
+                                         response['scenario_change_55_45'], $.parseJSON(response['break_scenario']),
+                                         $.parseJSON(response['scenario_75_25']), $.parseJSON(response['scenario_55_45']));
+                    toastr.success('Analysis Complete!', 'You may export to Pdf!', {positionClass: 'toast-top-right',
+                                                                                    containerId: 'toast-top-right'});
                 }
             },
             error: function (e) {

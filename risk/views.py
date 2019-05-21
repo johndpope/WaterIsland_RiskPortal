@@ -23,6 +23,7 @@ from risk.chart_utils import *
 from risk.forms import MaDealsRiskFactorsForm
 from risk.models import *
 from risk.tasks import add_new_idea, run_ess_premium_analysis_task
+from risk_reporting.models import FormulaeBasedDownsides
 from wic_news.models import NewsMaster
 
 api_host = bbgclient.bbgclient.get_next_available_host()
@@ -133,20 +134,20 @@ def calculate_mna_idea_deal_value(request):
         # Collect the parameters...
         try:
             acquirer_ticker = request.POST['acquirer_ticker']
-            deal_cash_terms = float(request.POST['deal_cash_terms'])
-            deal_stock_terms = float(request.POST['deal_stock_terms'])
-            target_dividends = float(request.POST['target_dividends'])
-            acquirer_dividends = float(request.POST['acquirer_dividends'])
-            short_rebate = float(request.POST['short_rebate'])
-            stub_cvr_value = float(request.POST['stub_cvr_value'])
+            if 'equity' not in acquirer_ticker.lower():
+                acquirer_ticker = acquirer_ticker.upper() + ' EQUITY'
+            deal_cash_terms = float(request.POST['deal_cash_terms']) if request.POST['deal_cash_terms'] else 0.0
+            deal_share_terms = float(request.POST['deal_share_terms']) if request.POST['deal_share_terms'] else 0.0
+            target_dividends = float(request.POST['target_dividends']) if request.POST['target_dividends'] else 0.0
+            acquirer_dividends = float(request.POST['acquirer_dividends']) if request.POST['acquirer_dividends'] else 0.0
+            short_rebate = float(request.POST['short_rebate']) if request.POST['short_rebate'] else 0.0
+            stub_cvr_value = float(request.POST['stub_cvr_value']) if request.POST['stub_cvr_value'] else 0.0
             # Get latest acquirer price
+            px_last = float(bbgclient.bbgclient.get_secid2field([acquirer_ticker], 'tickers', ['CRNCY_ADJ_PX_LAST'],
+                                                                req_type='refdata', api_host=api_host)[acquirer_ticker]
+                                                                ['CRNCY_ADJ_PX_LAST'][0]) if deal_share_terms > 0 else 0
 
-            px_last = float(bbgclient.bbgclient.get_secid2field([acquirer_ticker], 'tickers',
-                                                                ['CRNCY_ADJ_PX_LAST'], req_type='refdata',
-                                                                api_host=api_host)[acquirer_ticker]
-                            ['CRNCY_ADJ_PX_LAST'][0]) if deal_stock_terms > 0 else 0
-
-            deal_value = (deal_cash_terms + (px_last * deal_stock_terms) + target_dividends -
+            deal_value = (deal_cash_terms + (px_last * deal_share_terms) + target_dividends -
                           acquirer_dividends + short_rebate + stub_cvr_value)
 
             response = str(deal_value)
@@ -340,10 +341,10 @@ def mna_idea_add_peers(request):
         deal_id = request.POST['deal_id']
         deal_object = MA_Deals.objects.get(id=deal_id)
 
-        if 'EQUITY' or 'Equity' in deal_object.target_ticker:
-            peer_set.append(deal_object.target_ticker)
+        if 'equity' in deal_object.target_ticker.lower():
+            peer_set.append(deal_object.target_ticker.upper())
         else:
-            peer_set.append(deal_object.target_ticker + " EQUITY")
+            peer_set.append(deal_object.target_ticker.upper() + " EQUITY")
 
         # Save to Database if checkbox value is ON
         # Get the Required charts for each Peer and save it in the DB
@@ -486,6 +487,100 @@ def update_comments(request):
     return HttpResponse(response)
 
 
+def run_scenario_analysis(details):
+    try:
+        cash_terms = float(details['cash_terms']) if details.get('cash_terms') else 0.0
+        share_terms = float(details['share_terms']) if details.get('share_terms') else 0.0
+        acquirer_upside = float(details['acquirer_upside']) if details.get('acquirer_upside') else 0.0
+        aum = float(details['aum']) if details.get('aum') else 0.0
+        deal_upside = float(details['deal_upside']) if details.get('deal_upside') else 0.0
+        deal_downside = float(details['deal_downside']) if details.get('deal_downside') else 0.0
+        target_current_price = float(details['target_current_price']) if details.get('target_current_price') else 0.0
+        target_shares_outstanding = float(details['target_shares_outstanding']) if details.get('target_shares_outstanding') else 0.0
+        target_shares_float = float(details['target_shares_float']) if details.get('target_shares_float') else 0.0
+        target_last_price = float(details['target_last_price']) if details.get('target_last_price') else 0.0
+        deal_id = details.get('deal_id')
+        stock_component_involved = False
+
+        # Update the Deal Object
+        deal_object = MA_Deals.objects.get(id=deal_id)
+
+        if share_terms > 0:
+            stock_component_involved = True  # Check if stock component is involved
+            break_spread = ((acquirer_upside * share_terms) + cash_terms) - deal_downside
+            spread = deal_upside - target_last_price
+
+        # Update the Deal Object
+        deal_object.deal_cash_terms = cash_terms
+        deal_object.deal_share_terms = share_terms
+        deal_object.deal_upside = deal_upside
+        deal_object.target_downside = deal_downside
+        deal_object.acquirer_upside = acquirer_upside
+        deal_object.save()
+        # Create Deal Break Scenario First
+        bps_to_lose = [0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.75, 0.80, 0.90, 1.0]
+
+        break_df = pd.DataFrame(bps_to_lose, columns=['bps_impact'])
+        deal_break_change = (deal_downside - target_current_price) if not stock_component_involved else (
+            break_spread)
+
+        # Change Upside/downside based on Stock component
+        if stock_component_involved:
+            deal_upside = spread
+            deal_downside = spread - break_spread
+
+        break_df['shares'] = ((aum * break_df['bps_impact'] * 0.01) / abs(deal_break_change)).astype(int)
+        break_df['NAV break'] = round(100.0 * ((break_df['shares'] * deal_break_change) / aum), 2)
+        break_df['% nav'] = round(100.0 * ((break_df['shares'] * target_last_price) / aum), 2)
+        break_df['% of S/O'] = round(100.0 * (break_df['shares'] / target_shares_outstanding), 2)
+        break_df['% of Float'] = round(100.0 * (break_df['shares'] / target_shares_float), 2)
+
+        # Repeat the above for 75-25 Probability Scenario
+        deal_scenario_75_25 = pd.DataFrame(bps_to_lose, columns=['bps_impact'])
+        new_downside = -(abs((0.75 * deal_upside) + (0.25 * abs(deal_downside))))
+        deal_break_change_scenario = new_downside - deal_upside if not stock_component_involved else new_downside
+        deal_scenario_75_25['shares'] = ((aum * deal_scenario_75_25['bps_impact'] * 0.01) / abs(deal_break_change_scenario)).astype(int)
+        deal_scenario_75_25['NAV 75/25'] = round(100.0 * ((deal_scenario_75_25['shares'] * deal_break_change_scenario) / aum), 2)
+        deal_scenario_75_25['NAV break'] = round(100.0 * ((deal_scenario_75_25['shares'] * deal_break_change) / aum), 2)
+        deal_scenario_75_25['% nav'] = round(100.0 * ((deal_scenario_75_25['shares'] * target_last_price) / aum), 2)
+        deal_scenario_75_25['% of S/O'] = round(100.0 * (deal_scenario_75_25['shares'] / target_shares_outstanding), 2)
+        deal_scenario_75_25['% of Float'] = round(100.0 * (deal_scenario_75_25['shares'] / target_shares_float), 2)
+
+        # Repeat for 55/45 Probability
+        # Repeat the above for 75-25 Probability Scenario
+        deal_scenario_55_45 = pd.DataFrame(bps_to_lose, columns=['bps_impact'])
+        new_downside = -(abs((0.55 * deal_upside) + (0.45 * abs(deal_downside))))
+        change_55_45 = new_downside - deal_upside if not stock_component_involved else new_downside
+        deal_scenario_55_45['shares'] = ((aum * deal_scenario_55_45['bps_impact'] * 0.01) / abs(change_55_45)).astype(int)
+        deal_scenario_55_45['NAV 55/45'] = round(100.0 * ((deal_scenario_55_45['shares'] * change_55_45) / aum), 2)
+        deal_scenario_55_45['NAV break'] = round(100.0 * ((deal_scenario_55_45['shares'] * deal_break_change) / aum), 2)
+        deal_scenario_55_45['% nav'] = round(100.0 * ((deal_scenario_55_45['shares'] * target_last_price) / aum), 2)
+        deal_scenario_55_45['% of S/O'] = round(100.0 * (deal_scenario_55_45['shares'] / target_shares_outstanding), 2)
+        deal_scenario_55_45['% of Float'] = round(100.0 * (deal_scenario_55_45['shares'] / target_shares_float), 2)
+
+        # Save both these Deal Dfs into the Database for future Retrieval
+        scenario_change = deal_break_change_scenario
+        break_change = deal_break_change
+        scenario_change_55_45 = change_55_45
+
+        break_scenario = break_df.to_json(orient='records')
+        scenario_75_25 = deal_scenario_75_25.to_json(orient='records')
+        scenario_change = float(round(scenario_change, 2))
+        break_change = float(round(break_change, 2))
+        scenario_change_55_45 = float(round(scenario_change_55_45, 2))
+        scenario_55_45 = deal_scenario_55_45.to_json(orient='records')
+
+        scenario_dfs = json.dumps({'break_scenario': break_scenario, 'scenario_75_25': scenario_75_25,
+                                   'scenario_change': scenario_change, 'break_change': break_change,
+                                   'scenario_change_55_45': scenario_change_55_45, 'scenario_55_45': scenario_55_45})
+
+        defaults = {'break_scenario_df': break_scenario, 'scenario_75_25': scenario_75_25,
+                    'scenario_change': scenario_change, 'break_change': break_change,
+                    'scenario_change_55_45': scenario_change_55_45, 'scenario_55_45': scenario_55_45}
+        return scenario_dfs, defaults, deal_id
+    except Exception as e:
+        return 'Failed', 'Failed', deal_id
+
 def mna_idea_run_scenario_analysis(request):
     """
     :param request: Request Object containing fields for performing Deal Scenario Analysis
@@ -493,110 +588,21 @@ def mna_idea_run_scenario_analysis(request):
     """
     if request.method == 'POST':
         try:
+            details = {}
             # Get all the required parameters
-            cash_terms = float(request.POST['cash_terms'])
-            share_terms = float(request.POST['share_terms'])
-            aum = float(request.POST['aum'])
-            deal_upside = float(request.POST['deal_upside'])
-            deal_downside = float(request.POST['deal_downside'])
-            target_current_price = float(request.POST['target_current_price'])
-            target_shares_outstanding = float(request.POST['target_shares_outstanding'])
-            target_shares_float = float(request.POST['target_shares_float'])
-            acquirer_upside = float(request.POST['acquirer_upside'] if 'acquirer_upside' in request.POST else 0)
-            target_last_price = float(request.POST['target_last_price'])
-            deal_id = request.POST['deal_id']
-            stock_component_involved = False
-
-            # Update the Deal Object
-            deal_object = MA_Deals.objects.get(id=deal_id)
-
-            if share_terms > 0:
-                stock_component_involved = True  # Check if stock component is involved
-                break_spread = ((acquirer_upside * share_terms) + cash_terms) - deal_downside
-                spread = deal_upside - target_last_price
-
-            # Update the Deal Object
-            deal_object.deal_cash_terms = cash_terms
-            deal_object.deal_share_terms = share_terms
-            deal_object.deal_upside = deal_upside
-            deal_object.target_downside = deal_downside
-            deal_object.acquirer_upside = acquirer_upside
-            deal_object.save()
-            # Create Deal Break Scenario First
-            bps_to_lose = [0.15, 0.20, 0.25, 0.30, 0.40, 0.50, 0.60, 0.75, 0.80, 0.90, 1.0]
-
-            break_df = pd.DataFrame(bps_to_lose, columns=['bps_impact'])
-            deal_break_change = (deal_downside - target_current_price) if not stock_component_involved else (
-                break_spread)
-
-            # Change Upside/downside based on Stock component
-            if stock_component_involved:
-                deal_upside = spread
-                deal_downside = spread - break_spread
-
-            break_df['shares'] = ((aum * break_df['bps_impact'] * 0.01) / abs(deal_break_change)).astype(int)
-            break_df['NAV break'] = round(100.0 * ((break_df['shares'] * deal_break_change) / aum), 2)
-            break_df['% nav'] = round(100.0 * ((break_df['shares'] * target_last_price) / aum), 2)
-            break_df['% of S/O'] = round(100.0 * (break_df['shares'] / target_shares_outstanding), 2)
-            break_df['% of Float'] = round(100.0 * (break_df['shares'] / target_shares_float), 2)
-
-            # Repeat the above for 75-25 Probability Scenario
-            deal_scenario_75_25 = pd.DataFrame(bps_to_lose, columns=['bps_impact'])
-            new_downside = -(abs((0.75 * deal_upside) + (0.25 * abs(deal_downside))))
-            deal_break_change_scenario = new_downside - deal_upside if not stock_component_involved else new_downside
-            deal_scenario_75_25['shares'] = (
-                    (aum * deal_scenario_75_25['bps_impact'] * 0.01) / abs(deal_break_change_scenario)).astype(int)
-            deal_scenario_75_25['NAV 75/25'] = round(
-                100.0 * ((deal_scenario_75_25['shares'] * deal_break_change_scenario) / aum), 2)
-            deal_scenario_75_25['NAV break'] = round(
-                100.0 * ((deal_scenario_75_25['shares'] * deal_break_change) / aum), 2)
-            deal_scenario_75_25['% nav'] = round(100.0 * ((deal_scenario_75_25['shares'] * target_last_price) / aum), 2)
-            deal_scenario_75_25['% of S/O'] = round(100.0 * (deal_scenario_75_25['shares'] / target_shares_outstanding),
-                                                    2)
-            deal_scenario_75_25['% of Float'] = round(100.0 * (deal_scenario_75_25['shares'] / target_shares_float), 2)
-
-            # Repeat for 55/45 Probability
-            # Repeat the above for 75-25 Probability Scenario
-            deal_scenario_55_45 = pd.DataFrame(bps_to_lose, columns=['bps_impact'])
-            new_downside = -(abs((0.55 * deal_upside) + (0.45 * abs(deal_downside))))
-            change_55_45 = new_downside - deal_upside if not stock_component_involved else new_downside
-            deal_scenario_55_45['shares'] = (
-                    (aum * deal_scenario_55_45['bps_impact'] * 0.01) / abs(change_55_45)).astype(int)
-            deal_scenario_55_45['NAV 55/45'] = round(100.0 * ((deal_scenario_55_45['shares'] * change_55_45) / aum), 2)
-            deal_scenario_55_45['NAV break'] = round(
-                100.0 * ((deal_scenario_55_45['shares'] * deal_break_change) / aum), 2)
-            deal_scenario_55_45['% nav'] = round(100.0 * ((deal_scenario_55_45['shares'] * target_last_price) / aum), 2)
-            deal_scenario_55_45['% of S/O'] = round(100.0 * (deal_scenario_55_45['shares'] / target_shares_outstanding),
-                                                    2)
-            deal_scenario_55_45['% of Float'] = round(100.0 * (deal_scenario_55_45['shares'] / target_shares_float), 2)
-
-            # Save both these Deal Dfs into the Database for future Retrieval
-            scenario_change = deal_break_change_scenario
-            break_change = deal_break_change
-            scenario_change_55_45 = change_55_45
-
-            break_scenario = break_df.to_json(orient='records')
-            scenario_75_25 = deal_scenario_75_25.to_json(orient='records')
-            scenario_change = float(round(scenario_change, 2))
-            break_change = float(round(break_change, 2))
-            scenario_change_55_45 = float(round(scenario_change_55_45, 2))
-            scenario_55_45 = deal_scenario_55_45.to_json(orient='records')
-
-            scenario_dfs = json.dumps({'break_scenario': break_scenario, 'scenario_75_25': scenario_75_25,
-                                       'scenario_change': scenario_change, 'break_change': break_change,
-                                       'scenario_change_55_45': scenario_change_55_45,
-                                       'scenario_55_45': scenario_55_45})
-
-            # Save to DB
-            MA_Deals_Scenario_Analysis.objects.update_or_create(deal_id=deal_id,
-                                                                defaults={'break_scenario_df': break_scenario,
-                                                                          'scenario_75_25': scenario_75_25,
-                                                                          'scenario_change': scenario_change,
-                                                                          'break_change': break_change,
-                                                                          'scenario_change_55_45': scenario_change_55_45,
-                                                                          'scenario_55_45': scenario_55_45})
-
-            return HttpResponse(scenario_dfs)
+            details['cash_terms'] = float(request.POST['cash_terms'])
+            details['share_terms'] = float(request.POST['share_terms'])
+            details['aum'] = float(request.POST['aum'])
+            details['deal_upside'] = float(request.POST['deal_upside'])
+            details['deal_downside'] = float(request.POST['deal_downside'])
+            details['target_current_price'] = float(request.POST['target_current_price'])
+            details['target_shares_outstanding'] = float(request.POST['target_shares_outstanding'])
+            details['target_shares_float'] = float(request.POST['target_shares_float'])
+            details['acquirer_upside'] = float(request.POST['acquirer_upside'] if 'acquirer_upside' in request.POST else 0)
+            details['target_last_price'] = float(request.POST['target_last_price'])
+            details['deal_id'] = request.POST['deal_id']
+            scenario_dfs, defaults, deal_id = run_scenario_analysis(details)
+            return HttpResponse(scenario_dfs) if scenario_dfs != 'Failed' else HttpResponse('Failed')
         except Exception as exception:
             print(exception)
             return HttpResponse('Failed')
@@ -744,8 +750,8 @@ def show_mna_idea(request):
     else:
         overlay_weekly_downside_estimate = weekly_downside_estimates.first()
 
-    target_ticker = deal_core.target_ticker if "EQUITY" in deal_core.target_ticker else \
-        deal_core.target_ticker + " EQUITY"
+    target_ticker = deal_core.target_ticker if "equity" in deal_core.target_ticker.lower() else \
+        deal_core.target_ticker.upper() + " EQUITY"
 
     created_date = deal_core.created.strftime('%Y%m%d')
     # Get PX_LAST, EQ_SH_OUT, EQY_FLOAT * 1000000
@@ -803,11 +809,8 @@ def show_mna_idea(request):
     except Exception as exception:
         print(exception)
         px_last_historical = None
-    # Get the Previous Analysis (if any)
-    scenario_analysis_object = MA_Deals_Scenario_Analysis.objects.filter(deal_id=deal_id).first()
 
     deal_note = '' if not deal_note else deal_note
-    scenario_analysis_object = '' if not scenario_analysis_object else scenario_analysis_object
 
     try:
         px_last_historical_acquirer_data = hist_data_results[1][acquirer_ticker]
@@ -873,13 +876,28 @@ def show_mna_idea(request):
         fund_aum = pd.read_sql_query('SELECT DISTINCT AUM FROM wic.daily_flat_file_db where flat_file_as_of='
                                      '(select max(flat_file_as_of) from wic.daily_flat_file_db) and fund like \'ARB\'',
                                      con=connection)
+        fund_aum = fund_aum.iloc[0]['AUM']
     except Exception as e:
         fund_aum = 0
+    try:
+        formulae_object = FormulaeBasedDownsides.objects.filter(TradeGroup=deal_core.deal_name, TargetAcquirer='Target',
+                                                                Underlying=deal_core.target_ticker).first()
+        if formulae_object and formulae_object.base_case:
+            deal_core.target_downside = formulae_object.base_case
+        details = {'cash_terms': deal_core.deal_cash_terms, 'share_terms': deal_core.deal_share_terms,
+                   'acquirer_upside': deal_core.acquirer_upside, 'aum': fund_aum, 'deal_upside': deal_core.deal_value,
+                   'deal_downside': deal_core.target_downside, 'target_current_price': target_last_px,
+                   'target_shares_outstanding': eqy_sh_out, 'target_shares_float': eqy_float,
+                   'target_last_price': target_last_px, 'deal_id': deal_core.id
+        }
+        scenario_dfs, scenario_analysis_object, deal_id = run_scenario_analysis(details)
+    except Exception as e:
+        deal_core.target_downside = 0.0
 
     return render(request, 'show_mna_idea.html',
                   {'deal_core': deal_core,
                    'deal_risk_factors_list': json.dumps(deal_risk_factors_list),
-                   'deal_note': deal_note, 'fund_aum': fund_aum.iloc[0]['AUM'],
+                   'deal_note': deal_note, 'fund_aum': fund_aum,
                    'eqy_float': eqy_float, 'eqy_sh_out': eqy_sh_out, 'target_px_last': target_last_px,
                    'px_last_historical': px_last_historical, 'px_last_historical_acquirer': px_last_historical_acquirer,
                    'target_ticker': target_ticker, 'acquirer_ticker': acquirer_ticker,
@@ -1518,7 +1536,7 @@ def get_gics_sector(request):
     response = 'Failed'
     if request.method == 'POST':
         ticker = request.POST['ticker']
-        ticker = ticker + " EQUITY" if "EQUITY" not in ticker else ticker
+        ticker = ticker.upper() + " EQUITY" if "equity" not in ticker.lower() else ticker.upper()
         gics_sector = bbgclient.bbgclient.get_secid2field([ticker], 'ticker', ['GICS_SECTOR_NAME'], req_type='refdata',
                                                           api_host=api_host)
         gics_sector = gics_sector[ticker]['GICS_SECTOR_NAME'][0]

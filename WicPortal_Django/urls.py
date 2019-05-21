@@ -33,6 +33,7 @@ urlpatterns = [
     url('tweets/', include('tweets.urls')),
     url('breakfast/', include('breakfast.urls')),
     url('risk/', include('risk.urls')),
+    url('mna_deal/', include('mna_deal.urls')),
     url('portal/', include('portal.urls')),
     url('statpro/', include('statpro.urls')),
     url('notes/', include('notes.urls')),

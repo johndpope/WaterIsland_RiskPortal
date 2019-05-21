@@ -131,7 +131,8 @@ INSTALLED_APPS = [
     'position_stats',
     'cleanup',
     'risk_drawdown',
-    'sales_reporting'
+    'sales_reporting',
+    'mna_deal',
 ]
 
 MIDDLEWARE = [
