@@ -53,4 +53,62 @@ $(document).ready(function(){
     $('#cade_required').on('click', function () {
         checkDateFields('#cade_required', '#expected_cade', '#actual_cade')
     });
+
+    $(document).on("click", "button", function () {
+        var button_id = this.id;
+        if (button_id.includes("edit_action_id_")) {
+            var deal_id = button_id.split("_").pop()
+            var title = "Update Action ID";
+            var text = "Enter the value for action ID for deal ID " + deal_id.toString();
+            var success = "The action ID has been updated to "
+            swal({
+                title: title,
+                text: text,
+                content: 'input',
+                buttons: ["Cancel",
+                    {text: "Save", closeModal: false}],
+            }).then((action_id) => {
+                if (action_id) {
+                    $.ajax({
+                        type: 'POST',
+                        url: '../risk/edit_mna_idea_action_id',
+                        data: {'deal_id': deal_id, 'action_id': action_id},
+                        success: function (response) {
+                            console.log(response);
+                            if (response.error == false) {
+                                $("#action_id_value").html(action_id);
+                                swal("Success! " + success + action_id + " for " + deal_id.toString(), {icon: "success"});
+                                location.reload();
+                            }
+                            else if (response.type == 'ma_deal'){
+                                swal("Error!", "The action ID could not be updated", "error");
+                                console.log('Updation failed', deal_id, action_id);
+                            }
+                            else if (response.type == 'action_id'){
+                                swal("Error!", "The action ID is updated but there was a problem fetching data from Bloomberg API", "warning");
+                                console.log('Fetching Bloomberg data failed', deal_id, action_id);
+                            }
+                            else if (response.type == 'same_action_id'){
+                                swal("Same Action ID!", "OOPS! You forgot to change the Action ID value", "error");
+                                console.log('Same Action ID', deal_id, action_id);
+                            }
+                            else if (response.type == 'duplicate_action_id'){
+                                swal("Duplicate Action ID!", "The action ID already exists in the database", "error");
+                                console.log('Duplicate Action ID', deal_id, action_id);
+                            }
+                            else {
+                                swal("Error!", "Some error occurred", "error");
+                                console.log('Error in updating action id', deal_id, action_id);
+                            }
+                        },
+                        error: function (error) {
+                            swal("Error!", "The action ID could not be updated", "error");
+                            console.log(error, deal_id, action_id);
+                        }
+                    });
+
+                }
+            });
+        }
+    });
 });

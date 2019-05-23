@@ -7,7 +7,7 @@ import requests
 from celery.result import AsyncResult
 from django.conf import settings
 from django.core import serializers
-from django.db import connection
+from django.db import connection, IntegrityError
 from django.forms import ValidationError
 from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import redirect, render
@@ -20,7 +20,8 @@ import pandas as pd
 from ess_premium_analysis import multiple_underlying_df
 from notes.models import NotesMaster
 from risk.chart_utils import *
-from risk.forms import MaDealsRiskFactorsForm
+from risk.forms import MaDealsActionIdDetailsForm, MaDealsRiskFactorsForm
+from risk.mna_deal_bloomberg_utils import get_data_from_bloombery_using_action_id, save_bloomberg_data_to_table
 from risk.models import *
 from risk.tasks import add_new_idea, run_ess_premium_analysis_task
 from risk_reporting.models import FormulaeBasedDownsides
@@ -81,19 +82,37 @@ def mna_idea_add_unaffected_date(request):
 
 
 def edit_mna_idea_action_id(request):
-    response = 'Failed'
+    response = {'error': True, 'type': None}
     if request.method == 'POST':
-        try:
-            deal_id = request.POST.get('deal_id')
-            action_id = request.POST.get('action_id')
-            if deal_id and action_id:
+        deal_id = request.POST.get('deal_id')
+        action_id = request.POST.get('action_id')
+        if deal_id and action_id:
+            try:
                 deal_object = MA_Deals.objects.get(id=deal_id)
-                deal_object.action_id = action_id
-                deal_object.save()
-                response = 'Success'
-        except Exception as exception:
-            print(exception)
-    return HttpResponse(response)
+                current_action_id = deal_object.action_id
+                if current_action_id != action_id:
+                    deal_object.action_id = action_id
+                    deal_object.save()
+                    action_id_obj = MaDealsActionIdDetails.objects.filter(action_id=current_action_id)
+                    if action_id_obj.exists():
+                        action_id_obj.first().delete()
+                else:
+                    response = {'error': True, 'type': 'same_action_id'}
+                    return JsonResponse(response)
+            except MA_Deals.DoesNotExist:
+                response = {'error': True, 'type': 'ma_deal'}
+                return JsonResponse(response)
+            try:
+                result = get_data_from_bloombery_using_action_id([action_id])
+                save_bloomberg_data_to_table(result, [deal_object])
+            except IntegrityError as e:
+                response = {'error': True, 'type': 'duplicate_action_id'}
+                return JsonResponse(response)
+            except Exception as e:
+                response = {'error': True, 'type': 'action_id'}
+                return JsonResponse(response)
+            response = {'error': False, 'type': None}
+    return JsonResponse(response)
 
 
 def retrieve_spread_index(request):
@@ -156,6 +175,23 @@ def calculate_mna_idea_deal_value(request):
             print(exception)
             response = 'Failed'
     return HttpResponse(response)
+
+
+def fetch_bloomberg_data(request):
+    response = {'error': True}
+    if request.method == 'POST':
+        try:
+            action_id = request.POST.get('action_id')
+            if action_id:
+                action_id = str(action_id) + ' Action'
+                result = get_data_from_bloombery_using_action_id([action_id])
+                if result.get(action_id):
+                    response = result[action_id]
+                    response.update({'error': False})
+                    return JsonResponse(response)
+        except Exception as e:
+            response = {'error': True}
+    return JsonResponse(response)
 
 
 def delete_mna_idea(request):
@@ -917,29 +953,51 @@ class MaDealsRiskFactorsView(FormView):
     fields = '__all__'
 
     def get_success_url(self):
-        return "/risk/show_mna_idea?mna_idea_id=" + self.kwargs.get('deal_id')
+        return '#'
 
     def form_valid(self, form):
-        deal_id = self.kwargs.get('deal_id')
-        if deal_id:
-            obj, created = MA_Deals_Risk_Factors.objects.get_or_create(deal_id=deal_id)
-            form = MaDealsRiskFactorsForm(self.request.POST or None, instance=obj)
-            if form.is_valid():
-                resource = form.save(commit=False)
-                resource.deal_id = self.kwargs.get('deal_id')
-                resource.save()
-                return super(MaDealsRiskFactorsView, self).form_valid(form)
+        if 'risk_form_save_button' in self.request.POST:
+            deal_id = self.kwargs.get('deal_id')
+            if deal_id:
+                obj, created = MA_Deals_Risk_Factors.objects.get_or_create(deal_id=deal_id)
+                form = MaDealsRiskFactorsForm(self.request.POST or None, instance=obj)
+                if form.is_valid():
+                    resource = form.save(commit=False)
+                    resource.deal_id = self.kwargs.get('deal_id')
+                    resource.save()
+                    return super(MaDealsRiskFactorsView, self).form_valid(form)
+        if 'action_id_form_save_button' in self.request.POST:
+            action_id = self.request.POST.get('action_id')
+            if action_id:
+                obj, created = MaDealsActionIdDetails.objects.get_or_create(action_id=action_id)
+                form = MaDealsActionIdDetailsForm(self.request.POST or None, instance=obj)
+                if form.is_valid():
+                    resource = form.save(commit=False)
+                    resource.save()
+                    return super(MaDealsRiskFactorsView, self).form_valid(form)
+
 
     def get_context_data(self, **kwargs):
         context = super(MaDealsRiskFactorsView, self).get_context_data(**kwargs)
         deal_id = self.kwargs.get('deal_id')
+        action_id_data = {}
         if deal_id:
             context.update({'deal_id': deal_id})
             try:
-                deal_name = MA_Deals.objects.get(id=deal_id).deal_name
+                deal_object = MA_Deals.objects.get(id=deal_id)
+                deal_name = deal_object.deal_name
                 context.update({'deal_name': deal_name})
+                action_id = deal_object.action_id
+                if action_id:
+                    action_id_query = MaDealsActionIdDetails.objects.filter(action_id=action_id)
+                    context.update({'action_id': action_id})
+                    if action_id_query.exists():
+                        action_id_data = action_id_query.first()
+                        action_id_data = action_id_data.__dict__
             except MA_Deals.DoesNotExist:
                 return render('coming_soon.html', status=404)
+        action_id_form = MaDealsActionIdDetailsForm(initial=action_id_data)
+        context.update({'action_id_form': action_id_form})
         return context
 
     def get_initial(self):

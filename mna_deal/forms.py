@@ -9,6 +9,7 @@ from risk_reporting.models import FormulaeBasedDownsides
 
 
 BADGE_SUCCESS_CLASS = 'badge badge-default badge-success'
+BADGE_DARK_CLASS = 'badge badge-default badge-dark'
 DATE_PICKER_CLASS = 'form-control'
 CUSTOM_SELECT_CLASS = 'custom-select form-control input-lg'
 FORM_CONTROL_CLASS = 'form-control input-lg'
@@ -23,41 +24,37 @@ class CreateMaDealsForm(forms.Form):
     """
     Form for adding new M&A Deal
     """
-    action_id = forms.CharField(required=False, label="Action ID", max_length=20,
-                                widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
-                                                              'label_class': BADGE_SUCCESS_CLASS, 'id': 'action_id',
-                                                              'placeholder': '123456789'}))
     deal_name = forms.CharField(required=True, label="Deal Name", max_length=100,
                                 widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                               'label_class': BADGE_SUCCESS_CLASS, 'id': 'deal_name',
-                                                              'placeholder': 'IBM - US'}))
+                                                              'placeholder': 'IBM - RHT'}))
     analyst = forms.CharField(required=True, label="Analyst", max_length=50,
                               widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                             'label_class': BADGE_SUCCESS_CLASS, 'id': 'analyst',
                                                             'placeholder': 'John Doe'}))
     target_ticker = forms.CharField(required=True, label="Target Ticker", max_length=50,
                                     widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
-                                                                  'label_class': BADGE_SUCCESS_CLASS, 'id': 'target_ticker',
-                                                                  'placeholder': 'AAPL'}))
+                                                                  'label_class': BADGE_DARK_CLASS, 'id': 'target_ticker',
+                                                                  'placeholder': 'AAPL US EQUITY'}))
     acquirer_ticker = forms.CharField(required=False, label="Acquirer Ticker", max_length=50,
                                       widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
-                                                                    'label_class': BADGE_SUCCESS_CLASS,
-                                                                    'id': 'acquirer_ticker', 'placeholder': 'GOOGL'}))
+                                                                    'label_class': BADGE_DARK_CLASS,
+                                                                    'id': 'acquirer_ticker', 'placeholder': 'GOOGL US EQUITY'}))
     deal_cash_terms = forms.FloatField(required=False, label="Deal Cash Terms",
                                        widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
-                                                                     'label_class': BADGE_SUCCESS_CLASS,
+                                                                     'label_class': BADGE_DARK_CLASS,
                                                                      'id': 'deal_cash_terms', 'placeholder': '0.00'}))
     deal_share_terms = forms.FloatField(required=False, label="Deal Share Terms",
                                         widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
-                                                                      'label_class': BADGE_SUCCESS_CLASS,
+                                                                      'label_class': BADGE_DARK_CLASS,
                                                                       'id': 'deal_share_terms', 'placeholder': '0.00'}))
     deal_value = forms.FloatField(required=True, label="Deal Value",
                                   widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                 'label_class': BADGE_SUCCESS_CLASS,
-                                                                'id': 'deal_value', 'placeholder': '123456789'}))
+                                                                'id': 'deal_value', 'placeholder': '000.00'}))
     expected_close_date = forms.DateField(required=True, label="Expected Close Date",
                                           widget=forms.TextInput(attrs={'type': 'date', 'class':DATE_PICKER_CLASS,
-                                                                        'label_class': BADGE_SUCCESS_CLASS,
+                                                                        'label_class': BADGE_DARK_CLASS,
                                                                         'id': 'expected_close_date'}))
     target_dividends = forms.FloatField(required=False, label="Target Dividends",
                                         widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
@@ -75,7 +72,7 @@ class CreateMaDealsForm(forms.Form):
     fx_carry_percent = forms.CharField(required=False, label="FX Carry %", max_length=10,
                                        widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                      'label_class': BADGE_SUCCESS_CLASS,
-                                                                     'id': 'fx_carry_percent', 'placeholder': '12'}))
+                                                                     'id': 'fx_carry_percent', 'placeholder': '10'}))
     stub_cvr_value = forms.FloatField(required=False, label="Stub / CVR Value",
                                       widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                     'label_class': BADGE_SUCCESS_CLASS,
@@ -84,18 +81,18 @@ class CreateMaDealsForm(forms.Form):
                                        widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
                                                                      'label_class': BADGE_SUCCESS_CLASS,
                                                                      'id': 'acquirer_upside', 'placeholder': '0.00'}))
-    loss_tolerance_percentage_of_limit = forms.CharField(required=False, label="Loss Tolerance % of Limit", max_length=10,
-                                                         widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
-                                                                                       'label_class': BADGE_SUCCESS_CLASS,
-                                                                                       'id': 'loss_tolerance_percentage_of_limit',
-                                                                                       'placeholder': '12'}))
+    loss_tolerance_percentage_of_limit = forms.FloatField(required=False, label="Loss Tolerance % of Limit",
+                                                          widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
+                                                                                        'label_class': BADGE_SUCCESS_CLASS,
+                                                                                        'id': 'loss_tolerance_percentage_of_limit',
+                                                                                        'placeholder': '10'}))
     risk_limit = forms.FloatField(required=True, label="Risk Limit",
                                   widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
                                                                 'label_class': BADGE_SUCCESS_CLASS,
                                                                 'id': 'risk_limit'}))
     origination_date = forms.DateField(required=True, label="Origination Date",
                                        widget=forms.DateInput(attrs={'type': 'date', 'class': DATE_PICKER_CLASS,
-                                                                     'label_class': BADGE_SUCCESS_CLASS,
+                                                                     'label_class': BADGE_DARK_CLASS,
                                                                      'id': 'origination_date'}))
     position_in_acquirer = forms.CharField(label="Position in Acquirer",
                                            widget=forms.Select(choices=POSITION_ACQUIRER_CHOICES,
@@ -126,6 +123,14 @@ class CreateMaDealsForm(forms.Form):
             cleaned_data['acquirer_upside'] = 0.0
         if not cleaned_data.get('loss_tolerance_percentage_of_limit'):
             cleaned_data['loss_tolerance_percentage_of_limit'] = 0.0
+        target_ticker = cleaned_data.get('target_ticker')
+        if target_ticker:
+            if 'equity' not in str(target_ticker).lower():
+                cleaned_data['target_ticker'] = target_ticker.upper() + ' EQUITY'
+        acquirer_ticker = cleaned_data.get('acquirer_ticker')
+        if acquirer_ticker:
+            if 'equity' not in str(acquirer_ticker).lower():
+                cleaned_data['acquirer_ticker'] = acquirer_ticker.upper() + ' EQUITY'
         return cleaned_data
 
 

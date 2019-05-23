@@ -32,7 +32,7 @@ class CreateMaDealsView(FormView):
     def form_valid(self, form):
         """Create the objects in respective models if the form is valid"""
         data = form.cleaned_data
-        action_id = data.get('action_id')
+        action_id = self.request.POST.get('action_id')
         deal_name = data.get('deal_name')
         analyst = data.get('analyst')
         target_ticker = data.get('target_ticker')

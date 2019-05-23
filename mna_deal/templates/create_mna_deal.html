@@ -30,7 +30,7 @@ Create M & A Deals
                     <div class="row text-center">
                         <div class="col-lg-4 col-md-1 col-sm-1"></div>
                             <div class="col-lg-4 col-md-10 col-sm-10">
-                                <div id="create_mna_deal_error_div" class="alert alert-danger">
+                                <div id="create_mna_deal_error_div">
                                     <strong id="create_mna_deal_error"></strong>
                                 </div>
                             </div>
@@ -50,15 +50,26 @@ Create M & A Deals
                                 </div>
                             {% endif %}
                         {% endfor %}
-                        <!-- {% for error in form.non_field_errors %}
-                            <div class="alert alert-danger">
-                                <strong>{{ error|escape }}</strong>
-                            </div>
-                        {% endfor %} -->
                     {% endif %}
                     <form method="POST">
                         {% csrf_token %}
                         <div class="col-lg-12">
+                            <div class="row">
+                                <div class="col-lg-1 col-md-1 col-sm-1"></div>
+                                <div class="col-lg-3 col-md-3 col-sm-3">
+                                    <small class="badge badge-default badge-dark">Action ID</small>
+                                    <fieldset class="form-group position-relative">
+                                        <input type="text" name="action_id" class="form-control input-lg"
+                                            label_class="badge badge-default badge-dark" id="action_id"
+                                            placeholder="123456789" maxlength="20">
+                                    </select>
+                                </div>
+                                <div class="col-lg-3 col-md-3 col-sm-3 col-3 pt-2">
+                                    <button id='fetch_bloomberg_data' type="button" class="btn btn-primary">Fetch Bloomberg Data</button>
+                                </div>
+                                <div class="col-lg-5 col-md-5 col-sm-5 col-5 text-right pt-2"></div>
+                            </div>
+                            <br>
                             <div class="row">
                                 <div class="col-lg-1 col-md-1 col-sm-1"></div>
                                 {% for item in form %}
@@ -66,14 +77,14 @@ Create M & A Deals
                                         <small class="{{ item.field.widget.attrs.label_class }}">{{ item.label }}</small>
                                         <fieldset class="form-group position-relative">
                                             {{ item }}
-                                            </select>
+                                        </select>
                                     </div>
                                     {% if forloop.counter|divisibleby:3 %}
                                         </div>
                                         </div>
                                         <div class="col-lg-12">
                                         <div class="row">
-                                                <div class="col-lg-1 col-md-1 col-sm-1"></div>
+                                        <div class="col-lg-1 col-md-1 col-sm-1"></div>
                                     {% endif %}
                                 {% endfor %}
                             </div>

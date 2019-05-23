@@ -2,11 +2,13 @@ from django.core.management.base import BaseCommand, CommandError
 import pandas as pd
 
 from bbgclient import bbgclient
-from risk.models import MA_Deals
+from risk.models import MA_Deals, MaDealsActionIdDetails
+from risk.mna_deal_bloomberg_utils import get_data_from_bloombery_using_action_id, save_bloomberg_data_to_table
 
 class Command(BaseCommand):
     help = """
                 Populate Action IDs for MA_Deals by matching the deals from the given file.
+                Populate the data fetched from the Bloomberg API by using Action ID.
                 The management command has 2 positional arguments:
                     1.) File Path          String of entire file path
                     2.) Skip Rows          Integer value indicating number of rows to skip starting from 0.
@@ -56,22 +58,19 @@ class Command(BaseCommand):
                         remaining.append(deal_name)
                 else:
                     remaining.append(deal_name)
-            if not dry_run:
-                print('{count} deals out of {total} deals updated.'.format(count=count, total=len(ma_deals)))
-            else:
+            if dry_run:
                 print('{count} deals out of {total} deals will be updated.'.format(count=count, total=len(ma_deals)))
+            else:
+                print('{count} deals out of {total} deals updated.'.format(count=count, total=len(ma_deals)))
             if remaining:
                 print('Following deals did not have a matching row in the given file.')
                 print(remaining)
-            # fields = ['CA052', 'CA054', 'CA057']
-            # result = bbgclient.get_secid2field(action_id_list, 'tickers', fields, req_type='refdata')
-            # if dry_run:
-            #     print(result)
-            # else:
-            #     for ma_deal in ma_deals:
-            #         action_id = str(ma_deal.action_id) + ' Action'
-            #         if result.get(action):
-            #             data = result[action_id]
+            print("Calling Bloomberg API...")
+            result = get_data_from_bloombery_using_action_id(action_id_list)
+            if dry_run:
+                print(result)
+            else:
+                save_bloomberg_data_to_table(result, ma_deals)
 
             print("Successfully completed.")
         except Exception as e:

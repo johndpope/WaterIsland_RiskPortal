@@ -1517,13 +1517,30 @@ $(document).ready(function () {
                         url: '../risk/edit_mna_idea_action_id',
                         data: {'deal_id': deal_id, 'action_id': action_id},
                         success: function (response) {
-                            if (response === "Success") {
-                                $("#action_id_" + deal_id.toString()).html("Action ID: " + action_id);
+                            console.log(response);
+                            if (response.error == false) {
+                                $("#action_id_value").html(action_id);
                                 swal("Success! " + success + action_id + " for " + deal_id.toString(), {icon: "success"});
                             }
-                            else {
+                            else if (response.type == 'ma_deal'){
                                 swal("Error!", "The action ID could not be updated", "error");
-                                console.log('Deletion failed', deal_id, action_id);
+                                console.log('Updation failed', deal_id, action_id);
+                            }
+                            else if (response.type == 'action_id'){
+                                swal("Error!", "The action ID is updated but there was a problem fetching data from Bloomberg API", "warning");
+                                console.log('Fetching Bloomberg data failed', deal_id, action_id);
+                            }
+                            else if (response.type == 'same_action_id'){
+                                swal("Same Action ID!", "OOPS! You forgot to change the Action ID value", "error");
+                                console.log('Same Action ID', deal_id, action_id);
+                            }
+                            else if (response.type == 'duplicate_action_id'){
+                                swal("Duplicate Action ID!", "The action ID already exists in the database", "error");
+                                console.log('Duplicate Action ID', deal_id, action_id);
+                            }
+                            else {
+                                swal("Error!", "Some error occurred", "error");
+                                console.log('Error in updating action id', deal_id, action_id);
                             }
                         },
                         error: function (error) {

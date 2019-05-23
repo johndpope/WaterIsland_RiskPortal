@@ -31,18 +31,25 @@
                 <div class="card mb-0">
                     <div class="card-header bg-gradient-directional-brown card-head-inverse">
                         <div class="row">
-                            <div class="col-lg-2 text-center">
+                            <div class="col-lg-12 col-md-12 col-sm-12">
+                                <h4 class="card-title text-center white">{{ deal_core.deal_name }} (Unaffected Date): 
+                                    {{ deal_core.unaffected_date }}</h4>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6 text-center col-md-6 col-sm-6 col-12">
                                     <button id='open_arb_risk_form' class="btn btn-primary btn-sm" onclick='window.open("{% url 'risk:show_risk_factors' deal_id=deal_core.id %}","_blank")'>
                                         <i class="ft-flag"> </i>Open Risk Form
                                     </button>
                             </div>
-                            <div class="col-lg-8">
-                                <h4 class="card-title text-center white">{{ deal_core.deal_name }} (Unaffected Date): 
-                                    {{ deal_core.unaffected_date }}</h4>
-                            </div>
-                            <div class="col-lg-2">
+                            <div class="col-lg-3 col-md-3 col-sm-3 offset-3 col-12">
                                 <div class="row">
-                                    <h4 class="card-title white" id="action_id_{{ deal_core.id }}">Action ID: {{ deal_core.action_id }}</h4>
+                                    <h4 class="card-title white">Action ID: </h4>&nbsp;
+                                    {% if deal_core.action_id %}
+                                        <h4 class="card-title white" id="action_id_value">{{ deal_core.action_id }}</h4>
+                                    {% else %}
+                                        <h4 class="card-title red" id="action_id_value">Insert Action ID</h4>
+                                    {% endif %}
                                     <button type="button" class="btn btn-link btn-md white pt-0" id="edit_action_id_{{ deal_core.id }}">
                                         <span class="ft-edit"></span>
                                     </button>
@@ -884,7 +891,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <br><br>
+                            <br>
                         </div>
                     </div>
                 </div>
@@ -903,96 +910,82 @@
                     <div class="card-content">
 
                         <div class="row">
-                            <div class="col-lg-1 block-tag offset-1">
+                            <div class="col-lg-2 offset-2 col-md-2 col-sm-2 col-2 block-tag">
                                 <small class="badge badge-default badge-success">Deal Cash Terms</small>
+                                <input type="text" id="deal_cash_terms" class="form-control"
+                                       value="{{ deal_core.deal_cash_terms }}" placeholder="Input Cash Terms">
                             </div>
-                            <input type="text" id="deal_cash_terms" class="col-lg-2 form-control"
-                                   value="{{ deal_core.deal_cash_terms }}"
-                                   placeholder="Input Cash Terms">
-
-                            <div class="col-lg-1 block-tag">
+                            <div class="col-lg-1 col-md-1 col-sm-1 col-1"></div>
+                            <div class="col-lg-2 col-md-2 col-sm-2 col-2 block-tag">
                                 <small class="badge badge-default badge-success">Deal Share Terms</small>
+                                <input type="text" id='deal_share_terms' class="form-control"
+                                       value="{{ deal_core.deal_share_terms }}" placeholder="Input Stock Terms">
                             </div>
-                            <input type="text" id='deal_share_terms' class="col-lg-2 form-control"
-                                   value="{{ deal_core.deal_share_terms }}"
-                                   placeholder="Input Stock Terms">
-
+                            <div class="col-lg-1 col-md-1 col-sm-1 col-1"></div>
                             {% if deal_core.deal_share_terms != 0 %}
-
-                                <div class="col-lg-1 block-tag">
+                                <div class="col-lg-2 col-md-2 col-sm-2 col-2 block-tag">
                                     <small class="badge badge-default badge-success">Acquirer Upside</small>
+                                    <input type="number" id='deal_acquirer_upside' class="form-control"
+                                            placeholder="Input Acquirer Upside">
                                 </div>
-                                <input type="number" id='deal_acquirer_upside' class="col-lg-2 form-control"
-                                       value="{{ deal_core.acquirer_upside }}"
-                                       placeholder="Input Acquirer Upside">
-
+                                <div class="col-lg-2 col-md-2 col-sm-2 col-2"></div>
                             {% endif %}
                         </div>
 
                         <br><br>
                         <div class="row">
-
-                            <div class="col-lg-1 block-tag offset-1">
+                            <div class="col-lg-2 offset-2 col-md-2 col-sm-2 col-2 block-tag">
                                 <small class="badge badge-default badge-success">Total AUM</small>
+                                <input type="number" id="fund_aum" class="form-control" value="{{ fund_aum }}"
+                                       placeholder="AUM">
                             </div>
-                            <input type="number" id="fund_aum" class="col-lg-2 form-control" value="{{ fund_aum }}"
-                                   placeholder="AUM">
-                            <div class="col-lg-1 block-tag">
+                            <div class="col-lg-1 col-md-1 col-sm-1 col-1"></div>
+                            <div class="col-lg-2 col-md-2 col-sm-2 col-2 block-tag">
                                 <small class="badge badge-default badge-success">Deal Upside</small>
+                                <input type="number" id="deal_upside" class="form-control"
+                                       value="{{ deal_core.deal_value }}" placeholder="Input Deal Upside">
                             </div>
-                            <input type="number" id="deal_upside" class="col-lg-2 form-control"
-                                   value="{{ deal_core.deal_value }}"
-                                   placeholder="Input Deal Upside">
-
-                            <div class="col-lg-1 block-tag">
+                            <div class="col-lg-1 col-md-1 col-sm-1 col-1"></div>
+                            <div class="col-lg-2 col-md-2 col-sm-2 col-2 block-tag">
                                 <small class="badge badge-default badge-success">Deal Downside</small>
+                                <input type="number" id='deal_downside' class="form-control"
+                                       value="{{ deal_core.target_downside }}" placeholder="Input Deal Downside">
                             </div>
-                            <input type="number" id='deal_downside' class="col-lg-2 form-control"
-                                   value="{{ deal_core.target_downside }}"
-                                   placeholder="Input Deal Downside">
-                            <div>
-                            </div>
+                            <div class="col-lg-2 col-md-2 col-sm-2 col-2"></div>
+                        </div>
 
+                        <br><br>
+                        <div class="row">
+                            <div class="col-lg-2 offset-2 col-md-2 col-sm-2 col-2 block-tag">
+                                <small class="badge badge-default badge-success">Target Current Price</small>
+                                <input type="number" id='target_current_price' class="form-control"
+                                       value="{{ target_px_last }}" placeholder="Target PX_LAST">
+                            </div>
+                            <div class="col-lg-1 col-md-1 col-sm-1 col-1"></div>
+                            <div class="col-lg-2 col-md-2 col-sm-2 col-2 block-tag">
+                                <small class="badge badge-default badge-success">Target Shares Out.</small>
+                                <input type="number" id="target_shares_outstanding" class="form-control"
+                                       value="{{ eqy_sh_out }}" placeholder="Target Shares Out">
+                            </div>
+                            <div class="col-lg-1 col-md-1 col-sm-1 col-1"></div>
+                            <div class="col-lg-2 col-md-2 col-sm-2 col-2 block-tag">
+                                <small class="badge badge-default badge-success">Target Shares (Float)</small>
+                                <input type="number" id='target_shares_float' class="form-control"
+                                       value="{{ eqy_float }}" placeholder="Target Shares Float">
+                            </div>
+                            <div class="col-lg-2 col-md-2 col-sm-2 col-2"></div>
                         </div>
                         <br><br>
                         <div class="row">
-
-                            <div class="col-lg-1 block-tag offset-1">
-                                <small class="badge badge-default badge-success">Target Current Price</small>
+                            <div class="col-lg-12 col-md-12 col-sm-12 col-12 text-center">
+                                <button type="button" id='run_scenario_analysis'
+                                    class="btn btn-primary btn-lg ">Run Analysis
+                                </button>
                             </div>
-                            <input type="number" id='target_current_price' class="col-lg-2 form-control"
-                                   value="{{ target_px_last }}"
-                                   placeholder="Target PX_LAST">
-                            <div class="col-lg-1 block-tag">
-                                <small class="badge badge-default badge-success">Tgt. Shares Out.</small>
-                            </div>
-                            <input type="number" id="target_shares_outstanding" class="col-lg-2 form-control"
-                                   value="{{ eqy_sh_out }}"
-                                   placeholder="Target Shares Out">
-
-                            <div class="col-lg-1 block-tag">
-                                <small class="badge badge-default badge-success">Target Shares (Float)</small>
-                            </div>
-                            <input type="number" id='target_shares_float' class="col-lg-2 form-control"
-                                   value="{{ eqy_float }}"
-                                   placeholder="Target Shares Float">
-                            <div>
-                            </div>
-
                         </div>
                         <br><br>
-
-                        <button type="button" id='run_scenario_analysis'
-                                class="col-lg-1 offset-5 center btn btn-primary btn-lg ">Run Analysis
-                        </button>
-
-
-                        <br><br>
-
                     </div>
                 </div>
-
-
             </div>
         </div>
 
@@ -1000,129 +993,125 @@
         {# Section Scenario Analysis End#}
 
         {# Scenario Analysis Sheet#}
-        <div class="row">
-            <div class="col-lg-12 ">
+        <div class="content-wrapper">
+            <div class="row">
+                <div class="col-lg-12 ">
 
-                <div class="card">
-                    <div class="card-header card-head-inverse bg-gradient-directional-blue-grey">
-                        <h2 class="card-title text-center text-light">Analysis Results 1. Deal Break</h2>
-                    </div>
-                    <div class="card-content">
-                        <div class="table-responsive table-hover">
-                            <!-- Task List table -->
-                            <table class="table table-striped " id='deal_break_analysis'>
-                                <thead>
-                                <tr>
-                                    <th>Change</th>
-                                    <th class="text-danger">0.15</th>
-                                    <th class="text-danger">0.20</th>
-                                    <th class="text-danger">0.25</th>
-                                    <th class="text-danger">0.30</th>
-                                    <th class="text-danger">0.40</th>
-                                    <th class="text-danger">0.50</th>
-                                    <th class="text-danger">0.60</th>
-                                    <th class="text-danger">0.75</th>
-                                    <th class="text-danger">0.80</th>
-                                    <th class="text-danger">0.90</th>
-                                    <th class="text-danger">1.0</th>
-                                </tr>
-                                </thead>
-                                <tbody>
+                    <div class="card">
+                        <div class="card-header card-head-inverse bg-gradient-directional-blue-grey">
+                            <h2 class="card-title text-center text-light">Analysis Results 1. Deal Break</h2>
+                        </div>
+                        <div class="card-content">
+                            <div class="table-responsive table-hover">
+                                <!-- Task List table -->
+                                <table class="table table-striped " id='deal_break_analysis'>
+                                    <thead>
+                                    <tr>
+                                        <th>Change</th>
+                                        <th class="text-danger">0.15</th>
+                                        <th class="text-danger">0.20</th>
+                                        <th class="text-danger">0.25</th>
+                                        <th class="text-danger">0.30</th>
+                                        <th class="text-danger">0.40</th>
+                                        <th class="text-danger">0.50</th>
+                                        <th class="text-danger">0.60</th>
+                                        <th class="text-danger">0.75</th>
+                                        <th class="text-danger">0.80</th>
+                                        <th class="text-danger">0.90</th>
+                                        <th class="text-danger">1.0</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
 
-                                </tbody>
-                                <tfoot></tfoot>
-                            </table>
+                                    </tbody>
+                                    <tfoot></tfoot>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-
             </div>
-        </div>
 
-        {#Scenario Analysis for 75/25 Probability#}
-        <div class="row">
-            <div class="col-lg-12 ">
+            {#Scenario Analysis for 75/25 Probability#}
+            <div class="row">
+                <div class="col-lg-12 ">
 
-                <div class="card">
-                    <div class="card-header card-head-inverse bg-gradient-directional-blue-grey">
-                        <h2 class="card-title text-center text-light">Analysis Results 2. 75/25 Chance</h2>
-                    </div>
-                    <div class="card-content">
-                        <div class="table-responsive table-hover">
-                            <!-- Task List table -->
-                            <table class="table table-striped " id='deal_break_analysis_75_25'>
-                                <thead>
-                                <tr>
-                                    <th>Change</th>
-                                    <th class="text-danger">0.15</th>
-                                    <th class="text-danger">0.20</th>
-                                    <th class="text-danger">0.25</th>
-                                    <th class="text-danger">0.30</th>
-                                    <th class="text-danger">0.40</th>
-                                    <th class="text-danger">0.50</th>
-                                    <th class="text-danger">0.60</th>
-                                    <th class="text-danger">0.75</th>
-                                    <th class="text-danger">0.80</th>
-                                    <th class="text-danger">0.90</th>
-                                    <th class="text-danger">1.0</th>
-                                </tr>
-                                </thead>
-                                <tbody>
+                    <div class="card">
+                        <div class="card-header card-head-inverse bg-gradient-directional-blue-grey">
+                            <h2 class="card-title text-center text-light">Analysis Results 2. 75/25 Chance</h2>
+                        </div>
+                        <div class="card-content">
+                            <div class="table-responsive table-hover">
+                                <!-- Task List table -->
+                                <table class="table table-striped " id='deal_break_analysis_75_25'>
+                                    <thead>
+                                    <tr>
+                                        <th>Change</th>
+                                        <th class="text-danger">0.15</th>
+                                        <th class="text-danger">0.20</th>
+                                        <th class="text-danger">0.25</th>
+                                        <th class="text-danger">0.30</th>
+                                        <th class="text-danger">0.40</th>
+                                        <th class="text-danger">0.50</th>
+                                        <th class="text-danger">0.60</th>
+                                        <th class="text-danger">0.75</th>
+                                        <th class="text-danger">0.80</th>
+                                        <th class="text-danger">0.90</th>
+                                        <th class="text-danger">1.0</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
 
-                                </tbody>
-                                <tfoot></tfoot>
-                            </table>
+                                    </tbody>
+                                    <tfoot></tfoot>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-
             </div>
-        </div>
 
-        {# Scenario Analysis for 75/25 Probability END#}
+            {# Scenario Analysis for 75/25 Probability END#}
 
-        <div class="row">
-            <div class="col-lg-12 ">
+            <div class="row">
+                <div class="col-lg-12 ">
 
-                <div class="card">
-                    <div class="card-header card-head-inverse bg-gradient-directional-blue-grey">
-                        <h2 class="card-title text-center text-light">Analysis Results 3. 55/45 Chance</h2>
-                    </div>
-                    <div class="card-content">
-                        <div class="table-responsive table-hover">
-                            <!-- Task List table -->
-                            <table class="table table-striped " id='deal_break_analysis_55_45'>
-                                <thead>
-                                <tr>
-                                    <th>Change</th>
-                                    <th class="text-danger">0.15</th>
-                                    <th class="text-danger">0.20</th>
-                                    <th class="text-danger">0.25</th>
-                                    <th class="text-danger">0.30</th>
-                                    <th class="text-danger">0.40</th>
-                                    <th class="text-danger">0.50</th>
-                                    <th class="text-danger">0.60</th>
-                                    <th class="text-danger">0.75</th>
-                                    <th class="text-danger">0.80</th>
-                                    <th class="text-danger">0.90</th>
-                                    <th class="text-danger">1.0</th>
-                                </tr>
-                                </thead>
-                                <tbody>
+                    <div class="card">
+                        <div class="card-header card-head-inverse bg-gradient-directional-blue-grey">
+                            <h2 class="card-title text-center text-light">Analysis Results 3. 55/45 Chance</h2>
+                        </div>
+                        <div class="card-content">
+                            <div class="table-responsive table-hover">
+                                <!-- Task List table -->
+                                <table class="table table-striped " id='deal_break_analysis_55_45'>
+                                    <thead>
+                                    <tr>
+                                        <th>Change</th>
+                                        <th class="text-danger">0.15</th>
+                                        <th class="text-danger">0.20</th>
+                                        <th class="text-danger">0.25</th>
+                                        <th class="text-danger">0.30</th>
+                                        <th class="text-danger">0.40</th>
+                                        <th class="text-danger">0.50</th>
+                                        <th class="text-danger">0.60</th>
+                                        <th class="text-danger">0.75</th>
+                                        <th class="text-danger">0.80</th>
+                                        <th class="text-danger">0.90</th>
+                                        <th class="text-danger">1.0</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
 
-                                </tbody>
-                                <tfoot></tfoot>
-                            </table>
+                                    </tbody>
+                                    <tfoot></tfoot>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
-
-
             </div>
+            {# Scenario Analysis Sheet End#}
         </div>
-        {# Scenario Analysis Sheet End#}
     </div>
 
     <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
