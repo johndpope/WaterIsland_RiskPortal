@@ -353,10 +353,10 @@
                 <li></li>
                 <li class=" nav-item"><a href="#"><i class="icon-doc"></i><span class="menu-title"
                                                                                 data-i18n="nav.invoice.main">Securities</span></a>
-{#                    <ul class="menu-content">#}
-{#                        <li><a class="menu-item" href="{% url 'securities:securitiy_master' %}">WIC Security Master</a>#}
-{#                        </li>#}
-{#                    </ul>#}
+                    {#                    <ul class="menu-content">#}
+                    {#                        <li><a class="menu-item" href="{% url 'securities:securitiy_master' %}">WIC Security Master</a>#}
+                    {#                        </li>#}
+                    {#                    </ul>#}
                     <ul class="menu-content">
                         <li><a class="menu-item" href="{% url 'securities:wic_positions' %}">WIC Positions</a>
                         </li>
@@ -403,7 +403,7 @@
                 </a></li>
 
                 <li class=" nav-item"><a href="#"><i class="icon-chart"></i><span class="menu-title"
-                                                                                data-i18n="nav.invoice.main">P&L Reporting</span></a>
+                                                                                  data-i18n="nav.invoice.main">P&L Reporting</span></a>
 
                     <ul class="menu-content">
                         <li><a class="menu-item" href="{% url 'realtime_pnl_impacts:live_tradegroup_pnl' %}">Realtime
@@ -412,18 +412,22 @@
                     </ul>
 
                     <ul class="menu-content">
-                        <li><a class="menu-item" href="{% url 'position_stats:get_tradegroup_performance_main_page' %}">Tradegroups Perf (NAV)</a>
+                        <li><a class="menu-item" href="{% url 'position_stats:get_tradegroup_performance_main_page' %}">Tradegroups
+                            Perf (NAV)</a>
                         </li>
                     </ul>
 
                     <ul class="menu-content">
-                        <li><a class="menu-item" href="{% url 'position_stats:get_tradegroup_attribution_over_own_capital' %}">Tradegroups Perf (Cap.)</a>
+                        <li><a class="menu-item"
+                               href="{% url 'position_stats:get_tradegroup_attribution_over_own_capital' %}">Tradegroups
+                            Perf (Cap.)</a>
                         </li>
                     </ul>
                 </li>
 
-                <li class=" nav-item"><a href="{% url 'risk_drawdown:all_drawdowns' %}"><i class="icon-drawer"></i><span class="menu-title"
-                                                                                data-i18n="nav.invoice.main">Drawdowns</span></a>
+                <li class=" nav-item"><a href="{% url 'risk_drawdown:all_drawdowns' %}"><i class="icon-drawer"></i><span
+                        class="menu-title"
+                        data-i18n="nav.invoice.main">Drawdowns</span></a>
                 </li>
 
 
@@ -437,6 +441,19 @@
                         </li>
                     </ul>
                 </li>
+
+                <li class=" nav-item"><a href="#"><i class="icon-energy"></i><span class="menu-title">ETF</span></a>
+                    <ul class="menu-content">
+                        <li><a class="menu-item" href="{% url 'etf:get_etf_positions' %}"
+                               data-i18n="nav.project.project_summary">ETF Positions Database</a>
+                        </li>
+
+                        <li><a class="menu-item" href="{% url 'etf:get_etf_performances' %}"
+                               data-i18n="nav.project.project_summary">ETF Performance</a>
+                        </li>
+                    </ul>
+                </li>
+
 
             </ul>
         </div>
@@ -502,9 +519,9 @@
     <script src="{% static 'app-assets/js/scripts/navs/navs.js' %}" type="text/javascript"></script>
 {% endblock %}
 <script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.html5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.html5.min.js"></script>
 <script src="{% static 'app-assets/vendors/js/extensions/toastr.min.js' %}" type="text/javascript"></script>
 <script src="{% static 'app-assets/js/core/app-menu.js' %}" type="text/javascript"></script>
 <script src="{% static 'app-assets/js/core/app.js' %}" type="text/javascript"></script>
