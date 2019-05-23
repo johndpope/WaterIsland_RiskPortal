@@ -67,18 +67,21 @@ def get_data_from_bloombery_using_action_id(action_id_list):
 
 def save_bloomberg_data_to_table(result, ma_deals_list):
     columns = list(BLOOMBERG_MAPPING.keys())
+    unique_ma_deals = set()
     for ma_deal in ma_deals_list:
-        action_id = str(ma_deal.action_id)
-        if action_id:
-            bloomberg_action_id = str(ma_deal.action_id)
-            if 'action' not in bloomberg_action_id.lower():
-                bloomberg_action_id = bloomberg_action_id + ' Action'
-            if result.get(bloomberg_action_id):
-                data = result[bloomberg_action_id]
-                object_data = {'action_id': action_id}
-                for column in columns:
-                    object_data[column] = data.get(BLOOMBERG_MAPPING[column])[0]
-                try:
-                    MaDealsActionIdDetails.objects.create(**object_data)
-                except IntegrityError as e:
-                    raise IntegrityError
+        if ma_deal.deal_name not in unique_ma_deals:
+            unique_ma_deals.add(ma_deal.deal_name)
+            action_id = str(ma_deal.action_id)
+            if action_id:
+                bloomberg_action_id = str(ma_deal.action_id)
+                if 'action' not in bloomberg_action_id.lower():
+                    bloomberg_action_id = bloomberg_action_id + ' Action'
+                if result.get(bloomberg_action_id):
+                    data = result[bloomberg_action_id]
+                    object_data = {'action_id': action_id}
+                    for column in columns:
+                        object_data[column] = data.get(BLOOMBERG_MAPPING[column])[0]
+                    try:
+                        MaDealsActionIdDetails.objects.create(**object_data)
+                    except IntegrityError as e:
+                        raise IntegrityError
