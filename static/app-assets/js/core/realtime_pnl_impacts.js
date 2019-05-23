@@ -122,7 +122,7 @@ $(document).ready(function () {
         // Do this Iteratively for each fund
         // Crete Active Tab for ARB
         let data = fund_pnl;
-        $('<div class="tab-pane active" id="tabTable' + name + '"><table class="table table-striped text-dark" style="width:100%" id="table' + name + '">' +
+        $('<div class="tab-pane active" id="tabTable' + name + '"><table class="table table-striped table-bordered" style="width:100%" id="table' + name + '">' +
             '<tfoot><tr><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th><th></th></tr></tfoot></table><br><br><br>' +
             '</div>' +
             '').appendTo('#fund_pnl' + name);
@@ -137,6 +137,7 @@ $(document).ready(function () {
             responsive: true,
             scrollY: "580px",
             scrollX: true,
+            scrollCollapse: true,
             paging: false,
             columns: [
                 {
@@ -157,7 +158,20 @@ $(document).ready(function () {
 
             ],
             "columnDefs": [{
-                "targets": [2, 3, 4, 5, 6, 7, 8, 9],
+                "targets": [2, 3, 4, 5, 7],
+                "createdCell": function (td, cellData, rowData, rowIndex) {
+                    //Check for % Float and %Shares Out
+                    if (cellData < 0) {
+                        $(td).css('color', 'red')
+                    }
+                    else {
+                        $(td).css('color', 'green')
+                    }
+                },
+                "render": $.fn.dataTable.render.number(',', '.', 0),
+            },
+            {
+                "targets": [6, 8, 9],
                 "createdCell": function (td, cellData, rowData, rowIndex) {
                     //Check for % Float and %Shares Out
                     if (cellData < 0) {
@@ -191,7 +205,7 @@ $(document).ready(function () {
 
                     // Update footer
                     $(api.column([value]).footer()).html(
-                        '$ ' + pageTotal.toLocaleString()
+                        '$ ' + pageTotal.toLocaleString("en-US", {maximumFractionDigits: 0})
                     );
                 });
 
@@ -348,7 +362,7 @@ $(document).ready(function () {
                         $(td).css('color', 'green')
                     }
                 },
-                "render": $.fn.dataTable.render.number(',', '.', 2),
+                "render": $.fn.dataTable.render.number(',', '.', 0),
             },
                 {
                     "targets": [0],
@@ -406,7 +420,7 @@ $(document).ready(function () {
 
                     // Update footer
                     $(api.column([value]).footer()).html(
-                        '$ ' + pageTotal.toLocaleString()
+                        '$ ' + pageTotal.toLocaleString("en-US", {maximumFractionDigits: 0})
                     );
                 });
 
