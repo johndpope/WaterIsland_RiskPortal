@@ -28,7 +28,7 @@ $(document).ready(function () {
             let etf2_data = JSON.parse(etf_cum_pnl['ETF2']);
             let etf3_data = JSON.parse(etf_cum_pnl['ETF3']);
             var chartData = [];
-            
+
             for (var i = 0; i < etf1_data.length; i++) {
                 let etf1_value = etf1_data[i]['cum_pnl'];
                 let etf2_value = null;

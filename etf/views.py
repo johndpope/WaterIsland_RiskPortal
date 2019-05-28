@@ -48,6 +48,8 @@ def get_etf_performances(request):
     tradegroups_pnl_df = pd.read_sql_query("SELECT `Date`, Fund, TradeGroup, pnl FROM wic.tradegroups_pnl_cache WHERE "
                                            "Fund LIKE '%ETF%' AND `Date` = (SELECT MAX(`Date`) FROM "
                                            "wic.tradegroups_pnl_cache)", con=connection)
+    
+    tg_perf_max_date = str(tradegroups_pnl_df['Date'].max())
 
     tg_perf_df = pd.read_sql_query("SELECT `date`,TradeGroup, Fund, `pnl` FROM wic.tradegroups_pnl_cache where "
                                    "Fund like '%ETF%' ", con=connection)
@@ -55,8 +57,7 @@ def get_etf_performances(request):
     pct_of_assets = pd.read_sql_query("SELECT DISTINCT flat_file_as_of as `Date`, TradeGroup, Fund, "
                                       "100*(CurrentMktVal / aum) AS "
                                       "`pct_of_assets` FROM wic.daily_flat_file_db WHERE Fund LIKE '%ETF%' AND "
-                                      "Flat_file_as_of = (SELECT MAX(Flat_file_as_of) FROM "
-                                      "wic.daily_flat_file_db)", con=connection)
+                                      "Flat_file_as_of = '"+tg_perf_max_date+"'", con=connection)
 
     tg_perf_df['pnl'] = tg_perf_df['pnl'].apply(lambda x: int(float(x)))
     pct_of_assets['pct_of_assets'] = pct_of_assets['pct_of_assets'].apply(lambda x: str(np.round(x, decimals=2)) + "%")
