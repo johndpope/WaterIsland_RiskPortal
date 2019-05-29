@@ -133,6 +133,7 @@ INSTALLED_APPS = [
     'risk_drawdown',
     'sales_reporting',
     'mna_deal',
+    'portfolio_optimization',
 ]
 
 MIDDLEWARE = [

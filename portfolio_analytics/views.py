@@ -1,10 +1,11 @@
-from django.shortcuts import render
-import dbutils
 from django.http import JsonResponse
+from django.shortcuts import render
 import pandas as pd
-from .models import DealUniverse
 
-# Create your views here.
+import dbutils
+from portfolio_analytics.models import DealUniverse
+
+
 def show_current_deal_universe(request):
     #Gather data from db_utils
     universe = DealUniverse.objects.all()
