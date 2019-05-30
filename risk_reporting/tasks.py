@@ -29,7 +29,7 @@ SLEEVE_DICT = {
     'Equity Special Situations': 'ESS',
     'Merger Arbitrage': 'M&A',
     'Opportunistic': 'OPP',
-    'Break': 'CASH'
+    'Break': 'UNLISTED/CASH',
 }
 
 
@@ -711,7 +711,7 @@ def email_daily_formulae_linked_downsides():
 
 
 def round_bps(value):
-    return round((value/100), 2)
+    return float(value * 0.01)
 
 
 def get_ytd_key(period_dict):
@@ -746,8 +746,9 @@ def calculate_status(row):
 @shared_task
 def email_pl_target_loss_budgets():
 
-    loss_budgets, ytd_return_sleeve_df = calculate_pnl_budgets()
+    loss_budgets, ytd_return_sleeve_df, ytd_dollar_sleeve_df = calculate_pnl_budgets()
     loss_budgets = loss_budgets.drop(columns=['Last Updated'])
+    ytd_dollar_sleeve_df['Sleeve'] = ytd_dollar_sleeve_df['Sleeve'].fillna('UNLISTED')
 
     pivoted = pd.pivot_table(loss_budgets, columns=['Fund'], aggfunc=lambda x: x, fill_value='')
     pivoted = pivoted[['ARB', 'MACO', 'MALT', 'AED', 'CAM', 'LG', 'LEV', 'TACO', 'TAQ']]
@@ -939,6 +940,7 @@ def email_pl_target_loss_budgets():
     unique_sleeves = final_live_df['Sleeve_'].unique()
     ytd_return_unique_funds = ytd_return_sleeve_df.Fund.unique().tolist()
     ytd_return_unique_sleeves = ytd_return_sleeve_df.Sleeve.unique().tolist()
+    ytd_dollar_unique_sleeves = ytd_dollar_sleeve_df.Sleeve.unique().tolist()
     if 'Risk' in ytd_return_unique_sleeves:
         ytd_return_unique_sleeves.remove('Risk')
     if 'Forwards' in ytd_return_unique_sleeves:
@@ -948,10 +950,14 @@ def email_pl_target_loss_budgets():
     loss_sleeve_ytd = pd.DataFrame(columns=['Sleeve'] + fund_list)
     profit_sleeve_ytd_perc = pd.DataFrame(columns=['Sleeve'] + ytd_return_unique_funds)
     loss_sleeve_ytd_perc = pd.DataFrame(columns=['Sleeve'] + ytd_return_unique_funds)
+    profit_dollar_sleeve_df = ytd_dollar_sleeve_df[ytd_dollar_sleeve_df['Gross YTD Dollar'] > 0].\
+        groupby(['Fund', 'Sleeve']).agg('sum').reset_index()
+    loss_dollar_sleeve_df = ytd_dollar_sleeve_df[ytd_dollar_sleeve_df['Gross YTD Dollar'] < 0].\
+        groupby(['Fund', 'Sleeve']).agg('sum').reset_index()
 
-    ytd_return_sleeve_df['Gross YTD Return'] = ytd_return_sleeve_df['Gross YTD Return'].apply(round_bps)
     for sleeve in ytd_return_unique_sleeves:
-        profit_row_dict = {'Sleeve': SLEEVE_DICT.get(sleeve, sleeve)}
+        new_sleeve = SLEEVE_DICT.get(sleeve, sleeve)
+        profit_row_perc_dict = {'Sleeve': new_sleeve}
         for fund in ytd_return_unique_funds:
             gross_ytd_return_index = ytd_return_sleeve_df[(ytd_return_sleeve_df['Fund'] == fund) & (ytd_return_sleeve_df['Sleeve'] == sleeve)].index
             if not gross_ytd_return_index.empty:
@@ -967,32 +973,47 @@ def email_pl_target_loss_budgets():
                     ytd_sleeve_perc_target = 0.00
             else:
                 ytd_sleeve_perc_target = 0.00
-            profit_row_dict[fund] = ytd_sleeve_perc_target
-        profit_sleeve_ytd_perc = profit_sleeve_ytd_perc.append(profit_row_dict, ignore_index=True)
 
-    for sleeve in unique_sleeves:
-        row_sleeve = sleeve
-        if sleeve == 0 or sleeve == 0.0 or isinstance(sleeve, (int, float)):
-            row_sleeve = 'UNLISTED'
-        profit_row_dict = {'Sleeve': row_sleeve}
-        loss_row_dict = {'Sleeve': row_sleeve}
-        loss_percentage_row_dict = {'Sleeve': row_sleeve}
-        for column in final_live_df_columns:
-            fund = column.split("_")[1]
-            profit_value = final_live_df[(final_live_df['Sleeve_'] == sleeve) & (final_live_df[column] > 0)][column].sum()
-            profit_row_dict[fund] = int(profit_value)
-            loss_value = final_live_df[(final_live_df['Sleeve_'] == sleeve) & (final_live_df[column] < 0)][column].sum()
-            loss_row_dict[fund] = int(loss_value)
-            loss_budget_row_index = loss_budgets[loss_budgets['Fund'] == fund].index
-            if not loss_budget_row_index.empty:
-                loss_budget_row_index = loss_budget_row_index[0]
-                ann_loss_budget_dollar = int(loss_budgets.at[loss_budget_row_index, 'Ann Loss Budget $'].replace(",", ""))
-                loss_percentage_row_dict[fund] = float((loss_value / ann_loss_budget_dollar) * 100)
+            profit_row_perc_dict[fund] = float(ytd_sleeve_perc_target * 0.01)
+        profit_sleeve_ytd_perc = profit_sleeve_ytd_perc.append(profit_row_perc_dict, ignore_index=True)
+    
+    for sleeve in ytd_dollar_unique_sleeves:
+        new_sleeve = SLEEVE_DICT.get(sleeve, sleeve)
+        profit_row_dollar_dict = {'Sleeve': new_sleeve}
+        loss_row_perc_dict = {'Sleeve': new_sleeve}
+        loss_row_dollar_dict = {'Sleeve': new_sleeve}
+        for fund in ytd_return_unique_funds:
+            profit_dollar_sleeve_index = profit_dollar_sleeve_df[(profit_dollar_sleeve_df['Fund'] == fund) & (profit_dollar_sleeve_df['Sleeve'] == new_sleeve)].index            
+            if not profit_dollar_sleeve_index.empty:
+                profit_dollar_sleeve_index = profit_dollar_sleeve_index[0]
+                profit_dollar = profit_dollar_sleeve_df.at[profit_dollar_sleeve_index, 'Gross YTD Dollar']
+                if np.isnan(profit_dollar):
+                    profit_dollar = 0.00
             else:
-                loss_percentage_row_dict[fund] = 0
-        profit_sleeve_ytd = profit_sleeve_ytd.append(profit_row_dict, ignore_index=True)
-        loss_sleeve_ytd = loss_sleeve_ytd.append(loss_row_dict, ignore_index=True)
-        loss_sleeve_ytd_perc = loss_sleeve_ytd_perc.append(loss_percentage_row_dict, ignore_index=True)
+                profit_dollar = 0.00
+
+            loss_dollar_sleeve_index = loss_dollar_sleeve_df[(loss_dollar_sleeve_df['Fund'] == fund) & (loss_dollar_sleeve_df['Sleeve'] == new_sleeve)].index
+            if not loss_dollar_sleeve_index.empty:
+                loss_dollar_sleeve_index = loss_dollar_sleeve_index[0]
+                loss_dollar = loss_dollar_sleeve_df.at[loss_dollar_sleeve_index, 'Gross YTD Dollar']
+                if not np.isnan(loss_dollar):
+                    loss_budget_row_index = loss_budgets[loss_budgets['Fund'] == fund].index
+                    if not loss_budget_row_index.empty:
+                        loss_budget_row_index = loss_budget_row_index[0]
+                        ann_loss_budget_dollar = int(loss_budgets.at[loss_budget_row_index, 'Ann Loss Budget $'].replace(",", ""))
+                        loss_row_perc_dict[fund] = float((loss_dollar / ann_loss_budget_dollar) * 100)
+                else:
+                    loss_dollar = 0.00
+                    loss_row_perc_dict[fund] = 0.00
+            else:
+                loss_dollar = 0.00
+                loss_row_perc_dict[fund] = 0.00
+
+            profit_row_dollar_dict[fund] = int(profit_dollar)
+            loss_row_dollar_dict[fund] = int(loss_dollar)
+        profit_sleeve_ytd = profit_sleeve_ytd.append(profit_row_dollar_dict, ignore_index=True)
+        loss_sleeve_ytd = loss_sleeve_ytd.append(loss_row_dollar_dict, ignore_index=True)
+        loss_sleeve_ytd_perc = loss_sleeve_ytd_perc.append(loss_row_perc_dict, ignore_index=True)
 
     # Calculate total of the columns in all dataframes
     total_profit_dict = {'Sleeve': 'Total'}
@@ -1126,6 +1147,14 @@ def calculate_pnl_budgets():
     sleeve_df['Gross YTD Return'] = sleeve_df.apply(get_bps_value, axis=1)
 
     gross_ytd_return_sleeve_df = sleeve_df[['Fund', 'Sleeve', 'Gross YTD Return']].copy()
+    gross_ytd_dollar_sleeve_df = df[['fund', 'sleeve', 'tradegroup', 'ytd_dollar']].copy()
+    cash_index = gross_ytd_dollar_sleeve_df[gross_ytd_dollar_sleeve_df['tradegroup'] == 'CASH'].index
+    if not cash_index.empty:
+        for index in cash_index:
+            gross_ytd_dollar_sleeve_df.at[index, 'sleeve'] = 'CASH'
+    gross_ytd_dollar_sleeve_df.drop(columns=['tradegroup'], inplace=True)
+    gross_ytd_dollar_sleeve_df.rename(columns={'fund': 'Fund', 'sleeve': 'Sleeve', 'ytd_dollar': 'Gross YTD Dollar'},
+                                      inplace=True)
     new_sleeve_df = sleeve_df[['Fund', 'Gross YTD Return']].copy()
 
     new_sleeve_df = new_sleeve_df.groupby(['Fund']).sum()
@@ -1193,7 +1222,7 @@ def calculate_pnl_budgets():
     loss_budgets.drop(columns=['Average YTD AUM'], inplace=True)
     push_data = loss_budgets
     push_data_to_table(push_data)
-    return loss_budgets, gross_ytd_return_sleeve_df
+    return loss_budgets, gross_ytd_return_sleeve_df, gross_ytd_dollar_sleeve_df
 
 
 @shared_task
