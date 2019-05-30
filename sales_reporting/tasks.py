@@ -223,7 +223,7 @@ def email_weekly_sales_report():
     thread = Thread(target=send_email2, args=(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD,
                                               ['risk@wicfunds.com', 'cbuntic@wicfunds.com', 'jmitchell@wicfunds.com',
                                                'bdavis@wicfunds.com', 'kfeeney@wicfunds.com', 'jnespoli@wicfunds.com',
-                                               'cfazioli@wicfunds.com', 'cwalker@wicfunds.com'],
+                                               'cfazioli@wicfunds.com', 'cwalker@wicfunds.com', 'jcoburn@wicfunds.com'],
                                               "(Risk Automation) Weekly Sales Report - " + datetime.datetime.now().strftime('%Y-%m-%d'),
                                               'dispatch@wicfunds.com',
                                               'Please find attached Weekly Sales Report!', file))
