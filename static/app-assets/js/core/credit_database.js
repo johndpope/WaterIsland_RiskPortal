@@ -8,9 +8,7 @@ $(document).ready(function () {
         fixedHeader: {
             header: true
         },
-        columnDefs:[{targets:8, render:function(data){
-            return moment(data).format('YYYY-MM-DD');
-        }}],
+
         buttons: {
             buttons: [{
                 extend: 'print',
@@ -56,8 +54,11 @@ $(document).ready(function () {
         if (current_deal.search('view_') != -1) {
             //Logic for Editing a Deal
             // Steps. Populate Edit Modal with existing fields. Show Modal. Make changes through Ajax. Get Response. Display success Alert
-            var deal_id_to_view = current_deal.split('_')[1]; //Get the ID
-            window.open("../risk/credit_show_deal?id=" + deal_id_to_view, '_blank');
+            let tr = $(this).closest('tr');
+            let fund = tr.find('td:eq(0)').text();
+            let tradegroup =  tr.find('td:eq(1)').text();
+
+            window.open("../risk/credit_show_deal?TradeGroup=" +tradegroup+"&Fund="+fund, '_blank');
         }
 
         else {

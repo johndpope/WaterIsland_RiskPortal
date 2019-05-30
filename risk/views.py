@@ -2047,7 +2047,19 @@ def show_all_credit_deals(request):
     :param request: Request object (GET)
     :return: render with context dictionary
     """
-    credit_deals_df = CreditDatabase.objects.all()
+    credit_deals_df = CreditDatabase.objects.raw("SELECT DISTINCT 1 as id, Fund, TradeGroup, Ticker, BloombergID, "
+                                                 "Bucket, StrategyTypeWic, CatalystTypeWIC,CatalystRating, Coupon, "
+                                                 "DealUpside, DealDownside FROM wic.daily_flat_file_db WHERE "
+                                                 "Flat_file_as_of = (SELECT MAX(Flat_file_as_of) FROM "
+                                                 "wic.daily_flat_file_db) AND Sleeve = 'Credit Opportunities'")
+
     return render(request, 'credit_database.html', context={'credit_deals_df': credit_deals_df})
+
+
+def credit_show_deal(request):
+    tradegroup = request.GET['TradeGroup']
+    fund = request.GET['Fund']
+
+    return render(request, 'show_credit_deal.html', {'tradegroup_name': tradegroup, 'fund_name': fund})
 
 # endregion

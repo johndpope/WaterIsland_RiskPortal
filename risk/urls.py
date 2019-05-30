@@ -40,6 +40,7 @@ urlpatterns = [
     url('add_new_credit_deal$', views.add_new_credit_deal, name='add_new_credit_deal'),
     url('delete_credit_deal$', views.delete_credit_deal, name='delete_credit_deal'),
     url('show_all_credit_deals$', views.show_all_credit_deals, name='show_all_credit_deals'),
+    url('credit_show_deal$', views.credit_show_deal, name='credit_show_deal'),
     url('ess_idea_view_balance_sheet$', views.ess_idea_view_balance_sheet, name='ess_idea_view_balance_sheet'),
     url('ess_idea_save_balance_sheet$', views.ess_idea_save_balance_sheet, name='ess_idea_save_balance_sheet'),
     url('get_premium_analysis_results_from_worker$', views.get_premium_analysis_results_from_worker,

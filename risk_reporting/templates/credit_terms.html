@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title_block %}
+    Downside Formulae
+{% endblock %}
+{% load staticfiles %}
+
+{% block css_styles %}
+    {{ block.super }}
+
+    <link rel="stylesheet" type="text/css"
+          href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.bootstrap.min.css">
+
+{% endblock %}
+
+{% block datatables_bootstrap_css %}
+    {{ block.super }}
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+{# Show a Button to Add a new Deal#}
+<div class="app-content content">
+    <div class="content-wrapper">
+        <div class="content-header row">
+        </div>
+        <div id="mna_idea_content_wrapper" class="content-body">
+            <section class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-head">
+                            <div class="card-header">
+                                <h4 class="card-title font-medium-3 center">Credit Deal Terms</h4>
+                                <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
+                            </div>
+                        </div>
+
+                        <div class="card-content">
+                            <div class="table-responsive">
+                                <!-- Task List table -->
+                                <table class="table table-bordered" id='downside_formulae_table'
+                                       style="font-size:12px;">
+                                    <thead>
+                                    <tr>
+                                        <th>TradeGroup</th>
+                                        <th>Ticker</th>
+                                        <th>Analyst</th>
+                                        <th>LastUpdate</th>
+                                        <th>LastPrice</th>
+                                        <th>IsExcluded</th>
+                                        <th>DownsideType</th>
+                                        <th>Calculations</th>
+                                        <th>Upside</th>
+                                        <th>Upside Notes</th>
+                                        <th>Downside</th>
+                                        <th>Downside Notes</th>
+                                        <th></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+
+                                    <td>{{ row.TradeGroup }}</td>
+                                    <td>{{ row.Ticker }}</td>
+                                    <td>{{ row.Analyst }}</td>
+                                    <td>{{ row.LastUpdate }}</td>
+                                    <td>{{ row.LastPrice }}</td>
+                                    <td>
+                                        <select class="custom-select2 mr-sm-2 IsExcluded">
+                                            <option selected value="{{ row.IsExcluded }}">{{ row.IsExcluded }}
+                                            </option>
+                                            {% if row.IsExcluded == 'Yes' %}
+                                                <option value="No">No..</option>
+                                            {% else %}
+                                                <option value="Yes">Yes..</option>
+                                            {% endif %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select class="custom-select2 mr-sm-2 TermsType">
+                                            <option selected
+                                                    value="{{ row.BaseCaseDownsideType }}">{{ row.BaseCaseDownsideType }}
+                                            </option>
+                                            <option value="Fundamental Valuation">Fundamental Valuation</option>
+                                            <option value="Reverse ARB">Reverse ARB</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" value=""> Calcualtions here!</td>
+                                    <td><input type="text" class="BaseCaseDownside" id="credit_upside"
+                                               value="{{ row.base_case }}"></td>
+                                    <td><input type="text" id="credit_upside_notes" value="{{ row.base_case_notes }}">
+                                    </td>
+                                    <td><input type="text" class="OutlierDownside" id="credit_downside"
+                                               value="{{ row.base_case }}"></td>
+                                    <td><input type="text" id="credit_downside_notes" value="{{ row.base_case_notes }}">
+                                    </td>
+                                    </tr>
+
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+<script src="{% static 'app-assets/js/core/credit_terms.js' %}" type="text/javascript"></script>
+
+
+{% endblock %}
