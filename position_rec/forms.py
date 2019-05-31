@@ -4,7 +4,6 @@ from position_rec.models import AccountFundPositionRec, PositionRecAttachments
 
 
 BADGE_SUCCESS_CLASS = 'badge badge-default badge-success'
-CUSTOM_SELECT_CLASS = 'custom-select form-control input-lg'
 FORM_CONTROL_CLASS = 'form-control input-lg'
 
 EXLUDED_CHOICES = [
@@ -38,7 +37,7 @@ class AccountFundPositionRecForm(forms.Form):
                                                          'label_class': BADGE_SUCCESS_CLASS, 'id': 'fund',
                                                          'placeholder': 'ARB'}))
     excluded = forms.CharField(required=True, label="Excluded",
-                               widget=forms.Select(choices=EXLUDED_CHOICES, attrs={'class': CUSTOM_SELECT_CLASS,
+                               widget=forms.Select(choices=EXLUDED_CHOICES, attrs={'class': FORM_CONTROL_CLASS,
                                                                                    'label_class': BADGE_SUCCESS_CLASS,
                                                                                    'id': 'excluded'}))
 

@@ -12,7 +12,6 @@ from slack_utils import get_channel_name
 BADGE_SUCCESS_CLASS = 'badge badge-default badge-success'
 BADGE_DARK_CLASS = 'badge badge-default badge-dark'
 DATE_PICKER_CLASS = 'form-control'
-CUSTOM_SELECT_CLASS = 'custom-select form-control input-lg'
 FORM_CONTROL_CLASS = 'form-control input-lg'
 MAX_ACTUAL_DATE = date.today().strftime('%Y-%m-%d')
 
@@ -58,16 +57,16 @@ class CreateMaDealsForm(forms.Form):
                                                                         'label_class': BADGE_DARK_CLASS,
                                                                         'id': 'expected_close_date'}))
     target_dividends = forms.FloatField(required=False, label="Target Dividends",
-                                        widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
+                                        widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                       'label_class': BADGE_SUCCESS_CLASS,
                                                                       'id': 'target_dividends', 'placeholder': '0.00'}))
     acquirer_dividends = forms.FloatField(required=False, label="Acquirer Dividends",
-                                          widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
+                                          widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                         'label_class': BADGE_SUCCESS_CLASS,
                                                                         'id': 'acquirer_dividends',
                                                                         'placeholder': '0.00'}))
     short_rebate = forms.FloatField(required=False, label="Short Rebate",
-                                    widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
+                                    widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                   'label_class': BADGE_SUCCESS_CLASS,
                                                                   'id': 'short_rebate', 'placeholder': '0.00'}))
     fx_carry_percent = forms.CharField(required=False, label="FX Carry %", max_length=10,
@@ -79,16 +78,16 @@ class CreateMaDealsForm(forms.Form):
                                                                     'label_class': BADGE_SUCCESS_CLASS,
                                                                     'id': 'stub_cvr_value', 'placeholder': '0.00'}))
     acquirer_upside = forms.FloatField(required=False, label="Acquirer Upside",
-                                       widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
+                                       widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                      'label_class': BADGE_SUCCESS_CLASS,
                                                                      'id': 'acquirer_upside', 'placeholder': '0.00'}))
     loss_tolerance_percentage_of_limit = forms.FloatField(required=False, label="Loss Tolerance % of Limit",
-                                                          widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
+                                                          widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                                         'label_class': BADGE_SUCCESS_CLASS,
                                                                                         'id': 'loss_tolerance_percentage_of_limit',
                                                                                         'placeholder': '10'}))
     risk_limit = forms.FloatField(required=True, label="Risk Limit",
-                                  widget=forms.TextInput(attrs={'class': CUSTOM_SELECT_CLASS,
+                                  widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                 'label_class': BADGE_SUCCESS_CLASS,
                                                                 'id': 'risk_limit'}))
     origination_date = forms.DateField(required=True, label="Origination Date",
@@ -97,7 +96,7 @@ class CreateMaDealsForm(forms.Form):
                                                                      'id': 'origination_date'}))
     position_in_acquirer = forms.CharField(label="Position in Acquirer",
                                            widget=forms.Select(choices=POSITION_ACQUIRER_CHOICES,
-                                                               attrs={'class': CUSTOM_SELECT_CLASS,
+                                                               attrs={'class': FORM_CONTROL_CLASS,
                                                                       'label_class': BADGE_SUCCESS_CLASS,
                                                                       'id': 'position_in_acquirer'}))
 

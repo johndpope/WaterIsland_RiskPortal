@@ -792,7 +792,7 @@
                 </div>
                 <br>
                 <fieldset class="form-group">
-                    <select id="ess_idea_version_number_select" class="custom-select">
+                    <select id="ess_idea_version_number_select" class="form-control">
                         <option selected value="N/A">Select a version to view</option>
                         {% for versions, timestamps in version_numbers %}
                             <option value="{{ versions }}">Version Number: {{ versions }} -> {{ timestamps }}
@@ -835,7 +835,7 @@
 
                                 </ul>
                                 <fieldset class="form-group position-relative">
-                                    <select class="custom-select form-control input-lg">
+                                    <select class="form-control input-lg">
                                         <option selected>No Overrides Applicable</option>
                                     </select>
                                 </fieldset>
@@ -905,7 +905,7 @@
                                 </ul>
 
                                 <fieldset class="form-group position-relative">
-                                    <select id='fperiod_override' class="custom-select form-control input-lg">
+                                    <select id='fperiod_override' class="form-control input-lg">
                                         <option>LTM</option>
                                         <option selected>1BF</option>
                                         <option>2BF</option>

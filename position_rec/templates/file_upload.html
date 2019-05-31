@@ -61,7 +61,11 @@ Position Reconciliation
                                     <tr id="row_{{ file_data.id }}">
                                         <td nowrap class="align-middle text-center">{{ file_data.uploaded_on }}</td>
                                         <td class="align-middle">{{ file_data.original_filename }}</td>
-                                        <td class="align-middle"><a href={{ file_data.position_rec_attachment.url }} target="_blank">{{ file_data.position_rec_attachment.url|slice:"0:50"|add:"..."  }}</a></td>
+                                        <td class="align-middle">
+                                            <a href={{ file_data.position_rec_attachment.url }}
+                                               target="_blank">{{ file_data.position_rec_attachment.url|slice:"0:50"|add:"..."  }}
+                                            </a>
+                                        </td>
                                         <td class="align-middle">{{ file_data.uploaded_by }}</td>
                                         <td class="align-middle">{{ file_data.description }}</td>
                                         <td>

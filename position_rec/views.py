@@ -1,9 +1,11 @@
 from datetime import datetime
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django.views.generic import ListView, FormView, CreateView
+from django.views.generic import FormView, TemplateView
+import pandas as pd
 
 from cleanup.models import DeleteFile
 from position_rec.forms import AccountFundPositionRecForm, PositionRecAttachmentsForm
@@ -124,4 +126,23 @@ def delete_ops_file(request):
             response = 'Error'
             print('ERROR', error)
     return HttpResponse(response)
-    
+
+
+class BreaksView(TemplateView):
+    template_name = 'view_breaks.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # import ipdb; ipdb.set_trace()
+        max_date = PositionRecAttachments.objects.latest('uploaded_on').uploaded_on
+        latest_file = None
+        latest_file_list = PositionRecAttachments.objects.filter(uploaded_on=max_date)
+        if latest_file_list.exists():
+            latest_file = latest_file_list.first()
+        if latest_file:
+            df = pd.read_excel(latest_file.position_rec_attachment.url, skiprows=7)
+            df = df[['Client ID', 'Business Date', 'Account Mnemonic', 'Account Number', 'Product Type',
+                     'Trade Date Quantity' ]]
+            json = df.to_json(orient='records')
+        context['data'] = json
+        return context
