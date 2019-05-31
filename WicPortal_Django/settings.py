@@ -134,6 +134,7 @@ INSTALLED_APPS = [
     'sales_reporting',
     'mna_deal',
     'etf',
+    'position_rec',
 ]
 
 MIDDLEWARE = [
