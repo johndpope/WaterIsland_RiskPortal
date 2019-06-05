@@ -288,7 +288,7 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
         for i in range(int(ticker_hedge_length)):
             # Store Ticker and Hedge Weight in a Dictionary
             p_ticker = ticker_hedge_mappings[i]['ticker'].upper()
-            p_ticker = p_ticker + " EQUITY" if "EQUITY" not in p_ticker else p_ticker
+            p_ticker = p_ticker + " EQUITY" if "EQUITY" not in p_ticker and "INDEX" not in p_ticker else p_ticker
             peer_tickers.append(p_ticker)
             peer_hedge_weights.append(ticker_hedge_mappings[i]['hedge'])
 
