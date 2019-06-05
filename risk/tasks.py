@@ -257,7 +257,8 @@ def premium_analysis_flagger():
 
     subject = '(Risk Automation) ESS IDEA Database Adjustments - ' + now_date
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-               recipients=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com','kkeung@wicfunds.com'],
+               recipients=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com', 'kkeung@wicfunds.com',
+                           'jhernandezdelapena@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
                EXPORTERS=exporters, dataframe=deal_change_log)
 
@@ -356,14 +357,17 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
 
     except Exception as e:
         print(e)
-        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
+        slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
+                      {'message': 'Your deal Addition failed because of following reasons:', 'errors': str(e)},
+                      channel='ess_idea_db_logs',
                       token=settings.SLACK_TOKEN,
                       name='ESS_IDEA_DB_ERROR_INSPECTOR')
         raise Exception
 
     slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
-                  {'errors': 'No Errors Detected...Your IDEA Was successfully added (alpha ticker)' + str(ticker)},
-                  channel='ess_idea_db_errors',
+                  {'message': 'Following ESS IDEA was successfully added: Alpha Ticker -> {0}'.format(str(ticker)),
+                   'errors': 'No Errors detected.'},
+                  channel='ess_idea_db_logs',
                   token=settings.SLACK_TOKEN,
                   name='ESS_IDEA_DB_ERROR_INSPECTOR')
     return 'Task Done'
@@ -872,7 +876,9 @@ def ess_idea_daily_update():
             print('Peers Updated....')
 
     except Exception as e:
-        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'errors': str(e)}, channel='ess_idea_db_errors',
+        slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
+                      {'message': 'Your deal Addition failed because of following reasons:', 'errors': str(e)},
+                      channel='ess_idea_db_logs',
                       token=settings.SLACK_TOKEN)
         print('Exception in Celery Task' + str(e))
         print(e)

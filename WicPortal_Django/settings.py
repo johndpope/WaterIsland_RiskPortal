@@ -93,7 +93,12 @@ CELERYBEAT_SCHEDULE = {
     'EMAIL_SALES_WEEKLY_REPORT': {
         'task': 'sales_reporting.tasks.email_weekly_sales_report',
         'schedule': crontab(minute="30", hour='9', day_of_week='mon'),
-    }
+    },
+    'REFRESH_ESS_LONG_SHORT_AND_IMPLIED_PROB': {
+        'task': 'portfolio_optimization.tasks.refresh_ess_long_shorts_and_implied_probability',
+        'schedule': crontab(minute="15", hour='8', day_of_week='mon-fri'),
+    },
+
 }
 
 BROKER_POOL_LIMIT = 0
@@ -135,6 +140,7 @@ INSTALLED_APPS = [
     'mna_deal',
     'etf',
     'position_rec',
+    'portfolio_optimization'
 ]
 
 MIDDLEWARE = [

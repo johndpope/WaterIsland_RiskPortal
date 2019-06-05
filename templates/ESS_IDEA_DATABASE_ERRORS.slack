@@ -1,7 +1,9 @@
 {% extends django_slack %}
 
 {% block text %}
-   Your deal Addition failed because of following reasons:
+   {{ message }}
 
    {{ errors }}
+
+   {{ table }}
 {% endblock %}

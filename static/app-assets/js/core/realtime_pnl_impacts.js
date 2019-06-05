@@ -311,7 +311,7 @@ $(document).ready(function () {
             "lengthChange": false,
             "paging": false,
             "language": {
-                "processing": "Refreshing PnL"
+                "processing": "Refreshing P&L ...."
             },
 
             "processing": true,
