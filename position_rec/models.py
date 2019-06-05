@@ -41,3 +41,17 @@ class PositionRecAttachments(models.Model):
 
     def filename(self):
         return self.original_filename
+
+
+class PositionRecBreak(models.Model):
+    third_party = models.CharField(max_length=255, null=True, blank=True)
+    fund = models.CharField(max_length=100, null=True, blank=True)
+    ticker = models.CharField(max_length=255, null=True, blank=True)
+    symbol = models.CharField(max_length=255, null=True, blank=True)
+    tradar_quantity = models.IntegerField(default=0)
+    trade_date_quantity = models.IntegerField(default=0)
+    account_no = models.CharField(max_length=255)
+    comments = models.CharField(max_length=255, null=True, blank=True)
+    is_resolved = models.BooleanField()
+    is_break = models.BooleanField()
+    number_of_days = models.IntegerField(default=0)

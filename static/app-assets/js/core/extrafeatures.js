@@ -31,11 +31,12 @@ $(document).ready(function () {
                 var news_sources = [];
 
                 for (var i = 0; i < news_data.articles.length; i++) {
-                    if (news_data.articles[i].urlToImage != null && news_data.articles[i].description != null) {
-                        $('<div class="carousel-item carousel-news-image center" ><img src="' + news_data.articles[i].urlToImage + ' " alt="NO IMAGE FOUND"><div class="carousel-caption"><h3><br>' + news_data.articles[i].title + '</h3>' +
-                            '<p>' + news_data.articles[i].description + '</p></div></div>').appendTo('.carousel-inner');
+                    var article = news_data.articles[i];
+                    if (article.urlToImage != null && article.description != null) {
+                        $('<div class="carousel-item carousel-news-image center" ><img src="' + article.urlToImage + ' " alt="NO IMAGE FOUND"><div class="carousel-caption"><h3><br>' + news_data.articles[i].title + '</h3>' +
+                            '<p>' + article.description + '</p><p><a href="' + article.url + '" target="_blank">Read More</a></p></div></div>').appendTo('.carousel-inner');
                         $('<li data-target="#carousel-interval" data-slide-to=' + i + '></li>').appendTo('.carousel-indicators');
-                        news_sources.push(news_data.articles[i].source.name.toString());
+                        news_sources.push(article.source.name.toString());
                     }
                     else {
                         continue;

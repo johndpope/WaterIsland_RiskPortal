@@ -316,6 +316,10 @@ MEDIA_URL = 'http://s3.amazonaws.com/{}/media/'.format(AWS_STORAGE_BUCKET_NAME)
 # Tell the staticfiles app to use S3Boto3 storage when writing the collected static files (when
 # you run `collectstatic`).
 
+# ******* SFTP GS CREDENTIALS *******
+SFTP_GS_USERNAME = env('SFTP_GS_USERNAME')
+SFTP_GS_PASSWORD = env('SFTP_GS_PASSWORD')
+SFTP_GS_HOST = env('SFTP_GS_HOST')
 
 if DEBUG == 'on':
     DEBUG = True

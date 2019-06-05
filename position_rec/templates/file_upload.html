@@ -50,7 +50,6 @@ Position Reconciliation
                                 <tr>
                                     <th>Date Uploaded</th>
                                     <th>File Name</th>
-                                    <th>File URL</th>
                                     <th>Uploaded By</th>
                                     <th>Description</th>
                                     <th>Options</th>
@@ -61,11 +60,6 @@ Position Reconciliation
                                     <tr id="row_{{ file_data.id }}">
                                         <td nowrap class="align-middle text-center">{{ file_data.uploaded_on }}</td>
                                         <td class="align-middle">{{ file_data.original_filename }}</td>
-                                        <td class="align-middle">
-                                            <a href={{ file_data.position_rec_attachment.url }}
-                                               target="_blank">{{ file_data.position_rec_attachment.url|slice:"0:50"|add:"..."  }}
-                                            </a>
-                                        </td>
                                         <td class="align-middle">{{ file_data.uploaded_by }}</td>
                                         <td class="align-middle">{{ file_data.description }}</td>
                                         <td>
@@ -76,6 +70,13 @@ Position Reconciliation
                                                     <i class="ft-settings"></i>
                                                 </button>
                                                 <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a id="download_file_data_{{ file_data.id }}"
+                                                           data-value="{{ file_data.id }}" class='dropdown-item'
+                                                           href="javascript:void(0)"
+                                                           onclick="window.location.href='{{ file_data.position_rec_attachment.url }}';">
+                                                                <i class="ft-save"></i> Download</a>
+                                                    </li>
                                                     <li><a id="delete_file_data_{{ file_data.id }}"
                                                         data-value="{{ file_data.id }}" class='dropdown-item'
                                                         href="#"><i class="ft-trash-2"></i> Delete</a></li>

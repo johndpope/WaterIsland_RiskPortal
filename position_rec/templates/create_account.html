@@ -71,9 +71,9 @@ Position Reconciliation
                                 <th>Date Updated</th>
                                 <th>Custodian</th>
                                 <th>Account Number</th>
-                                <th>Mnemonic</th>
-                                <th>Type</th>
                                 <th>Fund</th>
+                                <th>Custodian Mnemonic</th>
+                                <th>Account Type</th>
                                 <th>Excluded</th>
                                 <th>Options</th>
                             </tr>
@@ -84,9 +84,9 @@ Position Reconciliation
                                     <td nowrap class="align-middle text-center">{{ account.date_updated }}</td>
                                     <td class="align-middle">{{ account.third_party }}</td>
                                     <td class="align-middle">{{ account.account_no }}</td>
+                                    <td class="align-middle">{{ account.fund }}</td>
                                     <td class="align-middle">{{ account.mnemonic }}</td>
                                     <td class="align-middle">{{ account.type }}</td>
-                                    <td class="align-middle">{{ account.fund }}</td>
                                     <td class="align-middle">{{ account.excluded }}</td>
                                     <td>
                                         <div class="btn-group">

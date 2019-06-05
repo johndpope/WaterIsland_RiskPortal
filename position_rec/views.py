@@ -4,12 +4,13 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django.views.generic import FormView, TemplateView
+from django.views.generic import FormView, TemplateView, ListView
 import pandas as pd
 
+from position_rec import tradar_utils
 from cleanup.models import DeleteFile
 from position_rec.forms import AccountFundPositionRecForm, PositionRecAttachmentsForm
-from position_rec.models import AccountFundPositionRec, PositionRecAttachments
+from position_rec.models import AccountFundPositionRec, PositionRecAttachments, PositionRecBreak
 
 
 class AccountFundPositionRecView(FormView):
@@ -128,21 +129,32 @@ def delete_ops_file(request):
     return HttpResponse(response)
 
 
-class BreaksView(TemplateView):
+class BreaksView(ListView):
+    """
+    View for displaying breaks.
+    """
     template_name = 'view_breaks.html'
+    model = PositionRecBreak
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # import ipdb; ipdb.set_trace()
-        max_date = PositionRecAttachments.objects.latest('uploaded_on').uploaded_on
-        latest_file = None
-        latest_file_list = PositionRecAttachments.objects.filter(uploaded_on=max_date)
-        if latest_file_list.exists():
-            latest_file = latest_file_list.first()
-        if latest_file:
-            df = pd.read_excel(latest_file.position_rec_attachment.url, skiprows=7)
-            df = df[['Client ID', 'Business Date', 'Account Mnemonic', 'Account Number', 'Product Type',
-                     'Trade Date Quantity' ]]
-            json = df.to_json(orient='records')
-        context['data'] = json
+        query_set = PositionRecBreak.objects.filter(is_break=True, is_resolved=False)
+        context['object_list'] = query_set
         return context
+
+
+def edit_position_rec(request):
+    response = None
+    if request.method == 'POST':
+        try:
+            id_to_edit = request.POST.get('position_rec_to_edit_id')
+            position_rec_object = PositionRecBreak.objects.get(id=id_to_edit)
+            comments = request.POST.get('comments')
+            resolved = True if request.POST.get('resolved').lower() == 'yes' else False
+            position_rec_object.comments = comments
+            position_rec_object.is_resolved = resolved
+            position_rec_object.save()
+            response = 'Success'
+        except PositionRecBreak.DoesNotExist:
+            response = 'Failed'
+    return HttpResponse(response)
