@@ -3,7 +3,7 @@ $(document).ready(function () {
     $('#ess_idea_new_deal_situation_overview').summernote();
     $('#ess_idea_new_deal_company_overview').summernote();
     var ess_idea_table = $('#ess_idea_table').DataTable({
-        "order": [[ 15, "desc" ]],
+        "order": [[ 16, "desc" ]],
         "pageLength": 100,
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
             '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
@@ -17,7 +17,7 @@ $(document).ready(function () {
             }
         },
         initComplete: function () {
-            this.api().columns([0, 1, 2, 3, 4, 10, 17]).every(function () {
+            this.api().columns([0, 1, 2, 3, 4, 5, 17]).every(function () {
                 var column = this;
                 $(column.header()).append("<br>");
                 var select = $('<select class="custom-select" ><option value=""></option></select>')
@@ -38,44 +38,30 @@ $(document).ready(function () {
             });
         },
         columnDefs: [{
-            targets: [9, 10], render: function (data)
+            targets: [10, 11], render: function (data)
             {
                 return moment(data).format('YYYY-MM-DD');
             }
         },
         {
-            targets: [6, 7, 8], render: function (data)
+            targets: [7, 8, 9], render: function (data)
             {
                 return parseFloat(data).toFixed(2);
             }
         },
         {
-            targets: [5], render: function(data)
+            targets: [6], render: function(data)
             {
                 return Number(data).toFixed(2);
             }
-        }],
+        },
+         { "width": "10px", "targets": 4 },],
         buttons: {
             buttons: [{
-                extend: 'print',
-                text: '<i class="fa fa-print"></i> Print',
-                title: '',
-                exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-                },
-                customize: function (win) {
-                    $(win.document.body)
-                        .css('font-size', '10pt')
-                        .prepend(
-                            '<p> Water Island Capital, Risk Portal - ESS IDEA Database</p>'
-                        );
-                },
-
-            }, {
                 extend: 'copy',
                 text: '<i class="fa fa-copy"></i> Copy',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ,18]
                 },
             }],
             dom: {

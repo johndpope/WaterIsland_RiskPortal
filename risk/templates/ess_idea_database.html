@@ -924,6 +924,7 @@
                                         <tr>
                                             <th>Alpha<br>Ticker</th>
                                             <th>Category</th>
+                                            <th>Deal Type</th>
                                             <th>Catalyst</th>
                                             <th>Catalyst<br>(Tier)</th>
                                             <th>GICSSector</th>
@@ -935,7 +936,7 @@
                                             <th>Expected<br>Close</th>
                                             <th>Gross(%)</th>
                                             <th>Ann.(%)</th>
-                                            <th>Hedged Vol.</th>
+                                            <th>Hedged <br>Vol.</th>
                                             <th>Sharpe</th>
                                             <th>Implied<br>Prob(%)</th>
                                             <th>Event<br>Premium(%)</th>
@@ -950,6 +951,7 @@
                                                 data-value="{{ row.needs_downside_attention }}">
                                                 <td>{{ row.alpha_ticker }}</td>
                                                 <td>{{ row.category }}</td>
+                                                <td>{{ row.deal_type }}</td>
                                                 <td>{{ row.catalyst }}</td>
                                                 <td>{{ row.catalyst_tier }}</td>
                                                 <td>{{ row.gics_sector }}</td>
