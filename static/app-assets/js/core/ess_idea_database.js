@@ -17,7 +17,7 @@ $(document).ready(function () {
             }
         },
         initComplete: function () {
-            this.api().columns([0, 1, 2, 3, 4, 5, 17]).every(function () {
+            this.api().columns([0, 1, 2, 3, 4, 5, 18]).every(function () {
                 var column = this;
                 $(column.header()).append("<br>");
                 var select = $('<select class="custom-select" ><option value=""></option></select>')
