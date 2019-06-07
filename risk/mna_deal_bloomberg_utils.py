@@ -65,6 +65,15 @@ def get_data_from_bloombery_using_action_id(action_id_list):
     return result
 
 
+def get_data_from_bloomberg_by_bg_id(bloomberg_id_list, field_list):
+    for bloomberg_id in bloomberg_id_list:
+        bloomberg_id_list.remove(bloomberg_id)
+        bloomberg_id = bloomberg_id.strip()
+        bloomberg_id_list.append(bloomberg_id)
+    result = bbgclient.get_secid2field(bloomberg_id_list, 'tickers', field_list, req_type='refdata')
+    return result
+
+
 def save_bloomberg_data_to_table(result, ma_deals_list):
     columns = list(BLOOMBERG_MAPPING.keys())
     unique_ma_deals = set()

@@ -17,8 +17,10 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 from email_utilities import send_email
+from risk.mna_deal_bloomberg_utils import get_data_from_bloomberg_by_bg_id
 from realtime_pnl_impacts import views
-from risk_reporting.models import DailyNAVImpacts, PositionLevelNAVImpacts, FormulaeBasedDownsides
+from risk_reporting.models import (CreditDealsUpsideDownside, DailyNAVImpacts, PositionLevelNAVImpacts,
+    FormulaeBasedDownsides)
 from slack_utils import get_channel_name
 
 
@@ -1315,3 +1317,65 @@ def sort_by_sleeve(given_df, sleeve_column):
     given_df['Sleeve'] = pd.Categorical(given_df['Sleeve'], sleeve_sorting)
     given_df = given_df.sort_values(by=['Sleeve'])
     return given_df
+
+
+@shared_task
+def refresh_credit_deals_upside_downside():
+    try:
+        credit_deals_df = pd.DataFrame.from_records(CreditDealsUpsideDownside.objects.all().values())
+        formuale_df = pd.DataFrame.from_records(FormulaeBasedDownsides.objects.all().values('Underlying', 'outlier', 'DealValue'))
+        spread_index_list = credit_deals_df[credit_deals_df['upside_type'] == 'Calculate from SIX']['spread_index'].tolist()
+        bloomberg_id_list = credit_deals_df['bloomberg_id'].tolist()
+        ticker_bbg_id_list = list(spread_index_list + bloomberg_id_list)
+        fields = ['PX_LAST']
+        result = get_data_from_bloomberg_by_bg_id(ticker_bbg_id_list, fields)
+        credit_deals_df['last_price'] = credit_deals_df['bloomberg_id'].map(result)
+        credit_deals_df['last_price'] = credit_deals_df['last_price'].apply(get_px_last_value)
+        credit_deals_df['last_price'] = credit_deals_df['last_price'].fillna(0.0)
+        credit_deals_df['spread_px_last'] = credit_deals_df['spread_index'].map(result)
+        credit_deals_df['spread_px_last'] = credit_deals_df['spread_px_last'].apply(get_px_last_value)
+        credit_deals_df['spread_px_last'] = credit_deals_df['spread_px_last'].fillna(0.0)
+        credit_deals_df['equity_ticker'] = credit_deals_df.apply(lambda row: row['ticker'] + ' EQUITY' if 'equity' not in \
+                                                                row['ticker'].lower() else row['ticker'].upper(), axis=1)
+        credit_deals_df = pd.merge(credit_deals_df, formuale_df, left_on='equity_ticker', right_on='Underlying', how='left')
+
+        credit_deals_df['upside'] = credit_deals_df.apply(lambda row: float(row['last_price']) + \
+                                                        float(row['spread_px_last']) if row['upside_type'] == \
+                                                        'Calculate from SIX' else row['upside'], axis=1)
+        credit_deals_df['upside'] = credit_deals_df.apply(lambda row: float(row['last_price']) if row['upside_type'] == \
+                                                        'Last Price' else row['upside'], axis=1)
+        credit_deals_df['upside'] = credit_deals_df.apply(lambda row: row['DealValue'] if row['upside_type'] == \
+                                                        'Match ARB' else row['upside'], axis=1)
+
+        credit_deals_df['downside'] = credit_deals_df.apply(lambda row: float(row['last_price']) if row['downside_type'] ==\
+                                                            'Last Price' else row['downside'], axis=1)
+        credit_deals_df['downside'] = credit_deals_df.apply(lambda row: row['outlier'] if row['downside_type'] == \
+                                                            'Match ARB' else row['downside'], axis=1)
+        credit_deals_df['deal_value'] = credit_deals_df.apply(lambda row: row['DealValue'] if row['downside_type'] == \
+                                                            'Match ARB' or row['upside_type'] == 'Match ARB' else \
+                                                            row['deal_value'], axis=1)
+
+        credit_deals_df['last_updated'] = datetime.datetime.now()
+        credit_deals_df.drop(columns=['equity_ticker', 'spread_px_last', 'Underlying', 'outlier', 'DealValue'], inplace=True)
+        CreditDealsUpsideDownside.objects.all().delete()
+        time.sleep(3)
+        engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD +
+                            "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
+        con = engine.connect()
+        credit_deals_df.to_sql(con=con, name='risk_reporting_creditdealsupsidedownside', schema=settings.CURRENT_DATABASE,
+                            if_exists='append', chunksize=10000, index=False)
+        con.close()
+    except Exception as e:
+        print('Credit Deals Upside/Downside Update failed', e)
+        slack_message('generic.slack',
+                      {'message': 'ERROR: CREDIT DEALS UPSIDE/DOWNSIDE REFRESH' + str(e)},
+                      channel=get_channel_name('realtimenavimpacts'),
+                      token=settings.SLACK_TOKEN,
+                      name='ESS_IDEA_DB_ERROR_INSPECTOR')
+
+
+def get_px_last_value(value):
+    try:
+        return value['PX_LAST'][0]
+    except Exception as e:
+        return value

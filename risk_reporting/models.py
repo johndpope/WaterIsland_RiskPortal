@@ -117,7 +117,7 @@ class CreditDealsUpsideDownside(models.Model):
     ticker = models.CharField(max_length=100, null=True)
     analyst = models.CharField(max_length=20, null=True)
     origination_date = models.DateField(null=True)
-    last_update = models.DateField(null=True)
+    last_updated = models.DateTimeField(null=True)
     spread_index = models.CharField(max_length=50, null=True)
     deal_value = models.FloatField(null=True, blank=True)
     last_price = models.FloatField(null=True, blank=True)
@@ -129,6 +129,7 @@ class CreditDealsUpsideDownside(models.Model):
     upside_type = models.CharField(max_length=50, null=True)
     upside = models.CharField(max_length=50, null=True, blank=True)
     upside_notes = models.TextField(null=True)
+    bloomberg_id = models.CharField(max_length=50, null=True, blank=True)
 
 
 class PositionLevelNAVImpacts(models.Model):

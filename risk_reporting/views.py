@@ -426,6 +426,14 @@ class CreditDealsUpsideDownsideView(ListView):
     model = CreditDealsUpsideDownside
     queryset = CreditDealsUpsideDownside.objects.all()
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context['as_of'] = CreditDealsUpsideDownside.objects.all().latest('last_updated').last_updated
+        except CreditDealsUpsideDownside.DoesNotExist:
+            context['as_of'] = 'Unknown'
+        return context
+
 
 def update_credit_deals_upside_downside(request):
     """ View to Update the Upside/Downside for Credit Deals """
