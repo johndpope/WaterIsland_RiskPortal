@@ -137,7 +137,7 @@ def create_note(request):
                 if file_urls:
                     content += "<p><strong>Attachment URLs:</strong> {file_urls}</p>".format(file_urls=file_urls)
 
-                subject = '(Risk Automation) Note Created for {tickers} ({date})'.format(tickers=tickers, date=date)
+                subject = '{tickers} : {title} :- Note Created {date}'.format(tickers=tickers, title=title, date=date)
                 html = """ \
                         <html>
                             <head>
