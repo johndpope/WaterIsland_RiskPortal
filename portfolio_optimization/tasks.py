@@ -188,7 +188,7 @@ def refresh_ess_long_shorts_and_implied_probability():
         slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                       {'message': message,
                        'table': tabulate(final_implied_probability_df, headers='keys', tablefmt='pssql',
-                                         numalign='right')},
+                                         numalign='right', showindex=False)},
                       channel=get_channel_name('ess_idea_db_logs'))
 
     except Exception as e:
