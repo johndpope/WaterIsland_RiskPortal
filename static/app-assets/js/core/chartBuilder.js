@@ -164,8 +164,8 @@ function createLineChartConfigs(tradegroupOverallDP, datasets, graphs, title, y_
 
         "export":
             {
-                "enabled":
-                    true
+                "enabled": true,
+                "exportSelection": true
             },
 
     }

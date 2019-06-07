@@ -76,9 +76,10 @@
         <script src="https://www.amcharts.com/lib/3/amcharts.js"></script>
         <script src="https://www.amcharts.com/lib/3/serial.js"></script>
         <script src="https://www.amcharts.com/lib/3/themes/black.js"></script>
-        <script src="//www.amcharts.com/lib/3/themes/light.js"></script>
-        <script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
+        <script src="https://www.amcharts.com/lib/3/themes/light.js"></script>
         <script type="text/javascript" src="http://www.amcharts.com/lib/3/amstock.js"></script>
+        <script src="https://www.amcharts.com/lib/3/plugins/export/export.min.js"></script>
+
         <link rel="stylesheet" href="https://www.amcharts.com/lib/3/plugins/export/export.css" type="text/css"
               media="all"/>
     {% endblock %}
@@ -371,6 +372,8 @@
                         <li><a class="menu-item" href="{% url 'portfolio_optimization:ess_target_configs' %}">ESS Optimization Parameters</a>
                         </li>
                         <li><a class="menu-item" href="{% url 'portfolio_optimization:ess_potential_long_shorts' %}">ESS Long/Short</a>
+                        </li>
+                         <li><a class="menu-item" href="{% url 'portfolio_optimization:ess_implied_probabilites' %}">ESS Implied Prob.</a>
                         </li>
 
                     </ul>

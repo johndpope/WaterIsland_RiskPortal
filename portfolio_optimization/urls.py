@@ -11,5 +11,7 @@ urlpatterns = [
         name='update_soft_catalyst_risk_sizing'),
     url('ess_potential_long_shorts', views.ess_potential_long_shorts,
         name='ess_potential_long_shorts'),
+    url('ess_implied_probabilites$', views.ess_implied_probabilites,
+        name='ess_implied_probabilites'),
 
 ]

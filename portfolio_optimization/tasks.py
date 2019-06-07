@@ -1,11 +1,14 @@
 import os
 import datetime
+import time
 import numpy as np
 import pandas as pd
 from tabulate import tabulate
+import bbgclient
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 import django
 django.setup()
+from risk.models import ESS_Idea
 from celery import shared_task
 from sqlalchemy import create_engine
 from django.conf import settings
@@ -97,14 +100,77 @@ def refresh_ess_long_shorts_and_implied_probability():
                      'Potential Long': 'potential_long', 'Potential Short': 'potential_short'})
         x.to_sql(con=con, if_exists='append', schema=settings.CURRENT_DATABASE,
                  name='portfolio_optimization_esspotentiallongshorts', index=False)
-
+        time.sleep(2)
         avg_imp_prob = x[['deal_type', 'implied_probability']].groupby('deal_type').agg('mean').reset_index()
         avg_imp_prob.loc[len(avg_imp_prob)] = ['Soft Universe Imp. Prob',
                                                x[x['catalyst'] == 'Soft']['implied_probability'].mean()]
 
         avg_imp_prob['Date'] = today
-        avg_imp_prob.to_sql(index=False, name='portfolio_optimization_essuniverseimpliedprobability',
-                            schema=settings.CURRENT_DATABASE, con=con, if_exists='append')
+        # --------------- SECTION FOR Tracking Univese, TAQ, AED Long/Short Implied Probabilities ---------------------
+        query = "SELECT DISTINCT flat_file_as_of as `Date`, TradeGroup, Fund, Ticker, "\
+                "LongShort, SecType, DealUpside, DealDownside "\
+                "FROM wic.daily_flat_file_db  "\
+                "WHERE Flat_file_as_of = (SELECT MAX(flat_file_as_of) from wic.daily_flat_file_db) AND Fund  "\
+                "IN ('AED', 'TAQ') and AlphaHedge = 'Alpha' AND  "\
+                "LongShort IN ('Long', 'Short') AND SecType = 'EQ' "\
+                "AND Sleeve = 'Equity Special Situations' and amount<>0"\
+
+        api_host = bbgclient.bbgclient.get_next_available_host()
+        imp_prob_tracker_df = pd.read_sql_query(query, con=con)
+        imp_prob_tracker_df['Ticker'] = imp_prob_tracker_df['Ticker'] + ' EQUITY'
+        ess_tickers = imp_prob_tracker_df['Ticker'].unique()
+
+        live_price_df = pd.DataFrame.from_dict(bbgclient.bbgclient.get_secid2field(ess_tickers, 'tickers',
+                                                                                   ['CRNCY_ADJ_PX_LAST'],
+                                                                                   req_type='refdata',
+                                                                                   api_host=api_host),
+                                               orient='index').reset_index()
+        live_price_df.columns = ['Ticker', 'Price']
+        live_price_df['Price'] = live_price_df['Price'].apply(lambda px: float(px[0]) if px[0] else 0)
+        imp_prob_tracker_df = pd.merge(imp_prob_tracker_df, live_price_df, how='left', on='Ticker')
+        imp_prob_tracker_df['implied_probability'] = 1e2*(imp_prob_tracker_df['Price'] - imp_prob_tracker_df['DealDownside'])/(imp_prob_tracker_df['DealUpside'] - imp_prob_tracker_df['DealDownside'])
+
+        imp_prob_tracker_df.replace([np.inf, -np.inf], np.nan, inplace=True)  #Replace Inf values
+        grouped_funds_imp_prob = imp_prob_tracker_df[['Date', 'Fund', 'LongShort', 'implied_probability']].\
+            groupby(['Date', 'Fund', 'LongShort']).mean().reset_index()
+
+        grouped_funds_imp_prob['deal_type'] = grouped_funds_imp_prob['Fund'] + " " + grouped_funds_imp_prob['LongShort']
+        grouped_funds_imp_prob = grouped_funds_imp_prob[['Date', 'deal_type', 'implied_probability']]
+
+        # --------------- POTENTIAL LONG SHORT LEVEL IMPLIED PROBABILITY TRACKING --------------------------------------
+
+        ess_potential_ls_df = pd.read_sql_query("SELECT * FROM "
+                                                "prod_wic_db.portfolio_optimization_esspotentiallongshorts", con=con)
+
+        ess_potential_ls_df = ess_potential_ls_df[['alpha_ticker', 'price', 'implied_probability',
+                                                   'potential_long', 'potential_short']]
+
+        def classify_ess_longshorts(row):
+            classification = 'Universe (Unclassified)'
+            if row['potential_long'] == 'Y':
+                classification = 'Universe (Long)'
+            if row['potential_short'] == 'Y':
+                classification = 'Universe (Short)'
+
+            return classification
+
+        ess_potential_ls_df['LongShort'] = ess_potential_ls_df.apply(classify_ess_longshorts, axis=1)
+        universe_long_short_implied_probabilities_df = ess_potential_ls_df[['LongShort',
+                                                                            'implied_probability']].\
+            groupby('LongShort').mean().reset_index()
+
+        universe_long_short_implied_probabilities_df['Date'] = today
+        universe_long_short_implied_probabilities_df = universe_long_short_implied_probabilities_df.\
+            rename(columns = {'LongShort': 'deal_type'})
+
+        universe_long_short_implied_probabilities_df = universe_long_short_implied_probabilities_df[
+            ['Date', 'deal_type', 'implied_probability']]
+
+        final_implied_probability_df = pd.concat([avg_imp_prob, universe_long_short_implied_probabilities_df,
+                                                 grouped_funds_imp_prob])
+
+        final_implied_probability_df.to_sql(index=False, name='portfolio_optimization_essuniverseimpliedprobability',
+                                            schema=settings.CURRENT_DATABASE, con=con, if_exists='append')
 
         print('refresh_ess_long_shorts_and_implied_probability : Task Done')
 
@@ -114,17 +180,17 @@ def refresh_ess_long_shorts_and_implied_probability():
 
         # Post this Update to Slack
         # Format avg_imp_prob
-        avg_imp_prob = avg_imp_prob[['deal_type', 'implied_probability']]
-        avg_imp_prob['implied_probability'] = avg_imp_prob['implied_probability'].apply(lambda ip:
+        final_implied_probability_df = final_implied_probability_df[['deal_type', 'implied_probability']]
+        final_implied_probability_df['implied_probability'] = final_implied_probability_df['implied_probability'].apply(lambda ip:
                                                                                         str(np.round(ip, decimals=2))
                                                                                         + " %")
-        avg_imp_prob.columns = ['Deal Type', 'Implied Probability']
-
+        final_implied_probability_df.columns = ['Deal Type', 'Implied Probability']
         slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                       {'message': message,
-                       'table': tabulate(avg_imp_prob, headers='keys', tablefmt='pssql', numalign='right')},
-                      channel=get_channel_name('ess_idea_db_logs'),
-                      token=settings.SLACK_TOKEN)
+                       'table': tabulate(final_implied_probability_df, headers='keys', tablefmt='pssql',
+                                         numalign='right')},
+                      channel=get_channel_name('ess_idea_db_logs'))
+
     except Exception as e:
         print('Error in ESS Potential Long Short Tasks ... ' + str(e))
     finally:
