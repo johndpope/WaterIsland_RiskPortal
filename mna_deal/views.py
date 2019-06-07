@@ -9,6 +9,7 @@ from bbgclient import bbgclient
 from mna_deal.forms import CreateMaDealsForm
 from risk.models import MA_Deals
 from risk_reporting.models import FormulaeBasedDownsides
+from slack_utils import get_channel_name
 
 
 API_HOST = bbgclient.get_next_available_host()
@@ -103,7 +104,7 @@ class CreateMaDealsView(FormView):
                       'stub_cvr_value': stub_cvr_value, 'acquirer_upside': acquirer_upside,
                       'loss_tolerance_percentage_of_limit': loss_tolerance_percentage_of_limit, 'risk_limit': risk_limit,
                       'position_in_acquirer': position_in_acquirer},
-                    channel='new-mna-deals',
+                    channel=get_channel_name('new-mna-deals'),
                     token=settings.SLACK_TOKEN,
                     name='ESS_IDEA_DB_ERROR_INSPECTOR')
         return super(CreateMaDealsView, self).form_valid(form)

@@ -19,6 +19,7 @@ from sqlalchemy import create_engine
 from email_utilities import send_email
 from realtime_pnl_impacts import views
 from risk_reporting.models import DailyNAVImpacts, PositionLevelNAVImpacts, FormulaeBasedDownsides
+from slack_utils import get_channel_name
 
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
@@ -206,9 +207,6 @@ def refresh_base_case_and_outlier_downsides():
         old_formulaes.to_sql(name='risk_reporting_formulaebaseddownsides', con=con, if_exists='append', index=False,
                              schema=settings.CURRENT_DATABASE)
         print('Restored Downside formulae state to previous...!')
-        # Post to Slack
-        slack_message('navinspector.slack',
-                      {'impacts': 'While Refreshing Impacts: ' + str(e)})
 
     try:
         api_host = bbgclient.bbgclient.get_next_available_host()
@@ -371,7 +369,7 @@ def refresh_base_case_and_outlier_downsides():
         exc_type, exc_obj, exc_tb = sys.exc_info()
         slack_message('generic.slack',
                       {'message': 'ERROR: ' + str(e) + ' : ' + str(exc_type) + ' : ' + str(exc_tb.tb_lineno)},
-                      channel='realtimenavimpacts',
+                      channel=get_channel_name('realtimenavimpacts'),
                       token=settings.SLACK_TOKEN,
                       name='ESS_IDEA_DB_ERROR_INSPECTOR')
 

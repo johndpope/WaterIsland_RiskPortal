@@ -25,6 +25,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from celery_progress.backend import ProgressRecorder
 from .ess_idea_db_utilities import add_new_deal, add_new_deal_alpha_only, add_new_deal_with_lock
 from email_utilities import send_email
+from slack_utils import get_channel_name
 
 
 @shared_task
@@ -359,7 +360,7 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
         print(e)
         slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                       {'message': 'Your deal Addition failed because of following reasons:', 'errors': str(e)},
-                      channel='ess_idea_db_logs',
+                      channel=get_channel_name('ess_idea_db_logs'),
                       token=settings.SLACK_TOKEN,
                       name='ESS_IDEA_DB_ERROR_INSPECTOR')
         raise Exception
@@ -367,7 +368,7 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
     slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                   {'message': 'Following ESS IDEA was successfully added: Alpha Ticker -> {0}'.format(str(ticker)),
                    'errors': 'No Errors detected.'},
-                  channel='ess_idea_db_logs',
+                  channel=get_channel_name('ess_idea_db_logs'),
                   token=settings.SLACK_TOKEN,
                   name='ESS_IDEA_DB_ERROR_INSPECTOR')
     return 'Task Done'
@@ -878,7 +879,7 @@ def ess_idea_daily_update():
     except Exception as e:
         slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                       {'message': 'Your deal Addition failed because of following reasons:', 'errors': str(e)},
-                      channel='ess_idea_db_logs',
+                      channel=get_channel_name('ess_idea_db_logs'),
                       token=settings.SLACK_TOKEN)
         print('Exception in Celery Task' + str(e))
         print(e)

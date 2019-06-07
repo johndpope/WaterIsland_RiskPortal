@@ -111,6 +111,26 @@ class FormulaeBasedDownsides(models.Model):
     outlier_notes = models.TextField(null=True)
 
 
+class CreditDealsUpsideDownside(models.Model):
+    id = models.IntegerField(primary_key=True,unique=True)
+    tradegroup = models.CharField(max_length=100, null=True)
+    ticker = models.CharField(max_length=100, null=True)
+    analyst = models.CharField(max_length=20, null=True)
+    origination_date = models.DateField(null=True)
+    last_update = models.DateField(null=True)
+    spread_index = models.CharField(max_length=50, null=True)
+    deal_value = models.FloatField(null=True, blank=True)
+    last_price = models.FloatField(null=True, blank=True)
+    is_excluded = models.CharField(max_length=22, default='No')
+    risk_limit = models.FloatField(null=True, blank=True)
+    downside_type = models.CharField(max_length=50, null=True)
+    downside = models.CharField(max_length=50, null=True, blank=True)
+    downside_notes = models.TextField(null=True)
+    upside_type = models.CharField(max_length=50, null=True)
+    upside = models.CharField(max_length=50, null=True, blank=True)
+    upside_notes = models.TextField(null=True)
+
+
 class PositionLevelNAVImpacts(models.Model):
     TradeGroup = models.CharField(max_length=300)
     Ticker = models.CharField(max_length=200)

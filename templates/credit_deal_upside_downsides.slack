@@ -1,0 +1,10 @@
+{% extends django_slack %}
+
+{% block text %}
+    CREDIT DEAL UPSIDE/DOWNSIDE UPDATE
+    Updated By: {{ IP }}
+    Downside Updated for  {{ updated_deal }}
+    Ticker: {{ ticker }}
+    Downside: {{ downside }}
+    Upside: {{ upside }}
+{% endblock %}

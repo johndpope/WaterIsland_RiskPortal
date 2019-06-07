@@ -1,21 +1,20 @@
-"""
-Module contains Functions and Views to support Risk Reporting Functionality on the Portal
-"""
 import datetime
+import json
+
 import pandas as pd
 import numpy as np
-import json
-from ipware import get_client_ip
-from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
-from django.db import connection
-from .models import ArbNAVImpacts, DailyNAVImpacts, FormulaeBasedDownsides, PositionLevelNAVImpacts
 from django.conf import settings
-from django_slack import slack_message
+from django.db import close_old_connections, connection
 from django.db.models import Max
-from django.db import close_old_connections
-import workstation_mapper
-# Following NAV Impacts Utilities
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
+from django_slack import slack_message
+from django.views.generic import ListView
+
+import bbgclient
+from risk_reporting.models import (ArbNAVImpacts, CreditDealsUpsideDownside, DailyNAVImpacts, FormulaeBasedDownsides,
+    PositionLevelNAVImpacts)
+from slack_utils import get_channel_name, get_ip_addr
 
 
 def calculate_pl_base_case(row):
@@ -320,20 +319,13 @@ def update_risk_limit(request):
                 deals.RiskLimit = risk_limit
                 deals.save()
             response = 'Success'
-            client_ip, is_routable = get_client_ip(request)
-            if client_ip is None:
-                ip_addr = 'NA'
-            else:
-                ip_addr = client_ip
-            try:
-                ip_addr = workstation_mapper.ip_mapper[ip_addr]
-            except KeyError:
-                ip_addr = client_ip
+
+            ip_addr = get_ip_addr(request)
             slack_message('portal_risk_limit_update.slack',
-                         {'updated_deal': str(obj.TradeGroup),
+                          {'updated_deal': str(obj.TradeGroup),
                           'risk_limit': str(old_risk_limit) + " -> " + str(risk_limit),
                           'IP': str(ip_addr)},
-                          channel='portal_downsides',
+                          channel=get_channel_name('portal_downsides'),
                           token=settings.SLACK_TOKEN,
                           name='PORTAL DOWNSIDE UPDATE AGENT')
         except FormulaeBasedDownsides.DoesNotExist:
@@ -411,24 +403,15 @@ def update_downside_formulae(request):
                 obj.LastUpdate = datetime.datetime.now()
                 obj.save()
                 response = 'Success'
-                client_ip, is_routable = get_client_ip(request)
-                if client_ip is None:
-                    ip_addr = 'NA'
-                else:
-                    ip_addr = client_ip
 
-                try:
-                    ip_addr = workstation_mapper.ip_mapper[ip_addr]
-                except KeyError:
-                    ip_addr = client_ip
-
+                ip_addr = get_ip_addr(request)
                 slack_message('portal_downsides.slack',
                             {'updated_deal': str(obj.TradeGroup),
                             'underlying_security': obj.Underlying,
                             'base_case': str(old_base_case_downside) + " -> " + str(obj.base_case),
                             'outlier': str(old_outlier) + " -> " + str(obj.outlier),
                             'IP': str(ip_addr)},
-                            channel='portal_downsides',
+                            channel=get_channel_name('portal_downsides'),
                             token=settings.SLACK_TOKEN,
                             name='PORTAL DOWNSIDE UPDATE AGENT')
             except Exception as e:
@@ -436,3 +419,137 @@ def update_downside_formulae(request):
                 response = 'Failed'
 
     return HttpResponse(response)
+
+
+class CreditDealsUpsideDownsideView(ListView):
+    template_name = 'credit_deals_upside_downside.html'
+    model = CreditDealsUpsideDownside
+    queryset = CreditDealsUpsideDownside.objects.all()
+
+
+def update_credit_deals_upside_downside(request):
+    """ View to Update the Upside/Downside for Credit Deals """
+    # Only process POST requests
+    response = 'Failed'
+    if request.method == 'POST':
+        if request.POST.get('update_risk_limit') == 'true':
+            risk_limit = request.POST.get('risk_limit')
+            row_id = request.POST.get('id')
+            try:
+                obj = CreditDealsUpsideDownside.objects.get(id=row_id)
+                original_risk_limit = obj.risk_limit
+                if str(original_risk_limit) != str(risk_limit):
+                    return JsonResponse({'msg': 'Risk Limit Different', 'original_risk_limit': original_risk_limit})
+                else:
+                    response = 'Risk Limit Same'
+            except CreditDealsUpsideDownside.DoesNotExist:
+                response = 'Failed'
+        else:
+            try:
+                row_id = request.POST['id']
+                spread_index = request.POST['spread_index']
+                is_excluded = request.POST['is_excluded']
+                downside_type = request.POST['downside_type']
+                downside = request.POST['downside'] or None
+                downside_notes = request.POST['downside_notes']
+                upside_type = request.POST['upside_type']
+                upside = request.POST['upside'] or None
+                upside_notes = request.POST['upside_notes']
+
+                obj = CreditDealsUpsideDownside.objects.get(id=row_id)
+                old_downside = obj.downside
+                old_upside = obj.upside
+                obj.spread_index = spread_index
+                obj.is_excluded = is_excluded
+                obj.downside_type = downside_type
+                obj.downside = downside
+                obj.downside_notes = downside_notes
+                obj.upside_type = upside_type
+                obj.upside = upside
+                obj.upside_notes = upside_notes
+                obj.last_update = datetime.datetime.now().date()
+                obj.save()
+                response = 'Success'
+
+                ip_addr = get_ip_addr(request)
+                slack_message('credit_deal_upside_downsides.slack',
+                            {'updated_deal': str(obj.tradegroup),
+                            'ticker': obj.ticker,
+                            'downside': str(old_downside) + " -> " + str(obj.downside),
+                            'upside': str(old_upside) + " -> " + str(obj.upside),
+                            'IP': str(ip_addr)},
+                            channel=get_channel_name('portal_downsides_test'),
+                            token=settings.SLACK_TOKEN,
+                            name='PORTAL DOWNSIDE UPDATE AGENT')
+            except Exception as e:
+                print(e)
+                response = 'Failed'
+
+    return HttpResponse(response)
+
+
+def update_credit_deal_risk_limit(request):
+    """
+    View for updating risk limit for Credit Deal Upside/Downside
+    """
+    if request.method == 'POST':
+        risk_limit = request.POST.get('risk_limit')
+        row_id = request.POST.get('id')
+        try:
+            obj = CreditDealsUpsideDownside.objects.get(id=row_id)
+            old_risk_limit = obj.risk_limit
+            obj.risk_limit = risk_limit
+            obj.save()
+            response = 'Success'
+            ip_addr = get_ip_addr(request)
+            slack_message('portal_risk_limit_update.slack',
+                         {'updated_deal': str(obj.tradegroup),
+                          'risk_limit': str(old_risk_limit) + " -> " + str(risk_limit),
+                          'IP': str(ip_addr)},
+                          channel=get_channel_name('portal_downsides'),
+                          token=settings.SLACK_TOKEN,
+                          name='PORTAL DOWNSIDE UPDATE AGENT')
+        except FormulaeBasedDownsides.DoesNotExist:
+            response = 'Failed'
+    return HttpResponse(response)
+
+
+def get_details_from_arb(request):
+    response = {'msg': 'Failed'}
+    if request.method == 'POST':
+        try:
+            ticker = request.POST.get('ticker')
+            if 'equity' not in ticker.lower():
+                ticker = ticker.upper() + ' EQUITY'
+            object_list = FormulaeBasedDownsides.objects.filter(Underlying=ticker)
+            if object_list:
+                obj = object_list.first()
+                deal_value = obj.DealValue
+                outlier = obj.outlier
+                return JsonResponse({'msg': 'Success', 'deal_value': deal_value, 'outlier': outlier})
+            return JsonResponse({'msg': 'Not Found'})
+        except Exception as e:
+            return JsonResponse(response)   
+    return JsonResponse(response)
+
+
+def fetch_from_bloomberg_by_spread_index(request):
+    """
+    Fetch data from Bloomberg API by using Spread Index
+    """
+    response = {'msg': 'Failed'}
+    if request.method == 'POST':
+        spread_index = request.POST.get('spread_index')
+        if spread_index:
+            try:
+                api_host = bbgclient.bbgclient.get_next_available_host()
+                data = bbgclient.bbgclient.get_secid2field([spread_index], 'tickers', ['PX_LAST'],
+                                                           req_type='refdata', api_host=api_host)
+                if data and data.get(spread_index) and data.get(spread_index).get('PX_LAST'):
+                    px_last = data[spread_index]['PX_LAST']
+                    if len(px_last) > 0:
+                        px_last = float(px_last[0])
+                        response = {'msg': 'Success', 'px_last': px_last}
+            except Exception as e:
+                return JsonResponse(response)
+    return JsonResponse(response)

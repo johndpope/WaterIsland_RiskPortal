@@ -11,6 +11,7 @@ from sqlalchemy import create_engine
 from django.conf import settings
 from django_slack import slack_message
 from portfolio_optimization.models import  EssPotentialLongShorts, EssUniverseImpliedProbability
+from slack_utils import get_channel_name
 
 
 @shared_task
@@ -122,7 +123,7 @@ def refresh_ess_long_shorts_and_implied_probability():
         slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                       {'message': message,
                        'table': tabulate(avg_imp_prob, headers='keys', tablefmt='pssql', numalign='right')},
-                      channel='ess_idea_db_logs',
+                      channel=get_channel_name('ess_idea_db_logs'),
                       token=settings.SLACK_TOKEN)
     except Exception as e:
         print('Error in ESS Potential Long Short Tasks ... ' + str(e))
