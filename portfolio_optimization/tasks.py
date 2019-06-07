@@ -168,6 +168,9 @@ def refresh_ess_long_shorts_and_implied_probability():
 
         final_implied_probability_df = pd.concat([avg_imp_prob, universe_long_short_implied_probabilities_df,
                                                  grouped_funds_imp_prob])
+        del final_implied_probability_df['Date']
+
+        final_implied_probability_df['Date'] = today
 
         final_implied_probability_df.to_sql(index=False, name='portfolio_optimization_essuniverseimpliedprobability',
                                             schema=settings.CURRENT_DATABASE, con=con, if_exists='append')
