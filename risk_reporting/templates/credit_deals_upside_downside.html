@@ -94,11 +94,11 @@
                                                 {% else %}
                                                     <tr id="{{ row.id }}">
                                                 {% endif %}
-                                                <td id="tradegroup_{{ row.id }}">{{ row.tradegroup }}</td>
-                                                <td id="ticker_{{ row.id }}">{{ row.ticker }}</td>
+                                                <td nowrap id="tradegroup_{{ row.id }}">{{ row.tradegroup }}</td>
+                                                <td nowrap id="ticker_{{ row.id }}">{{ row.ticker }}</td>
                                                 <td id="analyst_{{ row.id }}">{{ row.analyst }}</td>
                                                 <td id="origination_date_{{ row.id }}">{{ row.origination_date }}</td>
-                                                <td id="last_update_{{ row.id }}">{{ row.last_update }}</td>
+                                                <td id="last_updated_{{ row.id }}">{{ row.last_updated }}</td>
                                                 <td id="spread_index_td_{{ row.id }}"><input type="text" value="{{ row.spread_index }}" id="spread_index_{{ row.id }}" class="spread_index_class"></td>
                                                 <td id="deal_value_{{ row.id }}">{{ row.deal_value }}</td>
                                                 <td id="last_price_{{ row.id }}"> {{ row.last_price }}</td>
