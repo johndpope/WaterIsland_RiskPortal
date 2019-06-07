@@ -1280,51 +1280,53 @@ def show_ess_idea(request):
 
     # Repeat for EV/Sales Multiple
 
-
     for i in range(len(ev_sales_chart_ltm)):
-        if i == 0:
-            # assign first dataframe
-            ev_sales_chart_ltm_df = pd.DataFrame.from_dict(json.loads(ev_sales_chart_ltm[i]))
-            continue
-        # Merge each dataframe into each other and finally append the merged Results to account for missing data
-        ev_sales_chart_ltm_ = pd.DataFrame.from_dict(json.loads(ev_sales_chart_ltm[i]))
-        # Merge with Next DataFrame on Date
-        ev_sales_chart_ltm_df = pd.merge(ev_sales_chart_ltm_df, ev_sales_chart_ltm_, on='date', how='outer')
+        if ev_sales_chart_ltm[i]:
+            if i == 0:
+                # assign first dataframe
+                ev_sales_chart_ltm_df = pd.DataFrame.from_dict(json.loads(ev_sales_chart_ltm[i]))
+                continue
+            # Merge each dataframe into each other and finally append the merged Results to account for missing data
+            ev_sales_chart_ltm_ = pd.DataFrame.from_dict(json.loads(ev_sales_chart_ltm[i]))
+            # Merge with Next DataFrame on Date
+            ev_sales_chart_ltm_df = pd.merge(ev_sales_chart_ltm_df, ev_sales_chart_ltm_, on='date', how='outer')
 
     # ----- Repeat for 1BF ------------
 
     for i in range(len(ev_sales_chart_1bf)):
-        if i == 0:
-            # assign first dataframe
-            ev_sales_chart_1bf_df = pd.DataFrame.from_dict(json.loads(ev_sales_chart_1bf[i]))
-            continue
-        # Merge each dataframe into each other and finally append the merged Results to account for missing data
-        ev_sales_chart_1bf_ = pd.DataFrame.from_dict(json.loads(ev_sales_chart_1bf[i]))
-        # Merge with Next DataFrame on Date
-        ev_sales_chart_1bf_df = pd.merge(ev_sales_chart_1bf_df, ev_sales_chart_1bf_, on='date', how='outer')
+        if ev_sales_chart_1bf[i]:
+            if i == 0:
+                # assign first dataframe
+                ev_sales_chart_1bf_df = pd.DataFrame.from_dict(json.loads(ev_sales_chart_1bf[i]))
+                continue
+            # Merge each dataframe into each other and finally append the merged Results to account for missing data
+            ev_sales_chart_1bf_ = pd.DataFrame.from_dict(json.loads(ev_sales_chart_1bf[i]))
+            # Merge with Next DataFrame on Date
+            ev_sales_chart_1bf_df = pd.merge(ev_sales_chart_1bf_df, ev_sales_chart_1bf_, on='date', how='outer')
 
     # Repeat for 2BF
     for i in range(len(ev_sales_chart_2bf)):
-        if i == 0:
-            # assign first dataframe
-            ev_sales_chart_2bf_df = pd.DataFrame.from_dict(json.loads(ev_sales_chart_2bf[i]))
-            continue
-        # Merge each dataframe into each other and finally append the merged Results to account for missing data
-        ev_sales_chart_2bf_ = pd.DataFrame.from_dict(json.loads(ev_sales_chart_2bf[i]))
-        # Merge with Next DataFrame on Date
-        ev_sales_chart_2bf_df = pd.merge(ev_sales_chart_2bf_df, ev_sales_chart_2bf_, on='date', how='outer')
+        if ev_sales_chart_2bf[i]:
+            if i == 0:
+                # assign first dataframe
+                ev_sales_chart_2bf_df = pd.DataFrame.from_dict(json.loads(ev_sales_chart_2bf[i]))
+                continue
+            # Merge each dataframe into each other and finally append the merged Results to account for missing data
+            ev_sales_chart_2bf_ = pd.DataFrame.from_dict(json.loads(ev_sales_chart_2bf[i]))
+            # Merge with Next DataFrame on Date
+            ev_sales_chart_2bf_df = pd.merge(ev_sales_chart_2bf_df, ev_sales_chart_2bf_, on='date', how='outer')
 
     # Merge with Alpha Ticker
 
     ev_sales_chart_ltm_df = pd.merge(ev_sales_chart_ltm_df,
                                      pd.DataFrame.from_dict(json.loads(ess_idea.ev_sales_chart_ltm)), on='date',
-                                     how='outer') if len(ev_sales_chart_ltm) > 0 else pd.DataFrame()
+                                     how='outer') if len(ev_sales_chart_ltm) > 1 else pd.DataFrame(columns=['date', 'ev_sales_value'])
     ev_sales_chart_1bf_df = pd.merge(ev_sales_chart_1bf_df,
                                      pd.DataFrame.from_dict(json.loads(ess_idea.ev_sales_chart_1bf)), on='date',
-                                     how='outer') if len(ev_sales_chart_1bf_df) > 0 else pd.DataFrame()
+                                     how='outer') if len(ev_sales_chart_1bf_df) > 1 else pd.DataFrame(columns=['date', 'ev_sales_value'])
     ev_sales_chart_2bf_df = pd.merge(ev_sales_chart_2bf_df,
                                      pd.DataFrame.from_dict(json.loads(ess_idea.ev_sales_chart_2bf)), on='date',
-                                     how='outer') if len(ev_sales_chart_2bf_df) > 0 else pd.DataFrame()
+                                     how='outer') if len(ev_sales_chart_2bf_df) > 1 else pd.DataFrame(columns=['date', 'ev_sales_value'])
     ev_sales_chart_2bf_df = ev_sales_chart_2bf_df.replace(r'\s+', "NaN", regex=True).sort_values(by='date') if len(
         ev_sales_chart_2bf_df) > 0 else ev_sales_chart_2bf_df
 
@@ -1433,12 +1435,17 @@ def show_ess_idea(request):
     p_fcf_chart_df = p_fcf_chart_df.sort_values(by=['date'])
 
     for i in range(1, len(ev_ebitda_chart_ltm_df.columns.values)):
-        ev_sales_chart_ltm.append(str(ev_sales_chart_ltm_df.iloc[:, [0, i]].to_dict('records'))
-                                  .replace('u\'', '\''))
-        ev_sales_chart_1bf.append(str(ev_sales_chart_1bf_df.iloc[:, [0, i]].to_dict('records'))
-                                  .replace('u\'', '\''))
-        ev_sales_chart_2bf.append(str(ev_sales_chart_2bf_df.iloc[:, [0, i]].to_dict('records'))
-                                  .replace('u\'', '\''))
+        if len(ev_sales_chart_ltm_df) > 1:
+            ev_sales_chart_ltm.append(str(ev_sales_chart_ltm_df.iloc[:, [0, i]].to_dict('records'))
+                                      .replace('u\'', '\''))
+
+        if len(ev_sales_chart_1bf_df) > 1:
+            ev_sales_chart_1bf.append(str(ev_sales_chart_1bf_df.iloc[:, [0, i]].to_dict('records'))
+                                      .replace('u\'', '\''))
+        
+        if len(ev_sales_chart_2bf_df) > 1:
+            ev_sales_chart_2bf.append(str(ev_sales_chart_2bf_df.iloc[:, [0, i]].to_dict('records'))
+                                      .replace('u\'', '\''))
 
         ev_ebitda_chart_ltm.append(str(ev_ebitda_chart_ltm_df.iloc[:, [0, i]].to_dict('records'))
                                    .replace('u\'', '\''))
