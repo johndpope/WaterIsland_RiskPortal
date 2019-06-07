@@ -84,7 +84,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'CALCULATE_REALTIME_PNL_BUDGETS': {
         'task': 'risk_reporting.tasks.calculate_realtime_pnl_budgets',
-        'schedule': crontab(minute='*/15', hour='10-4', day_of_week='mon-fri')
+        'schedule': crontab(minute='*/15', hour='10-16', day_of_week='mon-fri')
     },
     'SEND_DAILY_SITUATIONS_LOG': {
         'task': 'wic_news.tasks.email_news_additions',

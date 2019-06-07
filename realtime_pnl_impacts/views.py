@@ -23,11 +23,7 @@ def fund_level_pnl(request):
     final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl, \
     fund_drilldown_details = get_data()
     fund_level_live = fund_level_live.groupby(['Group', 'TradeGroup']).sum().reset_index()
-    assets_df = pd.read_sql_query('SELECT DISTINCT Fund, aum from wic.daily_flat_file_db where flat_file_as_of ='
-                                  '(select max(flat_file_as_of) from wic.daily_flat_file_db)', con=connection)
-    fund_details = pd.merge(fund_level_live, assets_df, left_on='Group', right_on='Fund')
-    fund_details['ROC'] = 100.0 * (fund_details['MKTVAL_CHG_USD'] / fund_details['Capital($)_x'])
-    fund_details['Contribution_to_NAV'] = 1e4 * (fund_details['MKTVAL_CHG_USD'] / fund_details['aum'])
+    fund_details = calculate_roc_nav_fund_level_live(fund_level_live)
     del fund_details['Fund']
     del fund_details['Qty_x']
     fund_details_dict = {}
@@ -39,6 +35,15 @@ def fund_level_pnl(request):
         return JsonResponse({
             'fund_details': fund_details_dict
         })
+
+
+def calculate_roc_nav_fund_level_live(fund_df):
+    df = pd.read_sql_query('SELECT DISTINCT Fund, aum from wic.daily_flat_file_db where flat_file_as_of ='
+                                  '(select max(flat_file_as_of) from wic.daily_flat_file_db)', con=connection)
+    return_df = pd.merge(fund_df, df, left_on='Group', right_on='Fund')
+    return_df['ROC'] = 100.0 * (return_df['MKTVAL_CHG_USD'] / return_df['Capital($)_x'])
+    return_df['Contribution_to_NAV'] = 1e4 * (return_df['MKTVAL_CHG_USD'] / return_df['aum'])
+    return return_df
 
 
 def apply_red_green_formatting(dataframe, start_from_col=2):

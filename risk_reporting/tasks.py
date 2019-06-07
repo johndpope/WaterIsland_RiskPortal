@@ -1232,12 +1232,29 @@ def calculate_realtime_pnl_budgets():
     pnl_budgets = pd.read_sql('Select * from ' + settings.CURRENT_DATABASE + '.realtime_pnl_impacts_pnlmonitors where '\
                               'last_updated = (Select max(last_updated) from ' + settings.CURRENT_DATABASE +
                               '.realtime_pnl_impacts_pnlmonitors)', con=con)
+    gross_ytd_return_df = pd.read_sql('select fund, gross_ytd_return from ' + settings.CURRENT_DATABASE + \
+                                      '.realtime_pnl_impacts_pnlmonitors where DATE(last_updated) = '\
+                                      '(select DATE(max(last_updated)) from ' + settings.CURRENT_DATABASE + \
+                                      '.realtime_pnl_impacts_pnlmonitors) and HOUR(last_updated) = 8;', con=con)
+    con.close()
 
     if 'id' in pnl_budgets.columns.values:
         pnl_budgets.drop(columns=['id'], inplace=True)
 
     final_live_df, final_daily_pnl, position_level_pnl, last_updated, fund_level_live, final_position_level_ytd_pnl, \
     fund_drilldown_details = views.get_data()
+    fund_level_df = views.calculate_roc_nav_fund_level_live(fund_level_live)
+    fund_level_df = fund_level_df[['Fund', 'Contribution_to_NAV']]
+    fund_level_df = fund_level_df.groupby(['Fund']).sum()
+    fund_level_df['fund'] = fund_level_df.index
+    fund_level_df.reset_index(drop=True, inplace=True)
+    fund_level_df['Contribution_to_NAV'] = fund_level_df['Contribution_to_NAV'] * 0.01
+    ytd_return_merge = pd.merge(gross_ytd_return_df, fund_level_df, on='fund', how='left')
+    ytd_return_merge['gross_ytd_return'] = ytd_return_merge['gross_ytd_return'].str.replace('%', '').apply(atof)
+    ytd_return_merge['gross_ytd_return'] = ytd_return_merge['gross_ytd_return'] + ytd_return_merge['Contribution_to_NAV']
+    ytd_return_merge.rename(columns={'gross_ytd_return': 'new_ytd_return'}, inplace=True)
+    ytd_return_merge.drop(columns=['Contribution_to_NAV'], inplace=True)
+
     live_ytd_pnl = pd.Series([])
     ytd_live_pnl_sum = pd.Series([])
     ytd_pnl_df = pd.DataFrame()
@@ -1251,8 +1268,9 @@ def calculate_realtime_pnl_budgets():
     realtime_pl_budget_df = pd.merge(pnl_budgets, ytd_pnl_df, on=['fund'], how='left')
     realtime_pl_budget_df['gross_ytd_pnl'] = realtime_pl_budget_df['Live P&L']
     realtime_pl_budget_df['investable_assets'] = realtime_pl_budget_df['investable_assets'].str.replace(',', '').apply(atof)
-    realtime_pl_budget_df['gross_ytd_return'] = realtime_pl_budget_df['gross_ytd_return'].str.replace('%', '').apply(atof)
-    realtime_pl_budget_df['gross_ytd_return'] = realtime_pl_budget_df['gross_ytd_pnl']/realtime_pl_budget_df['investable_assets'] * 100
+    realtime_pl_budget_df = pd.merge(realtime_pl_budget_df, ytd_return_merge, on='fund', how='left')
+    realtime_pl_budget_df.drop(columns=['gross_ytd_return'], inplace=True)
+    realtime_pl_budget_df.rename(columns={'new_ytd_return': 'gross_ytd_return'}, inplace=True)
     realtime_pl_budget_df['ann_gross_pnl_target_perc'] = realtime_pl_budget_df['ann_gross_pnl_target_perc'].str.replace('%', '').apply(atof)
     realtime_pl_budget_df['ytd_pnl_perc_target'] = realtime_pl_budget_df['gross_ytd_return'] / realtime_pl_budget_df['ann_gross_pnl_target_perc'] * 100
     realtime_pl_budget_df['gross_ytd_return'] = format_with_percentage_decimal(realtime_pl_budget_df, 'gross_ytd_return')
