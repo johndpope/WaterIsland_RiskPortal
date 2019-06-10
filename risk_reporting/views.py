@@ -481,14 +481,14 @@ def update_credit_deals_upside_downside(request):
 
                 ip_addr = get_ip_addr(request)
                 slack_message('credit_deal_upside_downsides.slack',
-                            {'updated_deal': str(obj.tradegroup),
-                            'ticker': obj.ticker,
-                            'downside': str(old_downside) + " -> " + str(obj.downside),
-                            'upside': str(old_upside) + " -> " + str(obj.upside),
-                            'IP': str(ip_addr)},
-                            channel=get_channel_name('portal_downsides'),
-                            token=settings.SLACK_TOKEN,
-                            name='PORTAL DOWNSIDE UPDATE AGENT')
+                              {'updated_deal': str(obj.tradegroup),
+                               'ticker': obj.ticker,
+                               'downside': str(old_downside) + " -> " + str(obj.downside),
+                               'upside': str(old_upside) + " -> " + str(obj.upside),
+                               'IP': str(ip_addr)},
+                              channel=get_channel_name('portal_downsides'),
+                              token=settings.SLACK_TOKEN,
+                              name='PORTAL DOWNSIDE UPDATE AGENT')
             except Exception as e:
                 print(e)
                 response = 'Failed'
@@ -561,3 +561,29 @@ def fetch_from_bloomberg_by_spread_index(request):
             except Exception as e:
                 return JsonResponse(response)
     return JsonResponse(response)
+
+
+def credit_deals_csv_import(request):
+    credit_deals_df = pd.DataFrame.from_records(CreditDealsUpsideDownside.objects.all().values())
+    try:
+        last_refreshed = CreditDealsUpsideDownside.objects.latest('last_refreshed').last_refreshed.strftime('%B %d %Y %H: %M %p')
+    except CreditDealsUpsideDownside.DoesNotExist:
+        last_refreshed = 'Unknown'
+    credit_deals_df.drop(columns=['last_updated', 'last_refreshed'], inplace=True)
+    credit_deals_df.rename(columns={'tradegroup': 'TradeGroup', 'ticker': 'Ticker', 'analyst': 'Analyst',
+                                    'origination_date': 'Origination Date', 'spread_index': 'Spread Index',
+                                    'deal_value': 'Deal Value', 'last_price': 'Last Price', 'is_excluded': 'Is Excluded',
+                                    'risk_limit': 'Risk Limit', 'downside_type': 'Downside Type', 'downside': 'Downside',
+                                    'downside_notes': 'Downside Notes', 'upside_type': 'Upside Type', 'upside': 'Upside',
+                                    'upside_notes': 'Upside Notes', 'bloomberg_id': 'Bloomberg ID'}, inplace=True)
+    
+    credit_deals_df = credit_deals_df[['TradeGroup', 'Ticker', 'Analyst', 'Origination Date', 'Spread Index',
+                                       'Deal Value', 'Last Price', 'Is Excluded', 'Risk Limit', 'Downside Type',
+                                       'Downside', 'Downside Notes', 'Upside Type', 'Upside', 'Upside Notes',
+                                       'Bloomberg ID']]
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=CreditDealsUpDown.csv'
+    response.write('Credit Deals Upside Downside\n')
+    response.write('Last Refreshed: {0}\n\n'.format(last_refreshed))
+    credit_deals_df.to_csv(path_or_buf=response, index=False)
+    return response
