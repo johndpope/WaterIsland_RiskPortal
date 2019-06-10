@@ -429,7 +429,7 @@ class CreditDealsUpsideDownsideView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
-            context['as_of'] = CreditDealsUpsideDownside.objects.all().latest('last_updated').last_updated
+            context['as_of'] = CreditDealsUpsideDownside.objects.all().latest('last_refreshed').last_refreshed
         except CreditDealsUpsideDownside.DoesNotExist:
             context['as_of'] = 'Unknown'
         return context
@@ -475,7 +475,7 @@ def update_credit_deals_upside_downside(request):
                 obj.upside_type = upside_type
                 obj.upside = upside
                 obj.upside_notes = upside_notes
-                obj.last_update = datetime.datetime.now().date()
+                obj.last_updated = datetime.datetime.now()
                 obj.save()
                 response = 'Success'
 
@@ -486,7 +486,7 @@ def update_credit_deals_upside_downside(request):
                             'downside': str(old_downside) + " -> " + str(obj.downside),
                             'upside': str(old_upside) + " -> " + str(obj.upside),
                             'IP': str(ip_addr)},
-                            channel=get_channel_name('portal_downsides_test'),
+                            channel=get_channel_name('portal_downsides'),
                             token=settings.SLACK_TOKEN,
                             name='PORTAL DOWNSIDE UPDATE AGENT')
             except Exception as e:

@@ -2,6 +2,7 @@ import datetime
 
 from django.conf import settings
 from django.shortcuts import render
+from django.urls import reverse
 from django.views.generic.edit import FormView
 from django_slack import slack_message
 
@@ -24,11 +25,12 @@ class CreateMaDealsView(FormView):
 
     def get_success_url(self):
         """Redirect the User back to the referal page"""
-        http_referer = self.request.META.get('HTTP_REFERER')
-        if 'mna_idea_database' in http_referer or 'formula_based_downsides' in http_referer:
-            return http_referer
-        else:
-            return '#'
+        http_referer = self.request.GET.get('referer')
+        if http_referer == 'mna_idea_database':
+            return reverse('risk:mna_idea_database')
+        if http_referer == 'formula_based_downsides':
+            return reverse('risk_reporting:formula_based_downsides')
+        return '#'
 
     def form_valid(self, form):
         """Create the objects in respective models if the form is valid"""

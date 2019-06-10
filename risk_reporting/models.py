@@ -130,6 +130,7 @@ class CreditDealsUpsideDownside(models.Model):
     upside = models.CharField(max_length=50, null=True, blank=True)
     upside_notes = models.TextField(null=True)
     bloomberg_id = models.CharField(max_length=50, null=True, blank=True)
+    last_refreshed = models.DateTimeField(null=True)
 
 
 class PositionLevelNAVImpacts(models.Model):

@@ -1355,7 +1355,7 @@ def refresh_credit_deals_upside_downside():
                                                             'Match ARB' or row['upside_type'] == 'Match ARB' else \
                                                             row['deal_value'], axis=1)
 
-        credit_deals_df['last_updated'] = datetime.datetime.now()
+        credit_deals_df['last_refreshed'] = datetime.datetime.now()
         credit_deals_df.drop(columns=['equity_ticker', 'spread_px_last', 'Underlying', 'outlier', 'DealValue'], inplace=True)
         CreditDealsUpsideDownside.objects.all().delete()
         time.sleep(3)
