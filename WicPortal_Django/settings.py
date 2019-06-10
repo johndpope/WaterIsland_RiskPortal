@@ -330,3 +330,6 @@ if not DEBUG:
 MEDIAFILES_LOCATION = 'media'
 DEFAULT_FILE_STORAGE = 'custom_storages.MediaStorage'
 STATICFILES_LOCATION = 'static'
+
+# Allow large data to be saved
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760 # 10 MB
