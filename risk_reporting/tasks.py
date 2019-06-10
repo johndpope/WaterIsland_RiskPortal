@@ -1356,6 +1356,9 @@ def refresh_credit_deals_upside_downside():
                                                             row['deal_value'], axis=1)
 
         credit_deals_df['last_refreshed'] = datetime.datetime.now()
+        credit_deals_df.drop(columns=['id'], inplace=True)
+        credit_deals_df.reset_index(inplace=True)
+        credit_deals_df.rename(columns={'index': 'id'}, inplace=True)
         credit_deals_df.drop(columns=['equity_ticker', 'spread_px_last', 'Underlying', 'outlier', 'DealValue'], inplace=True)
         CreditDealsUpsideDownside.objects.all().delete()
         time.sleep(3)
