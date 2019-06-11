@@ -117,6 +117,9 @@ def ess_implied_prob_drilldown(request):
                 else:
                     imp_prob_tracker_df = imp_prob_tracker_df[imp_prob_tracker_df['LongShort'] == 'Short']
 
+                # Slice for the Fund
+                imp_prob_tracker_df = imp_prob_tracker_df[imp_prob_tracker_df['Fund'] == deal_type.split(' ')[0]]
+
                 imp_prob_tracker_df['implied_probability'] = 1e2*(imp_prob_tracker_df['Price'] - imp_prob_tracker_df['DealDownside'])/(imp_prob_tracker_df['DealUpside'] - imp_prob_tracker_df['DealDownside'])
 
                 imp_prob_tracker_df.replace([np.inf, -np.inf], np.nan, inplace=True)  # Replace Inf values
