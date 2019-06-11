@@ -35,6 +35,7 @@ SLEEVE_DICT = {
     'Opportunistic': 'OPP',
     'Break': 'UNLISTED/CASH',
 }
+TODAY_DATE_yyyy_mm_dd = datetime.datetime.now().date().strftime('%Y-%m-%d')
 
 
 @shared_task
@@ -631,10 +632,10 @@ def email_nav_impacts_report():
                 </html>
         """.format(last_calculated_on, extra_message, df.hide_index().render(index=False))
 
-        exporters = {'Merger Arb NAV Impacts (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
+        exporters = {'Merger Arb NAV Impacts (' + TODAY_DATE_yyyy_mm_dd + ').xlsx':
                          export_excel}
 
-        subject = '(Risk Automation) Merger Arb NAV Impacts - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
+        subject = '(Risk Automation) Merger Arb NAV Impacts - ' + TODAY_DATE_yyyy_mm_dd
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                    recipients=['iteam@wicfunds.com'],
                    subject=subject, from_email='dispatch@wicfunds.com', html=html,
@@ -655,6 +656,7 @@ def email_daily_formulae_linked_downsides():
         con = engine.connect()
         downsides_df = pd.read_sql_query(
             'SELECT * FROM ' + settings.CURRENT_DATABASE+'.risk_reporting_formulaebaseddownsides ', con=con)
+        credit_deals_up_down_df = pd.DataFrame.from_records(CreditDealsUpsideDownside.objects.all().values())
         time.sleep(3)
 
         alert_message = ''
@@ -667,6 +669,9 @@ def email_daily_formulae_linked_downsides():
                                                 | (downsides_df['base_case'] == '')]['TradeGroup'].unique()
         null_outlier_downsides = downsides_df[(downsides_df['outlier'] == 0) | (pd.isna(downsides_df['outlier'])
                                               | (downsides_df['outlier'] == ''))]['TradeGroup'].unique()
+        credit_deals_null_up_downside = credit_deals_up_down_df[((credit_deals_up_down_df['downside'] == '') |
+                                                                 (credit_deals_up_down_df['upside'] == ''))]
+        credit_deals_null_downside_tradegroups = credit_deals_null_up_downside['tradegroup'].unique()
 
         if len(null_risk_limits) > 0:
             alert_message += '<strong>Following have Undefined or Zero Risk Limits</strong>: <div class="bg-warning">'+\
@@ -680,6 +685,11 @@ def email_daily_formulae_linked_downsides():
             alert_message += '<strong><br><br> Following have Undefined or Zero Outlier</strong>: ' \
                              '<div class="bg-warning">' + ' , '.join(null_outlier_downsides) + "</div>"
 
+        if len(credit_deals_null_downside_tradegroups) > 0:
+            alert_message += '<strong><br><br>CREDIT DEALS</strong><br>' \
+                             '<strong>Following Credit Deals TradeGroups have NULL upside/downside</strong>:' \
+                             '<div class="bg-warning">' + ' , '.join(credit_deals_null_downside_tradegroups) + "</div>"
+
         def export_excel(df):
             with io.BytesIO() as buffer:
                 writer = pd.ExcelWriter(buffer)
@@ -692,19 +702,20 @@ def email_daily_formulae_linked_downsides():
                   <head>
                   </head>
                   <body>
-                    PFA Daily Backup for Formulae Linked Downsides<br><br>
+                    PFA Daily Backup for Formulae Linked Downsides and Credit Deals<br><br>
                     {0}
                   </body>
                 </html>
         """.format(alert_message)
 
-        exporters = {'FormulaeLinkedDownsides (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
-                         export_excel}
+        exporters = {'FormulaeLinkedDownsides (' + TODAY_DATE_yyyy_mm_dd + ').xlsx': export_excel,
+                     'CreditDealsUpsideDownsides (' + TODAY_DATE_yyyy_mm_dd + ').xlsx': export_excel}
 
-        subject = '(Risk Automation) FormulaeLinkedDownsides - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
+        subject = '(Risk Automation) FormulaeLinkedDownsides & Credit Deals - ' + TODAY_DATE_yyyy_mm_dd
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                    recipients=['risk@wicfunds.com', 'rlogan@wicfunds.com'], subject=subject,
-                   from_email='dispatch@wicfunds.com', html=html, EXPORTERS=exporters, dataframe=downsides_df)
+                   from_email='dispatch@wicfunds.com', html=html, EXPORTERS=exporters,
+                   dataframe=[downsides_df, credit_deals_up_down_df], multiple=True)
 
     except Exception as e:
         print('Error Occured....')
@@ -780,8 +791,6 @@ def email_pl_target_loss_budgets():
     df1.index.values[11] = 'Time Passed %'
     df1.index.values[12] = '* Ann Loss Budget $'
     df1 = df1.replace(np.nan, '', regex=True)
-
-    now_date = datetime.datetime.now().date().strftime('%Y-%m-%d')
 
     def excel_formatting(row):
         bold = False
@@ -868,7 +877,7 @@ def email_pl_target_loss_budgets():
                                                                                                     'center')]}
     ]
     df1.drop(columns=['TAQ'], inplace=True)
-    styled_html = (df1.style.apply(style_funds).set_table_styles(styles).set_caption("PL Targets & Loss Budgets (" + now_date + ")"))
+    styled_html = (df1.style.apply(style_funds).set_table_styles(styles).set_caption("PL Targets & Loss Budgets (" + TODAY_DATE_yyyy_mm_dd + ")"))
 
     html = """ \
                 <html>
@@ -887,7 +896,7 @@ def email_pl_target_loss_budgets():
                     <p>* Above data has been calculated using Average YTD Investable Assets</p>
                   </body>
                 </html>
-        """.format(table=styled_html.render(), date=now_date)
+        """.format(table=styled_html.render(), date=TODAY_DATE_yyyy_mm_dd)
 
     def export_excel(df_list):
         with io.BytesIO() as buffer:
@@ -1073,8 +1082,8 @@ def email_pl_target_loss_budgets():
     profit_sleeve_ytd_perc = profit_sleeve_ytd_perc.style.apply(sleeve_excel_formatting, axis=1)
     loss_sleeve_ytd_perc = loss_sleeve_ytd_perc.style.apply(sleeve_excel_formatting, axis=1)
 
-    exporters = {'PL Targets & Loss Budgets (' + now_date + ').xlsx': export_excel}
-    subject = 'PL Targets & Loss Budgets - ' + now_date
+    exporters = {'PL Targets & Loss Budgets (' + TODAY_DATE_yyyy_mm_dd + ').xlsx': export_excel}
+    subject = 'PL Targets & Loss Budgets - ' + TODAY_DATE_yyyy_mm_dd
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                recipients=['iteam@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
