@@ -2,6 +2,7 @@ import ast
 import datetime
 from dateutil.relativedelta import relativedelta
 import json
+import re
 import requests
 
 from celery.result import AsyncResult
@@ -191,6 +192,26 @@ def fetch_bloomberg_data(request):
                     return JsonResponse(response)
         except Exception as e:
             response = {'error': True}
+    return JsonResponse(response)
+
+
+def check_if_deal_present(request):
+    ma_deal_present = False
+    formulae_present = False
+    response = {'msg': 'Failed'}
+    if request.method == 'POST':
+        deal_name = request.POST.get('deal_name')
+        try:
+            ma_deals_df = pd.DataFrame.from_records(MA_Deals.objects.all().values('deal_name'))
+            if not ma_deals_df[ma_deals_df['deal_name'].str.contains(deal_name, flags=re.IGNORECASE)].empty:
+                ma_deal_present = True
+            
+            formulae_df = pd.DataFrame.from_records(FormulaeBasedDownsides.objects.all().values('TradeGroup'))
+            if not formulae_df[formulae_df['TradeGroup'].str.contains(deal_name, flags=re.IGNORECASE)].empty:
+                formulae_present = True
+            response = {'msg': 'Success', 'ma_deal_present': ma_deal_present, 'formulae_present': formulae_present}
+        except Exception as e:
+            print(e)
     return JsonResponse(response)
 
 

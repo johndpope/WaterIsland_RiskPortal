@@ -1,5 +1,49 @@
 $(document).ready(function () {
     $("#create_mna_deal_error_div").hide();
+    $("#create_mna_deal_present_msg_div").hide();
+    $('#deal_name').focusout(function() {
+        var deal_name = $('#deal_name').val();
+        if (deal_name) {
+            $.ajax({
+                'type': 'POST',
+                'url': '../risk/check_if_deal_present',
+                'data': {'deal_name': deal_name},
+                success: function (response) {
+                    if (response.msg == 'Success') {
+                        if (response.ma_deal_present & response.formulae_present) {
+                            $('#create_mna_deal_present_msg').addClass("alert alert-danger");
+                            $('#create_mna_deal_present_msg').html("<strong>Error: " + deal_name + "</strong> is already present in " +
+                                "both <strong>Formulae Downside</strong> and <strong>MA Deals</strong> page.");
+                            $("#create_mna_deal_present_msg_div").show();
+                        }
+                        else if (response.ma_deal_present) {
+                            $('#create_mna_deal_present_msg').addClass("alert alert-danger");
+                            $('#create_mna_deal_present_msg').html("<strong>Note: " + deal_name + "</strong> is already present in " +
+                                "<strong>MA Deals</strong> page. It will be saved to <strong>Formulae Downside</strong> Page Only.");
+                            $("#create_mna_deal_present_msg_div").show();
+                        }
+                        else if (response.formulae_present) {
+                            $('#create_mna_deal_present_msg').addClass("alert alert-danger");
+                            $('#create_mna_deal_present_msg').html("<strong>Note: " + deal_name + "</strong> is already present in " +
+                                "<strong>Formulae Downside</strong>. It will be saved to <strong>MA Deals</strong> Page Only.");
+                            $("#create_mna_deal_present_msg_div").show();
+                        }
+                        else {
+                            $("#create_mna_deal_present_msg_div").hide();
+                        }
+                    }
+                    else {
+                        $("#create_mna_deal_present_msg_div").hide();
+                    }
+                },
+                error: function (err) {
+                    alert(err);
+                }
+            })
+        }
+        $("#create_mna_deal_present_msg_div").hide();
+    });
+
     $('#calculate_deal_value').on('click', function () {
         /* 
         Formula is 

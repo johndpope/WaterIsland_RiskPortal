@@ -30,6 +30,7 @@ urlpatterns = [
         name='mna_idea_historical_downside_estimate'),
     url('ess_idea_premium_analysis$', views.ess_idea_premium_analysis, name='ess_idea_premium_analysis'),
     url('calculate_mna_idea_deal_value$', views.calculate_mna_idea_deal_value, name='calculate_mna_idea_deal_value'),
+    url('check_if_deal_present$', views.check_if_deal_present, name='check_if_deal_present'),
     url('fetch_bloomberg_data$', views.fetch_bloomberg_data, name='fetch_bloomberg_data'),
     url('delete_mna_idea$', views.delete_mna_idea, name='delete_mna_idea'),
     url('mna_idea_add_unaffected_date$', views.mna_idea_add_unaffected_date, name='mna_idea_add_unaffected_date'),
