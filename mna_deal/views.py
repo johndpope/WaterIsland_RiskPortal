@@ -1,4 +1,5 @@
 import datetime
+import pandas as pd
 
 from django.conf import settings
 from django.shortcuts import render
@@ -61,45 +62,60 @@ class CreateMaDealsView(FormView):
         insert_id = max_id + 1
 
         # Save to MA Deal Model
-        deal_object = MA_Deals(action_id=action_id, deal_name=deal_name, analyst=analyst, target_ticker=target_ticker,
-                               acquirer_ticker=acquirer_ticker, deal_cash_terms=deal_cash_terms,
-                               deal_share_terms=deal_share_terms, deal_value=deal_value,
-                               expected_closing_date=expected_close_date, target_dividends=target_dividends,
-                               acquirer_dividends=acquirer_dividends, short_rebate=short_rebate,
-                               fx_carry_percent=fx_carry_percent, stub_cvr_value=stub_cvr_value,
-                               acquirer_upside=acquirer_upside, status=status, created=created,
-                               loss_tolerance_percentage_of_limit=loss_tolerance_percentage_of_limit,
-                               last_modified=DATE_TODAY, is_complete='No')
-        deal_object.save()
-
-        # Calculate Last Price and Save to FormulaeBasedDownsides Model for Target
-        try:
-            target_last_price = float(bbgclient.get_secid2field([target_ticker], 'tickers', ['CRNCY_ADJ_PX_LAST'],
-                                                                req_type='refdata', api_host=API_HOST)[target_ticker]
-                                                                ['CRNCY_ADJ_PX_LAST'][0]) if deal_share_terms > 0 else 0
-        except Exception as error:
-            target_last_price = None
-        target_object = FormulaeBasedDownsides(id=insert_id, TradeGroup=deal_name, Underlying=target_ticker,
-                                               TargetAcquirer='Target', Analyst=analyst, RiskLimit=risk_limit,
-                                               OriginationDate=origination_date, DealValue=deal_value,
-                                               LastPrice=target_last_price)
-        target_object.save()
-
-        # If Position in Acquirer is Yes then calculate last price and save to FormulaeBasedDownsides Model for Acquirer
-        if position_in_acquirer.lower() == 'yes':
-            try:
-                acquirer_last_price = float(bbgclient.get_secid2field([target_ticker], 'tickers', ['CRNCY_ADJ_PX_LAST'],
-                                                                      req_type='refdata', api_host=API_HOST)[target_ticker]
-                                                                      ['CRNCY_ADJ_PX_LAST'][0]) if deal_share_terms > 0 else 0
-            except Exception as error:
-                acquirer_last_price = None
-            acquirer_object = FormulaeBasedDownsides(id=insert_id+1, TradeGroup=deal_name, Underlying=acquirer_ticker,
-                                                     TargetAcquirer='Acquirer', Analyst=analyst, RiskLimit=risk_limit,
-                                                     OriginationDate=origination_date, DealValue=deal_value,
-                                                     LastPrice=acquirer_last_price)
-            acquirer_object.save()
-        slack_message('new_mna_deal_notify.slack',
+        ma_deals_df = pd.DataFrame.from_records(MA_Deals.objects.all().values('deal_name'))
+        if ma_deals_df[ma_deals_df['deal_name'].str.contains(deal_name)].empty:
+            deal_object = MA_Deals(action_id=action_id, deal_name=deal_name, analyst=analyst,
+                                   target_ticker=target_ticker, acquirer_ticker=acquirer_ticker,
+                                   deal_cash_terms=deal_cash_terms, deal_share_terms=deal_share_terms,
+                                   deal_value=deal_value, expected_closing_date=expected_close_date,
+                                   target_dividends=target_dividends, acquirer_dividends=acquirer_dividends,
+                                   short_rebate=short_rebate, fx_carry_percent=fx_carry_percent,
+                                   stub_cvr_value=stub_cvr_value, acquirer_upside=acquirer_upside, status=status,
+                                   created=created, last_modified=DATE_TODAY, is_complete='No',
+                                   loss_tolerance_percentage_of_limit=loss_tolerance_percentage_of_limit)
+            deal_object.save()
+            slack_message('new_mna_deal_notify.slack',
                       {'message': 'New M & A Deal Added', 'deal_name': deal_name, 'action_id': action_id, 'analyst': analyst,
+                      'target_ticker': target_ticker, 'acquirer_ticker': acquirer_ticker, 'deal_cash_terms': deal_cash_terms,
+                      'deal_share_terms': deal_share_terms, 'deal_value': deal_value, 'target_dividends': target_dividends,
+                      'acquirer_dividends': acquirer_dividends, 'short_rebate': short_rebate, 'fx_carry_percent': fx_carry_percent,
+                      'stub_cvr_value': stub_cvr_value, 'acquirer_upside': acquirer_upside,
+                      'loss_tolerance_percentage_of_limit': loss_tolerance_percentage_of_limit, 'risk_limit': risk_limit,
+                      'position_in_acquirer': position_in_acquirer},
+                    channel=get_channel_name('new-mna-deals'),
+                    token=settings.SLACK_TOKEN,
+                    name='ESS_IDEA_DB_ERROR_INSPECTOR')
+
+        formulae_df = pd.DataFrame.from_records(FormulaeBasedDownsides.objects.all().values('TradeGroup'))
+        if formulae_df[formulae_df['TradeGroup'].str.contains(deal_name)].empty:
+            # Calculate Last Price and Save to FormulaeBasedDownsides Model for Target
+            try:
+                target_last_price = float(bbgclient.get_secid2field([target_ticker], 'tickers', ['CRNCY_ADJ_PX_LAST'],
+                                                                    req_type='refdata', api_host=API_HOST)[target_ticker]
+                                                                    ['CRNCY_ADJ_PX_LAST'][0]) if deal_share_terms > 0 else 0
+            except Exception as error:
+                target_last_price = None
+            target_object = FormulaeBasedDownsides(id=insert_id, TradeGroup=deal_name, Underlying=target_ticker,
+                                                   TargetAcquirer='Target', Analyst=analyst, RiskLimit=risk_limit,
+                                                   OriginationDate=origination_date, DealValue=deal_value,
+                                                   LastPrice=target_last_price)
+            target_object.save()
+
+            # If Position in Acquirer is Yes then calculate last price and save to FormulaeBasedDownsides Model for Acquirer
+            if position_in_acquirer.lower() == 'yes':
+                try:
+                    acquirer_last_price = float(bbgclient.get_secid2field([target_ticker], 'tickers', ['CRNCY_ADJ_PX_LAST'],
+                                                                        req_type='refdata', api_host=API_HOST)[target_ticker]
+                                                                        ['CRNCY_ADJ_PX_LAST'][0]) if deal_share_terms > 0 else 0
+                except Exception as error:
+                    acquirer_last_price = None
+                acquirer_object = FormulaeBasedDownsides(id=insert_id+1, TradeGroup=deal_name, Underlying=acquirer_ticker,
+                                                        TargetAcquirer='Acquirer', Analyst=analyst, RiskLimit=risk_limit,
+                                                        OriginationDate=origination_date, DealValue=deal_value,
+                                                        LastPrice=acquirer_last_price)
+                acquirer_object.save()
+            slack_message('new_mna_deal_notify.slack',
+                      {'message': 'New Deal Added in Formulae Downside', 'deal_name': deal_name, 'action_id': action_id, 'analyst': analyst,
                       'target_ticker': target_ticker, 'acquirer_ticker': acquirer_ticker, 'deal_cash_terms': deal_cash_terms,
                       'deal_share_terms': deal_share_terms, 'deal_value': deal_value, 'target_dividends': target_dividends,
                       'acquirer_dividends': acquirer_dividends, 'short_rebate': short_rebate, 'fx_carry_percent': fx_carry_percent,

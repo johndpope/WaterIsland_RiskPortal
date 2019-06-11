@@ -160,17 +160,17 @@ class CreateMaDealsForm(forms.Form):
                       'acquirer_upside': cleaned_data.get('acquirer_upside'), 'risk_limit': cleaned_data.get('risk_limit'),
                       'loss_tolerance_percentage_of_limit': cleaned_data.get('loss_tolerance_percentage_of_limit'),
                       'position_in_acquirer': cleaned_data.get('position_in_acquirer')}
-        if MA_Deals.objects.filter(deal_name=deal_name).exists():
-            valid = False
-            self._errors['deal_name'] = '{deal_name} is already present in the M&A Deal Database'.format(deal_name=deal_name)
-            slack_dict['message'] = 'ERROR! Deal adready present in MA Deals'
-            slack_message('new_mna_deal_notify.slack', slack_dict, channel=get_channel_name('new-mna-deals'), token=settings.SLACK_TOKEN,
-                          name='ESS_IDEA_DB_ERROR_INSPECTOR')
-        if FormulaeBasedDownsides.objects.filter(TradeGroup=deal_name).exists():
-            valid = False
-            self._errors['deal_name'] = '{deal_name} is already present in the Downside Formulae'.format(deal_name=deal_name)
-            slack_dict['message'] = 'ERROR! Deal adready present in Downside Formulae'
-            slack_message('new_mna_deal_notify.slack', slack_dict, channel=get_channel_name('new-mna-deals'), token=settings.SLACK_TOKEN,
-                          name='ESS_IDEA_DB_ERROR_INSPECTOR')
+        # if MA_Deals.objects.filter(deal_name=deal_name).exists():
+        #     valid = False
+        #     self._errors['deal_name'] = '{deal_name} is already present in the M&A Deal Database'.format(deal_name=deal_name)
+        #     slack_dict['message'] = 'ERROR! Deal adready present in MA Deals'
+        #     slack_message('new_mna_deal_notify.slack', slack_dict, channel=get_channel_name('new-mna-deals'), token=settings.SLACK_TOKEN,
+        #                   name='ESS_IDEA_DB_ERROR_INSPECTOR')
+        # if FormulaeBasedDownsides.objects.filter(TradeGroup=deal_name).exists():
+        #     valid = False
+        #     self._errors['deal_name'] = '{deal_name} is already present in the Downside Formulae'.format(deal_name=deal_name)
+        #     slack_dict['message'] = 'ERROR! Deal adready present in Downside Formulae'
+        #     slack_message('new_mna_deal_notify.slack', slack_dict, channel=get_channel_name('new-mna-deals'), token=settings.SLACK_TOKEN,
+        #                   name='ESS_IDEA_DB_ERROR_INSPECTOR')
 
         return valid
