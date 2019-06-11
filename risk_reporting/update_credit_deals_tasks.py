@@ -52,6 +52,12 @@ def update_credit_deals():
         con = engine.connect()
         credit_deals_merge.to_sql(con=con, name='risk_reporting_creditdealsupsidedownside',
                                   schema=settings.CURRENT_DATABASE, if_exists='append', chunksize=10000, index=False)
+        slack_message('generic.slack',
+                      {'message': 'Credit Deals upside/downside DB update from WIC ran successfully on: ' +
+                                  datetime.now().strftime('%B %d, %Y %H:%M')},
+                      channel=get_channel_name('realtimenavimpacts'),
+                      token=settings.SLACK_TOKEN,
+                      name='ESS_IDEA_DB_ERROR_INSPECTOR')
     except Exception as e:
         current_credit_deals_df.to_sql(con=con, name='risk_reporting_creditdealsupsidedownside',
                                        schema=settings.CURRENT_DATABASE, if_exists='append', chunksize=10000,
