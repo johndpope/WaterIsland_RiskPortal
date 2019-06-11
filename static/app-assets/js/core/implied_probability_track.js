@@ -1,50 +1,52 @@
-$(document).ready(function(){
+$(document).ready(function () {
 
     let implied_probability_chart = $.parseJSON($('#implied_probability_chart').val());
     let field_names = $.parseJSON($('#field_names').val());
 
     let title = "Implied Probability Tracker";
-    let fieldMappingsArray = ['AED Long', 'AED Short','N/A', 'Post Re-org Equity', 'Soft Universe Imp. Prob',
-        'Spec M&A','Spin-Off','Stub Value','TAQ Long','TAQ Short','Transformational M&A', 'Turnaround',
-        'Universe (Long)', 'Universe (Short)', 'Universe (Unclassified)'];
+    let fieldMappingsArray = ['AED Long', 'AED Short', 'N/A', 'Post Re-org Equity', 'Soft Universe Imp. Prob',
+        'Spec M&A', 'Spin-Off', 'Stub Value', 'TAQ Long', 'TAQ Short', 'Transformational M&A', 'Turnaround',
+        'Universe (Long)', 'Universe (Short)', 'Universe (Unclassified)', 'ESS IDEA Universe'];
 
     let datasets = createDataSets(implied_probability_chart, field_names, fieldMappingsArray, false, fieldMappingsArray);
 
     console.log(datasets);
     let graphs = [];
     let counter = 1;
-    let is_hidden=true;
-    for(var i in fieldMappingsArray){
-        if(fieldMappingsArray[i] === 'Universe (Long)' || fieldMappingsArray[i] === 'Universe (Short)' || fieldMappingsArray[i] === 'Universe (Unclassified)'){
+    let is_hidden = true;
+    for (var i in fieldMappingsArray) {
+        if (fieldMappingsArray[i] === 'Universe (Long)' || fieldMappingsArray[i] === 'Universe (Short)' || fieldMappingsArray[i] === 'Universe (Unclassified)') {
             is_hidden = false;
         }
-        else{
+        else {
             is_hidden = true;
         }
-         graphs.push({
-                "useDataSetColors": false,
-                "id": "g" + counter++,
-                "hidden": is_hidden,
-                "valueField": fieldMappingsArray[i],
-                "valueAxis": "a1",
-                "title": fieldMappingsArray[i].toString(),
-                "lineThickness": 1.5,
-                "lineColor": randomColor({
-                    luminosity: 'bright',
-                    hue: 'random',
-                }),
-         });
+        graphs.push({
+            "useDataSetColors": false,
+            "id": "g" + counter++,
+            "hidden": is_hidden,
+            "valueField": fieldMappingsArray[i],
+            "valueAxis": "a1",
+            "title": fieldMappingsArray[i].toString(),
+            "lineThickness": 1.5,
+            "lineColor": randomColor({
+                luminosity: 'bright',
+                hue: 'random',
+            }),
+        });
     }
 
     let probability_tracker = AmCharts.makeChart("implied_probability_track", createLineChartConfigs(implied_probability_chart, datasets, graphs, title, '%', 'black'));
 
     $('#ess_implied_probability_table').DataTable({
         order: [[0, 'desc']],
-        columnDefs: [{
-            targets: [2], render: function (data) {
-                return parseFloat(data).toFixed(2).toString() + " %"
-            }
-        }],
+        columnDefs: [
+            {
+                targets: [2], render: function (data) {
+                    return parseFloat(data).toFixed(2).toString() + " %"
+                },
+
+            }],
         "pageLength": 100,
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
             '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
@@ -69,7 +71,7 @@ $(document).ready(function(){
             }
         },
         initComplete: function () {
-            this.api().columns([0, 1]).every(function () {
+            this.api().columns([1]).every(function () {
                 var column = this;
                 $(column.header()).append("<br>");
                 var select = $('<select class="custom-select" ><option value=""></option></select>')
@@ -89,7 +91,79 @@ $(document).ready(function(){
                 });
             });
         },
-    })
+    });
 
+
+    $('#ess_implied_probability_table tr td button').on('click', function () {
+        let date = $(this).parent().data('date');
+        let deal_type = $(this).parent().data('deal');
+        let data = {'date': date, 'deal_type': deal_type};
+        // Make Ajax Request, Gather Data in JSON, Open
+        $('#ess_drilldown_modal').modal('show');
+        $('#ess_implied_probability_drilldown').DataTable({
+            "language": {
+                "processing": "Gathering Drilldown data...."
+            },
+            destroy: true,
+            'paging': false,
+            dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
+                '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
+                '<"row"<"col-sm-5"i><"col-sm-7"p>>',
+            buttons: {
+                buttons: [{
+                    extend: 'copy',
+                    text: '<i class="fa fa-copy"></i> Copy',
+                    exportOptions: {
+                        columns: ':visible',
+                        stripHtml: false
+                    }
+                },
+                ],
+            },
+            "processing": true,
+            "searching": true,
+            "ajax": {
+                "url": "../portfolio_optimization/ess_implied_prob_drilldown",
+                "type": "POST",
+                "data": data,
+                dataSrc: function (json) {
+                    let obj = JSON.parse(json["data"]);
+                    if(obj === null){
+                        swal({
+                            title: "No Data available",
+                            text: "Data not found!",
+                            icon: "warning",
+                            dangerMode: true,
+                        });
+                        $('#ess_drilldown_modal').modal('hide');
+                    }
+                    return obj;
+                }
+            },
+            "columns": [
+                {"data": "Date"},
+                {"data": "alpha_ticker"},
+                {"data": "price"},
+                {"data": "deal_type"},
+                {"data": "implied_probability"},
+            ],
+            "footerCallback": function (row, data, start, end, display) {
+                var api = this.api();
+                // Total over all pages
+                let avg = api
+                    .column( 4 )
+                    .data()
+                    .reduce( function (a, b) {
+                        return parseFloat(a) + parseFloat(b);
+                    }, 0 );
+                let average = avg/data.length;
+                // Update footer
+                $(api.column(4).footer()).html(
+                    average.toFixed(2).toString() + ' %'
+                );
+            }
+        });
+    });
 
 });
+

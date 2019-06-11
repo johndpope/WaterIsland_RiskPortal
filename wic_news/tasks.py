@@ -69,7 +69,7 @@ def email_news_additions():
         exporters = {'Situation Logs (' + datetime.datetime.now().date().strftime('%Y-%m-%d') + ').xlsx':
                          export_excel}
 
-        subject = '(Risk Automation) Situation Logs - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
+        subject = 'Situation Logs - ' + datetime.datetime.now().date().strftime('%Y-%m-%d')
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                    recipients=['kgorde@wicfunds.com', 'cwatkins@wicfunds.com', 'vaggarwal@wicfunds.com',
                                'kkeung@wicfunds.com', 'tchen@wicfunds.com', 'rlogan@wicfunds.com',

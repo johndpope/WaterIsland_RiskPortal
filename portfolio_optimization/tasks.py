@@ -27,7 +27,6 @@ def refresh_ess_long_shorts_and_implied_probability():
 
     con = engine.connect()
     try:
-        EssPotentialLongShorts.objects.all().delete()
         EssUniverseImpliedProbability.objects.filter(Date=today).delete() # Delete todays records
         ess_ideas_df = pd.read_sql_query("SELECT  A.id, A.alpha_ticker, A.price, A.pt_up, A.pt_wic, A.pt_down,"
                                          " A.unaffected_date, A.expected_close, A.gross_percentage, A.ann_percentage, "
@@ -93,6 +92,7 @@ def refresh_ess_long_shorts_and_implied_probability():
         ess_ideas_df['Potential Short'] = ess_ideas_df.apply(lambda x: 'Y' if (
                 (x['Implied Probability'] > x['short_prob']) and (x['Adj. Ann IRR'] < x['short_irr'])) else '', axis=1)
 
+        ess_ideas_df['Date'] = today
         x = ess_ideas_df.rename(
             columns={'Implied Probability': 'implied_probability', 'Return/Risk': 'return_risk',
                      'Gross IRR': 'gross_irr',
@@ -139,8 +139,8 @@ def refresh_ess_long_shorts_and_implied_probability():
 
         # --------------- POTENTIAL LONG SHORT LEVEL IMPLIED PROBABILITY TRACKING --------------------------------------
 
-        ess_potential_ls_df = pd.read_sql_query("SELECT * FROM "
-                                                "prod_wic_db.portfolio_optimization_esspotentiallongshorts", con=con)
+        ess_potential_ls_df = pd.read_sql_query("SELECT * FROM " + settings.CURRENT_DATABASE +
+                                                ".portfolio_optimization_esspotentiallongshorts", con=con)
 
         ess_potential_ls_df = ess_potential_ls_df[['alpha_ticker', 'price', 'implied_probability',
                                                    'potential_long', 'potential_short']]
@@ -154,6 +154,17 @@ def refresh_ess_long_shorts_and_implied_probability():
 
             return classification
 
+        # Get the Whole ESS Universe Implied Probability
+
+        universe_data = ['ESS IDEA Universe', ess_potential_ls_df['implied_probability'].mean(),
+                         len(ess_potential_ls_df)]
+        all_ess_universe_implied_probability = pd.DataFrame(columns=['deal_type', 'implied_probability', 'count'],
+                                                            data=[universe_data])
+
+        all_ess_universe_implied_probability['Date'] = today
+
+        # Section for only Long Short Tagging...
+
         ess_potential_ls_df['LongShort'] = ess_potential_ls_df.apply(classify_ess_longshorts, axis=1)
         universe_long_short_implied_probabilities_df = ess_potential_ls_df[['LongShort',
                                                                             'implied_probability']].\
@@ -166,8 +177,9 @@ def refresh_ess_long_shorts_and_implied_probability():
         universe_long_short_implied_probabilities_df = universe_long_short_implied_probabilities_df[
             ['Date', 'deal_type', 'implied_probability']]
 
-        final_implied_probability_df = pd.concat([avg_imp_prob, universe_long_short_implied_probabilities_df,
-                                                 grouped_funds_imp_prob])
+        final_implied_probability_df = pd.concat([avg_imp_prob, all_ess_universe_implied_probability,
+                                                  universe_long_short_implied_probabilities_df,
+                                                  grouped_funds_imp_prob])
         del final_implied_probability_df['Date']
 
         final_implied_probability_df['Date'] = today

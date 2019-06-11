@@ -24,14 +24,61 @@
     {{ block.super }}
 {% endblock %}
 
+
+
 {% block content %}
     <input type="hidden" id="implied_probability_chart" value="{{ implied_probability_chart }}">
     <input type="hidden" id="field_names" value="{{ field_names }}">
 
+
+    <div class="modal animated fadeInDown text-left" id="ess_drilldown_modal" tabindex="-1"
+         role="dialog" aria-labelledby="modal_label" aria-hidden="true">
+        <div class="modal-xl modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="modal_label">Implied Prob (%)</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id='ess_implied_probability_drilldown'
+                               style="font-size:12px;">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Alpha Ticker</th>
+                                <th>Price</th>
+                                <th>Deal Type</th>
+                                <th>Implied Probability</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                            <tfoot>
+                            <tr>
+                                <th colspan="4" style="text-align:right">Avg (%):</th>
+                                <th></th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id='close_imp_prob_modal' type="button"
+                            class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
+                    </button>
+                    <button type="submit" class="btn btn-outline-primary">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
     <div class="app-content content">
-
         <div class="content-wrapper">
-
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
@@ -61,59 +108,65 @@
                                 </p>
 
 
-
                                 <div class="table-responsive">
                                     <table class="table table-bordered" id='ess_implied_probability_table'
-                                            style="font-size:12px;">
+                                           style="font-size:12px;">
                                         <thead>
-                                            <tr>
-                                                <th>Date</th>
-                                                <th>Deal Type</th>
-                                                <th>Avg. Implied Probability</th>
-                                            </tr>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Deal Type</th>
+                                            <th>Avg. Implied Probability</th>
+                                            <th>Drilldown</th>
+                                        </tr>
                                         </thead>
                                         <tbody>
-                                            {% for row in ess_implied_prob %}
-                                                <tr>
-                                                    <td>{{ row.Date }}</td>
-                                                    <td>{{ row.deal_type }}</td>
-                                                    <td>{{ row.implied_probability }}</td>
-                                                </tr>
-                                            {% endfor %}
+                                        {% for row in ess_implied_prob %}
+                                            <tr>
+                                                <td>{{ row.Date|date:'Y-m-d' }}</td>
+                                                <td>{{ row.deal_type }}</td>
+                                                <td>{{ row.implied_probability }}</td>
+                                                <td data-date="{{ row.Date|date:'Y-m-d' }}"
+                                                    data-deal="{{ row.deal_type }}">
+                                                    <button class="btn btn-secondary btn-sm">Drilldown</button>
+                                                </td>
+
+                                            </tr>
+                                        {% endfor %}
                                         </tbody>
                                     </table>
                                 </div>
 
 
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div></div>
+            </div>
 
-    </div>
+        </div>
 
-    <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
-    <script type="text/javascript" src="{% static "app-assets/js/core/chartBuilder.js" %}"></script>
-    {% block sweetalert_js %}
-        {{ block.super }}
-    {% endblock %}
+        <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+        <script type="text/javascript" src="{% static "app-assets/js/core/chartBuilder.js" %}"></script>
+        {% block sweetalert_js %}
+            {{ block.super }}
+        {% endblock %}
 
-    {% block navs_js %}
-        {{ block.super }}
-    {% endblock %}
+        {% block navs_js %}
+            {{ block.super }}
+        {% endblock %}
 
-    {% block summernote_js %}
-        {{ block.super }}
-    {% endblock %}
+        {% block summernote_js %}
+            {{ block.super }}
+        {% endblock %}
 
-    <script src="{% static 'app-assets/vendors/js/pickers/dateTime/moment-with-locales.min.js' %}"
-            type="text/javascript"></script>
+        <script src="{% static 'app-assets/vendors/js/pickers/dateTime/moment-with-locales.min.js' %}"
+                type="text/javascript"></script>
 
-    <script src="{% static 'app-assets/vendors/js/loaders/loaders.css.js' %}"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.5.4/randomColor.min.js"></script>
+        <script src="{% static 'app-assets/vendors/js/loaders/loaders.css.js' %}"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.5.4/randomColor.min.js"></script>
 
-    <script src="https://www.amcharts.com/lib/3/themes/black.js"></script>
-   <script src="{% static 'app-assets/js/core/implied_probability_track.js' %}"></script>
+        <script src="https://www.amcharts.com/lib/3/themes/black.js"></script>
+        <script src="{% static 'app-assets/js/core/implied_probability_track.js' %}"></script>
 
 
 {% endblock %}

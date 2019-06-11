@@ -1,9 +1,13 @@
+import datetime
 import pandas as pd
 import numpy as np
 import json
+import bbgclient
 from django.shortcuts import render
+from django.db import connection
+from django.http import HttpResponse, JsonResponse
 from .models import *
-from django.http import HttpResponse
+
 
 def ess_target_configs(request):
     # Render a response to View the current ESS configs.
@@ -84,3 +88,68 @@ def ess_implied_probabilites(request):
     return render(request, 'implied_probability_track.html', {'implied_probability_chart': implied_probability_chart,
                                                               'field_names': json.dumps(field_names),
                                                               'ess_implied_prob': ess_implied_prb_universe})
+
+
+def ess_implied_prob_drilldown(request):
+    return_data = None
+    if request.method == 'POST':
+        try:
+            date = request.POST['date']
+            deal_type = request.POST['deal_type']
+
+            if deal_type in ['AED Long', 'AED Short', 'TAQ Long', 'TAQ Short']:
+                if date == datetime.datetime.now().strftime('%Y-%m-%d'):
+                    date_adj = '(SELECT MAX(flat_file_as_of) from wic.daily_flat_file_db)'
+                else:
+                    date_adj = "'"+date+"'"
+                query = "SELECT DISTINCT flat_file_as_of as `Date`, TradeGroup, Fund, Ticker,Price, "\
+                    "LongShort, SecType, DealUpside, DealDownside "\
+                    "FROM wic.daily_flat_file_db  "\
+                    "WHERE Flat_file_as_of = "+date_adj+" AND Fund  "\
+                    "IN ('AED', 'TAQ') and AlphaHedge = 'Alpha' AND  "\
+                    "LongShort IN ('Long', 'Short') AND SecType = 'EQ' "\
+                    "AND Sleeve = 'Equity Special Situations' and amount<>0"\
+
+                imp_prob_tracker_df = pd.read_sql_query(query, con=connection)
+
+                if 'Long' in deal_type:
+                    imp_prob_tracker_df = imp_prob_tracker_df[imp_prob_tracker_df['LongShort'] == 'Long']
+                else:
+                    imp_prob_tracker_df = imp_prob_tracker_df[imp_prob_tracker_df['LongShort'] == 'Short']
+
+                imp_prob_tracker_df['implied_probability'] = 1e2*(imp_prob_tracker_df['Price'] - imp_prob_tracker_df['DealDownside'])/(imp_prob_tracker_df['DealUpside'] - imp_prob_tracker_df['DealDownside'])
+
+                imp_prob_tracker_df.replace([np.inf, -np.inf], np.nan, inplace=True)  # Replace Inf values
+                imp_prob_tracker_df = imp_prob_tracker_df[~(pd.isna(imp_prob_tracker_df['implied_probability']))]
+
+                imp_prob_tracker_df['Date'] = imp_prob_tracker_df['Date'].astype(str)
+
+                imp_prob_tracker_df = imp_prob_tracker_df[['Date', 'Ticker', 'Price', 'TradeGroup', 'implied_probability']]
+                imp_prob_tracker_df.columns = ['Date', 'alpha_ticker', 'price', 'deal_type', 'implied_probability']
+                return_data = imp_prob_tracker_df.to_json(orient='records')
+
+            else:
+                # Gather Data from Potential Long short timeseries..
+                if deal_type == 'ESS IDEA Universe':
+                    implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date).values('Date', 'alpha_ticker',  'deal_type', 'implied_probability'))
+
+                elif deal_type == 'Universe (Long)':
+                    implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, potential_long='Y').values('Date', 'alpha_ticker', 'price',  'deal_type', 'implied_probability'))
+
+                elif deal_type == 'Universe (Short)':
+                    implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, potential_short='Y').values('Date', 'alpha_ticker', 'price',  'deal_type', 'implied_probability'))
+
+                elif deal_type == 'Universe (Unclassified)':
+                    implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, potential_short='').values('Date', 'alpha_ticker',  'price', 'deal_type', 'implied_probability'))
+
+                else:
+                    implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, deal_type=deal_type).values('Date', 'alpha_ticker', 'deal_type', 'implied_probability'))
+                implied_drilldowwn['Date'] = implied_drilldowwn['Date'].astype(str)
+
+                return_data = implied_drilldowwn.to_json(orient='records')
+
+        except Exception as e:
+            print(e)
+            return_data = None
+
+    return JsonResponse({'data': return_data})

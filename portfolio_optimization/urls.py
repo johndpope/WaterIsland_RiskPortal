@@ -13,5 +13,9 @@ urlpatterns = [
         name='ess_potential_long_shorts'),
     url('ess_implied_probabilites$', views.ess_implied_probabilites,
         name='ess_implied_probabilites'),
+    url('ess_implied_prob_drilldown$', views.ess_implied_prob_drilldown,
+        name='ess_implied_prob_drilldown'),
+
+
 
 ]

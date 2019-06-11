@@ -31,6 +31,7 @@ class SoftCatalystNormalizedRiskSizing(models.Model):
 
 
 class EssPotentialLongShorts(models.Model):
+    Date = models.DateField(null=True)
     alpha_ticker = models.CharField(max_length=100)
     price = models.FloatField(null=True)
     pt_up = models.FloatField(null=True)
@@ -68,3 +69,4 @@ class EssUniverseImpliedProbability(models.Model):
     Date = models.DateField()
     deal_type = models.CharField(max_length=100, null=True)
     implied_probability = models.FloatField(null=True)
+    count = models.IntegerField(null=True)  # To count how many names in the avg. implied probability
