@@ -134,7 +134,7 @@ def ess_implied_prob_drilldown(request):
             else:
                 # Gather Data from Potential Long short timeseries..
                 if deal_type == 'ESS IDEA Universe':
-                    implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date).values('Date', 'alpha_ticker',  'deal_type', 'implied_probability'))
+                    implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date).values('Date', 'alpha_ticker', 'price',  'deal_type', 'implied_probability'))
 
                 elif deal_type == 'Universe (Long)':
                     implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, potential_long='Y').values('Date', 'alpha_ticker', 'price',  'deal_type', 'implied_probability'))
@@ -146,7 +146,7 @@ def ess_implied_prob_drilldown(request):
                     implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, potential_short='').values('Date', 'alpha_ticker',  'price', 'deal_type', 'implied_probability'))
 
                 else:
-                    implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, deal_type=deal_type).values('Date', 'alpha_ticker', 'deal_type', 'implied_probability'))
+                    implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, deal_type=deal_type).values('Date', 'alpha_ticker', 'price', 'deal_type', 'implied_probability'))
                 implied_drilldowwn['Date'] = implied_drilldowwn['Date'].astype(str)
 
                 return_data = implied_drilldowwn.to_json(orient='records')
