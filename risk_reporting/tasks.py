@@ -19,6 +19,7 @@ from sqlalchemy import create_engine
 from email_utilities import send_email
 from risk.mna_deal_bloomberg_utils import get_data_from_bloomberg_by_bg_id
 from realtime_pnl_impacts import views
+from risk_reporting.update_credit_deals_tasks import update_credit_deals
 from risk_reporting.models import (CreditDealsUpsideDownside, DailyNAVImpacts, PositionLevelNAVImpacts,
     FormulaeBasedDownsides)
 from slack_utils import get_channel_name
@@ -1359,19 +1360,32 @@ def refresh_credit_deals_upside_downside():
         credit_deals_df.drop(columns=['id'], inplace=True)
         credit_deals_df.reset_index(inplace=True)
         credit_deals_df.rename(columns={'index': 'id'}, inplace=True)
-        credit_deals_df.drop(columns=['equity_ticker', 'spread_px_last', 'Underlying', 'outlier', 'DealValue'], inplace=True)
-        CreditDealsUpsideDownside.objects.all().delete()
-        time.sleep(3)
-        engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD +
-                            "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
-        con = engine.connect()
-        credit_deals_df.to_sql(con=con, name='risk_reporting_creditdealsupsidedownside', schema=settings.CURRENT_DATABASE,
-                            if_exists='append', chunksize=10000, index=False)
+        credit_deals_df.drop(columns=['equity_ticker', 'spread_px_last', 'Underlying', 'outlier', 'DealValue'],
+                             inplace=True)
+        current_credit_deals_df = pd.DataFrame.from_records(CreditDealsUpsideDownside.objects.all().values())
+        try:
+            CreditDealsUpsideDownside.objects.all().delete()
+            time.sleep(3)
+            engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" +
+                                   settings.WICFUNDS_DATABASE_PASSWORD + "@" + settings.WICFUNDS_DATABASE_HOST + "/" +
+                                   settings.WICFUNDS_DATABASE_NAME)
+            con = engine.connect()
+            credit_deals_df.to_sql(con=con, name='risk_reporting_creditdealsupsidedownside',
+                                   schema=settings.CURRENT_DATABASE, if_exists='append', chunksize=10000, index=False)
+        except Exception as e:
+            current_credit_deals_df.to_sql(con=con, name='risk_reporting_creditdealsupsidedownside',
+                                           schema=settings.CURRENT_DATABASE, if_exists='append', chunksize=10000,
+                                           index=False)
+            slack_message('generic.slack',
+                          {'message': 'ERROR: Credit Deals upside/downside DB Refresh (every 29 minutes) had an error.'+
+                                      'The database has been restored to the previous data. Exception: ' + str(e)},
+                          channel=get_channel_name('realtimenavimpacts'), token=settings.SLACK_TOKEN,
+                          name='ESS_IDEA_DB_ERROR_INSPECTOR')
         con.close()
     except Exception as e:
         print('Credit Deals Upside/Downside Update failed', e)
         slack_message('generic.slack',
-                      {'message': 'ERROR: CREDIT DEALS UPSIDE/DOWNSIDE REFRESH' + str(e)},
+                      {'message': 'ERROR: Credit Deals up/downside refresh (every 29 minutes) had an error.' + str(e)},
                       channel=get_channel_name('realtimenavimpacts'),
                       token=settings.SLACK_TOKEN,
                       name='ESS_IDEA_DB_ERROR_INSPECTOR')
@@ -1382,3 +1396,8 @@ def get_px_last_value(value):
         return value['PX_LAST'][0]
     except Exception as e:
         return value
+
+
+@shared_task
+def update_credit_deals_upside_downside_once_daily():
+    update_credit_deals()

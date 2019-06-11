@@ -16,7 +16,7 @@ $(document).ready(function () {
         },
             {
                 targets: [4], render: function (data) {
-                return moment(data, 'MMM DD, YYYY, h:mm').format('YYYY-MM-DD, hh:mm a');
+                return moment(data, 'MMM DD, YYYY, h:mm a').format('YYYY-MM-DD, hh:mm a');
             }
         }],
 

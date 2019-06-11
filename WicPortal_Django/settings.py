@@ -102,7 +102,10 @@ CELERYBEAT_SCHEDULE = {
         'task': 'risk_reporting.tasks.refresh_credit_deals_upside_downside',
         'schedule': crontab(minute='*/29', hour='6-16', day_of_week='mon-fri'),
     },
-
+    'UPDATE_CREDIT_DEALS_UPSIDE_DOWNSIDE': {
+        'task': 'risk_reporting.tasks.update_credit_deals_upside_downside_once_daily',
+        'schedule': crontab(minute='00', hour='21', day_of_week='mon-fri'),
+    },
 }
 
 BROKER_POOL_LIMIT = 0
