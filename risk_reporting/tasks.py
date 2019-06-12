@@ -227,7 +227,8 @@ def refresh_base_case_and_outlier_downsides():
                                                                                                          'ETF1',
                                                                                                          'ETF2',
                                                                                                          'INDEX3',
-                                                                                                         'ETF3']))]
+                                                                                                         'ETF3',
+                                                                                                         'WIC']))]
 
         nav_impacts_positions_df.drop(columns=['LastPrice', 'RiskLimit'], inplace=True)
 
