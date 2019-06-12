@@ -681,6 +681,26 @@ def restore_from_archive_mna_idea(request):
     return HttpResponse(response)
 
 
+def ma_deal_detailed_export(request):
+    response = 'Failed'
+    query_ma_deal_detailed_export = "SELECT * FROM "+settings.CURRENT_DATABASE+".risk_ma_deals as RMA "\
+                                    "LEFT OUTER JOIN "+settings.CURRENT_DATABASE+".risk_madealsactioniddetails as AID"\
+                                    " ON RMA.action_id = AID.action_id LEFT OUTER JOIN  " +\
+                                     settings.CURRENT_DATABASE+".risk_ma_deals_risk_factors as RF "\
+                                    "ON "\
+                                    "RF.deal_id = RMA.id "
+    try:
+        risk_attr_df = pd.read_sql_query(query_ma_deal_detailed_export, con=connection)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=ARBDetailedExport.csv'
+        risk_attr_df.to_csv(path_or_buf=response, index=False)
+
+    except Exception as e:
+        print(e)
+
+    return response
+
+
 def archive_mna_idea(request):
     response = 'Failed'
     if request.method == 'POST':
