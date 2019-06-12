@@ -63,23 +63,4 @@ $(document).ready(function () {
         });
         $('#edit_position_rec_modal').modal('hide');
     });
-
-    const checkbox = document.getElementById('show_resolved_breaks_checkbox')
-    checkbox.addEventListener('change', (event) => {
-        if (event.target.checked) {
-            console.log('checked');
-            var url = window.location.href,
-            url = url.replace("?resolved=true", "");
-            url = url.replace("?resolved=false", "");
-            url += "?resolved=true";
-            window.location.href = url;
-        } else {
-            console.log('not checked');
-            var url = window.location.href,
-            url = url.replace("?resolved=true", "");
-            url = url.replace("?resolved=false", "");
-            url += "?resolved=false";
-            window.location.href = url;
-        }
-    });
 });
