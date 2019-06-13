@@ -1,1380 +1,1339 @@
 {% extends 'base.html' %}
 {% block title_block %}
-    View ESS IDEA
+View ESS IDEA
 {% endblock %}
 {% load staticfiles %}
 
 {% block amcharts_scripts %}
-    {{ block.super }}
+{{ block.super }}
 {% endblock %}
 
 {% block css_styles %}
-    {{ block.super }}
+{{ block.super }}
 {% endblock %}
 
 {% block summernote_css %}
-    {{ block.super }}
+{{ block.super }}
 {% endblock %}
 
 {% block content %}
 
-    {#  Detailed Calculations Modal START#}
-            <input type="hidden" id="regression_calcs_latest" value="{{ regression_calculations }}">
-            <input type="hidden" id="cix_calcs_latest" value="{{ cix_calculations }}">
+{#  Detailed Calculations Modal START#}
+<input type="hidden" id="regression_calcs_latest" value="{{ regression_calculations }}">
+<input type="hidden" id="cix_calcs_latest" value="{{ cix_calculations }}">
 
-            <input type="hidden" id="analyst_upside" value="{{ ess_idea_object.pt_up }}">
-            <input type="hidden" id="analyst_downside" value="{{ ess_idea_object.pt_down }}">
-            <input type="hidden" id="analyst_pt_wic" value="{{ ess_idea_object.pt_wic }}">
+<input type="hidden" id="analyst_upside" value="{{ ess_idea_object.pt_up }}">
+<input type="hidden" id="analyst_downside" value="{{ ess_idea_object.pt_down }}">
+<input type="hidden" id="analyst_pt_wic" value="{{ ess_idea_object.pt_wic }}">
 
 
 
-            <div class="modal animated lightSpeedIn text-left" id="ess_idea_calculations_modal" tabindex="-1"
-                 role="dialog"
-                 aria-labelledby="myModalLabel42" aria-hidden="true">
-                <div class="modal-xl modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 class="modal-title text-center" id="myModalLabel42">Step-by-Step calculations Report</h4>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
+<div class="modal animated lightSpeedIn text-left" id="ess_idea_calculations_modal" tabindex="-1" role="dialog"
+  aria-labelledby="myModalLabel42" aria-hidden="true">
+  <div class="modal-xl modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title text-center" id="myModalLabel42">Step-by-Step calculations Report</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
 
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-lg-6 offset-4">
-                                    <div class="row">
-                                        <div class="col-lg-2 block-tag">
-                                            <small class="badge badge-default badge-success">Backend calculations
-                                            </small>
-                                        </div>
-                                        <br><br>
-                                        <div class="col-lg-12" id="step_by_step_content">
-                                        </div>
-                                    </div>
-                                    <br>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button id='close_wic_note_modal' type="button"
-                                    class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
-                            </button>
-                        </div>
-
-                    </div>
-                </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-lg-6 offset-4">
+            <div class="row">
+              <div class="col-lg-2 block-tag">
+                <small class="badge badge-default badge-success">Backend calculations
+                </small>
+              </div>
+              <br><br>
+              <div class="col-lg-12" id="step_by_step_content">
+              </div>
             </div>
-
-            {# Detailed Calculations Modal End #}
-
-
-
-    <input type="hidden" value="{{ upside_downside_records_df }}" id="upside_downside_records_df">
-    {#            Balance Sheet Modal        #}
-    <!-- Modal -->
-    {% csrf_token %}
-    <div class="modal modal-xl fade" id="balance_sheet_modal" tabindex="-1" role="dialog"
-         aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-        <div class="modal-xl modal-dialog modal-dialog-centered " role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="balanceSheet">Balance Sheet
-                        for: {{ ess_idea_object.alpha_ticker }}</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-
-                    <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg">
-                        <li class="nav-item">
-                            <a class="nav-link active" id="base-tab50" data-toggle="tab"
-                               aria-controls="tab50"
-                               href="#tab50" aria-expanded="true">Adjustments for Upside</a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link" id="base-tab51" data-toggle="tab" aria-controls="tab51"
-                               href="#tab51"
-                               aria-expanded="false">Adjustments for PT_WIC</a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a class="nav-link" id="base-tab52" data-toggle="tab" aria-controls="tab52"
-                               href="#tab52"
-                               aria-expanded="false">Adjustments for Downside</a>
-                        </li>
-                    </ul>
-                    <br><br>
-                    {# *******************   Upsides Adjustment  ************************************#}
-                    <div class="tab-content">
-                        <div role="tabpanel" class="tab-pane active" id="tab50" aria-expanded="true"
-                             aria-labelledby="base-tab50">
-                            <div class="row">
-                                <div class="col-lg-1"></div>
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">PX</small>
-                                    <input type="text" class="form-control" id="upside_balance_sheet_px"/>
-                                </div>
-
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EPS</small>
-                                    <input type="text" class="form-control" id="upside_balance_sheet_best_eps"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                                    <input type="text" class="form-control" id="upside_balance_sheet_best_net_income"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_OPP</small>
-                                    <input type="text" class="form-control" id="upside_balance_sheet_best_opp"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_SALES</small>
-                                    <input type="text" class="form-control" id="upside_balance_sheet_best_sales"/>
-                                </div>
-
-                                <div class="col-lg-2">
-                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                                    <input type="text" class="form-control" id="upside_balance_sheet_cur_ev_component"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                                    <input type="text" class="form-control" id="upside_balance_sheet_best_capex"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                                    <input type="text" class="form-control" id="upside_balance_sheet_best_ebitda"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                                    <input type="text" class="form-control" id="upside_balance_sheet_eqy_sh_out"/>
-                                </div>
-                            </div>
-                            <br><br>
-                            <h3 class="modal-title">Balance Sheet Adjustments</h3><br>
-                            <div class="row">
-                                <div class="col-lg-1"></div>
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">PX</small>
-                                    <input type="text" class="form-control" id="upside_adjustment_balance_sheet_px" value="0.00"/>
-                                </div>
-
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EPS</small>
-                                    <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_eps"
-                                           value="0.00"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                                    <input type="text" class="form-control"
-                                           id="upside_adjustment_balance_sheet_best_net_income" value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_OPP</small>
-                                    <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_opp"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_SALES</small>
-                                    <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_sales"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-2">
-                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                                    <input type="text" class="form-control"
-                                           id="upside_adjustment_balance_sheet_cur_ev_component" value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                                    <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_capex"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                                    <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_ebitda"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                                    <input type="text" class="form-control" id="upside_adjustment_balance_sheet_eqy_sh_out"
-                                           value="0.0"/>
-                                </div>
-                                <div class="col-lg-1"></div>
-                            </div>
-                            <br>
-
-                            <h3 class="modal-title">Final Balance Sheet</h3><br>
-                            <div class="row">
-                                <div class="col-lg-1"></div>
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">PX</small>
-                                    <input type="text" class="form-control" id="upside_final_balance_sheet_px"/>
-                                </div>
-
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EPS</small>
-                                    <input type="text" class="form-control" id="upside_final_balance_sheet_best_eps"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                                    <input type="text" class="form-control" id="upside_final_balance_sheet_best_net_income"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_OPP</small>
-                                    <input type="text" class="form-control" id="upside_final_balance_sheet_best_opp"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_SALES</small>
-                                    <input type="text" class="form-control" id="upside_final_balance_sheet_best_sales"/>
-                                </div>
-
-                                <div class="col-lg-2">
-                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                                    <input type="text" class="form-control" id="upside_final_balance_sheet_cur_ev_component"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                                    <input type="text" class="form-control" id="upside_final_balance_sheet_best_capex"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                                    <input type="text" class="form-control" id="upside_final_balance_sheet_best_ebitda"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                                    <input type="text" class="form-control" id="upside_final_balance_sheet_eqy_sh_out"/>
-                                </div>
-                            <div class="col-lg-1"></div>
-                            </div>
-                        </div>
-
-                        {#  ************************* WIC Adjustments ****************************************************** #}
-                        <div class="tab-pane" id="tab51" aria-labelledby="base-tab51">
-                            <div class="row">
-                                <div class="col-lg-1"></div>
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">PX</small>
-                                    <input type="text" class="form-control" id="wic_balance_sheet_px"/>
-                                </div>
-
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EPS</small>
-                                    <input type="text" class="form-control" id="wic_balance_sheet_best_eps"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                                    <input type="text" class="form-control" id="wic_balance_sheet_best_net_income"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_OPP</small>
-                                    <input type="text" class="form-control" id="wic_balance_sheet_best_opp"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_SALES</small>
-                                    <input type="text" class="form-control" id="wic_balance_sheet_best_sales"/>
-                                </div>
-
-                                <div class="col-lg-2">
-                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                                    <input type="text" class="form-control" id="wic_balance_sheet_cur_ev_component"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                                    <input type="text" class="form-control" id="wic_balance_sheet_best_capex"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                                    <input type="text" class="form-control" id="wic_balance_sheet_best_ebitda"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                                    <input type="text" class="form-control" id="wic_balance_sheet_eqy_sh_out"/>
-                                </div>
-                                <div class="col-lg-1"></div>
-                            </div>
-                            <br><br>
-                            <h3 class="modal-title">Balance Sheet Adjustments</h3><br>
-                            <div class="row">
-                                <div class="col-lg-1"></div>
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">PX</small>
-                                    <input type="text" class="form-control" id="wic_adjustment_balance_sheet_px"
-                                           value="0.00"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EPS</small>
-                                    <input type="text" class="form-control" id="wic_adjustment_balance_sheet_best_eps"
-                                           value="0.00"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                                    <input type="text" class="form-control"
-                                           id="wic_adjustment_balance_sheet_best_net_income" value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_OPP</small>
-                                    <input type="text" class="form-control" id="wic_adjustment_balance_sheet_best_opp"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_SALES</small>
-                                    <input type="text" class="form-control"
-                                           id="wic_adjustment_balance_sheet_best_sales"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-2">
-                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                                    <input type="text" class="form-control"
-                                           id="wic_adjustment_balance_sheet_cur_ev_component" value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                                    <input type="text" class="form-control"
-                                           id="wic_adjustment_balance_sheet_best_capex"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                                    <input type="text" class="form-control"
-                                           id="wic_adjustment_balance_sheet_best_ebitda"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                                    <input type="text" class="form-control"
-                                           id="wic_adjustment_balance_sheet_eqy_sh_out"
-                                           value="0.0"/>
-                                </div>
-                                <div class="col-lg-1"></div>
-                            </div>
-                            <br>
-
-                            <h3 class="modal-title">Final Balance Sheet</h3><br>
-                            <div class="row">
-                                 <div class="col-lg-1"></div>
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">PX</small>
-                                    <input type="text" class="form-control" id="wic_final_balance_sheet_px"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EPS</small>
-                                    <input type="text" class="form-control" id="wic_final_balance_sheet_best_eps"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                                    <input type="text" class="form-control"
-                                           id="wic_final_balance_sheet_best_net_income"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_OPP</small>
-                                    <input type="text" class="form-control" id="wic_final_balance_sheet_best_opp"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_SALES</small>
-                                    <input type="text" class="form-control" id="wic_final_balance_sheet_best_sales"/>
-                                </div>
-
-                                <div class="col-lg-2">
-                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                                    <input type="text" class="form-control"
-                                           id="wic_final_balance_sheet_cur_ev_component"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                                    <input type="text" class="form-control" id="wic_final_balance_sheet_best_capex"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                                    <input type="text" class="form-control" id="wic_final_balance_sheet_best_ebitda"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                                    <input type="text" class="form-control" id="wic_final_balance_sheet_eqy_sh_out"/>
-                                </div>
-                                <div class="col-lg-1"></div>
-                            </div>
-                        </div>
-
-                        {#  ************************* Downsides Adjustment ****************************************************** #}
-                        <div class="tab-pane" id="tab52" aria-labelledby="base-tab52">
-                            <div class="row">
-                                 <div class="col-lg-1"></div>
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">PX</small>
-                                    <input type="text" class="form-control" id="downsides_balance_sheet_px"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EPS</small>
-                                    <input type="text" class="form-control" id="downsides_balance_sheet_best_eps"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                                    <input type="text" class="form-control" id="downsides_balance_sheet_best_net_income"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_OPP</small>
-                                    <input type="text" class="form-control" id="downsides_balance_sheet_best_opp"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_SALES</small>
-                                    <input type="text" class="form-control" id="downsides_balance_sheet_best_sales"/>
-                                </div>
-
-                                <div class="col-lg-2">
-                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                                    <input type="text" class="form-control" id="downsides_balance_sheet_cur_ev_component"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                                    <input type="text" class="form-control" id="downsides_balance_sheet_best_capex"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                                    <input type="text" class="form-control" id="downsides_balance_sheet_best_ebitda"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                                    <input type="text" class="form-control" id="downsides_balance_sheet_eqy_sh_out"/>
-                                </div>
-                                <div class="col-lg-1"></div>
-                            </div>
-                            <br><br>
-                            <h3 class="modal-title">Balance Sheet Adjustments</h3><br>
-                            <div class="row">
-                                <div class="col-lg-1"></div>
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">PX</small>
-                                    <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_px"
-                                           value="0.00"/>
-                                </div>
-
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EPS</small>
-                                    <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_best_eps"
-                                           value="0.00"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                                    <input type="text" class="form-control"
-                                           id="downsides_adjustment_balance_sheet_best_net_income" value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_OPP</small>
-                                    <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_best_opp"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_SALES</small>
-                                    <input type="text" class="form-control"
-                                           id="downsides_adjustment_balance_sheet_best_sales"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-2">
-                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                                    <input type="text" class="form-control"
-                                           id="downsides_adjustment_balance_sheet_cur_ev_component" value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                                    <input type="text" class="form-control"
-                                           id="downsides_adjustment_balance_sheet_best_capex"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                                    <input type="text" class="form-control"
-                                           id="downsides_adjustment_balance_sheet_best_ebitda"
-                                           value="0.0"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                                    <input type="text" class="form-control"
-                                           id="downsides_adjustment_balance_sheet_eqy_sh_out"
-                                           value="0.0"/>
-                                </div>
-                                <div class="col-lg-1"></div>
-                            </div>
-                            <br>
-
-                            <h3 class="modal-title">Final Balance Sheet</h3><br>
-                            <div class="row">
-                                <div class="col-lg-1"></div>
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">PX</small>
-                                    <input type="text" class="form-control" id="downsides_final_balance_sheet_px"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EPS</small>
-                                    <input type="text" class="form-control" id="downsides_final_balance_sheet_best_eps"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
-                                    <input type="text" class="form-control"
-                                           id="downsides_final_balance_sheet_best_net_income"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_OPP</small>
-                                    <input type="text" class="form-control" id="downsides_final_balance_sheet_best_opp"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_SALES</small>
-                                    <input type="text" class="form-control" id="downsides_final_balance_sheet_best_sales"/>
-                                </div>
-
-                                <div class="col-lg-2">
-                                    <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
-                                    <input type="text" class="form-control"
-                                           id="downsides_final_balance_sheet_cur_ev_component"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_CAPEX</small>
-                                    <input type="text" class="form-control" id="downsides_final_balance_sheet_best_capex"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">BEST_EBITDA</small>
-                                    <input type="text" class="form-control" id="downsides_final_balance_sheet_best_ebitda"/>
-                                </div>
-
-                                <div class="col-lg-1">
-                                    <small class="badge badge-default badge-success">EQY_SH_OUT</small>
-                                    <input type="text" class="form-control" id="downsides_final_balance_sheet_eqy_sh_out"/>
-                                </div>
-                                <div class="col-lg-1"></div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <small class="badge badge-default badge-warning">Hitting Save Changes will save these adjustments
-                        into the Database and subsequent Premium analysis would be calculated based off this balance
-                        sheet!
-                    </small>
-
-                    <fieldset>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input"
-                                   id="use_upside_without_bloomberg">
-                            <label class="custom-control-label"
-                                   for="use_upside_without_bloomberg">Up w/o BBG</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input"
-                                   id="use_wic_without_bloomberg">
-                            <label class="custom-control-label"
-                                   for="use_wic_without_bloomberg">WIC w/o BBG</label>
-                        </div>
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input"
-                                   id="use_downside_without_bloomberg">
-                            <label class="custom-control-label"
-                                   for="use_downside_without_bloomberg">Down w/o BBG</label>
-                        </div>
-                    </fieldset>
-
-                    <button type="button" id='copy_from_upside_adjustments' class="btn btn-indigo">Populate WIC and Downside Adj. from Upside Adj.
-                    </button>
-                    <button type="button" id='calculate_balance_sheet' class="btn btn-warning">Update Balance Sheet
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" id='save_balance_sheet' class="btn btn-primary">Save changes</button>
-                </div>
-            </div>
+            <br>
+          </div>
         </div>
+      </div>
+      <div class="modal-footer">
+        <button id='close_wic_note_modal' type="button" class="btn btn-danger btn-outline-secondary"
+          data-dismiss="modal">Close
+        </button>
+      </div>
+
     </div>
+  </div>
+</div>
+
+{# Detailed Calculations Modal End #}
 
 
-    {# Balance Sheet Modal End #}
-    <div class="app-content content">
-        <div class="content-wrapper">
-            <input type="hidden" id="alpha_chart" value="{{ alpha_chart }}">
-            <input type="hidden" id="ev_ebitda_chart_ltm" value="{{ ev_ebitda_chart_ltm }}">
-            <input type="hidden" id="ev_ebitda_chart_1bf" value="{{ ev_ebitda_chart_1bf }}">
-            <input type="hidden" id="ev_ebitda_chart_2bf" value="{{ ev_ebitda_chart_2bf }}">
 
-            <input type="hidden" id="ev_sales_chart_ltm" value="{{ ev_sales_chart_ltm }}">
-            <input type="hidden" id="ev_sales_chart_1bf" value="{{ ev_sales_chart_1bf }}">
-            <input type="hidden" id="ev_sales_chart_2bf" value="{{ ev_sales_chart_2bf }}">
+<input type="hidden" value="{{ upside_downside_records_df }}" id="upside_downside_records_df">
+{#            Balance Sheet Modal        #}
+<!-- Modal -->
+{% csrf_token %}
+<div class="modal modal-xl fade" id="balance_sheet_modal" tabindex="-1" role="dialog"
+  aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-xl modal-dialog modal-dialog-centered " role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="balanceSheet">Balance Sheet
+          for: {{ ess_idea_object.alpha_ticker }}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
 
-            <input type="hidden" id="ess_idea_deal_id" value="{{ ess_idea_object.id }}">
+        <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg">
+          <li class="nav-item">
+            <a class="nav-link active" id="base-tab50" data-toggle="tab" aria-controls="tab50" href="#tab50"
+              aria-expanded="true">Adjustments for Upside</a>
+          </li>
 
-            <input type="hidden" id="p_eps_chart_ltm" value="{{ p_eps_chart_ltm }}">
-            <input type="hidden" id="p_eps_chart_1bf" value="{{ p_eps_chart_1bf }}">
-            <input type="hidden" id="p_eps_chart_2bf" value="{{ p_eps_chart_2bf }}">
+          <li class="nav-item">
+            <a class="nav-link" id="base-tab51" data-toggle="tab" aria-controls="tab51" href="#tab51"
+              aria-expanded="false">Adjustments for PT_WIC</a>
+          </li>
 
-            <input type="hidden" id="p_fcf_chart" value="{{ p_fcf_chart }}">
-            <input type="hidden" id="peer_tickers" value="{{ peer_tickers }}">
-            <input type="hidden" id="hedge_chart" value="{{ hedge_chart }}">
-            <input type="hidden" id="market_neutral_chart" value="{{ market_neutral_chart }}">
-            <input type="hidden" id="implied_probability_chart" value="{{ implied_probability_chart }}">
-            <input type="hidden" id="event_premium_chart" value="{{ event_premium_chart }}">
-            <input type="hidden" id="bull_thesis_input" value="{{ ess_idea_object.bull_thesis }}">
-            <input type="hidden" id="our_thesis_input" value="{{ ess_idea_object.our_thesis }}">
-            <input type="hidden" id="bear_thesis_input" value="{{ ess_idea_object.bear_thesis }}">
+          <li class="nav-item">
+            <a class="nav-link" id="base-tab52" data-toggle="tab" aria-controls="tab52" href="#tab52"
+              aria-expanded="false">Adjustments for Downside</a>
+          </li>
+        </ul>
+        <br><br>
+        {# *******************   Upsides Adjustment  ************************************#}
+        <div class="tab-content">
+          <div role="tabpanel" class="tab-pane active" id="tab50" aria-expanded="true" aria-labelledby="base-tab50">
+            <div class="row">
+              <div class="col-lg-1"></div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">PX</small>
+                <input type="text" class="form-control" id="upside_balance_sheet_px" />
+              </div>
 
-            <input type="hidden" id="ess_idea_unaffected_date" value="{{ ess_idea_object.unaffected_date }}">
-            <input type="hidden" id="ess_idea_downside_changes" value="{{ downside_changes }}">
-            {#  Notes Modal START#}
 
-            <div class="modal animated lightSpeedIn text-left" id="show_ess_idea_notes_modal" tabindex="-1"
-                 role="dialog"
-                 aria-labelledby="myModalLabel42" aria-hidden="true">
-                <div class="modal-xl modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 class="modal-title text-center" id="myModalLabel42">Here's your Note!</h4>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EPS</small>
+                <input type="text" class="form-control" id="upside_balance_sheet_best_eps" />
+              </div>
 
-                        <div class="modal-body">
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                <input type="text" class="form-control" id="upside_balance_sheet_best_net_income" />
+              </div>
 
-                            <div class="row">
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_OPP</small>
+                <input type="text" class="form-control" id="upside_balance_sheet_best_opp" />
+              </div>
 
-                                <div class="col-lg-6 offset-4">
-                                    <div class="row">
-                                        <div class="col-lg-2 block-tag">
-                                            <small class="badge badge-default badge-success">Your Note:
-                                            </small>
-                                        </div>
-                                        <br><br>
-                                        <div class="col-lg-12">
-                                            <div class="container" id="show_ess_idea_note_article">
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_SALES</small>
+                <input type="text" class="form-control" id="upside_balance_sheet_best_sales" />
+              </div>
 
-                                            </div>
-                                        </div>
-                                        <br><br>
-                                        <p id="edit_notes_attachments"></p>
-                                    </div>
-                                    <br>
-                                </div>
-                            </div>
+              <div class="col-lg-2">
+                <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                <input type="text" class="form-control" id="upside_balance_sheet_cur_ev_component" />
+              </div>
 
-                        </div>
-                        <div class="modal-footer">
-                            <button id='close_wic_note_modal' type="button"
-                                    class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
-                            </button>
-                        </div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                <input type="text" class="form-control" id="upside_balance_sheet_best_capex" />
+              </div>
 
-                    </div>
-                </div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                <input type="text" class="form-control" id="upside_balance_sheet_best_ebitda" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                <input type="text" class="form-control" id="upside_balance_sheet_eqy_sh_out" />
+              </div>
             </div>
+            <br><br>
+            <h3 class="modal-title">Balance Sheet Adjustments</h3><br>
+            <div class="row">
+              <div class="col-lg-1"></div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">PX</small>
+                <input type="text" class="form-control" id="upside_adjustment_balance_sheet_px" value="0.00" />
+              </div>
 
-            {# Notes Modal End #}
-            {# News Modal #}
-            <div class="modal animated lightSpeedIn text-left" id="show_ess_idea_news_modal" tabindex="-1"
-                 role="dialog"
-                 aria-labelledby="myModalLabel42" aria-hidden="true">
-                <div class="modal-xl modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h4 class="modal-title text-center" id="myModalLabel42">Here's your News</h4>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
 
-                        <div class="modal-body">
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EPS</small>
+                <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_eps" value="0.00" />
+              </div>
 
-                            <div class="row">
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_net_income"
+                  value="0.0" />
+              </div>
 
-                                <div class="col-lg-6 offset-4">
-                                    <div class="row">
-                                        <div class="col-lg-2 block-tag">
-                                            <small class="badge badge-default badge-success">News Article
-                                            </small>
-                                        </div>
-                                        <br><br>
-                                        <div class="col-lg-12">
-                                            <div class="container" id="show_ess_idea_news_article">
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_OPP</small>
+                <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_opp" value="0.0" />
+              </div>
 
-                                            </div>
-                                        </div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_SALES</small>
+                <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_sales" value="0.0" />
+              </div>
 
-                                    </div>
-                                    <br>
-                                </div>
-                            </div>
+              <div class="col-lg-2">
+                <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                <input type="text" class="form-control" id="upside_adjustment_balance_sheet_cur_ev_component"
+                  value="0.0" />
+              </div>
 
-                        </div>
-                        <div class="modal-footer">
-                            <button id='close_wic_note_modal' type="button"
-                                    class="btn btn-danger btn-outline-secondary" data-dismiss="modal">Close
-                            </button>
-                            <button id='show_ess_idea_go_to_url' type="button"
-                                    class="btn btn-success" data-dismiss="modal">Visit the Article!
-                            </button>
-                        </div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_capex" value="0.0" />
+              </div>
 
-                    </div>
-                </div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                <input type="text" class="form-control" id="upside_adjustment_balance_sheet_best_ebitda" value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                <input type="text" class="form-control" id="upside_adjustment_balance_sheet_eqy_sh_out" value="0.0" />
+              </div>
+              <div class="col-lg-1"></div>
             </div>
+            <br>
 
-            {# News Modal End #}
+            <h3 class="modal-title">Final Balance Sheet</h3><br>
+            <div class="row">
+              <div class="col-lg-1"></div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">PX</small>
+                <input type="text" class="form-control" id="upside_final_balance_sheet_px" />
+              </div>
 
-            <div class="container">
-                <div class="row justify-content-center">
-                    <small class="badge badge-lg badge-info text-center">{{ ess_idea_object.alpha_ticker }}</small>
-                </div>
-                <div class="row justify-content-center">
-                    <small class="badge badge-lg badge-secondary text-center">Current Version:
-                        ({{ ess_idea_object.version_number }})
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EPS</small>
+                <input type="text" class="form-control" id="upside_final_balance_sheet_best_eps" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                <input type="text" class="form-control" id="upside_final_balance_sheet_best_net_income" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_OPP</small>
+                <input type="text" class="form-control" id="upside_final_balance_sheet_best_opp" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_SALES</small>
+                <input type="text" class="form-control" id="upside_final_balance_sheet_best_sales" />
+              </div>
+
+              <div class="col-lg-2">
+                <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                <input type="text" class="form-control" id="upside_final_balance_sheet_cur_ev_component" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                <input type="text" class="form-control" id="upside_final_balance_sheet_best_capex" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                <input type="text" class="form-control" id="upside_final_balance_sheet_best_ebitda" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                <input type="text" class="form-control" id="upside_final_balance_sheet_eqy_sh_out" />
+              </div>
+              <div class="col-lg-1"></div>
+            </div>
+          </div>
+
+          {#  ************************* WIC Adjustments ****************************************************** #}
+          <div class="tab-pane" id="tab51" aria-labelledby="base-tab51">
+            <div class="row">
+              <div class="col-lg-1"></div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">PX</small>
+                <input type="text" class="form-control" id="wic_balance_sheet_px" />
+              </div>
+
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EPS</small>
+                <input type="text" class="form-control" id="wic_balance_sheet_best_eps" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                <input type="text" class="form-control" id="wic_balance_sheet_best_net_income" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_OPP</small>
+                <input type="text" class="form-control" id="wic_balance_sheet_best_opp" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_SALES</small>
+                <input type="text" class="form-control" id="wic_balance_sheet_best_sales" />
+              </div>
+
+              <div class="col-lg-2">
+                <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                <input type="text" class="form-control" id="wic_balance_sheet_cur_ev_component" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                <input type="text" class="form-control" id="wic_balance_sheet_best_capex" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                <input type="text" class="form-control" id="wic_balance_sheet_best_ebitda" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                <input type="text" class="form-control" id="wic_balance_sheet_eqy_sh_out" />
+              </div>
+              <div class="col-lg-1"></div>
+            </div>
+            <br><br>
+            <h3 class="modal-title">Balance Sheet Adjustments</h3><br>
+            <div class="row">
+              <div class="col-lg-1"></div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">PX</small>
+                <input type="text" class="form-control" id="wic_adjustment_balance_sheet_px" value="0.00" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EPS</small>
+                <input type="text" class="form-control" id="wic_adjustment_balance_sheet_best_eps" value="0.00" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                <input type="text" class="form-control" id="wic_adjustment_balance_sheet_best_net_income" value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_OPP</small>
+                <input type="text" class="form-control" id="wic_adjustment_balance_sheet_best_opp" value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_SALES</small>
+                <input type="text" class="form-control" id="wic_adjustment_balance_sheet_best_sales" value="0.0" />
+              </div>
+
+              <div class="col-lg-2">
+                <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                <input type="text" class="form-control" id="wic_adjustment_balance_sheet_cur_ev_component"
+                  value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                <input type="text" class="form-control" id="wic_adjustment_balance_sheet_best_capex" value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                <input type="text" class="form-control" id="wic_adjustment_balance_sheet_best_ebitda" value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                <input type="text" class="form-control" id="wic_adjustment_balance_sheet_eqy_sh_out" value="0.0" />
+              </div>
+              <div class="col-lg-1"></div>
+            </div>
+            <br>
+
+            <h3 class="modal-title">Final Balance Sheet</h3><br>
+            <div class="row">
+              <div class="col-lg-1"></div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">PX</small>
+                <input type="text" class="form-control" id="wic_final_balance_sheet_px" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EPS</small>
+                <input type="text" class="form-control" id="wic_final_balance_sheet_best_eps" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                <input type="text" class="form-control" id="wic_final_balance_sheet_best_net_income" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_OPP</small>
+                <input type="text" class="form-control" id="wic_final_balance_sheet_best_opp" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_SALES</small>
+                <input type="text" class="form-control" id="wic_final_balance_sheet_best_sales" />
+              </div>
+
+              <div class="col-lg-2">
+                <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                <input type="text" class="form-control" id="wic_final_balance_sheet_cur_ev_component" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                <input type="text" class="form-control" id="wic_final_balance_sheet_best_capex" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                <input type="text" class="form-control" id="wic_final_balance_sheet_best_ebitda" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                <input type="text" class="form-control" id="wic_final_balance_sheet_eqy_sh_out" />
+              </div>
+              <div class="col-lg-1"></div>
+            </div>
+          </div>
+
+          {#  ************************* Downsides Adjustment ****************************************************** #}
+          <div class="tab-pane" id="tab52" aria-labelledby="base-tab52">
+            <div class="row">
+              <div class="col-lg-1"></div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">PX</small>
+                <input type="text" class="form-control" id="downsides_balance_sheet_px" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EPS</small>
+                <input type="text" class="form-control" id="downsides_balance_sheet_best_eps" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                <input type="text" class="form-control" id="downsides_balance_sheet_best_net_income" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_OPP</small>
+                <input type="text" class="form-control" id="downsides_balance_sheet_best_opp" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_SALES</small>
+                <input type="text" class="form-control" id="downsides_balance_sheet_best_sales" />
+              </div>
+
+              <div class="col-lg-2">
+                <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                <input type="text" class="form-control" id="downsides_balance_sheet_cur_ev_component" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                <input type="text" class="form-control" id="downsides_balance_sheet_best_capex" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                <input type="text" class="form-control" id="downsides_balance_sheet_best_ebitda" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                <input type="text" class="form-control" id="downsides_balance_sheet_eqy_sh_out" />
+              </div>
+              <div class="col-lg-1"></div>
+            </div>
+            <br><br>
+            <h3 class="modal-title">Balance Sheet Adjustments</h3><br>
+            <div class="row">
+              <div class="col-lg-1"></div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">PX</small>
+                <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_px" value="0.00" />
+              </div>
+
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EPS</small>
+                <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_best_eps" value="0.00" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_best_net_income"
+                  value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_OPP</small>
+                <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_best_opp" value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_SALES</small>
+                <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_best_sales"
+                  value="0.0" />
+              </div>
+
+              <div class="col-lg-2">
+                <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_cur_ev_component"
+                  value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_best_capex"
+                  value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_best_ebitda"
+                  value="0.0" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                <input type="text" class="form-control" id="downsides_adjustment_balance_sheet_eqy_sh_out"
+                  value="0.0" />
+              </div>
+              <div class="col-lg-1"></div>
+            </div>
+            <br>
+
+            <h3 class="modal-title">Final Balance Sheet</h3><br>
+            <div class="row">
+              <div class="col-lg-1"></div>
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">PX</small>
+                <input type="text" class="form-control" id="downsides_final_balance_sheet_px" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EPS</small>
+                <input type="text" class="form-control" id="downsides_final_balance_sheet_best_eps" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_NET_INCOME</small>
+                <input type="text" class="form-control" id="downsides_final_balance_sheet_best_net_income" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_OPP</small>
+                <input type="text" class="form-control" id="downsides_final_balance_sheet_best_opp" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_SALES</small>
+                <input type="text" class="form-control" id="downsides_final_balance_sheet_best_sales" />
+              </div>
+
+              <div class="col-lg-2">
+                <small class="badge badge-default badge-success">CUR_EV_COMPONENT</small>
+                <input type="text" class="form-control" id="downsides_final_balance_sheet_cur_ev_component" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_CAPEX</small>
+                <input type="text" class="form-control" id="downsides_final_balance_sheet_best_capex" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">BEST_EBITDA</small>
+                <input type="text" class="form-control" id="downsides_final_balance_sheet_best_ebitda" />
+              </div>
+
+              <div class="col-lg-1">
+                <small class="badge badge-default badge-success">EQY_SH_OUT</small>
+                <input type="text" class="form-control" id="downsides_final_balance_sheet_eqy_sh_out" />
+              </div>
+              <div class="col-lg-1"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        <small class="badge badge-default badge-warning">Hitting Save Changes will save these adjustments
+          into the Database and subsequent Premium analysis would be calculated based off this balance
+          sheet!
+        </small>
+
+        <fieldset>
+          <div class="custom-control custom-checkbox">
+            <input type="checkbox" class="custom-control-input" id="use_upside_without_bloomberg">
+            <label class="custom-control-label" for="use_upside_without_bloomberg">Up w/o BBG</label>
+          </div>
+          <div class="custom-control custom-checkbox">
+            <input type="checkbox" class="custom-control-input" id="use_wic_without_bloomberg">
+            <label class="custom-control-label" for="use_wic_without_bloomberg">WIC w/o BBG</label>
+          </div>
+          <div class="custom-control custom-checkbox">
+            <input type="checkbox" class="custom-control-input" id="use_downside_without_bloomberg">
+            <label class="custom-control-label" for="use_downside_without_bloomberg">Down w/o BBG</label>
+          </div>
+        </fieldset>
+
+        <button type="button" id='copy_from_upside_adjustments' class="btn btn-indigo">Populate WIC and Downside Adj.
+          from Upside Adj.
+        </button>
+        <button type="button" id='calculate_balance_sheet' class="btn btn-warning">Update Balance Sheet
+        </button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" id='save_balance_sheet' class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{# Balance Sheet Modal End #}
+<div class="app-content content">
+  <div class="content-wrapper">
+    <input type="hidden" id="alpha_chart" value="{{ alpha_chart }}">
+    <input type="hidden" id="ev_ebitda_chart_ltm" value="{{ ev_ebitda_chart_ltm }}">
+    <input type="hidden" id="ev_ebitda_chart_1bf" value="{{ ev_ebitda_chart_1bf }}">
+    <input type="hidden" id="ev_ebitda_chart_2bf" value="{{ ev_ebitda_chart_2bf }}">
+
+    <input type="hidden" id="ev_sales_chart_ltm" value="{{ ev_sales_chart_ltm }}">
+    <input type="hidden" id="ev_sales_chart_1bf" value="{{ ev_sales_chart_1bf }}">
+    <input type="hidden" id="ev_sales_chart_2bf" value="{{ ev_sales_chart_2bf }}">
+
+    <input type="hidden" id="ess_idea_deal_id" value="{{ ess_idea_object.id }}">
+
+    <input type="hidden" id="p_eps_chart_ltm" value="{{ p_eps_chart_ltm }}">
+    <input type="hidden" id="p_eps_chart_1bf" value="{{ p_eps_chart_1bf }}">
+    <input type="hidden" id="p_eps_chart_2bf" value="{{ p_eps_chart_2bf }}">
+
+    <input type="hidden" id="p_fcf_chart" value="{{ p_fcf_chart }}">
+    <input type="hidden" id="peer_tickers" value="{{ peer_tickers }}">
+    <input type="hidden" id="hedge_chart" value="{{ hedge_chart }}">
+    <input type="hidden" id="market_neutral_chart" value="{{ market_neutral_chart }}">
+    <input type="hidden" id="implied_probability_chart" value="{{ implied_probability_chart }}">
+    <input type="hidden" id="event_premium_chart" value="{{ event_premium_chart }}">
+    <input type="hidden" id="bull_thesis_input" value="{{ ess_idea_object.bull_thesis }}">
+    <input type="hidden" id="our_thesis_input" value="{{ ess_idea_object.our_thesis }}">
+    <input type="hidden" id="bear_thesis_input" value="{{ ess_idea_object.bear_thesis }}">
+
+    <input type="hidden" id="ess_idea_unaffected_date" value="{{ ess_idea_object.unaffected_date }}">
+    <input type="hidden" id="ess_idea_downside_changes" value="{{ downside_changes }}">
+    {#  Notes Modal START#}
+
+    <div class="modal animated lightSpeedIn text-left" id="show_ess_idea_notes_modal" tabindex="-1" role="dialog"
+      aria-labelledby="myModalLabel42" aria-hidden="true">
+      <div class="modal-xl modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title text-center" id="myModalLabel42">Here's your Note!</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+
+          <div class="modal-body">
+
+            <div class="row">
+
+              <div class="col-lg-6 offset-4">
+                <div class="row">
+                  <div class="col-lg-2 block-tag">
+                    <small class="badge badge-default badge-success">Your Note:
                     </small>
+                  </div>
+                  <br><br>
+                  <div class="col-lg-12">
+                    <div class="container" id="show_ess_idea_note_article">
+
+                    </div>
+                  </div>
+                  <br><br>
+                  <p id="edit_notes_attachments"></p>
                 </div>
                 <br>
-                <fieldset class="form-group">
-                    <select id="ess_idea_version_number_select" class="custom-select">
-                        <option selected value="N/A">Select a version to view</option>
-                        {% for versions, timestamps in version_numbers %}
-                            <option value="{{ versions }}">Version Number: {{ versions }} -> {{ timestamps }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </fieldset>
+              </div>
             </div>
 
+          </div>
+          <div class="modal-footer">
+            <button id='close_wic_note_modal' type="button" class="btn btn-danger btn-outline-secondary"
+              data-dismiss="modal">Close
+            </button>
+          </div>
 
-            <div class="row">
-                <div class="col-xl-6 col-lg-12">
-                    <div class="card">
-                        <div class="card-content">
-                            <div class="card-body">
-
-                                <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" id="base-tab41" data-toggle="tab"
-                                           aria-controls="tab41"
-                                           href="#tab41" aria-expanded="true">Alpha/Hedge/Mkt Neutral Charts</a>
-                                    </li>
-
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="base-tab42" data-toggle="tab" aria-controls="tab42"
-                                           href="#tab42"
-                                           aria-expanded="false">Implied Probability (%)</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="base-tab43" data-toggle="tab" aria-controls="tab43"
-                                           href="#tab43"
-                                           aria-expanded="false">Event Premium</a>
-                                    </li>
-
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="base-tab44" data-toggle="tab" aria-controls="tab44"
-                                           href="#tab44"
-                                           aria-expanded="false">Upside/Downside Track Record</a>
-                                    </li>
-
-                                </ul>
-                                <fieldset class="form-group position-relative">
-                                    <select class="custom-select form-control input-lg">
-                                        <option selected>No Overrides Applicable</option>
-                                    </select>
-                                </fieldset>
-                                <div class="tab-content px-1 pt-1">
-                                    <div role="tabpanel" class="tab-pane active" id="tab41" aria-expanded="true"
-                                         aria-labelledby="base-tab41" style="background-color: #3f3e3b; color: #fff;">
-
-                                        <div id="ess_idea_alpha_chart" style="height: 430px">
-                                        </div>
-
-                                    </div>
-
-                                    <div class="tab-pane " id="tab42" aria-labelledby="base-tab42"
-                                         style="background-color: #3f3e3b; color: #fff;">
-                                        <div id="ess_idea_implied_probability_chart" style="height: 430px">
-                                        </div>
-                                    </div>
-                                    <div class="tab-pane " id="tab43" aria-labelledby="base-tab43"
-                                         style="background-color: #3f3e3b; color: #fff;">
-                                        <div id="ess_idea_event_premium_chart" style="height: 430px">
-                                        </div>
-                                    </div>
-
-                                    <div class="tab-pane " id="tab44" aria-labelledby="base-tab44"
-                                         style="background-color: #3f3e3b; color: #fff;">
-                                        <div id="ess_idea_upside_downside_track_record_chart" style="height: 430px">
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                            <p class="card-text text-lg-center">
-                                <small class="text-muted">Chart Insights</small>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-6 col-lg-12">
-                    <div class="card">
-                        <div class="card-content">
-                            <div class="card-body">
-
-                                <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg">
-                                    <li class="nav-item">
-                                        <a class="nav-link active" id="base-tab45" data-toggle="tab"
-                                           aria-controls="tab45"
-                                           href="#tab45"
-                                           aria-expanded="false">EV/EBITDA</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="base-tab49" data-toggle="tab" aria-controls="tab49"
-                                           href="#tab49"
-                                           aria-expanded="false">EV/Sales</a>
-                                    </li>
-
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="base-tab46" data-toggle="tab" aria-controls="tab46"
-                                           href="#tab46"
-                                           aria-expanded="false">PE Ratio</a>
-                                    </li>
-                                    <li class="nav-item">
-                                        <a class="nav-link" id="base-tab47" data-toggle="tab" aria-controls="tab47"
-                                           href="#tab47"
-                                           aria-expanded="false">FCF Yield</a>
-                                    </li>
-                                </ul>
-
-                                <fieldset class="form-group position-relative">
-                                    <select id='fperiod_override' class="custom-select form-control input-lg">
-                                        <option>LTM</option>
-                                        <option selected>1BF</option>
-                                        <option>2BF</option>
-                                    </select>
-                                </fieldset>
-
-                                <div class="tab-content px-1 pt-1">
-                                    <div role="tabpanel" class="tab-pane active" id="tab45" aria-expanded="true"
-                                         aria-labelledby="base-tab45" style="background-color: #3f3e3b; color: #fff;">
-                                        <div id="ess_idea_ev_ebitda_chart" style="height: 430px">
-
-                                        </div>
-                                    </div>
-
-                                    <div role="tabpanel" class="tab-pane" id="tab49" aria-expanded="true"
-                                         aria-labelledby="base-tab49" style="background-color: #3f3e3b; color: #fff;">
-                                        <div id="ess_idea_ev_sales_chart" style="height: 430px">
-
-                                        </div>
-                                    </div>
-
-                                    <div class="tab-pane " id="tab46" aria-labelledby="base-tab46"
-                                         style="background-color: #3f3e3b; color: #fff;">
-                                        <div id="ess_idea_p_eps_chart" style="height: 430px">
-
-                                        </div>
-                                    </div>
-                                    <div class="tab-pane " id="tab47" aria-labelledby="base-tab47"
-                                         style="background-color: #3f3e3b; color: #fff;">
-                                        <div id="ess_idea_p_fcf_chart" style="height: 430px">
-
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="card-text text-lg-center">
-                                <small class="text-muted">Valuation Multiples</small>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card">
-
-                        <div class="card-head">
-                            <div class="card-header card-head-inverse bg-dark">
-                                <h4 class="card-title text-light text-center">Deal Overview:
-                                    Prob%: {{ ess_idea_object.implied_probability }} MOSAIC: {{ mosaic_sum }}</h4>
-                                <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
-                            </div>
-                        </div>
-
-                        <div class="card-content"><br>
-                            <div class="col-lg-12">
-                                <div class="row">
-                                    <div class="col-lg-2 block-tag">
-                                        <small class="badge badge-default badge-success">Situation Overview</small>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-lg-10 offset-1">
-                                        <div class="container" id="ess_idea_situation_overview"
-                                             data-value="{{ ess_idea_object.situation_overview }}">
-                                        </div>
-                                    </div>
-                                </div>
-                                <br><br>
-                                <div class="row">
-                                    <div class="col-lg-2 block-tag">
-                                        <small class="badge badge-default badge-success">Company Overview</small>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-lg-10 offset-1">
-                                        <div class="container" id="ess_idea_company_overview"
-                                             data-value="{{ ess_idea_object.company_overview }}">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <br><br>
-                            <div class="row">
-                                <div class="col-lg-4 text-center">
-                                    <small class="badge badge-lg badge-default badge-danger">Bull Thesis</small>
-                                    <br>
-                                    <small id='model-upside' class="badge badge-secondary"></small>
-                                    <br>
-                                    <button id='upside_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">Upside Calculations</button>
-                                    <br><br>
-                                    <div class="container" id="ess_bull_thesis">
-                                    </div>
-                                    <br>
-                                    {% for file in bull_thesis_files %}
-                                        <li>
-                                            <a href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.bull_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a>
-                                            --> Uploaded on: {{ file.uploaded_at }}</li>
-                                    {% endfor %}
-
-                                </div>
-
-                                <div class="col-lg-4 text-center">
-                                    <small class="badge badge-lg badge-default badge-danger">Our Thesis</small>
-                                    <br>
-                                    <small id='model-ptwic' class="badge badge-secondary"></small>
-                                    <br>
-                                    <button id='wic_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">WIC Calculations</button>
-                                    <br><br>
-                                    <div class="container" id="ess_our_thesis">
-                                    </div>
-                                    <br>
-                                    {% for file in our_thesis_files %}
-                                        <li>
-                                            <a href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.our_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a>
-                                            --> Uploaded on: {{ file.uploaded_at }}</li>
-                                    {% endfor %}
-                                </div>
-
-                                <div class="col-lg-4 text-center">
-                                    <small class="badge badge-lg badge-default badge-danger">Bear Thesis</small>
-                                    <br>
-                                    <small id='model-downside' class="badge badge-secondary"></small>
-                                    <br>
-                                    <button id='downside_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">Downside Calculations</button>
-                                    <br><br>
-                                    <div class="container" id="ess_bear_thesis">
-                                    </div>
-                                    <br>
-                                    {% for file in bear_thesis_files %}
-                                        <li>
-                                            <a href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.bear_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a>
-                                            --> Uploaded on: {{ file.uploaded_at }}</li>
-                                    {% endfor %}
-
-                                </div>
-
-                            </div>
-
-                            <br><br>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-            <div class="row">
-                <div class="col-lg-6">
-                    <div class="card">
-                        <div class="card-header bg-gradient-radial-blue">
-                            <h4 class="card-title text-center text-white text-bold-700">Notes</h4>
-                        </div>
-
-                        <div class="card-content">
-                            <div class="table-responsive table-hover">
-                                <!-- Task List table -->
-                                <table class="table table-striped text-dark" id='show_ess_idea_notes_table'>
-                                    <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Title</th>
-                                        <th>Author</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for note_item in notes_master %}
-
-                                        <tr class="clickable-row-notes" data-value="{{ note_item.article }}" data-ids="{{ note_item.id }}" >
-                                            <td>{{ note_item.date }}</td>
-                                            <td>{{ note_item.title }}</td>
-                                            <td>{{ note_item.author }}</td>
-                                        </tr>
-
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-6">
-
-                    <div class="tooltip bs-tooltip-top" role="tooltip">
-                        <div class="arrow"></div>
-                        <div class="tooltip-inner">
-                            Click to Open article!
-                        </div>
-                    </div>
-                    <div data-toggle="tooltip" title='Click on any news to view!' class="card">
-                        <div class="card-header bg-gradient-radial-teal">
-                            <h4 class="card-title text-center text-white text-bold-700">News</h4>
-                        </div>
-                        <div class="card-content ">
-                            <div class="table-responsive table-hover">
-                                <!-- Task List table -->
-                                {#  Get News from Context Dictionary #}
-                                <table class="table table-striped text-dark " id='show_ess_idea_news_items'>
-                                    <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Title</th>
-                                        <th>Source</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for news_item in news_master %}
-                                        <tr class="clickable-row-news" data-href="{{ news_item.url }}"
-                                            data-value="{{ news_item.article }}">
-                                            <td>{{ news_item.date }}</td>
-                                            <td>{{ news_item.title }}</td>
-                                            <td>{{ news_item.source }}</td>
-                                        </tr>
-
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="row">
-                <div class="col-lg-12 ">
-                    <div class="card">
-                        <div class="card-header card-head-inverse bg-indigo">
-                            <button id='show_premium_analysis'
-                                    class="btn btn-red btn-lg offset-4"><i
-                                    class="ft-plus white"></i>Show Live Premium Analysis
-                            </button>
-
-                            <button id='ess_idea_view_balance_sheet'
-                                    class="btn btn-blue btn-lg offset-1"><i
-                                    class="ft-plus white"></i>View Balance Sheet
-                            </button>
-
-                             <button id='ess_idea_todays_calculations'
-                                    class="btn btn-green btn-lg offset-1"><i
-                                    class="ft-plus white"></i>View latest Premium Analysis Parameters
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class='progress-wrapper'>
-
-                        <div id='progress-bar' class='progress-bar progress-bar-striped progress-bar-animated bg-success' style="background-color: #68a9ef; width: 0%;">
-                            &nbsp;
-                        </div>
-                        <div id="progress-bar-message"></div>
-                    </div>
-                    <div class="card-content premium-analysis">
-                        <div class="table-responsive table-hover">
-                            <!-- Task List table -->
-                            <table class="table table-striped ">
-                                <thead>
-                                <tr>
-                                    <th>Up Price (CIX)</th>
-                                    <th>Up Price (Regression)</th>
-                                    <th>WIC Price(CIX)</th>
-                                    <th>WIC Price (Regression)</th>
-                                    <th>Down Price (CIX)</th>
-                                    <th>Down Price (Regression)</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                <tr>
-                                    <td><span class="cix_up_price"></span></td>
-                                    <td><span class="regression_up_price"></span></td>
-                                    <td><span class="wic_price_cix"></span></td>
-                                    <td><span class="wic_price_regression"></span></td>
-                                    <td><span class="cix_down_price"></span></td>
-                                    <td><span class="regression_down_price"></span></td>
-                                </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="card-content premium-analysis-table">
-                        <div class="table-responsive table-hover">
-                            <!-- Task List table -->
-                            <table class="table table-striped" id="premium_analysis_regression_breakdown_table">
-                                <thead class="thead-dark">
-                                <tr>
-                                    <th></th>
-                                    <th></th>
-                                    <th colspan="5" class="text-center">Price Target Date</th>
-                                    <th colspan="5" class="text-center">Now</th>
-                                </tr>
-                                <tr>
-                                    <th>Metric</th>
-                                    <th>Coefficients</th>
-
-                                    <th>Peers Multiple Drilldown</th>
-                                    <th>Alpha Implied Multiple</th>
-                                    <th>Alpha Bear Multiple</th>
-                                    <th>Alpha WIC Multiple</th>
-                                    <th>Alpha Bull Multiple</th>
-
-                                    <th>Peers Multiple Drilldown</th>
-                                    <th>Alpha Implied Multiple</th>
-                                    <th>Alpha Bear Multiple</th>
-                                    <th>Alpha WIC Multiple</th>
-                                    <th>Alpha Bull Multiple</th>
-
-
-                                </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-
-
-                </div>
-            </div>
-
-
-            <div class="row">
-                <div class="col-lg-12 ">
-
-                    <div class="card">
-                        <div class="card-header card-head-inverse bg-primary">
-                            <h2 class="card-title text-center text-light">Peer Valuation</h2>
-                        </div>
-                        <div class="card-content">
-                            <div class="table-responsive table-hover">
-                                <!-- Task List table -->
-                                <table class="table table-striped " id='peer_valuation_table'>
-                                    <thead>
-                                    <tr>
-                                        <th>Ticker</th>
-                                        <th>Name</th>
-                                        <th>EV</th>
-                                        <th>Mkt Cap</th>
-                                        <th>EV/EBITDA (1BF)</th>
-                                        <th>EV/EBITDA (2BF)</th>
-                                        <th>EV/Sales (1BF)</th>
-                                        <th>EV/Sales (2BF)</th>
-                                        <th>P/E (1BF)</th>
-                                        <th>P/E (2BF)</th>
-                                        <th>FCF Yield (1BF)</th>
-                                        <th>FCF Yield (2BF)</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-
-                                    {% for peer_object in related_peers %}
-                                        <tr>
-                                            <td>{{ peer_object.ticker }}</td>
-                                            <td>{{ peer_object.name }}</td>
-                                            <td>{{ peer_object.enterprise_value }}</td>
-                                            <td>{{ peer_object.market_cap }}</td>
-                                            <td>{{ peer_object.ev_ebitda_bf1 }}</td>
-                                            <td>{{ peer_object.ev_ebitda_bf2 }}</td>
-                                            <td>{{ peer_object.ev_sales_bf1 }}</td>
-                                            <td>{{ peer_object.ev_sales_bf2 }}</td>
-                                            <td>{{ peer_object.p_e_bf1 }}</td>
-                                            <td>{{ peer_object.p_e_bf2 }}</td>
-                                            <td>{{ peer_object.fcf_yield_bf1 }}</td>
-                                            <td>{{ peer_object.fcf_yield_bf2 }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                    <tfoot></tfoot>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card" style="margin-top:-30px">
-                        <div class="card-content">
-                            <div class="table-responsive">
-                                <!-- Task List table -->
-                                <table class="table table-dark" id='peer_valuation_summmary_table'>
-                                    <thead>
-                                    <tr>
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        <th></th>
-                                        <th>EV/EBITDA (1BF)</th>
-                                        <th>EV/EBITDA (2BF)</th>
-                                        <th>EV/Sales (1BF)</th>
-                                        <th>EV/Sales (2BF)</th>
-                                        <th>P/E (1BF)</th>
-                                        <th>P/E (2BF)</th>
-                                        <th>FCF Yield (1BF)</th>
-                                        <th>FCF Yield (2BF)</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-
-                                    <tr>
-                                        <td>Max.</td>
-                                        <td>Not Applicable</td>
-                                        <td>Not Applicable</td>
-                                        <td>Not Applicable</td>
-                                        <td>{{ summary_object.ev_ebitda_bf1_max }}</td>
-                                        <td>{{ summary_object.ev_ebitda_bf2_max }}</td>
-                                        <td>{{ summary_object.ev_sales_bf1_max }}</td>
-                                        <td>{{ summary_object.ev_sales_bf2_max }}</td>
-                                        <td>{{ summary_object.p_e_bf1_max }}</td>
-                                        <td>{{ summary_object.p_e_bf2_max }}</td>
-                                        <td>{{ summary_object.fcf_yield_bf1_max }}</td>
-                                        <td>{{ summary_object.fcf_yield_bf2_max }}</td>
-                                    </tr>
-
-                                    <tr>
-                                        <td>Mean</td>
-                                        <td>Not Applicable</td>
-                                        <td>Not Applicable</td>
-                                        <td>Not Applicable</td>
-                                        <td>{{ summary_object.ev_ebitda_bf1_mean }}</td>
-                                        <td>{{ summary_object.ev_ebitda_bf2_mean }}</td>
-                                        <td>{{ summary_object.ev_sales_bf1_mean }}</td>
-                                        <td>{{ summary_object.ev_sales_bf2_mean }}</td>
-                                        <td>{{ summary_object.p_e_bf1_mean }}</td>
-                                        <td>{{ summary_object.p_e_bf2_mean }}</td>
-                                        <td>{{ summary_object.fcf_yield_bf1_mean }}</td>
-                                        <td>{{ summary_object.fcf_yield_bf2_mean }}</td>
-                                    </tr>
-
-                                    <tr>
-                                        <td>Min</td>
-                                        <td>Not Applicable</td>
-                                        <td>Not Applicable</td>
-                                        <td>Not Applicable</td>
-                                        <td>{{ summary_object.ev_ebitda_bf1_min }}</td>
-                                        <td>{{ summary_object.ev_ebitda_bf2_min }}</td>
-                                        <td>{{ summary_object.ev_sales_bf1_min }}</td>
-                                        <td>{{ summary_object.ev_sales_bf2_min }}</td>
-                                        <td>{{ summary_object.p_e_bf1_min }}</td>
-                                        <td>{{ summary_object.p_e_bf2_min }}</td>
-                                        <td>{{ summary_object.fcf_yield_bf1_min }}</td>
-                                        <td>{{ summary_object.fcf_yield_bf2_min }}</td>
-                                    </tr>
-
-
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
+      </div>
+    </div>
+
+    {# Notes Modal End #}
+    {# News Modal #}
+    <div class="modal animated lightSpeedIn text-left" id="show_ess_idea_news_modal" tabindex="-1" role="dialog"
+      aria-labelledby="myModalLabel42" aria-hidden="true">
+      <div class="modal-xl modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title text-center" id="myModalLabel42">Here's your News</h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+
+          <div class="modal-body">
+
+            <div class="row">
+
+              <div class="col-lg-6 offset-4">
+                <div class="row">
+                  <div class="col-lg-2 block-tag">
+                    <small class="badge badge-default badge-success">News Article
+                    </small>
+                  </div>
+                  <br><br>
+                  <div class="col-lg-12">
+                    <div class="container" id="show_ess_idea_news_article">
+
+                    </div>
+                  </div>
+
+                </div>
+                <br>
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button id='close_wic_note_modal' type="button" class="btn btn-danger btn-outline-secondary"
+              data-dismiss="modal">Close
+            </button>
+            <button id='show_ess_idea_go_to_url' type="button" class="btn btn-success" data-dismiss="modal">Visit the
+              Article!
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    {# News Modal End #}
+
+    <div class="container">
+      <div class="row justify-content-center">
+        <small class="badge badge-lg badge-info text-center">{{ ess_idea_object.alpha_ticker }}</small>
+      </div>
+      <div class="row justify-content-center">
+        <small class="badge badge-lg badge-secondary text-center">Current Version:
+          ({{ ess_idea_object.version_number }})
+        </small>
+      </div>
+      <br>
+      <fieldset class="form-group">
+        <select id="ess_idea_version_number_select" class="custom-select">
+          <option selected value="N/A">Select a version to view</option>
+          {% for versions, timestamps in version_numbers %}
+          <option value="{{ versions }}">Version Number: {{ versions }} -> {{ timestamps }}
+          </option>
+          {% endfor %}
+        </select>
+      </fieldset>
     </div>
 
 
-    <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
-    {% block navs_js %}
-        {{ block.super }}
-    {% endblock %}
+    <div class="row">
+      <div class="col-xl-6 col-lg-12">
+        <div class="card">
+          <div class="card-content">
+            <div class="card-body">
 
-    {% block summernote_js %}
-        {{ block.super }}
-    {% endblock %}
+              <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg">
+                <li class="nav-item">
+                  <a class="nav-link active" id="base-tab41" data-toggle="tab" aria-controls="tab41" href="#tab41"
+                    aria-expanded="true">Alpha/Hedge/Mkt Neutral Charts</a>
+                </li>
 
-    <script src="{% static 'app-assets/js/core/show_ess_idea.js' %}"></script>
+                <li class="nav-item">
+                  <a class="nav-link" id="base-tab42" data-toggle="tab" aria-controls="tab42" href="#tab42"
+                    aria-expanded="false">Implied Probability (%)</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" id="base-tab43" data-toggle="tab" aria-controls="tab43" href="#tab43"
+                    aria-expanded="false">Event Premium</a>
+                </li>
+
+                <li class="nav-item">
+                  <a class="nav-link" id="base-tab44" data-toggle="tab" aria-controls="tab44" href="#tab44"
+                    aria-expanded="false">Upside/Downside Track Record</a>
+                </li>
+
+              </ul>
+              <fieldset class="form-group position-relative">
+                <select class="custom-select form-control input-lg">
+                  <option selected>No Overrides Applicable</option>
+                </select>
+              </fieldset>
+              <div class="tab-content px-1 pt-1">
+                <div role="tabpanel" class="tab-pane active" id="tab41" aria-expanded="true"
+                  aria-labelledby="base-tab41" style="background-color: #3f3e3b; color: #fff;">
+
+                  <div id="ess_idea_alpha_chart" style="height: 430px">
+                  </div>
+
+                </div>
+
+                <div class="tab-pane " id="tab42" aria-labelledby="base-tab42"
+                  style="background-color: #3f3e3b; color: #fff;">
+                  <div id="ess_idea_implied_probability_chart" style="height: 430px">
+                  </div>
+                </div>
+                <div class="tab-pane " id="tab43" aria-labelledby="base-tab43"
+                  style="background-color: #3f3e3b; color: #fff;">
+                  <div id="ess_idea_event_premium_chart" style="height: 430px">
+                  </div>
+                </div>
+
+                <div class="tab-pane " id="tab44" aria-labelledby="base-tab44"
+                  style="background-color: #3f3e3b; color: #fff;">
+                  <div id="ess_idea_upside_downside_track_record_chart" style="height: 430px">
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <p class="card-text text-lg-center">
+              <small class="text-muted">Chart Insights</small>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-6 col-lg-12">
+        <div class="card">
+          <div class="card-content">
+            <div class="card-body">
+
+              <ul class="nav nav-tabs nav-justified nav-underline no-hover-bg">
+                <li class="nav-item">
+                  <a class="nav-link active" id="base-tab45" data-toggle="tab" aria-controls="tab45" href="#tab45"
+                    aria-expanded="false">EV/EBITDA</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" id="base-tab49" data-toggle="tab" aria-controls="tab49" href="#tab49"
+                    aria-expanded="false">EV/Sales</a>
+                </li>
+
+                <li class="nav-item">
+                  <a class="nav-link" id="base-tab46" data-toggle="tab" aria-controls="tab46" href="#tab46"
+                    aria-expanded="false">PE Ratio</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" id="base-tab47" data-toggle="tab" aria-controls="tab47" href="#tab47"
+                    aria-expanded="false">FCF Yield</a>
+                </li>
+              </ul>
+
+              <fieldset class="form-group position-relative">
+                <select id='fperiod_override' class="custom-select form-control input-lg">
+                  <option>LTM</option>
+                  <option selected>1BF</option>
+                  <option>2BF</option>
+                </select>
+              </fieldset>
+
+              <div class="tab-content px-1 pt-1">
+                <div role="tabpanel" class="tab-pane active" id="tab45" aria-expanded="true"
+                  aria-labelledby="base-tab45" style="background-color: #3f3e3b; color: #fff;">
+                  <div id="ess_idea_ev_ebitda_chart" style="height: 430px">
+
+                  </div>
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="tab49" aria-expanded="true" aria-labelledby="base-tab49"
+                  style="background-color: #3f3e3b; color: #fff;">
+                  <div id="ess_idea_ev_sales_chart" style="height: 430px">
+
+                  </div>
+                </div>
+
+                <div class="tab-pane " id="tab46" aria-labelledby="base-tab46"
+                  style="background-color: #3f3e3b; color: #fff;">
+                  <div id="ess_idea_p_eps_chart" style="height: 430px">
+
+                  </div>
+                </div>
+                <div class="tab-pane " id="tab47" aria-labelledby="base-tab47"
+                  style="background-color: #3f3e3b; color: #fff;">
+                  <div id="ess_idea_p_fcf_chart" style="height: 430px">
+
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="card-text text-lg-center">
+              <small class="text-muted">Valuation Multiples</small>
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+
+          <div class="card-head">
+            <div class="card-header card-head-inverse bg-dark">
+              <h4 class="card-title text-light text-center">Deal Overview:
+                Prob%: {{ ess_idea_object.implied_probability }} MOSAIC: {{ mosaic_sum }}</h4>
+              <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
+            </div>
+          </div>
+
+          <div class="card-content"><br>
+            <div class="col-lg-12">
+              <div class="row">
+                <div class="col-lg-2 block-tag">
+                  <small class="badge badge-default badge-success">Situation Overview</small>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-10 offset-1">
+                  <div class="container" id="ess_idea_situation_overview"
+                    data-value="{{ ess_idea_object.situation_overview }}">
+                  </div>
+                </div>
+              </div>
+              <br><br>
+              <div class="row">
+                <div class="col-lg-2 block-tag">
+                  <small class="badge badge-default badge-success">Company Overview</small>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-lg-10 offset-1">
+                  <div class="container" id="ess_idea_company_overview"
+                    data-value="{{ ess_idea_object.company_overview }}">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <br><br>
+            <div class="row">
+              <div class="col-lg-4 text-center">
+                <small class="badge badge-lg badge-default badge-danger">Bull Thesis</small>
+                <br>
+                <small id='model-upside' class="badge badge-secondary"></small>
+                <br>
+                <button id='upside_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">Upside
+                  Calculations</button>
+                <br><br>
+                <div class="container" id="ess_bull_thesis">
+                </div>
+                <br>
+                {% for file in bull_thesis_files %}
+                <li>
+                  <a
+                    href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.bull_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a>
+                  --> Uploaded on: {{ file.uploaded_at }}</li>
+                {% endfor %}
+
+              </div>
+
+              <div class="col-lg-4 text-center">
+                <small class="badge badge-lg badge-default badge-danger">Our Thesis</small>
+                <br>
+                <small id='model-ptwic' class="badge badge-secondary"></small>
+                <br>
+                <button id='wic_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">WIC
+                  Calculations</button>
+                <br><br>
+                <div class="container" id="ess_our_thesis">
+                </div>
+                <br>
+                {% for file in our_thesis_files %}
+                <li>
+                  <a
+                    href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.our_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a>
+                  --> Uploaded on: {{ file.uploaded_at }}</li>
+                {% endfor %}
+              </div>
+
+              <div class="col-lg-4 text-center">
+                <small class="badge badge-lg badge-default badge-danger">Bear Thesis</small>
+                <br>
+                <small id='model-downside' class="badge badge-secondary"></small>
+                <br>
+                <button id='downside_calculations' class="btn btn-sm btn-outline-indigo box-shadow-5">Downside
+                  Calculations</button>
+                <br><br>
+                <div class="container" id="ess_bear_thesis">
+                </div>
+                <br>
+                {% for file in bear_thesis_files %}
+                <li>
+                  <a
+                    href="{% url 'risk:ess_idea_download_handler' %}?path={{ file.bear_thesis_model.url|default_if_none:'#' }}">{{ file.filename }}</a>
+                  --> Uploaded on: {{ file.uploaded_at }}</li>
+                {% endfor %}
+
+              </div>
+
+            </div>
+
+            <br><br>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card">
+          <div class="card-header bg-gradient-radial-blue">
+            <h4 class="card-title text-center text-white text-bold-700">Notes</h4>
+          </div>
+
+          <div class="card-content">
+            <div class="table-responsive table-hover">
+              <!-- Task List table -->
+              <table class="table table-striped text-dark" id='show_ess_idea_notes_table'>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for note_item in notes_master %}
+
+                  <tr class="clickable-row-notes" data-value="{{ note_item.article }}" data-ids="{{ note_item.id }}">
+                    <td>{{ note_item.date }}</td>
+                    <td>{{ note_item.title }}</td>
+                    <td>{{ note_item.author }}</td>
+                  </tr>
+
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+
+        <div class="tooltip bs-tooltip-top" role="tooltip">
+          <div class="arrow"></div>
+          <div class="tooltip-inner">
+            Click to Open article!
+          </div>
+        </div>
+        <div data-toggle="tooltip" title='Click on any news to view!' class="card">
+          <div class="card-header bg-gradient-radial-teal">
+            <h4 class="card-title text-center text-white text-bold-700">News</h4>
+          </div>
+          <div class="card-content ">
+            <div class="table-responsive table-hover">
+              <!-- Task List table -->
+              {#  Get News from Context Dictionary #}
+              <table class="table table-striped text-dark " id='show_ess_idea_news_items'>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Title</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for news_item in news_master %}
+                  <tr class="clickable-row-news" data-href="{{ news_item.url }}" data-value="{{ news_item.article }}">
+                    <td>{{ news_item.date }}</td>
+                    <td>{{ news_item.title }}</td>
+                    <td>{{ news_item.source }}</td>
+                  </tr>
+
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="col-lg-12 ">
+        <div class="card">
+          <div class="card-header card-head-inverse bg-indigo">
+            <div class="row">
+              <div class="col-lg-4 col-md-12 col-sm-12 col-12 text-lg-right text-md-center text-sm-center text-xs-center">
+                <button id='show_premium_analysis' class="btn btn-red btn-lg">
+                  <i class="ft-plus white"></i>Show Live Premium Analysis
+                </button>
+              </div>
+              <div class="col-lg-4 col-md-12 col-sm-12 col-12 center">    
+                <button id='ess_idea_view_balance_sheet' class="btn btn-blue btn-lg">
+                  <i class="ft-plus white"></i>View Balance Sheet
+                </button>
+              </div>
+              <div class="col-lg-4 col-md-12 col-sm-12 col-12 text-lg-left text-md-center text-sm-center text-xs-center">
+                <button id='ess_idea_todays_calculations' class="btn btn-green btn-lg">
+                  <i class="ft-plus white"></i>View Latest Premium Analysis Parameters
+                </button>    
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class='progress-wrapper'>
+
+          <div id='progress-bar' class='progress-bar progress-bar-striped progress-bar-animated bg-success'
+            style="background-color: #68a9ef; width: 0%;">
+            &nbsp;
+          </div>
+          <div id="progress-bar-message"></div>
+        </div>
+        <div class="card-content premium-analysis">
+          <div class="table-responsive table-hover">
+            <!-- Task List table -->
+            <table class="table table-striped ">
+              <thead>
+                <tr>
+                  <th>Up Price (CIX)</th>
+                  <th>Up Price (Regression)</th>
+                  <th>WIC Price(CIX)</th>
+                  <th>WIC Price (Regression)</th>
+                  <th>Down Price (CIX)</th>
+                  <th>Down Price (Regression)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="cix_up_price"></span></td>
+                  <td><span class="regression_up_price"></span></td>
+                  <td><span class="wic_price_cix"></span></td>
+                  <td><span class="wic_price_regression"></span></td>
+                  <td><span class="cix_down_price"></span></td>
+                  <td><span class="regression_down_price"></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card-content premium-analysis-table">
+          <div class="table-responsive table-hover">
+            <!-- Task List table -->
+            <table class="table table-striped" id="premium_analysis_regression_breakdown_table">
+              <thead class="thead-dark">
+                <tr>
+                  <th></th>
+                  <th></th>
+                  <th colspan="5" class="text-center">Price Target Date</th>
+                  <th colspan="5" class="text-center">Now</th>
+                </tr>
+                <tr>
+                  <th>Metric</th>
+                  <th>Coefficients</th>
+
+                  <th>Peers Multiple Drilldown</th>
+                  <th>Alpha Implied Multiple</th>
+                  <th>Alpha Bear Multiple</th>
+                  <th>Alpha WIC Multiple</th>
+                  <th>Alpha Bull Multiple</th>
+
+                  <th>Peers Multiple Drilldown</th>
+                  <th>Alpha Implied Multiple</th>
+                  <th>Alpha Bear Multiple</th>
+                  <th>Alpha WIC Multiple</th>
+                  <th>Alpha Bull Multiple</th>
+
+
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+
+      </div>
+    </div>
+
+
+    <div class="row">
+      <div class="col-lg-12 ">
+
+        <div class="card">
+          <div class="card-header card-head-inverse bg-primary">
+            <h2 class="card-title text-center text-light">Peer Valuation</h2>
+          </div>
+          <div class="card-content">
+            <div class="table-responsive table-hover">
+              <!-- Task List table -->
+              <table class="table table-striped " id='peer_valuation_table'>
+                <thead>
+                  <tr>
+                    <th>Ticker</th>
+                    <th>Name</th>
+                    <th>EV</th>
+                    <th>Mkt Cap</th>
+                    <th>EV/EBITDA (1BF)</th>
+                    <th>EV/EBITDA (2BF)</th>
+                    <th>EV/Sales (1BF)</th>
+                    <th>EV/Sales (2BF)</th>
+                    <th>P/E (1BF)</th>
+                    <th>P/E (2BF)</th>
+                    <th>FCF Yield (1BF)</th>
+                    <th>FCF Yield (2BF)</th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                  {% for peer_object in related_peers %}
+                  <tr>
+                    <td>{{ peer_object.ticker }}</td>
+                    <td>{{ peer_object.name }}</td>
+                    <td>{{ peer_object.enterprise_value }}</td>
+                    <td>{{ peer_object.market_cap }}</td>
+                    <td>{{ peer_object.ev_ebitda_bf1 }}</td>
+                    <td>{{ peer_object.ev_ebitda_bf2 }}</td>
+                    <td>{{ peer_object.ev_sales_bf1 }}</td>
+                    <td>{{ peer_object.ev_sales_bf2 }}</td>
+                    <td>{{ peer_object.p_e_bf1 }}</td>
+                    <td>{{ peer_object.p_e_bf2 }}</td>
+                    <td>{{ peer_object.fcf_yield_bf1 }}</td>
+                    <td>{{ peer_object.fcf_yield_bf2 }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                <tfoot></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card" style="margin-top:-30px">
+          <div class="card-content">
+            <div class="table-responsive">
+              <!-- Task List table -->
+              <table class="table table-dark" id='peer_valuation_summmary_table'>
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th>EV/EBITDA (1BF)</th>
+                    <th>EV/EBITDA (2BF)</th>
+                    <th>EV/Sales (1BF)</th>
+                    <th>EV/Sales (2BF)</th>
+                    <th>P/E (1BF)</th>
+                    <th>P/E (2BF)</th>
+                    <th>FCF Yield (1BF)</th>
+                    <th>FCF Yield (2BF)</th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                  <tr>
+                    <td>Max.</td>
+                    <td>Not Applicable</td>
+                    <td>Not Applicable</td>
+                    <td>Not Applicable</td>
+                    <td>{{ summary_object.ev_ebitda_bf1_max }}</td>
+                    <td>{{ summary_object.ev_ebitda_bf2_max }}</td>
+                    <td>{{ summary_object.ev_sales_bf1_max }}</td>
+                    <td>{{ summary_object.ev_sales_bf2_max }}</td>
+                    <td>{{ summary_object.p_e_bf1_max }}</td>
+                    <td>{{ summary_object.p_e_bf2_max }}</td>
+                    <td>{{ summary_object.fcf_yield_bf1_max }}</td>
+                    <td>{{ summary_object.fcf_yield_bf2_max }}</td>
+                  </tr>
+
+                  <tr>
+                    <td>Mean</td>
+                    <td>Not Applicable</td>
+                    <td>Not Applicable</td>
+                    <td>Not Applicable</td>
+                    <td>{{ summary_object.ev_ebitda_bf1_mean }}</td>
+                    <td>{{ summary_object.ev_ebitda_bf2_mean }}</td>
+                    <td>{{ summary_object.ev_sales_bf1_mean }}</td>
+                    <td>{{ summary_object.ev_sales_bf2_mean }}</td>
+                    <td>{{ summary_object.p_e_bf1_mean }}</td>
+                    <td>{{ summary_object.p_e_bf2_mean }}</td>
+                    <td>{{ summary_object.fcf_yield_bf1_mean }}</td>
+                    <td>{{ summary_object.fcf_yield_bf2_mean }}</td>
+                  </tr>
+
+                  <tr>
+                    <td>Min</td>
+                    <td>Not Applicable</td>
+                    <td>Not Applicable</td>
+                    <td>Not Applicable</td>
+                    <td>{{ summary_object.ev_ebitda_bf1_min }}</td>
+                    <td>{{ summary_object.ev_ebitda_bf2_min }}</td>
+                    <td>{{ summary_object.ev_sales_bf1_min }}</td>
+                    <td>{{ summary_object.ev_sales_bf2_min }}</td>
+                    <td>{{ summary_object.p_e_bf1_min }}</td>
+                    <td>{{ summary_object.p_e_bf2_min }}</td>
+                    <td>{{ summary_object.fcf_yield_bf1_min }}</td>
+                    <td>{{ summary_object.fcf_yield_bf2_min }}</td>
+                  </tr>
+
+
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+{% block navs_js %}
+{{ block.super }}
+{% endblock %}
+
+{% block summernote_js %}
+{{ block.super }}
+{% endblock %}
+
+<script src="{% static 'app-assets/js/core/show_ess_idea.js' %}"></script>
 
 {% endblock %}

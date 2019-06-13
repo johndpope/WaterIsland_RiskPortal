@@ -3674,3 +3674,18 @@ tr.shown td.details-control {
 
 .pagination.pagination-flat.pagination-sm li.active a {
   padding: 0.5rem 0.7rem; }
+
+/* For xs screen */
+@media (max-width: 575px) {
+
+  /* Align text to center */
+  .text-xs-center {
+    text-align: center;
+  }
+  .text-xs-right {
+    text-align: right;
+  }
+  .text-xs-left {
+    text-align: left;
+  }
+}
