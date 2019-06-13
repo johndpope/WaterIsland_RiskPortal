@@ -422,9 +422,13 @@ def update_downside_formulae(request):
 
 
 class CreditDealsUpsideDownsideView(ListView):
+    """
+    View for Credit Deals Upside Downside Page
+    """
     template_name = 'credit_deals_upside_downside.html'
     model = CreditDealsUpsideDownside
-    queryset = CreditDealsUpsideDownside.objects.all()
+    queryset = CreditDealsUpsideDownside.objects.all().order_by('downside', 'upside', '-last_updated',
+                                                                '-origination_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

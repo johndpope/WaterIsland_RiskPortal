@@ -7,18 +7,20 @@ $(document).ready(function () {
         fixedColumns: {
             leftColumns: 2
         },
-        order: [[4, 'desc'], [3, 'desc']],
+        "aaSorting": [],
+        "order": [],
         columnDefs: [
             {
                 targets: [3], render: function (data) {
-                return moment(data).format('YYYY-MM-DD');
-            }
-        },
+                    return moment(data).format('YYYY-MM-DD');
+                }
+            },
             {
                 targets: [4], render: function (data) {
-                return moment(data, 'MMM DD, YYYY, h:mm a').format('YYYY-MM-DD, hh:mm a');
+                    return moment(data, 'MMM DD, YYYY, h:mm a').format('YYYY-MM-DD, hh:mm a');
+                }
             }
-        }],
+        ],
 
     });
 
