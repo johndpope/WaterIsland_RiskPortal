@@ -36,12 +36,14 @@
         <div class="modal-xl modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title" id="modal_label">Implied Prob (%)</h4>
+                    <h4 class="modal-title" id="modal_label">Implied Prob (%)</h4><br>
+
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
+                    <h5 class="text-center">Click <a href="{% url 'risk:ess_idea_database' %}" target="_blank">here</a> for ESS Idea Database.</h5>
                     <div class="table-responsive">
                         <table class="table table-bordered" id='ess_implied_probability_drilldown'
                                style="font-size:12px;">

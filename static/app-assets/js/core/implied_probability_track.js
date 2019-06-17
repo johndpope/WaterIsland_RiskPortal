@@ -15,7 +15,7 @@ $(document).ready(function () {
     let counter = 1;
     let is_hidden = true;
     for (var i in fieldMappingsArray) {
-        if (fieldMappingsArray[i] === 'Universe (Long)' || fieldMappingsArray[i] === 'Universe (Short)' || fieldMappingsArray[i] === 'Universe (Unclassified)') {
+        if (fieldMappingsArray[i] === 'Universe (Long)' || fieldMappingsArray[i] === 'Universe (Short)' || fieldMappingsArray[i] === 'ESS IDEA Universe') {
             is_hidden = false;
         }
         else {

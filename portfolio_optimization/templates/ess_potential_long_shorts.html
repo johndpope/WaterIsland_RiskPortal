@@ -38,6 +38,7 @@
                                 <table class="table table-striped table-bordered" id='ess_ls'>
                                     <thead>
                                     <tr>
+                                        <th>As of</th>
                                         <th>Alpha Ticker</th>
                                         <th>PX</th>
                                         <th>Up</th>
@@ -70,7 +71,7 @@
                                             <tr class="table-warning">
                                         {% endif %}
 
-
+                                            <td>{{ deal.Date|date:'Y-m-d' }}</td>
                                             <td>{{ deal.alpha_ticker }}</td>
                                             <td>{{ deal.price }}</td>
                                             <td>{{ deal.pt_up }}</td>
