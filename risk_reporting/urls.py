@@ -9,6 +9,7 @@ urlpatterns = [
     url('merger_arb_nav_impacts', views.merger_arb_nav_impacts, name='merger_arb_nav_impacts'),
     url('formula_based_downsides$', views.formula_based_downsides, name='formula_based_downsides'),
     url('credit_upside_downsides$', views.CreditDealsUpsideDownsideView.as_view(), name='credit_upside_downsides'),
+    url('risk_factors_summary$', views.RiskFactorsSummaryView.as_view(), name='risk_factors_summary'),
     url('update_credit_deals_upside_downside$', views.update_credit_deals_upside_downside, name='update_credit_deals_upside_downside'),
     url('fetch_from_bloomberg_by_spread_index$', views.fetch_from_bloomberg_by_spread_index, name='fetch_from_bloomberg_by_spread_index'),
     url('credit_deals_csv_import$', views.credit_deals_csv_import, name='credit_deals_csv_import'),

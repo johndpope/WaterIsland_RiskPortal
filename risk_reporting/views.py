@@ -9,11 +9,12 @@ from django.db.models import Max
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django_slack import slack_message
-from django.views.generic import ListView
+from django.views.generic import ListView, TemplateView
 
 import bbgclient
 from risk_reporting.models import (ArbNAVImpacts, CreditDealsUpsideDownside, DailyNAVImpacts, FormulaeBasedDownsides,
     PositionLevelNAVImpacts)
+from risk_reporting import risk_factors_summary
 from slack_utils import get_channel_name, get_ip_addr
 
 
@@ -591,3 +592,12 @@ def credit_deals_csv_import(request):
     response.write('Last Refreshed: {0}\n\n'.format(last_refreshed))
     credit_deals_df.to_csv(path_or_buf=response, index=False)
     return response
+
+
+class RiskFactorsSummaryView(TemplateView):
+    template_name = 'risk_factors_summary.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['summary_data'] = json.dumps(risk_factors_summary.get_summary_for_risk_factors())
+        return context
