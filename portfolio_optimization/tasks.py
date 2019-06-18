@@ -21,7 +21,7 @@ from slack_utils import get_channel_name
 def refresh_ess_long_shorts_and_implied_probability():
     """ Shared Task executes at 8.15am and Post to Slack with an updated universe Table """
     today = datetime.datetime.now().date()
-
+    api_host = bbgclient.bbgclient.get_next_available_host()
     engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD
                            + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
 
@@ -59,6 +59,19 @@ def refresh_ess_long_shorts_and_implied_probability():
                                      'expected_close', 'category', 'catalyst',
                                      'deal_type', 'catalyst_tier',
                                      'gics_sector', 'hedges', 'lead_analyst', 'model_up', 'model_down', 'model_wic']]
+
+        ess_ideas_tickers = ess_ideas_df['alpha_ticker'].unique()
+
+        ess_ideas_live_prices = pd.DataFrame.from_dict(bbgclient.bbgclient.get_secid2field(ess_ideas_tickers, 'tickers',
+                                                                                   ['PX_LAST'],
+                                                                                   req_type='refdata',
+                                                                                   api_host=api_host),
+                                               orient='index').reset_index()
+        ess_ideas_live_prices.columns = ['alpha_ticker', 'Price']
+        ess_ideas_live_prices['Price'] = ess_ideas_live_prices['Price'].apply(lambda px: float(px[0]) if px[0] else 0)
+        ess_ideas_df = pd.merge(ess_ideas_df, ess_ideas_live_prices, how='left', on='alpha_ticker')
+        del ess_ideas_df['price']
+        ess_ideas_df.rename(columns={'Price': 'price'}, inplace=True)
 
         ess_ideas_df['Implied Probability'] = 1e2 * (ess_ideas_df['price'] - ess_ideas_df['pt_down']) / (
                 ess_ideas_df['pt_up'] - ess_ideas_df['pt_down'])
@@ -115,7 +128,7 @@ def refresh_ess_long_shorts_and_implied_probability():
                 "LongShort IN ('Long', 'Short') AND SecType = 'EQ' "\
                 "AND Sleeve = 'Equity Special Situations' and amount<>0"\
 
-        api_host = bbgclient.bbgclient.get_next_available_host()
+
         imp_prob_tracker_df = pd.read_sql_query(query, con=con)
         imp_prob_tracker_df['Ticker'] = imp_prob_tracker_df['Ticker'] + ' EQUITY'
         ess_tickers = imp_prob_tracker_df['Ticker'].unique()
