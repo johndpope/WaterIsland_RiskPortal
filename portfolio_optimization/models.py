@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 
 
-class EssDealTypearameters(models.Model):
+class EssDealTypeParameters(models.Model):
     deal_type = models.CharField(max_length=100, unique=True)
     long_probability = models.FloatField(null=True)
     long_irr = models.FloatField(null=True)

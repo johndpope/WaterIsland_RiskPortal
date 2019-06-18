@@ -1,178 +1,243 @@
 {% extends 'base.html' %}
 {% block title_block %}
-    ESS Optimization Configs
+ESS Optimization Configs
 {% endblock %}
 {% load staticfiles %}
 
 {% block css_styles %}
-    {{ block.super }}
+{{ block.super }}
 {% endblock %}
 
 {% block datatables_bootstrap_css %}
-    {{ block.super }}
+{{ block.super }}
 {% endblock %}
 
 
 
 {% block content %}
 
-    <div class="app-content content">
-        {% csrf_token %}
-        <div class="content-wrapper">
-            <div class="content-header row">
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="modal animated fadeInDown text-left" id="add_new_deal_type_modal" tabindex="-1" role="dialog"
+      aria-labelledby="modal_label" aria-hidden="true">
+      <div class="modal-xl modal-dialog" role="document">
+        <form id="submit_deal_type_edit_form" method="POST">
+          {% csrf_token %}
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title" id="modal_label">Add New Deal Type</h4>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
             </div>
-
-            <div class="card">
-                <div class="card-head">
-                    <div class="card-header">
-                        <h4 class="card-title font-medium-3 center">Configure ESS Optimization
-                            Parameters</h4>
-                        <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
-                        <div class="heading-elements">
+            <div class="modal-body">
+                {% if form.errors %}
+                {% for error in field.errors %}
+                        <div class="alert alert-danger">
+                            <strong>{{ error|escape }}</strong>
                         </div>
-                    </div>
+                    {% endfor %}
+                {% endif %}
+              {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+              {% endfor %}
+              <input type="hidden" id="deal_type_id_to_edit" >
+              <div class="row">
+                {% for item in form.visible_fields  %}
+                <div class="col-lg-3 col-md-3 col-sm-3">
+                  <small class="{{ item.field.widget.attrs.label_class }}">{{ item.label }}</small>
+                  <fieldset class="form-group position-relative">
+                    {{ item }}
+                  </fieldset>
                 </div>
-
-
-                <div class="col-lg-12">
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-bordered" id='sizing_by_risk_adj_prob_table'>
-                                    <thead>
-                                    <tr>
-                                        <th colspan="4" class="text-center">Normalized Sizing by Risk Adj Prob of
-                                            Close
-                                        </th>
-                                    </tr>
-                                    <tr>
-                                        <th>Arb Max Risk</th>
-                                        <th>Win Prob</th>
-                                        <th>Lose Prob</th>
-                                        <th>Risk Adj Loss</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-
-                                    {% for each_row in normalized_sizing %}
-
-                                        <tr>
-                                            <td><input type="text" id="arb_max_risk"
-                                                       value="{{ each_row.arb_max_risk }}"></td>
-                                            <td id="win_probability_cell"><input type="text" id="win_prob"
-                                                                                 value="{{ each_row.win_probability }}">
-                                            </td>
-                                            <td><input type="text" id="lose_prob"
-                                                       value="{{ each_row.lose_probability }}"></td>
-                                            <td><input type="text" id="risk_adj_loss"
-                                                       value="{{ each_row.risk_adj_loss }}"></td>
-                                            <td>
-                                                <button type="submit" id="sizing_by_risk_adj_prob"
-                                                        class="btn btn-primary">Update/Save
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-
-                                    </tbody>
-                                </table>
-
-                                <table class="table table-striped table-bordered" id='soft_catalyst_risk_sizing_table'>
-                                    <thead>
-                                    <tr>
-                                        <th colspan="5" class="text-center">Soft Catalyst Normalized Risk Sizing</th>
-                                    </tr>
-                                    <tr>
-                                        <th>Tier</th>
-                                        <th>Win Prob</th>
-                                        <th>Lose Prob</th>
-                                        <th>Max Risk</th>
-                                        <th>Avg Pos %</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for each_catalyst in soft_catalyst_sizing %}
-                                        <tr>
-                                            <td>{{ each_catalyst.tier }}</td>
-                                            <td><input type="text" value="{{ each_catalyst.win_probability }}" class="soft_focus_out"></td>
-                                            <td><input type="text" value="{{ each_catalyst.lose_probability }}"></td>
-                                            <td><input type="text" value="{{ each_catalyst.max_risk }}"></td>
-                                            <td><input type="text" value="{{ each_catalyst.avg_position }}"></td>
-                                            <td>
-                                                <button type="submit" class="btn btn-primary">Update/Save</button>
-                                            </td>
-                                        </tr>
-
-
-                                    {% endfor %}
-
-                                    </tbody>
-
-
-                                </table>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-bordered" id='file_upload_table'>
-                                    <thead>
-                                    <tr>
-                                        <th colspan="1" class="text-center"></th>
-                                        <th colspan="4" class="text-center">Long</th>
-                                        <th colspan="4" class="text-center">Short</th>
-                                    </tr>
-                                    <tr>
-                                        <th>Type</th>
-                                        <th>Probability</th>
-                                        <th>IRR</th>
-                                        <th>Max Risk</th>
-                                        <th>Max Size</th>
-                                        <th>Probability</th>
-                                        <th>IRR</th>
-                                        <th>Max Risk</th>
-                                        <th>Max Size</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for row in deal_type_paramters %}
-                                        <tr>
-                                            <td>{{ row.deal_type }}</td>
-                                            <td>{{ row.long_probability }}</td>
-                                            <td>{{ row.long_irr }}</td>
-                                            <td>{{ row.long_max_risk }}</td>
-                                            <td>{{ row.long_max_size }}</td>
-                                            <td>{{ row.short_probability }}</td>
-                                            <td>{{ row.short_irr }}</td>
-                                            <td>{{ row.short_max_risk }}</td>
-                                            <td>{{ row.short_max_size }}</td>
-
-
-                                        </tr>
-
-                                    {% endfor %}
-
-                                    </tbody>
-                                </table>
-
-
-                            </div>
-                            <button id='ess_optimization_new_type' class="btn btn-secondary btn-sm"
-                                    data-toggle="modal" data-target="#ess_new_deal_type_modal">
-                                <i class="ft-plus white"></i> Add/Edit Deal Type
-                            </button>
-                        </div>
-
-                    </div>
-                </div>
-
+                {% endfor %}
+              </div>
             </div>
-
-        </div>
+            <div class="modal-footer">
+              <button id='close_mna_idea_modal' type="button" class="btn btn-danger btn-outline-secondary"
+                data-dismiss="modal">Close
+              </button>
+              <button type="submit" class="btn btn-outline-primary">Save Changes</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="content-header row">
     </div>
 
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/later/1.2.0/later.js"></script>
-    <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
-    <script src="{% static 'app-assets/js/core/ess_targets_config.js' %}" type="text/javascript"></script>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-header">
+          <h4 class="card-title font-medium-3 center">Configure ESS Optimization
+            Parameters</h4>
+          <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
+          <div class="heading-elements">
+          </div>
+        </div>
+      </div>
+
+
+      <div class="col-lg-12">
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered" id='sizing_by_risk_adj_prob_table'>
+                <thead>
+                  <tr>
+                    <th colspan="4" class="text-center">Normalized Sizing by Risk Adj Prob of
+                      Close
+                    </th>
+                  </tr>
+                  <tr>
+                    <th>Arb Max Risk</th>
+                    <th>Win Prob</th>
+                    <th>Lose Prob</th>
+                    <th>Risk Adj Loss</th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                  {% for each_row in normalized_sizing %}
+
+                  <tr>
+                    <td><input type="text" id="arb_max_risk" value="{{ each_row.arb_max_risk }}"></td>
+                    <td id="win_probability_cell"><input type="text" id="win_prob"
+                        value="{{ each_row.win_probability }}">
+                    </td>
+                    <td><input type="text" id="lose_prob" value="{{ each_row.lose_probability }}"></td>
+                    <td><input type="text" id="risk_adj_loss" value="{{ each_row.risk_adj_loss }}"></td>
+                    <td>
+                      <button type="submit" id="sizing_by_risk_adj_prob" class="btn btn-primary">Update/Save
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+
+                </tbody>
+              </table>
+
+              <table class="table table-striped table-bordered" id='soft_catalyst_risk_sizing_table'>
+                <thead>
+                  <tr>
+                    <th colspan="5" class="text-center">Soft Catalyst Normalized Risk Sizing</th>
+                  </tr>
+                  <tr>
+                    <th>Tier</th>
+                    <th>Win Prob</th>
+                    <th>Lose Prob</th>
+                    <th>Max Risk</th>
+                    <th>Avg Pos %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for each_catalyst in soft_catalyst_sizing %}
+                  <tr>
+                    <td>{{ each_catalyst.tier }}</td>
+                    <td><input type="text" value="{{ each_catalyst.win_probability }}" class="soft_focus_out"></td>
+                    <td><input type="text" value="{{ each_catalyst.lose_probability }}"></td>
+                    <td><input type="text" value="{{ each_catalyst.max_risk }}"></td>
+                    <td><input type="text" value="{{ each_catalyst.avg_position }}"></td>
+                    <td>
+                      <button type="submit" class="btn btn-primary">Update/Save</button>
+                    </td>
+                  </tr>
+
+
+                  {% endfor %}
+
+                </tbody>
+
+
+              </table>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="row">
+              <div class="col-lg-12 col-md-12 col-sm-12 text-right">
+                <button id='ess_optimization_new_type' class="btn btn-secondary btn-sm" data-toggle="modal"
+                data-target="#add_new_deal_type_modal">
+                <i class="ft-plus white"></i> Add Deal Type
+              </button>
+              </div>
+            </div>
+            <br>
+            <div class="row">
+              <div class="col-lg-12 col-md-12 col-sm-12">
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered" id='deal_type_table'>
+                <thead>
+                  <tr>
+                    <th colspan="1" class="text-center"></th>
+                    <th colspan="4" class="text-center">Long</th>
+                    <th colspan="4" class="text-center">Short</th>
+                    <th colspan="1" class="text-center"></th>
+                  </tr>
+                  <tr>
+                    <th>Type</th>
+                    <th>Probability</th>
+                    <th>IRR</th>
+                    <th>Max Risk</th>
+                    <th>Max Size</th>
+                    <th>Probability</th>
+                    <th>IRR</th>
+                    <th>Max Risk</th>
+                    <th>Max Size</th>
+                    <th>Options</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in deal_type_parameters %}
+                  <tr id="row_{{ row.id }}">
+                    <td>{{ row.deal_type }}</td>
+                    <td>{{ row.long_probability }}</td>
+                    <td>{{ row.long_irr }}</td>
+                    <td>{{ row.long_max_risk }}</td>
+                    <td>{{ row.long_max_size }}</td>
+                    <td>{{ row.short_probability }}</td>
+                    <td>{{ row.short_irr }}</td>
+                    <td>{{ row.short_max_risk }}</td>
+                    <td>{{ row.short_max_size }}</td>
+                    <td>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                          <i class="ft-settings"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                          <li><a id="edit_deal_type_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item' href="#"><i
+                                class="ft-edit-2"></i> Edit</a></li>
+                          <li><a id="delete_deal_type_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item' href="#"><i
+                                class="ft-trash-2"></i> Delete</a></li>
+                        </ul>
+                      </div>
+                    </td>
+
+
+                  </tr>
+
+                  {% endfor %}
+
+                </tbody>
+              </table>
+
+
+            </div>
+            </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/later/1.2.0/later.js"></script>
+<script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+<script src="{% static 'app-assets/js/core/ess_targets_config.js' %}" type="text/javascript"></script>
 
 
 {% endblock %}

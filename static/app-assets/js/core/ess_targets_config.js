@@ -104,4 +104,110 @@ $(document).ready(function(){
 
 
     }
+
+    // Deal Type Table Script
+
+    var deal_type_table = $('#deal_type_table').DataTable({
+        "aaSorting": [[0,'desc']],
+        "pageLength": 10,
+    });
+
+    $('#ess_optimization_new_type').on("click", function(){
+        $('#modal_label').html('Add New Deal Type');
+        $('#deal_type_id_to_edit').val("");
+    });
+
+    $('.table-responsive').on("click", "#deal_type_table tr td li a", function (e) {
+        var current_deal_type = this.id.toString();
+        // Handle Selected Logic Here
+        if (current_deal_type.search('edit_deal_type_') != -1) {
+            var deal_type_id_to_edit = current_deal_type.split('_').pop(); //Get the ID
+            $('#submit_deal_type_edit_form').trigger('reset');
+            $('#modal_label').html('Edit Deal Type');
+            var deal_type = '';
+            var long_probability = '';
+            var long_irr = '';
+            var long_max_risk = '';
+            var long_max_size = '';
+            var short_probability = '';
+            var short_irr = '';
+            var short_max_risk = '';
+            var short_max_size = '';
+            $.ajax({
+                url: "../portfolio_optimization/get_deal_type_details/",
+                type: 'POST',
+                data: {'deal_type_id_to_edit': deal_type_id_to_edit},
+                success: function (response) {
+                    let deal_type_details = response['deal_type_details'];
+                    deal_type = deal_type_details.deal_type;
+                    long_probability = deal_type_details.long_probability;
+                    long_irr = deal_type_details.long_irr;
+                    long_max_risk = deal_type_details.long_max_risk;
+                    long_max_size = deal_type_details.long_max_size;
+                    short_probability = deal_type_details.short_probability;
+                    short_irr = deal_type_details.short_irr;
+                    short_max_risk = deal_type_details.short_max_risk;
+                    short_max_size = deal_type_details.short_max_size;
+                    $('#deal_type').val(deal_type);
+                    $('#long_probability').val(long_probability);
+                    $('#long_irr').val(long_irr);
+                    $('#long_max_risk').val(long_max_risk);
+                    $('#long_max_size').val(long_max_size);
+                    $('#short_probability').val(short_probability);
+                    $('#short_irr').val(short_irr);
+                    $('#short_max_risk').val(short_max_risk);
+                    $('#short_max_size').val(short_max_size);
+                    console.log("HERE", deal_type_id_to_edit);
+                    $('#deal_type_id_to_edit').val(deal_type_id_to_edit);
+                },
+                error: function (err) {
+                    console.log(err);
+                }
+            });
+            $('#add_new_deal_type_modal').modal('show');
+        }
+        else if (current_deal_type.search('delete_deal_type_') != -1) {
+            //First Popup sweetAlert to Confirm Deletion
+            deal_type_id_to_edit = current_deal_type.split('_').pop();
+
+            swal({
+                title: "Are you sure?",
+                text: "Once deleted, you will not be able to recover this deal type!",
+                icon: "warning",
+                buttons: true,
+                dangerMode: true,
+            }).then((willDelete) => {
+                if (willDelete) {
+                    //Handle Ajax request to Delete
+                    $.ajax({
+                        type: 'POST',
+                        url: '../portfolio_optimization/delete_deal_type/',
+                        data: {'id': deal_type_id_to_edit},
+                        success: function (response) {
+                            if (response === "deal_type_deleted") {
+                                //Delete Row from DataTable
+                                swal("Success! The Deal Type has been deleted!", {icon: "success"});
+                                //ReDraw The Table by Removing the Row with ID equivalent to dealkey
+                                deal_type_table.row($("#row_" + deal_type_id_to_edit)).remove().draw();
+
+                            }
+                            else if (response === 'deal_does_not_exist') {
+                                location.reload();
+                            }
+                            else {
+                                //show a sweet alert
+                                swal("Error!", "Deleting Deal Type Failed!", "error");
+                                console.log('Deletion failed');
+                            }
+                        },
+                        error: function (error) {
+                            swal("Error!", "Deleting Deal Type Failed!", "error");
+                            console.log(error);
+                        }
+                    });
+
+                }
+            });
+        }
+    });
 });

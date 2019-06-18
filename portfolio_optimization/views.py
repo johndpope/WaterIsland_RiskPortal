@@ -6,12 +6,14 @@ import bbgclient
 from django.shortcuts import render
 from django.db import connection
 from django.http import HttpResponse, JsonResponse
+from django.views.generic import FormView
 from .models import *
+from portfolio_optimization.forms import EssDealTypeParametersForm
 
 
 def ess_target_configs(request):
     # Render a response to View the current ESS configs.
-    deal_type_parameters = EssDealTypearameters.objects.all()
+    deal_type_parameters = EssDealTypeParameters.objects.all()
     normalized_sizing = NormalizedSizingByRiskAdjProb.objects.all()
     soft_catalyst_sizing = SoftCatalystNormalizedRiskSizing.objects.all()
 
@@ -20,6 +22,76 @@ def ess_target_configs(request):
                                                         'soft_catalyst_sizing': soft_catalyst_sizing
                                                         }
                   )
+
+
+class EssDealTypeParametersView(FormView):
+    template_name = "ess_targets_configs.html"
+    form_class = EssDealTypeParametersForm
+    success_url = '#'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        deal_type_parameters = EssDealTypeParameters.objects.all()
+        normalized_sizing = NormalizedSizingByRiskAdjProb.objects.all()
+        soft_catalyst_sizing = SoftCatalystNormalizedRiskSizing.objects.all()
+        context.update({'deal_type_parameters': deal_type_parameters, 'normalized_sizing': normalized_sizing,
+                        'soft_catalyst_sizing': soft_catalyst_sizing})
+        return context
+
+    def form_valid(self, form):
+        data = form.cleaned_data
+        deal_type_id_to_edit = self.request.POST.get('deal_type_id')
+        create_new_deal_type = not deal_type_id_to_edit
+        if not create_new_deal_type:
+            try:
+                deal_type_obj = EssDealTypeParameters.objects.get(id=deal_type_id_to_edit)
+                deal_type_obj.__dict__.update(data)
+                deal_type_obj.save()
+                create_new_deal_type = False
+            except EssDealTypeParameters.DoesNotExist:
+                create_new_deal_type = True
+        if create_new_deal_type:
+            if 'deal_type_id' in data.keys():
+                data.pop('deal_type_id')
+            EssDealTypeParameters.objects.create(**data)
+        return super(EssDealTypeParametersView, self).form_valid(form)
+
+
+def get_deal_type_details(request):
+    """ Retreives all the details for the requested Deal Type """
+    if request.method == 'POST':
+        deal_type_id_to_edit = request.POST['deal_type_id_to_edit']
+        deal_type_details = {}
+        try:
+            deal_type = EssDealTypeParameters.objects.get(id=deal_type_id_to_edit)
+            deal_type_details['deal_type'] = deal_type.deal_type
+            deal_type_details['long_probability'] = deal_type.long_probability
+            deal_type_details['long_irr'] = deal_type.long_irr
+            deal_type_details['long_max_risk'] = deal_type.long_max_risk
+            deal_type_details['long_max_size'] = deal_type.long_max_size
+            deal_type_details['short_probability'] = deal_type.short_probability
+            deal_type_details['short_irr'] = deal_type.short_irr
+            deal_type_details['short_max_risk'] = deal_type.short_max_risk
+            deal_type_details['short_max_size'] = deal_type.short_max_size
+        except EssDealTypeParameters.DoesNotExist:
+            deal_type_details = []
+
+    return JsonResponse({'deal_type_details': deal_type_details})
+
+
+
+def delete_deal_type(request):
+    response = None
+    if request.method == 'POST':
+        # Take the ID and Delete
+        id_to_delete = request.POST['id']
+        try:
+            EssDealTypeParameters.objects.get(id=id_to_delete).delete()
+            response = 'deal_type_deleted'
+        except EssDealTypeParameters.DoesNotExist:
+            response = 'deal_does_not_exist'
+
+    return HttpResponse(response)
 
 
 def update_soft_catalyst_risk_sizing(request):

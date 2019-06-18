@@ -4,7 +4,7 @@ from . import views
 app_name = 'portfolio_optimization'
 
 urlpatterns = [
-    url('ess_target_configs$', views.ess_target_configs, name='ess_target_configs'),
+    url('ess_target_configs$', views.EssDealTypeParametersView.as_view(), name='ess_target_configs'),
     url('update_normlized_sizing_by_risk_adj_prob$', views.update_normlized_sizing_by_risk_adj_prob,
         name='update_normlized_sizing_by_risk_adj_prob'),
     url('update_soft_catalyst_risk_sizing$', views.update_soft_catalyst_risk_sizing,
@@ -15,7 +15,6 @@ urlpatterns = [
         name='ess_implied_probabilites'),
     url('ess_implied_prob_drilldown$', views.ess_implied_prob_drilldown,
         name='ess_implied_prob_drilldown'),
-
-
-
+    url('get_deal_type_details/', views.get_deal_type_details, name='get_deal_type_details'),
+    url('delete_deal_type/', views.delete_deal_type, name='delete_deal_type'),
 ]
