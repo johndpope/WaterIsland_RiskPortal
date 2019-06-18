@@ -13,7 +13,7 @@ from celery import shared_task
 from sqlalchemy import create_engine
 from django.conf import settings
 from django_slack import slack_message
-from portfolio_optimization.models import  EssPotentialLongShorts, EssUniverseImpliedProbability
+from portfolio_optimization.models import  EssPotentialLongShorts, EssUniverseImpliedProbability, EssDealTypeParameters
 from slack_utils import get_channel_name
 
 
@@ -90,13 +90,10 @@ def refresh_ess_long_shorts_and_implied_probability():
 
         ess_ideas_df['Adj. Ann IRR'] = ess_ideas_df.apply(calculate_adj_ann_irr, axis=1)
         # Targets currently hard-coded (should be customizable)
-        long_short_targets = [['Merger Arbitrage', 75, 8, 95, 3], ['Dutch Tender', 75, 8, 95, 3],
-                              ['Stub Value', 70, 10, 95, 5],
-                              ['Spec M&A', 50, 40, 75, 10], ['Spin-Off', 35, 10, 55, 5],
-                              ['Transformational M&A', 35, 10, 55, 5],
-                              ['Turnaround', 35, 10, 55, 5], ['Post Re-org Equity', 35, 10, 55, 5]]
-        ls_targets_df = pd.DataFrame(columns=['deal_type', 'long_prob', 'long_irr', 'short_prob', 'short_irr'],
-                                     data=long_short_targets)
+        ls_targets_df = pd.DataFrame.from_records(EssDealTypeParameters.objects.all().values())
+        ls_targets_df.rename(columns={'long_probability': 'long_prob', 'short_probability': 'short_prob'}, inplace=True)
+        ls_targets_df.drop(columns=['id', 'long_max_risk', 'long_max_size', 'short_max_risk', 'short_max_size'],
+                           inplace=True)
         ess_ideas_df = pd.merge(ess_ideas_df, ls_targets_df, how='left', on='deal_type')
         ess_ideas_df['Potential Long'] = ess_ideas_df.apply(
             lambda x: 'Y' if (
