@@ -108,8 +108,8 @@ $(document).ready(function(){
     // Deal Type Table Script
 
     var deal_type_table = $('#deal_type_table').DataTable({
-        "aaSorting": [[0,'desc']],
-        "pageLength": 10,
+        "searching": false,
+        "paging":   false,
     });
 
     $('#ess_optimization_new_type').on("click", function(){

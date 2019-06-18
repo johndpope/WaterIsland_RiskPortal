@@ -41,11 +41,11 @@ class EssDealTypeParametersForm(forms.Form):
                                  widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                'label_class': BADGE_SUCCESS_CLASS, 'id': 'short_irr',
                                                                'placeholder': '0.0'}))
-    short_max_risk = forms.FloatField(required=True, label="Short Internal RoR",
+    short_max_risk = forms.FloatField(required=True, label="Short Max Risk",
                                       widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                     'label_class': BADGE_SUCCESS_CLASS,
                                                                     'id': 'short_max_risk', 'placeholder': '0.0'}))
-    short_max_size = forms.FloatField(required=True, label="Short Internal RoR",
+    short_max_size = forms.FloatField(required=True, label="Short Max Size",
                                       widget=forms.TextInput(attrs={'class': FORM_CONTROL_CLASS,
                                                                     'label_class': BADGE_SUCCESS_CLASS,
                                                                     'id': 'short_max_size', 'placeholder': '0.0'}))
