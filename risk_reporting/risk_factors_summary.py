@@ -7,6 +7,9 @@ from risk.models import MA_Deals, MA_Deals_Risk_Factors
 from risk_reporting.models import DailyNAVImpacts
 
 
+FUND_NAMES = ['AED', 'ARB', 'CAM', 'LEV', 'LG', 'MACO', 'MALT', 'TACO', 'TAQ', 'WED']
+
+
 def get_summary_for_risk_factors():
     response = {'msg': 'Failed', 'data': {}}
     data = {}
@@ -23,27 +26,31 @@ def get_summary_for_risk_factors():
                           'Inversion Risk': 'is_inversion_deal_or_tax_avoidance'}
 
         risk_factors_df = pd.DataFrame.from_records(MA_Deals_Risk_Factors.objects.all().values())
-        wic_flat_file_df = pd.read_sql_query('SELECT * FROM wic.daily_flat_file_db where flat_file_as_of = (select ' \
-                                             'max(flat_file_as_of) from wic.daily_flat_file_db) and fund like \'ARB\'',
-                                             con=connection)
+        wic_flat_file_all_funds_df = pd.read_sql_query('SELECT * FROM wic.daily_flat_file_db where flat_file_as_of = ' \
+                                                       '(select max(flat_file_as_of) from wic.daily_flat_file_db) and' \
+                                                       ' Sleeve = \'Merger Arbitrage\'', con=connection)
         ma_deals_df = pd.DataFrame.from_records(MA_Deals.objects.all().values())
         merge_df = pd.merge(risk_factors_df, ma_deals_df[['id', 'deal_name', 'status']], left_on=['deal_id'],
                             right_on=['id'], how='left')
         merge_df.rename(columns={'id_x': 'id', 'id_y': 'deal_id'}, inplace=True)
-        for main_tab in main_tabs_dict:
-            if main_tab == 'Regulatory Risk':
-                main_tab_data = {}
-                for regulatory_tab in main_tabs_dict[main_tab]:
-                    field_names_list = [regulatory_tab_dict[regulatory_tab]]
+        for fund in FUND_NAMES:
+            wic_flat_file_df = wic_flat_file_all_funds_df[wic_flat_file_all_funds_df['Fund'] == fund]
+            fund_tab_data = {}
+            for main_tab in main_tabs_dict:
+                if main_tab == 'Regulatory Risk':
+                    main_tab_data = {}
+                    for regulatory_tab in main_tabs_dict[main_tab]:
+                        field_names_list = [regulatory_tab_dict[regulatory_tab]]
+                        tab_data = get_tabs_data(wic_flat_file_df, merge_df, field_names_list)
+                        main_tab_data[regulatory_tab] = tab_data
+                    fund_tab_data['Regulatory Risk'] = main_tab_data
+                else:
+                    main_tab_data = {}
+                    field_names_list = main_tabs_dict[main_tab]
+                    field_names_list = field_names_list if isinstance(field_names_list, (list,)) else [field_names_list]
                     tab_data = get_tabs_data(wic_flat_file_df, merge_df, field_names_list)
-                    main_tab_data[regulatory_tab] = tab_data
-                data['Regulatory Risk'] = main_tab_data
-            else:
-                main_tab_data = {}
-                field_names_list = main_tabs_dict[main_tab]
-                field_names_list = field_names_list if isinstance(field_names_list, (list,)) else [field_names_list]
-                tab_data = get_tabs_data(wic_flat_file_df, merge_df, field_names_list)
-                data[main_tab] = tab_data
+                    fund_tab_data[main_tab] = tab_data
+            data[fund] = fund_tab_data
         response = {'msg': 'Success', 'data': data}
     except Exception as e:
         response = {'msg': 'Failed', 'data': {}}
@@ -114,15 +121,15 @@ def get_tabs_data(wic_flat_file_df, merge_df, field_names_list):
                     if not impacts_df_index.empty:
                         impacts_df_index = impacts_df_index[0]
                         try:
-                            base_case_impact = float(impacts_df.at[impacts_df_index, 'BASE_CASE_NAV_IMPACT_ARB'])
+                            outlier_nav_impact = float(impacts_df.at[impacts_df_index, 'OUTLIER_NAV_IMPACT_ARB'])
                         except ValueError:
-                            base_case_impact = 0.0
+                            outlier_nav_impact = 0.0
                     else:
-                        base_case_impact = 0.0
+                        outlier_nav_impact = 0.0
                     deal_data = {'deal_name': deal_name, 'alpha_mkt_val': alpha_mkt_val,
                                  'alphahedge_mkt_val': alphahedge_mkt_val, 'hedge_mkt_val': hedge_mkt_val,
                                  'alpha_alphahedge_val': alpha_alphahedge_val, 'deal_mkt_val': deal_mkt_val,
-                                 'base_case_nav_impacts': base_case_impact, 'deal_status': deal_status}
+                                 'outlier_nav_impact': outlier_nav_impact, 'deal_status': deal_status}
                     option_data.append(deal_data)
                 tab_data[option] = option_data
     return tab_data

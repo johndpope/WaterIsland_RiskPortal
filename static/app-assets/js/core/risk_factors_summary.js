@@ -94,7 +94,7 @@ $(document).ready(function () {
                 {title: 'Hedhe Mkt Val', data: 'hedge_mkt_val'},
                 {title: 'Alpha AlphaHedge Mkt Val', data: 'alpha_alphahedge_val'},
                 {title: 'Deal Mkt Val', data: 'deal_mkt_val'},
-                {title: 'Base Case NAV Impacts', data: 'base_case_nav_impacts'},
+                {title: 'Outlier NAV Impacts', data: 'outlier_nav_impact'},
             ],
             "columnDefs": [{
                 "targets": [2, 3, 4, 5, 6, 7],
