@@ -1,10 +1,11 @@
 $(document).ready(function () {
+
     var remove_file_ids = {BULL: [], OUR: [], BEAR: []};
     $('#ess_idea_new_deal_situation_overview').summernote();
     $('#ess_idea_new_deal_company_overview').summernote();
     var ess_idea_table = $('#ess_idea_table').DataTable({
-        scrollY: "680px",
-        "order": [[ 16, "desc" ]],
+        scrollY: "65vh",
+        "order": [[ 17, "desc" ]],
         "pageLength": 100,
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
             '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
@@ -18,10 +19,10 @@ $(document).ready(function () {
             }
         },
         initComplete: function () {
-            this.api().columns([0, 1, 2, 3, 4, 5, 18]).every(function () {
+            this.api().columns([0, 1, 2, 3, 4, 5, 6, 19]).every(function () {
                 var column = this;
                 $(column.header()).append("<br>");
-                var select = $('<select class="custom-select" ><option value=""></option></select>')
+                var select = $('<select class="custom-select form-control" ><option value=""></option></select>')
                     .appendTo($(column.header()))
                     .on('change', function () {
                         var val = $.fn.dataTable.util.escapeRegex(
@@ -39,30 +40,30 @@ $(document).ready(function () {
             });
         },
         columnDefs: [{
-            targets: [10, 11], render: function (data)
+            targets: [11, 12], render: function (data)
             {
                 return moment(data).format('YYYY-MM-DD');
             }
         },
         {
-            targets: [7, 8, 9], render: function (data)
+            targets: [8, 9, 10], render: function (data)
             {
                 return parseFloat(data).toFixed(2);
             }
         },
         {
-            targets: [6], render: function(data)
+            targets: [7], render: function(data)
             {
                 return Number(data).toFixed(2);
             }
         },
-         { "width": "10px", "targets": 4 },],
+         { "width": "10px", "targets": 5 },],
         buttons: {
             buttons: [{
                 extend: 'copy',
                 text: '<i class="fa fa-copy"></i> Copy',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ,18]
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ,18, 19]
                 },
             }],
             dom: {
@@ -74,6 +75,12 @@ $(document).ready(function () {
                 }
             }
         }
+    });
+
+    $(window).resize(function() {
+        var oSettings = ess_idea_table.fnSettings();
+        oSettings.oScroll.sY = calcDataTableHeight(); 
+        ess_idea_table.fnDraw();
     });
 
 

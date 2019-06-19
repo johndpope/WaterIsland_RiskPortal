@@ -541,6 +541,7 @@ class ESS_Idea(models.Model):
 
     deal_key = models.IntegerField(null=False)
     alpha_ticker = models.CharField(max_length=30) #30 sufficient for ticker length
+    tradegroup = models.CharField(max_length=100, null=True, blank=True)
     price = models.FloatField()
     pt_up = models.FloatField()
     pt_wic = models.FloatField()

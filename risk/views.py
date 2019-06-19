@@ -1658,7 +1658,7 @@ def ess_idea_database(request):
     :return: Render object with all ESS IDEA deals in a dataframe
     """
 
-    df = ESS_Idea.objects.raw("SELECT  A.id, A.alpha_ticker, A.price, A.pt_up, A.pt_wic, A.pt_down, A.unaffected_date, "
+    df = ESS_Idea.objects.raw("SELECT  A.id, A.tradegroup, A.alpha_ticker, A.price, A.pt_up, A.pt_wic, A.pt_down, A.unaffected_date, "
                               "A.expected_close, A.gross_percentage, A.ann_percentage, A.hedged_volatility, "
                               "A.theoretical_sharpe, A.implied_probability, A.event_premium, A.situation_overview,"
                               "A.company_overview, A.bull_thesis, A.our_thesis, A.bear_thesis, A.m_value, A.o_value, "
