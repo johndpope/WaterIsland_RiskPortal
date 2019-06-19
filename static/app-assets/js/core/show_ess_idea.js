@@ -250,6 +250,7 @@ $(document).ready(function () {
     }
 
     function makeEssChart(chartId, graphData) {
+        let unaffected_date = $('#ess_idea_unaffected_date').val();
         amChart = AmCharts.makeChart(chartId, {
             "type": "serial",
             "theme": "black",
@@ -288,7 +289,16 @@ $(document).ready(function () {
             "export": {
                 "enabled": true,
                 "position": "bottom-right"
-            }
+            },
+            "guides": [{
+                "date": new Date(unaffected_date),
+                "lineColor": "#ffffff",
+                "lineAlpha": 1,
+                "dashLength": 2,
+                "inside": true,
+                "labelRotation": 90,
+                "label": "Unaffected Date"
+            }],
         });
         return amChart;
     }
@@ -536,7 +546,16 @@ $(document).ready(function () {
         "export": {
             "enabled": true,
             "position": "bottom-right"
-        }
+        },
+        "guides": [{
+            "date": new Date(unaffected_date),
+            "lineColor": "#ffffff",
+            "lineAlpha": 1,
+            "dashLength": 2,
+            "inside": true,
+            "labelRotation": 90,
+            "label": "Unaffected Date"
+        }],
     });
 
     function generateIMPChartData() {
@@ -659,7 +678,16 @@ $(document).ready(function () {
         "export": {
             "enabled": true,
             "position": "bottom-right"
-        }
+        },
+        "guides": [{
+            "date": new Date(unaffected_date),
+            "lineColor": "#ffffff",
+            "lineAlpha": 1,
+            "dashLength": 2,
+            "inside": true,
+            "labelRotation": 90,
+            "label": "Unaffected Date"
+        }],
     });
 
 
@@ -725,7 +753,16 @@ $(document).ready(function () {
         "export": {
             "enabled": true,
             "position": "bottom-right"
-        }
+        },
+        "guides": [{
+            "date": new Date(unaffected_date),
+            "lineColor": "#ffffff",
+            "lineAlpha": 1,
+            "dashLength": 2,
+            "inside": true,
+            "labelRotation": 90,
+            "label": "Unaffected Date"
+        }],
     });
 
     function generateEventPremiumChartData() {
