@@ -264,19 +264,11 @@ def premium_analysis_flagger():
     exporters = {'ESS IDEA DB Adjustments (' + now_date + ').xlsx': export_excel}
 
     subject = '(Risk Automation) ESS IDEA Database Adjustments - ' + now_date
-<<<<<<< HEAD
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                recipients=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com',
                            'jhernandezdelapena@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
                EXPORTERS=exporters, dataframe=deal_change_log)
-=======
-    # send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-    #            recipients=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com', 'kkeung@wicfunds.com',
-    #                        'jhernandezdelapena@wicfunds.com'],
-    #            subject=subject, from_email='dispatch@wicfunds.com', html=html,
-    #            EXPORTERS=exporters, dataframe=deal_change_log)
->>>>>>> Add Tradegroup column to Ess Idea, allow users to edit tradegroup
 
 
 @shared_task(bind=True)
