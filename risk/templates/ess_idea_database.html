@@ -58,16 +58,15 @@
                 <div class="card-content">
                   <div class="table-responsive">
                     <!-- Task List table -->
-                    <table class="table table-striped table-bordered table-sm" id='ess_idea_table' style="font-size:13px;">
+                    <table class="table table-striped table-bordered" id='ess_idea_table' style="font-size:13px;">
                       <thead>
                         <tr>
-                          <th class="center">TradeGroup</th>
-                          <th class="center">Alpha<br>Ticker</th>
-                          <th class="center">Category</th>
-                          <th class="center">Deal Type</th>
-                          <th class="center">Catalyst</th>
-                          <th class="center">Catalyst<br>(Tier)</th>
-                          <th class="center">GICSSector</th>
+                          <th>Alpha<br>Ticker</th>
+                          <th>Category</th>
+                          <th>Deal Type</th>
+                          <th>Catalyst</th>
+                          <th>Catalyst<br>(Tier)</th>
+                          <th>GICSSector</th>
                           <th>Price</th>
                           <th>PT<br>(Up)</th>
                           <th>PT<br>(WIC)</th>
@@ -80,14 +79,14 @@
                           <th>Sharpe</th>
                           <th>Implied<br>Prob(%)</th>
                           <th>Event<br>Premium(%)</th>
-                          <th class="center">Status</th>
+                          <th>Status</th>
+                          <th>Adjusts By</th>
                           <th>More</th>
                         </tr>
                       </thead>
                       <tbody>
                         {% for row in ess_idea_df %}
                         <tr id="row_{{ row.id }}" data-value="{{ row.needs_downside_attention }}">
-                          <td>{{ row.tradegroup }}</td>
                           <td>{{ row.alpha_ticker }}</td>
                           <td>{{ row.category }}</td>
                           <td>{{ row.deal_type }}</td>
@@ -107,6 +106,7 @@
                           <td>{{ row.implied_probability }}</td>
                           <td>{{ row.event_premium }}</td>
                           <td>{{ row.status }}</td>
+                          <td>{{ row.how_to_adjust }}</td>
                           <td>
                             <div class="btn-group">
                               <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"

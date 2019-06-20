@@ -31,25 +31,25 @@ ESS Optimization Configs
               </button>
             </div>
             <div class="modal-body">
-              {% if form.errors %}
+                {% if form.errors %}
                 {% for error in field.errors %}
-                  <div class="alert alert-danger">
-                    <strong>{{ error|escape }}</strong>
-                  </div>
-                {% endfor %}
-              {% endif %}
+                        <div class="alert alert-danger">
+                            <strong>{{ error|escape }}</strong>
+                        </div>
+                    {% endfor %}
+                {% endif %}
               {% for hidden in form.hidden_fields %}
                 {{ hidden }}
               {% endfor %}
-              <input type="hidden" id="deal_type_id_to_edit">
+              <input type="hidden" id="deal_type_id_to_edit" >
               <div class="row">
                 {% for item in form.visible_fields  %}
-                  <div class="col-lg-3 col-md-3 col-sm-3">
-                    <small class="{{ item.field.widget.attrs.label_class }}">{{ item.label }}</small>
-                    <fieldset class="form-group position-relative">
-                      {{ item }}
-                    </fieldset>
-                  </div>
+                <div class="col-lg-3 col-md-3 col-sm-3">
+                  <small class="{{ item.field.widget.attrs.label_class }}">{{ item.label }}</small>
+                  <fieldset class="form-group position-relative">
+                    {{ item }}
+                  </fieldset>
+                </div>
                 {% endfor %}
               </div>
             </div>
@@ -69,84 +69,16 @@ ESS Optimization Configs
     <div class="card">
       <div class="card-head">
         <div class="card-header">
-          <h4 class="card-title font-medium-3 center">Configure ESS Optimization Parameters</h4>
+          <h4 class="card-title font-medium-3 center">Configure ESS Optimization
+            Parameters</h4>
+          <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
+          <div class="heading-elements">
+          </div>
         </div>
       </div>
 
-      <div class="col-lg-12">
-        <div class="row">
-          <div class="col-lg-12">
-            <div class="row">
-              <div class="col-lg-12 col-md-12 col-sm-12 text-right pr-3">
-                <button id='ess_optimization_new_type' class="btn btn-secondary btn-sm" data-toggle="modal"
-                  data-target="#add_new_deal_type_modal">
-                  <i class="ft-plus white"></i> Add Deal Type
-                </button>
-              </div>
-            </div>
-            <br>
-            <div class="row">
-              <div class="col-lg-12 col-md-12 col-sm-12">
-                <div class="table-responsive">
-                  <table class="table table-striped table-bordered" id='deal_type_table'>
-                    <thead>
-                      <tr>
-                        <th colspan="1" class="text-center"></th>
-                        <th colspan="4" class="text-center">Long</th>
-                        <th colspan="4" class="text-center">Short</th>
-                        <th colspan="1" class="text-center"></th>
-                      </tr>
-                      <tr>
-                        <th>Type</th>
-                        <th>Probability</th>
-                        <th>IRR</th>
-                        <th>Max Risk</th>
-                        <th>Max Size</th>
-                        <th>Probability</th>
-                        <th>IRR</th>
-                        <th>Max Risk</th>
-                        <th>Max Size</th>
-                        <th>Options</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for row in deal_type_parameters %}
-                        <tr id="row_{{ row.id }}">
-                          <td>{{ row.deal_type }}</td>
-                          <td>{{ row.long_probability }}</td>
-                          <td>{{ row.long_irr }}</td>
-                          <td>{{ row.long_max_risk }}</td>
-                          <td>{{ row.long_max_size }}</td>
-                          <td>{{ row.short_probability }}</td>
-                          <td>{{ row.short_irr }}</td>
-                          <td>{{ row.short_max_risk }}</td>
-                          <td>{{ row.short_max_size }}</td>
-                          <td>
-                            <div class="btn-group">
-                              <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
-                                aria-haspopup="true" aria-expanded="false">
-                                <i class="ft-settings"></i>
-                              </button>
-                              <ul class="dropdown-menu">
-                                <li><a id="edit_deal_type_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'
-                                    href="#"><i class="ft-edit-2"></i> Edit</a></li>
-                                <li><a id="delete_deal_type_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'
-                                    href="#"><i class="ft-trash-2"></i> Delete</a></li>
-                              </ul>
-                            </div>
-                          </td>
-                        </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <br><br>
 
-        <!-- Normalized and Soft Catalyst Tables -->
+      <div class="col-lg-12">
         <div class="row">
           <div class="col-lg-6">
             <div class="table-responsive">
@@ -184,11 +116,7 @@ ESS Optimization Configs
 
                 </tbody>
               </table>
-            </div>
-          </div>
 
-          <div class="col-lg-6">
-            <div class="table-responsive">
               <table class="table table-striped table-bordered" id='soft_catalyst_risk_sizing_table'>
                 <thead>
                   <tr>
@@ -204,24 +132,106 @@ ESS Optimization Configs
                 </thead>
                 <tbody>
                   {% for each_catalyst in soft_catalyst_sizing %}
-                    <tr>
-                      <td>{{ each_catalyst.tier }}</td>
-                      <td><input type="text" value="{{ each_catalyst.win_probability }}" class="soft_focus_out"></td>
-                      <td><input type="text" value="{{ each_catalyst.lose_probability }}"></td>
-                      <td><input type="text" value="{{ each_catalyst.max_risk }}"></td>
-                      <td><input type="text" value="{{ each_catalyst.avg_position }}"></td>
-                      <td>
-                        <button type="submit" class="btn btn-primary">Update/Save</button>
-                      </td>
-                    </tr>
+                  <tr>
+                    <td>{{ each_catalyst.tier }}</td>
+                    <td><input type="text" value="{{ each_catalyst.win_probability }}" class="soft_focus_out"></td>
+                    <td><input type="text" value="{{ each_catalyst.lose_probability }}"></td>
+                    <td><input type="text" value="{{ each_catalyst.max_risk }}"></td>
+                    <td><input type="text" value="{{ each_catalyst.avg_position }}"></td>
+                    <td>
+                      <button type="submit" class="btn btn-primary">Update/Save</button>
+                    </td>
+                  </tr>
+
+
                   {% endfor %}
+
                 </tbody>
+
+
               </table>
             </div>
           </div>
+          <div class="col-lg-6">
+            <div class="row">
+              <div class="col-lg-12 col-md-12 col-sm-12 text-right">
+                <button id='ess_optimization_new_type' class="btn btn-secondary btn-sm" data-toggle="modal"
+                data-target="#add_new_deal_type_modal">
+                <i class="ft-plus white"></i> Add Deal Type
+              </button>
+              </div>
+            </div>
+            <br>
+            <div class="row">
+              <div class="col-lg-12 col-md-12 col-sm-12">
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered" id='deal_type_table'>
+                <thead>
+                  <tr>
+                    <th colspan="1" class="text-center"></th>
+                    <th colspan="4" class="text-center">Long</th>
+                    <th colspan="4" class="text-center">Short</th>
+                    <th colspan="1" class="text-center"></th>
+                  </tr>
+                  <tr>
+                    <th>Type</th>
+                    <th>Probability</th>
+                    <th>IRR</th>
+                    <th>Max Risk</th>
+                    <th>Max Size</th>
+                    <th>Probability</th>
+                    <th>IRR</th>
+                    <th>Max Risk</th>
+                    <th>Max Size</th>
+                    <th>Options</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in deal_type_parameters %}
+                  <tr id="row_{{ row.id }}">
+                    <td>{{ row.deal_type }}</td>
+                    <td>{{ row.long_probability }}</td>
+                    <td>{{ row.long_irr }}</td>
+                    <td>{{ row.long_max_risk }}</td>
+                    <td>{{ row.long_max_size }}</td>
+                    <td>{{ row.short_probability }}</td>
+                    <td>{{ row.short_irr }}</td>
+                    <td>{{ row.short_max_risk }}</td>
+                    <td>{{ row.short_max_size }}</td>
+                    <td>
+                      <div class="btn-group">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false">
+                          <i class="ft-settings"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                          <li><a id="edit_deal_type_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item' href="#"><i
+                                class="ft-edit-2"></i> Edit</a></li>
+                          <li><a id="delete_deal_type_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item' href="#"><i
+                                class="ft-trash-2"></i> Delete</a></li>
+                        </ul>
+                      </div>
+                    </td>
+
+
+                  </tr>
+
+                  {% endfor %}
+
+                </tbody>
+              </table>
+
+
+            </div>
+            </div>
+            </div>
+          </div>
+
         </div>
       </div>
+
     </div>
+
   </div>
 </div>
 
