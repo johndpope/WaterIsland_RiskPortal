@@ -4,7 +4,7 @@ $(document).ready(function () {
     $('#ess_idea_new_deal_situation_overview').summernote();
     $('#ess_idea_new_deal_company_overview').summernote();
     var ess_idea_table = $('#ess_idea_table').DataTable({
-        scrollY: "65vh",
+        scrollY: "50vh",
         "order": [[ 17, "desc" ]],
         "pageLength": 100,
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +

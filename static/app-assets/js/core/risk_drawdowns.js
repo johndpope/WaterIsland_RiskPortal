@@ -5,7 +5,7 @@ $(document).ready(function () {
 
     $('#tradegroup_drawdown_table').DataTable({
         data: tradegroup_drawdowns,
-        scrollY: "680px",
+        scrollY: "50vh",
         scrollX: true,
         scrollCollapse: false,
         paging: false,
@@ -84,7 +84,7 @@ $(document).ready(function () {
     // Sleeve Drawdowns
     $('#sleeve_drawdown_table').DataTable({
         data: sleeve_drawdowns,
-        scrollY: "680px",
+        scrollY: "50vh",
         scrollX: true,
         scrollCollapse: true,
         paging: false,
@@ -162,7 +162,7 @@ $(document).ready(function () {
     // Bucket Drawdowns
     $('#bucket_drawdown_table').DataTable({
         data: bucket_drawdowns,
-        scrollY: "680px",
+        scrollY: "50vh",
         scrollX: true,
         scrollCollapse: true,
         paging: false,
