@@ -74,7 +74,7 @@ $(document).ready(function () {
             this.api().columns([1]).every(function () {
                 var column = this;
                 $(column.header()).append("<br>");
-                var select = $('<select class="custom-select" ><option value=""></option></select>')
+                var select = $('<select class="custom-select form-control" ><option value=""></option></select>')
                     .appendTo($(column.header()))
                     .on('change', function () {
                         var val = $.fn.dataTable.util.escapeRegex(

@@ -168,6 +168,7 @@ def ess_implied_prob_drilldown(request):
     return_data = None
     if request.method == 'POST':
         try:
+            implied_drilldowwn = pd.DataFrame()
             date = request.POST['date']
             deal_type = request.POST['deal_type']
 
@@ -202,6 +203,7 @@ def ess_implied_prob_drilldown(request):
 
                 imp_prob_tracker_df = imp_prob_tracker_df[['Date', 'Ticker', 'Price', 'TradeGroup', 'implied_probability']]
                 imp_prob_tracker_df.columns = ['Date', 'alpha_ticker', 'price', 'deal_type', 'implied_probability']
+                imp_prob_tracker_df['implied_probability'] = imp_prob_tracker_df['implied_probability'].round(2)
                 return_data = imp_prob_tracker_df.to_json(orient='records')
 
             else:
@@ -217,10 +219,16 @@ def ess_implied_prob_drilldown(request):
 
                 elif deal_type == 'Universe (Unclassified)':
                     implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, potential_short='').values('Date', 'alpha_ticker',  'price', 'deal_type', 'implied_probability'))
+                
+                elif deal_type == 'Soft Universe Imp. Prob':
+                    implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, catalyst='Soft').values('Date', 'alpha_ticker',  'price', 'deal_type', 'implied_probability'))
+
 
                 else:
                     implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(Date=date, deal_type=deal_type).values('Date', 'alpha_ticker', 'price', 'deal_type', 'implied_probability'))
-                implied_drilldowwn['Date'] = implied_drilldowwn['Date'].astype(str)
+                if not implied_drilldowwn.empty:
+                    implied_drilldowwn['implied_probability'] = implied_drilldowwn['implied_probability'].round(2)
+                    implied_drilldowwn['Date'] = implied_drilldowwn['Date'].astype(str)
 
                 return_data = implied_drilldowwn.to_json(orient='records')
 
