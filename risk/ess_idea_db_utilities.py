@@ -13,7 +13,7 @@ from risk.models import *
 import ess_function
 
 
-def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id,
+def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, tradegroup, update_id,
                  ticker,
                  situation_overview, company_overview, bull_thesis,
                  our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close,
@@ -331,7 +331,7 @@ def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
     progress_recorder.set_progress(82, 100)
 
     version_number = 0
-    new_deal = ESS_Idea(deal_key=latest_deal_key, alpha_ticker=ticker, price=price, pt_up=pt_up,
+    new_deal = ESS_Idea(deal_key=latest_deal_key, tradegroup=tradegroup, alpha_ticker=ticker, price=price, pt_up=pt_up,
                         pt_down=pt_down, pt_wic=pt_wic,
                         unaffected_date=unaffected_date, expected_close=expected_close,
                         gross_percentage=gross_percentage, ann_percentage=ann_percentage,
@@ -712,8 +712,8 @@ def add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_mo
         raise Exception
 
 
-def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id,
-                           ticker,
+def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, tradegroup,
+                           update_id, ticker,
                            situation_overview, company_overview, bull_thesis,
                            our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close,
                            m_value, o_value,
@@ -1047,8 +1047,8 @@ def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear
         print('Printing Version number & Deal Key of current deal..' + str(version_number)
               + " ->" + str(latest_deal_key))
 
-        new_deal = ESS_Idea(deal_key=latest_deal_key, alpha_ticker=ticker, price=price, pt_up=pt_up,
-                            pt_down=pt_down,
+        new_deal = ESS_Idea(deal_key=latest_deal_key, tradegroup=tradegroup, alpha_ticker=ticker, price=price,
+                            pt_up=pt_up, pt_down=pt_down,
                             pt_wic=pt_wic, unaffected_date=unaffected_date, expected_close=expected_close,
                             gross_percentage=gross_percentage, ann_percentage=ann_percentage,
                             hedged_volatility=hedged_volatility, theoretical_sharpe=theoretical_sharpe,
@@ -1424,8 +1424,8 @@ def add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear
         raise Exception
 
 
-def add_new_deal_alpha_only(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id, ticker,
-                            situation_overview, company_overview, bull_thesis,
+def add_new_deal_alpha_only(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, tradegroup,
+                            update_id, ticker, situation_overview, company_overview, bull_thesis,
                             our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close, m_value,
                             o_value,
                             s_value, a_value, i_value,

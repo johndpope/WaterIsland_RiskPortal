@@ -164,15 +164,15 @@ def populate_new_ess_idea_db_from_old_db():
         id = int(row['dealKey'])
 
         price_target_date = datetime.datetime.strptime(price_target_date, "%m/%d/%Y").strftime("%Y-%m-%d")
+        tradegroup = ''
 
-        risk.tasks.add_new_idea.delay(bull_thesis_model_file, our_thesis_model_file, bear_thesis_model_file, update_id,
-                          ticker, situation_overview, company_overview, bull_thesis,
-                          our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close,
-                          m_value, o_value, s_value, a_value, i_value,
-                          c_value, m_overview, o_overview, s_overview, a_overview, i_overview, c_overview,
-                          ticker_hedge_length, json.dumps(ticker_hedge), cix_index, price_target_date,
-                          multiples, category, catalyst, deal_type, catalyst_tier, hedges, gics_sector, lead_analyst,
-                          status, version_number, id)
+        risk.tasks.add_new_idea.delay(bull_thesis_model_file, our_thesis_model_file, bear_thesis_model_file, tradegroup,
+                                      update_id, ticker, situation_overview, company_overview, bull_thesis, our_thesis,
+                                      bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close, m_value,
+                                      o_value, s_value, a_value, i_value, c_value, m_overview, o_overview, s_overview,
+                                      a_overview, i_overview, c_overview, ticker_hedge_length, json.dumps(ticker_hedge),
+                                      cix_index, price_target_date, multiples, category, catalyst, deal_type,
+                                      catalyst_tier, hedges, gics_sector, lead_analyst, status, version_number, id)
 
 
     return None

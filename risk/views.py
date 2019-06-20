@@ -1590,7 +1590,7 @@ def edit_ess_deal(request):
 
             deal_key = ESS_Idea.objects.filter(id=deal_id).first().deal_key
 
-            deal_object = ESS_Idea.objects.filter(id=deal_id, version_number=latest_version).values_list()
+            deal_objects = ESS_Idea.objects.filter(id=deal_id, version_number=latest_version).values()
             related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=deal_id,
                                                                       version_number=latest_version).values_list()
 
@@ -1626,11 +1626,10 @@ def edit_ess_deal(request):
             response['bull_thesis_files'] = bull_thesis_files
             response['our_thesis_files'] = our_thesis_files
             response['bear_thesis_files'] = bear_thesis_files
-
-            response['deal_object'] = list(deal_object)
+            response['deal_object'] = list(deal_objects)
             response['related_peers'] = list(related_peers)
             response['multiples_dict'] = ESS_Idea.objects.get(id=deal_id).multiples_dictionary.replace("\'", "\"")
-    return JsonResponse(response)
+    return JsonResponse(response, safe=False)
 
 
 def get_gics_sector(request):
@@ -1658,7 +1657,7 @@ def ess_idea_database(request):
     :return: Render object with all ESS IDEA deals in a dataframe
     """
 
-    df = ESS_Idea.objects.raw("SELECT  A.id, A.alpha_ticker, A.price, A.pt_up, A.pt_wic, A.pt_down, A.unaffected_date, "
+    df = ESS_Idea.objects.raw("SELECT  A.id, A.tradegroup, A.alpha_ticker, A.price, A.pt_up, A.pt_wic, A.pt_down, A.unaffected_date, "
                               "A.expected_close, A.gross_percentage, A.ann_percentage, A.hedged_volatility, "
                               "A.theoretical_sharpe, A.implied_probability, A.event_premium, A.situation_overview,"
                               "A.company_overview, A.bull_thesis, A.our_thesis, A.bear_thesis, A.m_value, A.o_value, "
@@ -1896,6 +1895,7 @@ def add_new_ess_idea_deal(request):
             our_thesis_model_files = request.FILES.getlist('filesOurThesis[]')
             bear_thesis_model_files = request.FILES.getlist('filesBearThesis[]')
             update_id = request.POST.get('update_id')
+            tradegroup = request.POST.get('tradegroup')
             ticker = request.POST.get('ticker')
             situation_overview = request.POST.get('situation_overview')
             company_overview = request.POST.get('company_overview')
@@ -1940,7 +1940,7 @@ def add_new_ess_idea_deal(request):
 
             task = add_new_idea.delay(bull_thesis_model_files=bull_thesis_model_files,
                                       our_thesis_model_files=our_thesis_model_files,
-                                      bear_thesis_model_files=bear_thesis_model_files,
+                                      bear_thesis_model_files=bear_thesis_model_files, tradegroup=tradegroup,
                                       update_id=update_id, ticker=ticker, situation_overview=situation_overview,
                                       company_overview=company_overview, bull_thesis=bull_thesis,
                                       our_thesis=our_thesis, bear_thesis=bear_thesis, pt_up=pt_up, pt_wic=pt_wic,

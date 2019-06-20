@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from django.http import HttpResponse
 from django.template.loader import get_template
-import pydf
+# import pydf
 
 
 class Render:
@@ -13,7 +13,7 @@ class Render:
         html = template.render(params)
         response = BytesIO()
         file = open("sales_reporting.pdf", "wb")
-        pdf = pydf.generate_pdf(html)
+        # pdf = pydf.generate_pdf(html)
         file.write(pdf)
         file.close()
         if not pdf.err:

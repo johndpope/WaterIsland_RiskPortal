@@ -264,16 +264,24 @@ def premium_analysis_flagger():
     exporters = {'ESS IDEA DB Adjustments (' + now_date + ').xlsx': export_excel}
 
     subject = '(Risk Automation) ESS IDEA Database Adjustments - ' + now_date
+<<<<<<< HEAD
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                recipients=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com',
                            'jhernandezdelapena@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
                EXPORTERS=exporters, dataframe=deal_change_log)
+=======
+    # send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
+    #            recipients=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com', 'kkeung@wicfunds.com',
+    #                        'jhernandezdelapena@wicfunds.com'],
+    #            subject=subject, from_email='dispatch@wicfunds.com', html=html,
+    #            EXPORTERS=exporters, dataframe=deal_change_log)
+>>>>>>> Add Tradegroup column to Ess Idea, allow users to edit tradegroup
 
 
 @shared_task(bind=True)
-def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id, ticker,
-                 situation_overview, company_overview, bull_thesis,
+def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, tradegroup, update_id,
+                 ticker, situation_overview, company_overview, bull_thesis,
                  our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close, m_value, o_value,
                  s_value, a_value, i_value,
                  c_value, m_overview, o_overview, s_overview, a_overview, i_overview, c_overview, ticker_hedge_length,
@@ -304,8 +312,8 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
         if len(peer_tickers) == 0:
             '''Only calcuate for alphas'''
             print('No peers specified...')
-            add_new_deal_alpha_only(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id,
-                                    ticker,
+            add_new_deal_alpha_only(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files,
+                                    tradegroup, update_id, ticker,
                                     situation_overview, company_overview, bull_thesis,
                                     our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close,
                                     m_value, o_value,
@@ -325,8 +333,8 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
 
         if update_id != 'false':
             # Update is Requested for the deal...Acquire a DB lock by select_for_update()
-            add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id,
-                                   ticker,
+            add_new_deal_with_lock(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, tradegroup,
+                                   update_id, ticker,
                                    situation_overview, company_overview, bull_thesis,
                                    our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close,
                                    m_value, o_value,
@@ -346,8 +354,8 @@ def add_new_idea(self, bull_thesis_model_files, our_thesis_model_files, bear_the
                 print('Database seems to be empty..')
                 latest_deal_key = 0
 
-            add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, update_id,
-                         ticker,
+            add_new_deal(bull_thesis_model_files, our_thesis_model_files, bear_thesis_model_files, tradegroup,
+                         update_id, ticker,
                          situation_overview, company_overview, bull_thesis,
                          our_thesis, bear_thesis, pt_up, pt_wic, pt_down, unaffected_date, expected_close,
                          m_value, o_value,

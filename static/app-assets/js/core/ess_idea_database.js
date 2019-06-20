@@ -1,10 +1,11 @@
 $(document).ready(function () {
+
     var remove_file_ids = {BULL: [], OUR: [], BEAR: []};
     $('#ess_idea_new_deal_situation_overview').summernote();
     $('#ess_idea_new_deal_company_overview').summernote();
     var ess_idea_table = $('#ess_idea_table').DataTable({
-        scrollY: "680px",
-        "order": [[ 16, "desc" ]],
+        scrollY: "50vh",
+        "order": [[ 17, "desc" ]],
         "pageLength": 100,
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
             '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
@@ -18,10 +19,10 @@ $(document).ready(function () {
             }
         },
         initComplete: function () {
-            this.api().columns([0, 1, 2, 3, 4, 5, 18]).every(function () {
+            this.api().columns([0, 1, 2, 3, 4, 5, 6, 19]).every(function () {
                 var column = this;
                 $(column.header()).append("<br>");
-                var select = $('<select class="custom-select" ><option value=""></option></select>')
+                var select = $('<select class="custom-select form-control" ><option value=""></option></select>')
                     .appendTo($(column.header()))
                     .on('change', function () {
                         var val = $.fn.dataTable.util.escapeRegex(
@@ -39,30 +40,30 @@ $(document).ready(function () {
             });
         },
         columnDefs: [{
-            targets: [10, 11], render: function (data)
+            targets: [11, 12], render: function (data)
             {
                 return moment(data).format('YYYY-MM-DD');
             }
         },
         {
-            targets: [7, 8, 9], render: function (data)
+            targets: [8, 9, 10], render: function (data)
             {
                 return parseFloat(data).toFixed(2);
             }
         },
         {
-            targets: [6], render: function(data)
+            targets: [7], render: function(data)
             {
                 return Number(data).toFixed(2);
             }
         },
-         { "width": "10px", "targets": 4 },],
+         { "width": "10px", "targets": 5 },],
         buttons: {
             buttons: [{
                 extend: 'copy',
                 text: '<i class="fa fa-copy"></i> Copy',
                 exportOptions: {
-                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ,18]
+                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ,18, 19]
                 },
             }],
             dom: {
@@ -75,7 +76,6 @@ $(document).ready(function () {
             }
         }
     });
-
 
     $('#ess_bull_thesis').summernote({dialogsInBody: true, height: 700});
     $('#ess_our_thesis').summernote({dialogsInBody: true, height: 700});
@@ -203,6 +203,8 @@ $(document).ready(function () {
 
 
         }
+        var tradegroup = $('#ess_idea_new_deal_tradegroup').val();
+
         let pt_up_check = 'No';
         let pt_down_check = 'No';   //Set default adjustments to False
         let pt_wic_check = 'No';
@@ -372,6 +374,7 @@ $(document).ready(function () {
         // data.append('our_thesis_model_file', our_thesis_model_file);
         // data.append('bear_thesis_model_file', bear_thesis_model_file);
         data.append('update_id', update_id);
+        data.append('tradegroup', tradegroup);
         data.append('ticker', ticker);
         data.append('situation_overview', situation_overview);
         data.append('company_overview', company_overview);
@@ -459,7 +462,9 @@ $(document).ready(function () {
 
                 function reload_page() {
                     $(block_ele).unblock(); // Release the Lock
-                    swal("Success! The IDEA has been added. Please hit refresh!", {icon: "success"});
+                    swal("Success! The IDEA has been added!", {icon: "success"}).then((value) => {
+                        location.reload();
+                    });
                 }
 
                 function display_error_message() {
@@ -593,7 +598,7 @@ $(document).ready(function () {
                     'csrfmiddlewaretoken': csrfmiddlewaretoken
                 },
                 success: function (response) {
-                    let deal_object = response['deal_object'];
+                    let deal_object = response['deal_object'][0];
                     let bull_thesis_files = response['bull_thesis_files'];
                     let our_thesis_files = response['our_thesis_files'];
                     let bear_thesis_files = response['bear_thesis_files'];
@@ -614,43 +619,9 @@ $(document).ready(function () {
                     console.log(deal_object);
                     let related_peers_length = response['related_peers'].length;
                     // Get all Required Fields
-                    let id = deal_object[0][0];
-                    let ticker = deal_object[0][2];
-                    let pt_up = deal_object[0][4];
-                    let pt_wic = deal_object[0][5];
-                    let pt_down = deal_object[0][6];
-                    let unaffected_date = deal_object[0][7];
-                    let expected_close = deal_object[0][8];
-                    let situation_overview = deal_object[0][15];
-                    let company_overview = deal_object[0][16];
-                    let bull_thesis = deal_object[0][17];
-                    let our_thesis = deal_object[0][18];
-                    let bear_thesis = deal_object[0][19];
-                    let m_value = deal_object[0][20];
-                    let o_value = deal_object[0][21];
-                    let s_value = deal_object[0][22];
-                    let a_value = deal_object[0][23];
-                    let i_value = deal_object[0][24];
-                    let c_value = deal_object[0][25];
-                    let m_description = deal_object[0][26];
-                    let o_description = deal_object[0][27];
-                    let s_description = deal_object[0][28];
-                    let a_description = deal_object[0][29];
-                    let i_description = deal_object[0][30];
-                    let c_description = deal_object[0][31];
 
-                    let price_target_date = deal_object[0][48];
-                    let cix_index = deal_object[0][50];
-
-                    let pt_up_check = deal_object[0][61];
-                    let pt_down_check = deal_object[0][62];
-                    let pt_wic_check = deal_object[0][63];
-
-                    let adjust_based_off = deal_object[0][64];
-                    let premium_format = deal_object[0][65];
-
-                    $('#select_based_off').val(adjust_based_off);
-                    $('#premium_format').val(premium_format);
+                    $('#select_based_off').val(deal_object.how_to_adjust);
+                    $('#premium_format').val(deal_object.premium_format);
 
                     //If adjustments are not null and contains Yes then check it
                     if (pt_up_check != null && pt_up_check === 'Yes') {
@@ -676,38 +647,38 @@ $(document).ready(function () {
 
                     let multiples_dict = JSON.parse(response['multiples_dict']);
 
-
                     //Now    Get all the Peers
                     let related_peers = response['related_peers'];
 
                     // Fill Values in the Modal and Then OPEN the Modal
-                    $('#ess_idea_new_deal_ticker').val(ticker);
-                    $('#ess_idea_new_deal_situation_overview').summernote('code',situation_overview);
-                    $('#ess_idea_new_deal_company_overview').summernote('code', company_overview);
-                    $('#ess_idea_new_deal_pt_up').val(parseFloat(pt_up).toFixed(2));
-                    $('#ess_idea_new_deal_pt_down').val(parseFloat(pt_down).toFixed(2));
-                    $('#ess_idea_new_deal_pt_wic').val(parseFloat(pt_wic).toFixed(2));
-                    $('#ess_idea_new_deal_unaffected_date').val(unaffected_date);
-                    $('#ess_idea_new_deal_expected_close').val(expected_close);
-                    $('#ess_bull_thesis').summernote('code', bull_thesis);
-                    $('#ess_our_thesis').summernote('code', our_thesis);
-                    $('#ess_bear_thesis').summernote('code', bear_thesis);
-                    $('#ess_M_select').val(m_value);
-                    $('#ess_O_select').val(o_value);
-                    $('#ess_S_select').val(s_value);
-                    $('#ess_A_select').val(a_value);
-                    $('#ess_I_select').val(i_value);
-                    $('#ess_C_select').val(c_value);
+                    $('#ess_idea_new_deal_tradegroup').val(deal_object.tradegroup);
+                    $('#ess_idea_new_deal_ticker').val(deal_object.alpha_ticker);
+                    $('#ess_idea_new_deal_situation_overview').summernote('code', deal_object.situation_overview);
+                    $('#ess_idea_new_deal_company_overview').summernote('code', deal_object.company_overview);
+                    $('#ess_idea_new_deal_pt_up').val(parseFloat(deal_object.pt_up).toFixed(2));
+                    $('#ess_idea_new_deal_pt_down').val(parseFloat(deal_object.pt_down).toFixed(2));
+                    $('#ess_idea_new_deal_pt_wic').val(parseFloat(deal_object.pt_wic).toFixed(2));
+                    $('#ess_idea_new_deal_unaffected_date').val(deal_object.unaffected_date);
+                    $('#ess_idea_new_deal_expected_close').val(deal_object.expected_close);
+                    $('#ess_bull_thesis').summernote('code', deal_object.bull_thesis);
+                    $('#ess_our_thesis').summernote('code', deal_object.our_thesis);
+                    $('#ess_bear_thesis').summernote('code', deal_object.bear_thesis);
+                    $('#ess_M_select').val(deal_object.m_value);
+                    $('#ess_O_select').val(deal_object.o_value);
+                    $('#ess_S_select').val(deal_object.s_value);
+                    $('#ess_A_select').val(deal_object.a_value);
+                    $('#ess_I_select').val(deal_object.i_value);
+                    $('#ess_C_select').val(deal_object.c_value);
                     // Overviews
-                    $('#ess_M_overview').val(m_description);
-                    $('#ess_O_overview').val(o_description);
-                    $('#ess_S_overview').val(s_description);
-                    $('#ess_A_overview').val(a_description);
-                    $('#ess_I_overview').val(i_description);
-                    $('#ess_C_overview').val(c_description);
-                    $('#ess_idea_new_deal_update_id').val(id);
-                    $('#ess_idea_new_deal_cix_index').val(cix_index);
-                    $('#ess_idea_new_deal_price_target_date').val(price_target_date);
+                    $('#ess_M_overview').val(deal_object.m_overview);
+                    $('#ess_O_overview').val(deal_object.o_overview);
+                    $('#ess_S_overview').val(deal_object.s_overview);
+                    $('#ess_A_overview').val(deal_object.a_overview);
+                    $('#ess_I_overview').val(deal_object.i_overview);
+                    $('#ess_C_overview').val(deal_object.c_overview);
+                    $('#ess_idea_new_deal_update_id').val(deal_object.id);
+                    $('#ess_idea_new_deal_cix_index').val(deal_object.cix_index);
+                    $('#ess_idea_new_deal_price_target_date').val(deal_object.price_target_date);
                     //Add category
 
 
@@ -718,15 +689,15 @@ $(document).ready(function () {
                     $('#fcf_yield_weight').val(multiples_dict[4]['FCF yield']);
 
 
-                    $('#ess_category_select').val(deal_object[0][51]);
-                    $('#ess_catalyst_select').val(deal_object[0][52]);
-                    $('#ess_deal_type').val(deal_object[0][53]);
+                    $('#ess_category_select').val(deal_object.category);
+                    $('#ess_catalyst_select').val(deal_object.catalyst);
+                    $('#ess_deal_type').val(deal_object.deal_type);
 
-                    $('#ess_catalyst_tier_select').val(deal_object[0][54]);
-                    $('#ess_idea_gics_sector').val(deal_object[0][55]);
-                    $('#ess_hedges_select').val(deal_object[0][56]);
-                    $('#ess_idea_status').val(deal_object[0][58]);
-                    $('#ess_idea_lead_analyst').val(deal_object[0][59]);
+                    $('#ess_catalyst_tier_select').val(deal_object.catalyst_tier);
+                    $('#ess_idea_gics_sector').val(deal_object.gics_sector);
+                    $('#ess_hedges_select').val(deal_object.hedges);
+                    $('#ess_idea_status').val(deal_object.status);
+                    $('#ess_idea_lead_analyst').val(deal_object.lead_analyst);
 
 
                     // Adjust Peers

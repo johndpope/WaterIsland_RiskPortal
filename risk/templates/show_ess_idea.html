@@ -742,11 +742,16 @@ View ESS IDEA
 
     <div class="container">
       <div class="row justify-content-center">
-        <small class="badge badge-lg badge-info text-center">{{ ess_idea_object.alpha_ticker }}</small>
+        <small class="badge badge-lg badge-info text-center">{{ ess_idea_object.alpha_ticker }}
+        {% if ess_idea_object.tradegroup %}
+          ( {{ ess_idea_object.tradegroup }} )</small>
+        {% else %}
+          </small>
+        {% endif %}
       </div>
       <div class="row justify-content-center">
         <small class="badge badge-lg badge-secondary text-center">Current Version:
-          ({{ ess_idea_object.version_number }})
+          {{ ess_idea_object.version_number }}
         </small>
       </div>
       <br>
