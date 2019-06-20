@@ -140,22 +140,24 @@ def ess_potential_long_shorts(request):
 
 def ess_implied_probabilites(request):
     # Show Raw time-series of values of implied probabilities....
-
+    field_names = []
+    implied_probability_chart = {}
     ess_implied_prb_universe = EssUniverseImpliedProbability.objects.all()
     implied_probabilities_df = pd.DataFrame().from_records(ess_implied_prb_universe.
                                                            values('Date', 'deal_type', 'implied_probability'))
 
-    field_names = list(implied_probabilities_df['deal_type'].unique())
-    implied_probabilities_df['implied_probability'] = implied_probabilities_df['implied_probability'].\
-        apply(lambda x: np.round(x, decimals=2))
+    if not implied_probabilities_df.empty:
+        field_names = list(implied_probabilities_df['deal_type'].unique())
+        implied_probabilities_df['implied_probability'] = implied_probabilities_df['implied_probability'].\
+            apply(lambda x: np.round(x, decimals=2))
 
-    implied_probabilities_df['Date'] = implied_probabilities_df['Date'].astype(str)
-    implied_probabilities_df = implied_probabilities_df.pivot_table(columns=['deal_type'], index='Date').reset_index()
+        implied_probabilities_df['Date'] = implied_probabilities_df['Date'].astype(str)
+        implied_probabilities_df = implied_probabilities_df.pivot_table(columns=['deal_type'], index='Date').reset_index()
 
-    implied_probabilities_df.columns = ["".join(('', j)) for i, j in implied_probabilities_df.columns]
-    implied_probabilities_df.columns.values[0] = 'Date'
-    implied_probabilities_df.reset_index(inplace=True)
-    implied_probability_chart = implied_probabilities_df.to_json(orient='records')
+        implied_probabilities_df.columns = ["".join(('', j)) for i, j in implied_probabilities_df.columns]
+        implied_probabilities_df.columns.values[0] = 'Date'
+        implied_probabilities_df.reset_index(inplace=True)
+        implied_probability_chart = implied_probabilities_df.to_json(orient='records')
 
     return render(request, 'implied_probability_track.html', {'implied_probability_chart': implied_probability_chart,
                                                               'field_names': json.dumps(field_names),
@@ -195,7 +197,6 @@ def ess_implied_prob_drilldown(request):
                 imp_prob_tracker_df['implied_probability'] = 1e2*(imp_prob_tracker_df['Price'] - imp_prob_tracker_df['DealDownside'])/(imp_prob_tracker_df['DealUpside'] - imp_prob_tracker_df['DealDownside'])
 
                 imp_prob_tracker_df.replace([np.inf, -np.inf], np.nan, inplace=True)  # Replace Inf values
-                imp_prob_tracker_df = imp_prob_tracker_df[~(pd.isna(imp_prob_tracker_df['implied_probability']))]
 
                 imp_prob_tracker_df['Date'] = imp_prob_tracker_df['Date'].astype(str)
 

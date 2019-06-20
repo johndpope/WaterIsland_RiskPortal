@@ -88,7 +88,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'SEND_DAILY_SITUATIONS_LOG': {
         'task': 'wic_news.tasks.email_news_additions',
-        'schedule': crontab(minute="15", hour='19', day_of_week='mon-fri'),  # Execute weekdays morning at 6.40am
+        'schedule': crontab(minute="15", hour='19', day_of_week='mon-fri'),
     },
     'EMAIL_SALES_WEEKLY_REPORT': {
         'task': 'sales_reporting.tasks.email_weekly_sales_report',
@@ -96,7 +96,7 @@ CELERYBEAT_SCHEDULE = {
     },
     'REFRESH_ESS_LONG_SHORT_AND_IMPLIED_PROB': {
         'task': 'portfolio_optimization.tasks.refresh_ess_long_shorts_and_implied_probability',
-        'schedule': crontab(minute="00", hour='13', day_of_week='mon-fri'),
+        'schedule': crontab(minute="45", hour='18', day_of_week='mon-fri'),
     },
     'REFRESH_CREDIT_DEALS_UPSIDE_DOWNSIDE': {
         'task': 'risk_reporting.tasks.refresh_credit_deals_upside_downside',

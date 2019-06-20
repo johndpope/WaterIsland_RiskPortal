@@ -111,9 +111,12 @@ def refresh_ess_long_shorts_and_implied_probability():
         x.to_sql(con=con, if_exists='append', schema=settings.CURRENT_DATABASE,
                  name='portfolio_optimization_esspotentiallongshorts', index=False)
         time.sleep(2)
-        avg_imp_prob = x[['deal_type', 'implied_probability']].groupby('deal_type').agg('mean').reset_index()
+        x['count'] = x['implied_probability'].apply(lambda y: 1 if not pd.isna(y) else np.nan)
+        avg_imp_prob = x[['deal_type', 'count', 'implied_probability']].groupby('deal_type').agg({'implied_probability': 'mean',
+                          'count': 'sum'}).reset_index()
+        x.drop(columns=['count'], inplace=True)
         avg_imp_prob.loc[len(avg_imp_prob)] = ['Soft Universe Imp. Prob',
-                                               x[x['catalyst'] == 'Soft']['implied_probability'].mean()]
+                                               x[x['catalyst'] == 'Soft']['implied_probability'].mean(), len(x[x['catalyst'] == 'Soft'])]
 
         avg_imp_prob['Date'] = today
         # --------------- SECTION FOR Tracking Univese, TAQ, AED Long/Short Implied Probabilities ---------------------
@@ -141,17 +144,18 @@ def refresh_ess_long_shorts_and_implied_probability():
         imp_prob_tracker_df['implied_probability'] = 1e2*(imp_prob_tracker_df['Price'] - imp_prob_tracker_df['DealDownside'])/(imp_prob_tracker_df['DealUpside'] - imp_prob_tracker_df['DealDownside'])
 
         imp_prob_tracker_df.replace([np.inf, -np.inf], np.nan, inplace=True)  #Replace Inf values
-        grouped_funds_imp_prob = imp_prob_tracker_df[['Date', 'Fund', 'LongShort', 'implied_probability']].\
-            groupby(['Date', 'Fund', 'LongShort']).mean().reset_index()
+        imp_prob_tracker_df['count'] = imp_prob_tracker_df['implied_probability'].apply(lambda x: 1 if not pd.isna(x) else np.nan)
+        grouped_funds_imp_prob = imp_prob_tracker_df[['Date', 'Fund', 'LongShort', 'implied_probability', 'count']].\
+            groupby(['Date', 'Fund', 'LongShort']).agg({'implied_probability': 'mean', 'count': 'sum'}).reset_index()
+        imp_prob_tracker_df.drop(columns=['count'], inplace=True)
 
         grouped_funds_imp_prob['deal_type'] = grouped_funds_imp_prob['Fund'] + " " + grouped_funds_imp_prob['LongShort']
-        grouped_funds_imp_prob = grouped_funds_imp_prob[['Date', 'deal_type', 'implied_probability']]
+        grouped_funds_imp_prob = grouped_funds_imp_prob[['Date', 'deal_type', 'implied_probability', 'count']]
 
         # --------------- POTENTIAL LONG SHORT LEVEL IMPLIED PROBABILITY TRACKING --------------------------------------
-
         ess_potential_ls_df = pd.read_sql_query("SELECT * FROM " + settings.CURRENT_DATABASE +
                                                 ".portfolio_optimization_esspotentiallongshorts", con=con)
-
+        
         ess_potential_ls_df = ess_potential_ls_df[['alpha_ticker', 'price', 'implied_probability',
                                                    'potential_long', 'potential_short']]
 
@@ -176,16 +180,16 @@ def refresh_ess_long_shorts_and_implied_probability():
         # Section for only Long Short Tagging...
 
         ess_potential_ls_df['LongShort'] = ess_potential_ls_df.apply(classify_ess_longshorts, axis=1)
-        universe_long_short_implied_probabilities_df = ess_potential_ls_df[['LongShort',
-                                                                            'implied_probability']].\
-            groupby('LongShort').mean().reset_index()
+        ess_potential_ls_df['count'] = ess_potential_ls_df['implied_probability'].apply(lambda x: 1 if not pd.isna(x) else np.nan)
+        universe_long_short_implied_probabilities_df = ess_potential_ls_df[['LongShort', 'count',
+            'implied_probability']].groupby(['LongShort']).agg({'implied_probability': 'mean', 'count': 'sum'}).reset_index()
 
         universe_long_short_implied_probabilities_df['Date'] = today
         universe_long_short_implied_probabilities_df = universe_long_short_implied_probabilities_df.\
-            rename(columns = {'LongShort': 'deal_type'})
+            rename(columns={'LongShort': 'deal_type'})
 
         universe_long_short_implied_probabilities_df = universe_long_short_implied_probabilities_df[
-            ['Date', 'deal_type', 'implied_probability']]
+            ['Date', 'deal_type', 'implied_probability', 'count']]
 
         final_implied_probability_df = pd.concat([avg_imp_prob, all_ess_universe_implied_probability,
                                                   universe_long_short_implied_probabilities_df,
@@ -205,11 +209,11 @@ def refresh_ess_long_shorts_and_implied_probability():
 
         # Post this Update to Slack
         # Format avg_imp_prob
-        final_implied_probability_df = final_implied_probability_df[['deal_type', 'implied_probability']]
-        final_implied_probability_df['implied_probability'] = final_implied_probability_df['implied_probability'].apply(lambda ip:
-                                                                                        str(np.round(ip, decimals=2))
-                                                                                        + " %")
-        final_implied_probability_df.columns = ['Deal Type', 'Implied Probability']
+        final_implied_probability_df = final_implied_probability_df[['deal_type', 'implied_probability', 'count']]
+        final_implied_probability_df['implied_probability'] = final_implied_probability_df['implied_probability'].apply(
+            lambda ip: str(np.round(ip, decimals=2)) + " %")
+        final_implied_probability_df.columns = ['Deal Type', 'Implied Probability', 'Count']
+        
         slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                       {'message': message,
                        'table': tabulate(final_implied_probability_df, headers='keys', tablefmt='pssql',
@@ -218,6 +222,7 @@ def refresh_ess_long_shorts_and_implied_probability():
 
     except Exception as e:
         print('Error in ESS Potential Long Short Tasks ... ' + str(e))
+        slack_message('ESS_IDEA_DATABASE_ERRORS.slack', {'message': str(e)},
+                      channel=get_channel_name('ess_idea_db_logs'))
     finally:
         con.close()
-        print('Connection Closed....')

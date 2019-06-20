@@ -120,6 +120,11 @@ $(document).ready(function () {
                 },
                 ],
             },
+            "createdRow": function( row, data, dataIndex){
+                if(!data.implied_probability){
+                    $(row).addClass('table-danger');
+                }
+            },
             "processing": true,
             "searching": true,
             "ajax": {
@@ -149,17 +154,23 @@ $(document).ready(function () {
             ],
             "footerCallback": function (row, data, start, end, display) {
                 var api = this.api();
+                var count = 1;
                 // Total over all pages
                 let avg = api
                     .column( 4 )
                     .data()
                     .reduce( function (a, b) {
-                        return parseFloat(a) + parseFloat(b);
+                        var x = parseFloat(a) || 0;
+                        var y = parseFloat(b) || 0;
+                        if (!x) {return y;}
+                        if (!y) {return x;}
+                        count += 1;
+                        return x + y;
                     }, 0 );
-                let average = avg/data.length;
+                let average = avg/count;
                 // Update footer
                 $(api.column(4).footer()).html(
-                    average.toFixed(2).toString() + ' %'
+                    average.toFixed(2).toString() + ' % ( ' + avg.toFixed(2).toString() + ' / ' + count.toString() + ' )'
                 );
             }
         });
