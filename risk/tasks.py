@@ -44,15 +44,16 @@ def premium_analysis_flagger():
 
     # Delete all previous calculations
     EssIdeaAdjustmentsInformation.objects.all().delete()
-
+    no_adjustments_requested_list = []
+    failed_adjustments_list = []
     for each_deal in unique_deals:
         try:
             deal_change_dict = {}
             deal_object = ESS_Idea.objects.filter(alpha_ticker__exact=each_deal).order_by('-version_number').first()
             # Reset Downside Attention
             deal_object.needs_downside_attention = 0
-
-            print('Processing for IDEA Ticker: ' + str(deal_object.alpha_ticker))
+            deal_ticker = deal_object.alpha_ticker
+            print('Processing for IDEA Ticker: ' + str(deal_ticker))
             multiples_dictionary = ast.literal_eval(deal_object.multiples_dictionary)[0]
             multiples_dictionary = {k: float(v) for k, v in multiples_dictionary.items()}
             related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=deal_object.id)
@@ -86,7 +87,7 @@ def premium_analysis_flagger():
                     wic_balance_sheet = None
                     downside_balance_sheet = None
 
-                result_dictionary = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker,
+                result_dictionary = ess_function.final_df(alpha_ticker=deal_ticker,
                                                   cix_index=deal_object.cix_index,
                                                   unaffectedDt=str(deal_object.unaffected_date),
                                                   expected_close=str(deal_object.expected_close),
@@ -178,7 +179,7 @@ def premium_analysis_flagger():
                     deal_change_dict['Adjusted Downside'] = new_downside
 
                 deal_change_dict['Date'] = datetime.datetime.now().date().strftime("%Y-%m-%d")
-                deal_change_dict['Deal Name'] = deal_object.alpha_ticker
+                deal_change_dict['Deal Name'] = deal_ticker
                 deal_change_log = deal_change_log.append(deal_change_dict, ignore_index=True)
                 deal_object.save()
 
@@ -195,16 +196,19 @@ def premium_analysis_flagger():
                                               cix_calculations = json.dumps(cix_calculations),
                                               calculated_on=datetime.datetime.now().date()).save()
 
-                print('Recorded Upside/Downside Adjustments for ' + str(deal_object.alpha_ticker))
-                print('Saved Daily Regression Results for '+ str(deal_object.alpha_ticker))
+                print('Recorded Upside/Downside Adjustments for ' + str(deal_ticker))
+                print('Saved Daily Regression Results for '+ str(deal_ticker))
             else:
-                print('No Adjustments requested for : ' + str(deal_object.alpha_ticker))
+                no_adjustments_requested_list += deal_ticker
+                print('No Adjustments requested for : ' + str(deal_ticker))
         except Exception as e:
             print(e)
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             print(exc_type, fname, exc_tb.tb_lineno)
-            print('Failed Calculating Premium Analysis for : ' + str(deal_object.alpha_ticker))
+
+            print('Failed Calculating Premium Analysis for : ' + str(deal_ticker))
+            failed_adjustments_list += deal_ticker
             continue
 
     def highlight_major_changes(row):
@@ -241,10 +245,13 @@ def premium_analysis_flagger():
                     <p>Daily Price Tracks (Highlighted RED if difference greater than 5%)</p>
                     <a href="http://192.168.0.16:8000/risk/ess_idea_database">
                     Link for ESS IDEA Database</a><br><br>
-                    {0}
+                    <p>No adjustments were requested for deals:{}</p>
+                    <p>Premium analysis failed for deals: {}</p><br>                    
+                    {}
                   </body>
                 </html>
-        """.format(deal_change_log.hide_index().render(index=False))
+        """.format(','.join(no_adjustments_requested_list), ','.join(failed_adjustments_list),
+                   deal_change_log.hide_index().render(index=False))
 
     def export_excel(df):
         with io.BytesIO() as buffer:
@@ -258,7 +265,7 @@ def premium_analysis_flagger():
 
     subject = '(Risk Automation) ESS IDEA Database Adjustments - ' + now_date
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-               recipients=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com', 'kkeung@wicfunds.com',
+               recipients=['risk@wicfunds.com', 'cwatkins@wicfunds.com', 'tchen@wicfunds.com',
                            'jhernandezdelapena@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
                EXPORTERS=exporters, dataframe=deal_change_log)
@@ -382,13 +389,16 @@ def ess_idea_daily_update():
     3. Update all the Charts with the New values """
 
     # Force a Connection Close to prevent 'My-SQL server has gone away'
-    try:
-        for name, info in django.db.connections.databases.items():  # Close the DB connections
-            django.db.connection.close()
-            print('Closing connection: ' + str(name))
 
-        unique_deals = set(ESS_Idea.objects.all().values_list('alpha_ticker', flat=True))
-        for eachDealObject in unique_deals:
+    for name, info in django.db.connections.databases.items():  # Close the DB connections
+        django.db.connection.close()
+        print('Closing connection: ' + str(name))
+
+    unique_deals = set(ESS_Idea.objects.all().values_list('alpha_ticker', flat=True))
+    failed_updates_ticker = []
+
+    for eachDealObject in unique_deals:
+        try:
             eachDealObject = ESS_Idea.objects.filter(alpha_ticker__exact=eachDealObject).order_by('-version_number') \
                 .first()
 
@@ -441,21 +451,25 @@ def ess_idea_daily_update():
                              timeout=15)  # Set a 15 secs Timeout
 
             resp = r.json()['results']
-
             peers_data = []  # Array of dictionaries containing Peer name, its historical prices and hedge weight
-            for i in range(len(resp)):
-                key = list(resp[i].keys())[0]
-                if key == ticker:
-                    # append to alpha tickers
-                    alpha_prices = resp[i][key]['fields']['PX_LAST']
-                    dates_array = resp[i][key]['fields']['date']
-                else:
-                    peers_data.append({
-                        'peer': key,
-                        'historical_prices': resp[i][key]['fields']['PX_LAST'],
-                        'hedge_weight': hedge_weight_dictionary[key]
-                    })
 
+            try:
+                for i in range(len(resp)):
+                    key = list(resp[i].keys())[0]
+                    if key == ticker:
+                        # append to alpha tickers
+                        alpha_prices = resp[i][key]['fields']['PX_LAST']
+                        dates_array = resp[i][key]['fields']['date']
+                    else:
+                        peers_data.append({
+                            'peer': key,
+                            'historical_prices': resp[i][key]['fields']['PX_LAST'],
+                            'hedge_weight': hedge_weight_dictionary[key]
+                        })
+            except KeyError:
+                print('Key Error while processing IDEA : '+ ticker + "  .... Continuing with the Rest")
+                failed_updates_ticker += ticker
+                continue
             # Recalculalte Alpha Chart, Hedge Chart & Market Netural Charts Each day. Only Append to Event Premium and Implied Probability
 
             price = float(alpha_prices[-1])  # Get most Recent Price
@@ -876,17 +890,19 @@ def ess_idea_daily_update():
             # --------------------------------------------------------------------------------------------------------
             print('Peers Updated....')
 
-    except Exception as e:
-        slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
-                      {'message': 'Your deal Addition failed because of following reasons:', 'errors': str(e)},
+        except Exception as e:
+            print(e)
+            print(' Error while processing daily update for: ' + str(ticker) + " ...Continuing with the rest...")
+            failed_updates_ticker += ticker
+            continue
+
+        # Post Failed updates to Slack
+        if len(failed_updates_ticker)>0:
+            slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
+                      {'message': 'Error while Processing Daily Update on following tickers :',
+                       'errors': ','.join(failed_updates_ticker)},
                       channel=get_channel_name('ess_idea_db_logs'),
                       token=settings.SLACK_TOKEN)
-        print('Exception in Celery Task' + str(e))
-        print(e)
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(exc_type, fname, exc_tb.tb_lineno)
-        raise Exception
 
 
 def get_fcf_yield(ticker, api_host, start_date_yyyymmdd, end_date_yyyymmdd, fperiod):

@@ -53,13 +53,13 @@ CELERY_BROKER_URL = env('CELERY_BROKER_URL')
 CELERYBEAT_SCHEDULE = {
     'ESS_IDEA_DAILY_UPDATE': {
         'task': 'risk.tasks.ess_idea_daily_update',
-        'schedule': crontab(hour=9, minute=45, day_of_week='mon-fri')
-    # Execute every morning at 9.40 after market opens
+        'schedule': crontab(hour=20, minute=00, day_of_week='mon-fri')
+    # Execute every night to fetch EOD prices
     },
 
     'ESS_IDEA_FLAGGER': {
         'task': 'risk.tasks.premium_analysis_flagger',
-        'schedule': crontab(hour=10, minute=38, day_of_week='mon-fri'),  # Execute every morning after daily update
+        'schedule': crontab(hour=22, minute=00, day_of_week='mon-fri'),  # Execute after daily update
     },
 
     'DYNAMIC_DOWNSIDE_UPDATE': {
