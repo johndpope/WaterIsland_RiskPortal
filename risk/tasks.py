@@ -199,7 +199,7 @@ def premium_analysis_flagger():
                 print('Recorded Upside/Downside Adjustments for ' + str(deal_ticker))
                 print('Saved Daily Regression Results for '+ str(deal_ticker))
             else:
-                no_adjustments_requested_list += deal_ticker
+                no_adjustments_requested_list += [deal_ticker]
                 print('No Adjustments requested for : ' + str(deal_ticker))
         except Exception as e:
             print(e)
@@ -208,7 +208,7 @@ def premium_analysis_flagger():
             print(exc_type, fname, exc_tb.tb_lineno)
 
             print('Failed Calculating Premium Analysis for : ' + str(deal_ticker))
-            failed_adjustments_list += deal_ticker
+            failed_adjustments_list += [deal_ticker]
             continue
 
     def highlight_major_changes(row):
@@ -468,7 +468,7 @@ def ess_idea_daily_update():
                         })
             except KeyError:
                 print('Key Error while processing IDEA : '+ ticker + "  .... Continuing with the Rest")
-                failed_updates_ticker += ticker
+                failed_updates_ticker += [ticker]
                 continue
             # Recalculalte Alpha Chart, Hedge Chart & Market Netural Charts Each day. Only Append to Event Premium and Implied Probability
 
@@ -893,14 +893,14 @@ def ess_idea_daily_update():
         except Exception as e:
             print(e)
             print(' Error while processing daily update for: ' + str(ticker) + " ...Continuing with the rest...")
-            failed_updates_ticker += ticker
+            failed_updates_ticker += [ticker]
             continue
 
         # Post Failed updates to Slack
         if len(failed_updates_ticker)>0:
             slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                       {'message': 'Error while Processing Daily Update on following tickers :',
-                       'errors': ','.join(failed_updates_ticker)},
+                       'errors': ' '.join(failed_updates_ticker)},
                       channel=get_channel_name('ess_idea_db_logs'),
                       token=settings.SLACK_TOKEN)
 
