@@ -201,11 +201,11 @@ document.onload = function () {
         .fixedColumns().update()
 };
 
-setInterval(function(){
+$(window).resize(function(){
     $($.fn.dataTable.tables(true)).DataTable()
         .columns.adjust()
         .fixedColumns().relayout()
-},500);
+});
 
 // Below Function to adjust columns for dynamically created Tabs
 $('body').on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {

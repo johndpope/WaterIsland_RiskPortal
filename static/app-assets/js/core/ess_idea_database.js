@@ -4,15 +4,18 @@ $(document).ready(function () {
     $('#ess_idea_new_deal_situation_overview').summernote();
     $('#ess_idea_new_deal_company_overview').summernote();
     var ess_idea_table = $('#ess_idea_table').DataTable({
+        scrollX: true,
+        scrollCollapse: true,
         scrollY: "50vh",
+        fixedColumns: {
+            leftColumns: 2,
+            heightMatch: 'auto'
+        },
         "order": [[ 17, "desc" ]],
         "pageLength": 100,
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
             '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
             '<"row"<"col-sm-5"i><"col-sm-7"p>>',
-        fixedHeader: {
-            header: true
-        },
         'rowCallback': function (row, data, index) {
             if ($(row).attr('data-value') === '1') {
                 $(row).css('background-color', '#ff9999');
@@ -817,4 +820,16 @@ $(document).ready(function () {
             });
         }
     });
+});
+
+document.onload = function () {
+    $($.fn.dataTable.tables(true)).DataTable()
+        .columns.adjust()
+        .fixedColumns().update()
+};
+
+$(window).resize(function(){
+    $($.fn.dataTable.tables(true)).DataTable()
+        .columns.adjust()
+        .fixedColumns().relayout()
 });
