@@ -897,12 +897,18 @@ def ess_idea_daily_update():
             continue
 
         # Post Failed updates to Slack
-        if len(failed_updates_ticker)>0:
-            slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
-                      {'message': 'Error while Processing Daily Update on following tickers :',
-                       'errors': ' '.join(failed_updates_ticker)},
-                      channel=get_channel_name('ess_idea_db_logs'),
-                      token=settings.SLACK_TOKEN)
+    if len(failed_updates_ticker)>0:
+        slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
+                  {'message': 'Error while Processing Daily Update on following tickers :',
+                   'errors': ' '.join(failed_updates_ticker)},
+                  channel=get_channel_name('ess_idea_db_logs'),
+                  token=settings.SLACK_TOKEN)
+    else:
+        slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
+                  {'message': 'ESS IDEA Database Daily Update Completed!',
+                   'errors': ' '},
+                  channel=get_channel_name('ess_idea_db_logs'),
+                  token=settings.SLACK_TOKEN)
 
 
 def get_fcf_yield(ticker, api_host, start_date_yyyymmdd, end_date_yyyymmdd, fperiod):
