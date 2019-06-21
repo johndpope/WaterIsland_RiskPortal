@@ -45,7 +45,7 @@
                 <div class="modal-body">
                     <h5 class="text-center">Click <a href="{% url 'risk:ess_idea_database' %}" target="_blank">here</a> for ESS Idea Database.</h5>
                     <div class="table-responsive">
-                        <table class="table table-bordered" id='ess_implied_probability_drilldown'
+                        <table class="table table-bordered table-hover" id='ess_implied_probability_drilldown'
                                style="font-size:12px;">
                             <thead>
                             <tr>
@@ -111,13 +111,14 @@
 
 
                                 <div class="table-responsive">
-                                    <table class="table table-bordered" id='ess_implied_probability_table'
+                                    <table class="table table-bordered table-striped" id='ess_implied_probability_table'
                                            style="font-size:12px;">
                                         <thead>
                                         <tr>
                                             <th>Date</th>
                                             <th>Deal Type</th>
                                             <th>Avg. Implied Probability</th>
+                                            <th>Count</th>
                                             <th>Drilldown</th>
                                         </tr>
                                         </thead>
@@ -127,9 +128,10 @@
                                                 <td>{{ row.Date|date:'Y-m-d' }}</td>
                                                 <td>{{ row.deal_type }}</td>
                                                 <td>{{ row.implied_probability }}</td>
+                                                <td>{{ row.count }}</td>
                                                 <td data-date="{{ row.Date|date:'Y-m-d' }}"
                                                     data-deal="{{ row.deal_type }}">
-                                                    <button class="btn btn-secondary btn-sm">Drilldown</button>
+                                                    <button type="button" class="btn btn-secondary btn-sm btn-details">Drilldown</button>
                                                 </td>
 
                                             </tr>

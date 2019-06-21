@@ -94,11 +94,12 @@ $(document).ready(function () {
     });
 
 
-    $('#ess_implied_probability_table tr td button').on('click', function () {
+    $('#ess_implied_probability_table').on('click', '.btn-details', function () {
         let date = $(this).parent().data('date');
         let deal_type = $(this).parent().data('deal');
         let data = {'date': date, 'deal_type': deal_type};
         // Make Ajax Request, Gather Data in JSON, Open
+        $('#modal_label').html('Implied Prob (%) for ' + deal_type + ' ( ' + date + ' )');
         $('#ess_drilldown_modal').modal('show');
         $('#ess_implied_probability_drilldown').DataTable({
             "language": {
