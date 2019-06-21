@@ -154,7 +154,8 @@ def refresh_ess_long_shorts_and_implied_probability():
 
         # --------------- POTENTIAL LONG SHORT LEVEL IMPLIED PROBABILITY TRACKING --------------------------------------
         ess_potential_ls_df = pd.read_sql_query("SELECT * FROM " + settings.CURRENT_DATABASE +
-                                                ".portfolio_optimization_esspotentiallongshorts", con=con)
+                                                ".portfolio_optimization_esspotentiallongshorts where Date='" +
+                                                today.strftime("%Y-%m-%d") +"'", con=con)
         
         ess_potential_ls_df = ess_potential_ls_df[['alpha_ticker', 'price', 'implied_probability',
                                                    'potential_long', 'potential_short']]
