@@ -11,6 +11,7 @@ def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, anal
                              analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_bear=None,
                              adjustments_df_bull=None, adjustments_df_pt=None, bear_flag=None, bull_flag=None,
                              pt_flag=None, f_period='1BF', progress_recorder=None):
+    import ipdb; ipdb.set_trace()
     slicer = dfutils.df_slicer()
     start_date = slicer.prev_n_business_days(120, unaffectedDt)  # lookback is 120 days (6 months)
     metrics = {k: v for k, v in metric2weight.items() if v != 0}
@@ -51,11 +52,12 @@ def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, anal
 def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, analyst_upside, analyst_downside,
              analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_bear=None,
              adjustments_df_bull=None, adjustments_df_pt=None, bear_flag=None, bull_flag=None,
-             pt_flag=None, f_period="1BF", progress_recorder=None):
+             pt_flag=None, f_period="1BF", progress_recorder=None, as_of_dt=None):
     
+    import ipdb; ipdb.set_trace()
     cix_calculations_dict = OrderedDict()
     slicer = dfutils.df_slicer()
-    as_of_dt = datetime.datetime.today()
+    as_of_dt = datetime.datetime.today() if not as_of_dt else as_of_dt
     unaff_dt = datetime.datetime.strptime(unaffectedDt, '%Y-%m-%d')
     tgt_dt = datetime.datetime.strptime(tgtDate, '%Y-%m-%d')
     exp_close_dt = datetime.datetime.strptime(expected_close, '%Y-%m-%d')

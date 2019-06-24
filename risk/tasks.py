@@ -944,18 +944,20 @@ def get_fcf_yield(ticker, api_host, start_date_yyyymmdd, end_date_yyyymmdd, fper
 
 @shared_task(bind=True)
 def run_ess_premium_analysis_task(self, deal_id, latest_version):
+    import ipdb; ipdb.set_trace()
     df, regression_parameters, regression_calculations, cix_calculations = None, None, None, None
     try:
-        progress_recorder = ProgressRecorder(self)
+        # progress_recorder = ProgressRecorder(self)
         deal_object = ESS_Idea.objects.get(id=deal_id, version_number=latest_version)
+        as_of_dt = deal_object.unaffected_date
         multiples_dictionary_list = ast.literal_eval(deal_object.multiples_dictionary)
-        progress_recorder.set_progress(10, 100)
+        # progress_recorder.set_progress(10, 100)
         multiples_dictionary = {}
         for multiple in multiples_dictionary_list:
             for key, value in multiple.items():
                 multiples_dictionary[key] = float(value)
 
-        progress_recorder.set_progress(20, 100)
+        # progress_recorder.set_progress(20, 100)
         related_peers = ESS_Peers.objects.select_related().filter(ess_idea_id_id=deal_object.id,
                                                                   version_number=latest_version)
         peers_weights_dictionary = {}
@@ -963,7 +965,7 @@ def run_ess_premium_analysis_task(self, deal_id, latest_version):
         for each_peer in related_peers:
             peers_weights_dictionary[each_peer.ticker] = each_peer.hedge_weight / 100
 
-        progress_recorder.set_progress(40, 100)
+        # progress_recorder.set_progress(40, 100)
         bear_flag, bull_flag, pt_flag = None, None, None
         try:
             balance_sheet_object = EssBalanceSheets.objects.get(deal_key=deal_object.deal_key)
@@ -982,7 +984,7 @@ def run_ess_premium_analysis_task(self, deal_id, latest_version):
             wic_balance_sheet = None
             downside_balance_sheet = None
 
-        progress_recorder.set_progress(43, 100)
+        # progress_recorder.set_progress(43, 100)
         result_dictionary = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker,
                                                   cix_index=deal_object.cix_index,
                                                   unaffectedDt=str(deal_object.unaffected_date),
@@ -997,13 +999,13 @@ def run_ess_premium_analysis_task(self, deal_id, latest_version):
                                                   adjustments_df_bull=downside_balance_sheet,
                                                   adjustments_df_pt=wic_balance_sheet, pt_flag=pt_flag,
                                                   bull_flag=bull_flag, bear_flag=bear_flag, f_period="1BF",
-                                                  progress_recorder=progress_recorder)
+                                                  as_of_dt=as_of_dt)
 
         df = result_dictionary['Final Results']
         regression_parameters = result_dictionary['Regression Results']
         regression_calculations = result_dictionary['Regression Calculations']
         cix_calculations = result_dictionary['CIX Calculations']
-        progress_recorder.set_progress(100, 100)
+        # progress_recorder.set_progress(100, 100)
 
     except Exception as e:
         print(e)

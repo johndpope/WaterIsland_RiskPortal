@@ -210,12 +210,14 @@ def compute_implied_price_from_multiple(metric_name, multiple, mult_underlying_d
             return implied_px
 
     except Exception as e:
+        import ipdb; ipdb.set_trace()
         print('failed calculating implied price from multiple: ' + str(metric_name) + ' ' + str(e.args))
         return None
 
 
 def compute_multiple_from_price(metric_name, price, mult_underlying_df):
     try:
+        import ipdb; ipdb.set_trace()
         if metric_name == 'EV/EBITDA':
             ebitda = float(mult_underlying_df['BEST_EBITDA'].iloc[0])
             eqy_sh_out = float(mult_underlying_df['EQY_SH_OUT'].iloc[0])
@@ -588,6 +590,7 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
                             analyst_pt_wic, as_of_dt, price_tgt_dt, metrics, metric2weight, api_host,
                             adjustments_df_bear, adjustments_df_bull, adjustments_df_pt, bear_flag=None,
                             bull_flag=None, pt_flag=None):
+    import ipdb; ipdb.set_trace()
     alpha_historical_mult_df = calib_data['alpha_historical_mult_df']
     peer2historical_mult_df = calib_data['peer2historical_mult_df']
     ticker2short_ticker = {p: p.split(' ')[0] for p in peer_ticker_list + [alpha_ticker]}
