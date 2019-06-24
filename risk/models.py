@@ -609,6 +609,7 @@ class ESS_Idea(models.Model):
     how_to_adjust = models.CharField(max_length=10, null=True, default='cix')   # CIX or Regression
     premium_format = models.CharField(max_length=10, null=True, default='dollar')  # Dollar or Percentage
     created_on = models.DateTimeField(null=True, default=datetime.datetime.now())
+    is_archived = models.BooleanField(default=False)
 
 
 class CreditDatabase(models.Model):

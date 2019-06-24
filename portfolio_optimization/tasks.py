@@ -34,13 +34,15 @@ def refresh_ess_long_shorts_and_implied_probability():
                                          " A.deal_type, A.catalyst_tier, A.gics_sector, A.hedges, A.lead_analyst, "
                                          "IF(model_up=0, A.pt_up, model_up) as model_up, "
                                          "IF(model_down=0, A.pt_down, model_down) as model_down, "
-                                         "IF(model_wic=0, A.pt_wic, model_wic) as model_wic FROM " +
+                                         "IF(model_wic=0, A.pt_wic, model_wic) as model_wic, A.is_archived FROM " +
                                          settings.CURRENT_DATABASE +
                                          ".risk_ess_idea AS A INNER JOIN "
                                          "(SELECT deal_key, MAX(version_number) AS max_version FROM  "
                                          + settings.CURRENT_DATABASE + ".risk_ess_idea GROUP BY deal_key) AS B "
                                                                        "ON A.deal_key = B.deal_key AND "
-                                                                       "A.version_number = B.max_version LEFT JOIN "
+                                                                       "A.version_number = B.max_version AND "
+                                                                       "A.is_archived=0 "
+                                                                       "LEFT JOIN "
                                                                        "(SELECT DISTINCT X.deal_key,"
                                                                        "X.pt_up as model_up, "
                                                                        "X.pt_down AS model_down, X.pt_wic AS model_wic "

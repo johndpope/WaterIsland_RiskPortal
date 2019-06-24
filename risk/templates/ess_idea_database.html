@@ -52,92 +52,192 @@
                     <div class="heading-elements">
                       <button id='ess_idea_add_new_deal' class="btn btn-primary btn-sm" data-toggle="modal"
                         data-target="#ess_idea_new_deal_modal">
-                        <i class="ft-plus white"></i> Add New Deal
+                        <i class="ft-plus white"></i> Add New Idea
                       </button>
                     </div>
                   </div>
                 </div>
                 <div class="card-content">
-                  <div class="table-responsive">
-                    <!-- Task List table -->
-                    <table class="table table-striped table-bordered table-sm" id='ess_idea_table' style="font-size:13px;">
-                      <thead>
-                        <tr>
-                          <th class="center">TradeGroup</th>
-                          <th class="center">Alpha<br>Ticker</th>
-                          <th class="center">Category</th>
-                          <th class="center">Deal Type</th>
-                          <th class="center">Catalyst</th>
-                          <th class="center">Catalyst<br>(Tier)</th>
-                          <th class="center">GICSSector</th>
-                          <th>Price</th>
-                          <th>PT<br>(Up)</th>
-                          <th>PT<br>(WIC)</th>
-                          <th>PT<br>(Down)</th>
-                          <th>Unaffected <br>Date</th>
-                          <th>Expected<br>Close</th>
-                          <th>Gross(%)</th>
-                          <th>Ann.(%)</th>
-                          <th>Hedged <br>Vol.</th>
-                          <th>Sharpe</th>
-                          <th>Implied<br>Prob(%)</th>
-                          <th>Event<br>Premium(%)</th>
-                          <th class="center">Status</th>
-                          <th>More</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {% for row in ess_idea_df %}
-                        <tr id="row_{{ row.id }}" data-value="{{ row.needs_downside_attention }}">
-                          <td>{{ row.tradegroup }}</td>
-                          <td>{{ row.alpha_ticker }}</td>
-                          <td>{{ row.category }}</td>
-                          <td>{{ row.deal_type }}</td>
-                          <td>{{ row.catalyst }}</td>
-                          <td>{{ row.catalyst_tier }}</td>
-                          <td>{{ row.gics_sector }}</td>
-                          <td>{{ row.price }}</td>
-                          <td>{{ row.model_up }}</td>
-                          <td>{{ row.model_wic }}</td>
-                          <td>{{ row.model_down }}</td>
-                          <td>{{ row.unaffected_date }}</td>
-                          <td>{{ row.expected_close }}</td>
-                          <td>{{ row.gross_percentage }}</td>
-                          <td>{{ row.ann_percentage }}</td>
-                          <td>{{ row.hedged_volatility }}</td>
-                          <td>{{ row.theoretical_sharpe }}</td>
-                          <td>{{ row.implied_probability }}</td>
-                          <td>{{ row.event_premium }}</td>
-                          <td>{{ row.status }}</td>
-                          <td>
-                            <div class="btn-group">
-                              <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
-                                aria-haspopup="true" aria-expanded="false">
-                                <i class="ft-settings"></i>
-                              </button>
-                              <ul class="dropdown-menu">
-                                <li>
-                                  <a id="edit_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'>
-                                    <i class="ft-edit-2"></i> Edit
-                                  </a>
-                                </li>
-                                <li>
-                                  <a id="delete_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'>
-                                    <i class="ft-trash-2"></i> Delete
-                                  </a>
-                                </li>
-                                <li>
-                                  <a id="view_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'>
-                                    <i class="ft-plus-circle primary"></i>View
-                                  </a>
-                                </li>
-                              </ul>
-                            </div>
-                          </td>
-                        </tr>
-                        {% endfor %}
-                      </tbody>
-                    </table>
+                  <ul class="nav nav-pills nav-justified nav-underline no-hover-bg">
+                    <li class="nav-item">
+                      <a class="nav-link active" id="ess_universe" data-toggle="tab" aria-controls="tab_ess_universe" href="#tab_ess_universe"
+                        aria-expanded="true">ESS Idea Universe</a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" id="ess_archived" data-toggle="tab" aria-controls="tab_ess_archived" href="#tab_ess_archived"
+                        aria-expanded="false">Archived ESS Ideas</a>
+                    </li>
+                  </ul>
+                  <br>
+                  <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="tab_ess_universe" aria-expanded="true"
+                      aria-labelledby="ess_universe">
+                      <div class="table-responsive">
+                        <!-- ESS Idea Universe table -->
+                        <table class="table table-striped table-bordered table-sm" id='ess_idea_table' style="font-size:13px;">
+                          <thead>
+                            <tr>
+                              <th class="center">TradeGroup</th>
+                              <th class="center">Alpha<br>Ticker</th>
+                              <th class="center">Category</th>
+                              <th class="center">Deal Type</th>
+                              <th class="center">Catalyst</th>
+                              <th class="center">Catalyst<br>(Tier)</th>
+                              <th class="center">GICSSector</th>
+                              <th>Price</th>
+                              <th>PT<br>(Up)</th>
+                              <th>PT<br>(WIC)</th>
+                              <th>PT<br>(Down)</th>
+                              <th>Unaffected <br>Date</th>
+                              <th>Expected<br>Close</th>
+                              <th>Gross(%)</th>
+                              <th>Ann.(%)</th>
+                              <th>Hedged <br>Vol.</th>
+                              <th>Sharpe</th>
+                              <th>Implied<br>Prob(%)</th>
+                              <th>Event<br>Premium(%)</th>
+                              <th class="center">Status</th>
+                              <th>More</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for row in ess_idea_df %}
+                            <tr id="row_{{ row.id }}" data-value="{{ row.needs_downside_attention }}">
+                              <td>{{ row.tradegroup }}</td>
+                              <td>{{ row.alpha_ticker }}</td>
+                              <td>{{ row.category }}</td>
+                              <td>{{ row.deal_type }}</td>
+                              <td>{{ row.catalyst }}</td>
+                              <td>{{ row.catalyst_tier }}</td>
+                              <td>{{ row.gics_sector }}</td>
+                              <td>{{ row.price }}</td>
+                              <td>{{ row.model_up }}</td>
+                              <td>{{ row.model_wic }}</td>
+                              <td>{{ row.model_down }}</td>
+                              <td>{{ row.unaffected_date }}</td>
+                              <td>{{ row.expected_close }}</td>
+                              <td>{{ row.gross_percentage }}</td>
+                              <td>{{ row.ann_percentage }}</td>
+                              <td>{{ row.hedged_volatility }}</td>
+                              <td>{{ row.theoretical_sharpe }}</td>
+                              <td>{{ row.implied_probability }}</td>
+                              <td>{{ row.event_premium }}</td>
+                              <td>{{ row.status }}</td>
+                              <td>
+                                <div class="btn-group">
+                                  <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">
+                                    <i class="ft-settings"></i>
+                                  </button>
+                                  <ul class="dropdown-menu">
+                                    <li>
+                                      <a id="view_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'>
+                                        <i class="ft-plus-circle primary"></i> View
+                                      </a>
+                                    </li>
+                                    <li>
+                                      <a id="edit_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'>
+                                        <i class="ft-edit-2"></i> Edit
+                                      </a>
+                                    </li>
+                                    <li>
+                                      <a id="archive_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'>
+                                        <i class="ft-briefcase danger"></i> Archive
+                                      </a>
+                                    </li>
+                                    <li>
+                                      <a id="delete_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'>
+                                        <i class="ft-trash-2"></i> Delete
+                                      </a>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div role="tabpanel" class="tab-pane" id="tab_ess_archived" aria-expanded="true" aria-labelledby="ess_archived">
+                      <div class="table-responsive">
+                        <!-- ESS Idea Archived table -->
+                        <table class="table table-striped table-bordered table-sm" id='ess_idea_archived_table' style="font-size:13px;">
+                          <thead>
+                            <tr>
+                              <th class="center">TradeGroup</th>
+                              <th class="center">Alpha<br>Ticker</th>
+                              <th class="center">Category</th>
+                              <th class="center">Deal Type</th>
+                              <th class="center">Catalyst</th>
+                              <th class="center">Catalyst<br>(Tier)</th>
+                              <th class="center">GICSSector</th>
+                              <th>Price</th>
+                              <th>PT<br>(Up)</th>
+                              <th>PT<br>(WIC)</th>
+                              <th>PT<br>(Down)</th>
+                              <th>Unaffected <br>Date</th>
+                              <th>Expected<br>Close</th>
+                              <th>Gross(%)</th>
+                              <th>Ann.(%)</th>
+                              <th>Hedged <br>Vol.</th>
+                              <th>Sharpe</th>
+                              <th>Implied<br>Prob(%)</th>
+                              <th>Event<br>Premium(%)</th>
+                              <th class="center">Status</th>
+                              <th>More</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for row in archived_ess_idea_df %}
+                            <tr id="row_{{ row.id }}" data-value="{{ row.needs_downside_attention }}">
+                              <td>{{ row.tradegroup }}</td>
+                              <td>{{ row.alpha_ticker }}</td>
+                              <td>{{ row.category }}</td>
+                              <td>{{ row.deal_type }}</td>
+                              <td>{{ row.catalyst }}</td>
+                              <td>{{ row.catalyst_tier }}</td>
+                              <td>{{ row.gics_sector }}</td>
+                              <td>{{ row.price }}</td>
+                              <td>{{ row.model_up }}</td>
+                              <td>{{ row.model_wic }}</td>
+                              <td>{{ row.model_down }}</td>
+                              <td>{{ row.unaffected_date }}</td>
+                              <td>{{ row.expected_close }}</td>
+                              <td>{{ row.gross_percentage }}</td>
+                              <td>{{ row.ann_percentage }}</td>
+                              <td>{{ row.hedged_volatility }}</td>
+                              <td>{{ row.theoretical_sharpe }}</td>
+                              <td>{{ row.implied_probability }}</td>
+                              <td>{{ row.event_premium }}</td>
+                              <td>{{ row.status }}</td>
+                              <td>
+                                <div class="btn-group">
+                                  <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">
+                                    <i class="ft-settings"></i>
+                                  </button>
+                                  <ul class="dropdown-menu">
+                                    <li>
+                                      <a id="view_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'>
+                                        <i class="ft-plus-circle primary"></i> View
+                                      </a>
+                                    </li>
+                                    <li>
+                                      <a id="restore_{{ row.id }}" data-value="{{ row.id }}" class='dropdown-item'>
+                                          <i class="ft-briefcase danger"></i> Restore to Universe
+                                      </a>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -3,9 +3,60 @@ $(document).ready(function () {
     var remove_file_ids = {BULL: [], OUR: [], BEAR: []};
     $('#ess_idea_new_deal_situation_overview').summernote();
     $('#ess_idea_new_deal_company_overview').summernote();
+
+    var ess_idea_archived_table = $('#ess_idea_archived_table').DataTable({
+        paging: false,
+        scrollX: true,
+        scrollY: "50vh",
+        fixedColumns: {
+            leftColumns: 2,
+        },
+        "order": [[ 17, "desc" ]],
+        initComplete: function () {
+            this.api().columns([0, 1, 2, 3, 4, 5, 6, 19]).every(function () {
+                var column = this;
+                $(column.header()).append("<br>");
+                var select = $('<select class="custom-select form-control" ><option value=""></option></select>')
+                    .appendTo($(column.header()))
+                    .on('change', function () {
+                        var val = $.fn.dataTable.util.escapeRegex(
+                            $(this).val()
+                        );
+
+                        column
+                            .search(val ? '^' + val + '$' : '', true, false)
+                            .draw();
+                    });
+
+                column.data().unique().sort().each(function (d, j) {
+                    select.append('<option value="' + d + '">' + d + '</option>')
+                });
+            });
+        },
+        columnDefs: [{
+            targets: [11, 12], render: function (data)
+            {
+                return moment(data).format('YYYY-MM-DD');
+            }
+        },
+        {
+            targets: [8, 9, 10], render: function (data)
+            {
+                return parseFloat(data).toFixed(2);
+            }
+        },
+        {
+            targets: [7], render: function(data)
+            {
+                return Number(data).toFixed(2);
+            }
+        },
+        { "width": "10px", "targets": 5 },],
+    });
+
+
     var ess_idea_table = $('#ess_idea_table').DataTable({
         scrollX: true,
-        scrollCollapse: true,
         scrollY: "50vh",
         fixedColumns: {
             leftColumns: 2,
@@ -768,6 +819,30 @@ $(document).ready(function () {
                 }
             });
         }
+        else if (current_deal.search('archive_') != -1) {
+            var deal_id_to_edit = current_deal.split('_')[1]; //Get the ID
+            $.ajax({
+                type: 'POST',
+                url: '../risk/archive_ess_idea',
+                data: {'id': deal_id_to_edit},
+                success: function (response) {
+                    if (response === "Success") {
+                        //Delete Row from DataTable
+                        swal("Success! The IDEA has been archived!", {icon: "success"});
+                        //ReDraw The Table by Removing the Row with ID equivalent to dealkey
+                        ess_idea_table.row($("#row_" + deal_id_to_edit)).remove().draw();
+
+                    }
+                    else {
+                        //show a sweet alert
+                        swal("Error!", "Archiving Failed!", "error");
+                    }
+                },
+                error: function (error) {
+                    swal("Error!", "Archiving Idea Failed!", "error");
+                }
+            });
+        }
         else {
             //Logic to View the Deal
             //Just take the URL and redirect to the page. Front-end handling
@@ -820,6 +895,48 @@ $(document).ready(function () {
             });
         }
     });
+
+    $('.table-responsive').on("click", "#ess_idea_archived_table tr td li a", function () {
+        var current_deal = this.id.toString();
+        // Handle Selected Logic Here
+        if (current_deal.search('view_') != -1) {
+            //Logic for Opening a Deal
+            // Steps. Populate Edit Modal with existing fields. Show Modal. Make changes through Ajax. Get Response. Display success Alert
+            let idea_to_view = current_deal.split('_')[1];
+            window.open("../risk/show_ess_idea?ess_idea_id=" + idea_to_view, '_blank');
+            return false;
+        }
+        else if (current_deal.search('restore_') != -1) {
+            var deal_id_to_edit = current_deal.split('_')[1]; //Get the ID
+            $.ajax({
+                type: 'POST',
+                url: '../risk/restore_ess_idea',
+                data: {'id': deal_id_to_edit},
+                success: function (response) {
+                    if (response === "Success") {
+                        //Delete Row from DataTable
+                        swal("Success! The IDEA has been Restored!", {icon: "success"});
+                        //ReDraw The Table by Removing the Row with ID equivalent to dealkey
+                        ess_idea_archived_table.row($("#row_" + deal_id_to_edit)).remove().draw();
+
+                    }
+                    else {
+                        //show a sweet alert
+                        swal("Error!", "Restoration Failed!", "error");
+                    }
+                },
+                error: function (error) {
+                    swal("Error!", "Restoring Deal Failed!", "error");
+                }
+            });
+        }
+    });
+
+    $('body').on('shown.bs.tab', 'a[data-toggle="tab"]', function (e) {
+        $($.fn.dataTable.tables(true)).DataTable()
+            .columns.adjust()
+            .fixedColumns().update()
+        });
 });
 
 document.onload = function () {

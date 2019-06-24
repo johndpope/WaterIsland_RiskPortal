@@ -681,6 +681,22 @@ def restore_from_archive_mna_idea(request):
     return HttpResponse(response)
 
 
+def restore_ess_idea(request):
+    response = 'Failed'
+    if request.method == 'POST':
+        try:
+            ess_id = request.POST.get('id')
+            ess_object = ESS_Idea.objects.get(id=ess_id)
+            deal_key = ess_object.deal_key
+            ESS_Idea.objects.filter(deal_key=deal_key).update(is_archived=False)
+            response = 'Success'
+        except Exception as exception:
+            print(exception)
+            response = 'Failed'
+
+    return HttpResponse(response)
+
+
 def ma_deal_detailed_export(request):
     response = 'Failed'
     query_ma_deal_detailed_export = "SELECT * FROM "+settings.CURRENT_DATABASE+".risk_ma_deals as RMA "\
@@ -712,6 +728,22 @@ def archive_mna_idea(request):
             response = 'Success'
         except Exception as exception:
             print(exception)  # Exception should be logged..
+            response = 'Failed'
+
+    return HttpResponse(response)
+
+
+def archive_ess_idea(request):
+    response = 'Failed'
+    if request.method == 'POST':
+        try:
+            ess_idea_id = request.POST.get('id')
+            ess_object = ESS_Idea.objects.get(id=ess_idea_id)
+            deal_key = ess_object.deal_key
+            ESS_Idea.objects.filter(deal_key=deal_key).update(is_archived=True)
+            response = 'Success'
+        except Exception as exception:
+            print(exception)
             response = 'Failed'
 
     return HttpResponse(response)
@@ -1657,47 +1689,45 @@ def ess_idea_database(request):
     :return: Render object with all ESS IDEA deals in a dataframe
     """
 
-    df = ESS_Idea.objects.raw("SELECT  A.id, A.tradegroup, A.alpha_ticker, A.price, A.pt_up, A.pt_wic, A.pt_down, A.unaffected_date, "
-                              "A.expected_close, A.gross_percentage, A.ann_percentage, A.hedged_volatility, "
-                              "A.theoretical_sharpe, A.implied_probability, A.event_premium, A.situation_overview,"
-                              "A.company_overview, A.bull_thesis, A.our_thesis, A.bear_thesis, A.m_value, A.o_value, "
-                              "A.s_value, A.a_value, A.i_value, A.c_value, A.m_overview, A.o_overview, A.s_overview, "
-                              "A.a_overview, A.i_overview, A.c_overview, A.alpha_chart, A.hedge_chart, "
-                              "A.market_neutral_chart, A.implied_probability_chart, A.event_premium_chart, "
-                              "A.valuator_multiple_chart, A.ev_ebitda_chart_1bf, A.ev_ebitda_chart_2bf, "
-                              "A.ev_ebitda_chart_ltm, A.ev_sales_chart_1bf, A.ev_sales_chart_2bf, A.ev_sales_chart_ltm,"
-                              "A.p_eps_chart_1bf, A.p_eps_chart_2bf, A.p_eps_chart_ltm, A.fcf_yield_chart,"
-                              "A.price_target_date, A.multiples_dictionary, A.cix_index, A.category, A.catalyst, "
-                              "A.deal_type, A.catalyst_tier, A.gics_sector, A.hedges, A.needs_downside_attention,"
-                              "A.status, A.lead_analyst, A.version_number, A.deal_key, A.pt_down_check, A.pt_up_check, "
-                              "A.pt_wic_check, A.how_to_adjust, A.premium_format, A.created_on, "
-                              "IF(model_up=0, A.pt_up, model_up) as model_up, IF(model_down=0, A.pt_down, model_down) "
-                              "as model_down, IF(model_wic=0, A.pt_wic, model_wic) as model_wic FROM " +
-                              settings.CURRENT_DATABASE + ".risk_ess_idea AS A "
-                              " INNER JOIN "
-                              "(SELECT deal_key, MAX(version_number) AS max_version "
-                              "FROM  "+settings.CURRENT_DATABASE+".risk_ess_idea GROUP BY deal_key "
-                              ") AS B " 
-                              "ON A.deal_key = B.deal_key "
-                              "AND "
-                              "A.version_number = B.max_version "
-                              "LEFT JOIN "
-                              "(SELECT DISTINCT X.deal_key,X.pt_up as model_up, X.pt_down AS model_down, X.pt_wic "
-                              "AS "
-                              "model_wic FROM "+settings.CURRENT_DATABASE +
-                              ".risk_ess_idea_upside_downside_change_records  AS X "
-                              "INNER JOIN "
-                              "(SELECT deal_key, MAX(date_updated) AS MaxDate FROM "+settings.CURRENT_DATABASE +
-                              ".risk_ess_idea_upside_downside_change_records "
-                              "GROUP BY deal_key) AS Y "
-                              "ON "
-                              "X.deal_key = Y.deal_key "
-                              "WHERE "
-                              "X.date_updated = Y.MaxDate) AS ADJ  "
-                              "ON "
-                              "ADJ.deal_key = A.deal_key ")
+    query = "SELECT  A.id, A.tradegroup, A.alpha_ticker, A.price, A.pt_up, A.pt_wic, A.pt_down, A.unaffected_date, " \
+            "A.expected_close, A.gross_percentage, A.ann_percentage, A.hedged_volatility, A.theoretical_sharpe, " \
+            "A.implied_probability, A.event_premium, A.situation_overview, A.company_overview, A.bull_thesis, " \
+            "A.our_thesis, A.bear_thesis, A.m_value, A.o_value, A.s_value, A.a_value, A.i_value, A.c_value, " \
+            "A.m_overview, A.o_overview, A.s_overview, A.a_overview, A.i_overview, A.c_overview, A.alpha_chart, " \
+            "A.hedge_chart, A.market_neutral_chart, A.implied_probability_chart, A.event_premium_chart, " \
+            "A.valuator_multiple_chart, A.ev_ebitda_chart_1bf, A.ev_ebitda_chart_2bf, A.ev_ebitda_chart_ltm, " \
+            "A.ev_sales_chart_1bf, A.ev_sales_chart_2bf, A.ev_sales_chart_ltm, A.p_eps_chart_1bf, A.p_eps_chart_2bf, " \
+            "A.p_eps_chart_ltm, A.fcf_yield_chart, A.price_target_date, A.multiples_dictionary, A.cix_index, " \
+            "A.category, A.catalyst, A.deal_type, A.catalyst_tier, A.gics_sector, A.hedges, A.is_archived, " \
+            "A.needs_downside_attention, A.status, A.lead_analyst, A.version_number, A.deal_key, A.pt_down_check, " \
+            "A.pt_up_check, A.pt_wic_check, A.how_to_adjust, A.premium_format, A.created_on, IF(model_up=0, A.pt_up, " \
+            "model_up) as model_up, IF(model_down=0, A.pt_down, model_down) as model_down, IF(model_wic=0, A.pt_wic, " \
+            "model_wic) as model_wic FROM " + settings.CURRENT_DATABASE + ".risk_ess_idea AS A  INNER JOIN " \
+            "(SELECT deal_key, MAX(version_number) " \
+            "AS max_version FROM  " + settings.CURRENT_DATABASE + ".risk_ess_idea GROUP BY deal_key ) AS B " \
+            "ON A.deal_key = B.deal_key " \
+            "AND " \
+            "A.version_number = B.max_version {is_archived_filter}" \
+            "LEFT JOIN " \
+            "(SELECT DISTINCT X.deal_key,X.pt_up as model_up, X.pt_down AS model_down, X.pt_wic " \
+            "AS " \
+            "model_wic FROM " + settings.CURRENT_DATABASE + ".risk_ess_idea_upside_downside_change_records  AS X " \
+            "INNER JOIN " \
+            "(SELECT deal_key, MAX(date_updated) AS MaxDate " \
+            "FROM " + settings.CURRENT_DATABASE + ".risk_ess_idea_upside_downside_change_records " \
+            "GROUP BY deal_key) AS Y " \
+            "ON " \
+            "X.deal_key = Y.deal_key " \
+            "WHERE " \
+            "X.date_updated = Y.MaxDate) AS ADJ  " \
+            "ON " \
+            "ADJ.deal_key = A.deal_key"
 
-    return render(request, 'ess_idea_database.html', context={'ess_idea_df': df})
+    df = ESS_Idea.objects.raw(query.format(is_archived_filter=" AND A.is_archived=0 "))
+    archived_query = query.format(is_archived_filter=" AND A.is_archived=1 ")
+    archived_df = ESS_Idea.objects.raw(archived_query)
+
+    return render(request, 'ess_idea_database.html', context={'ess_idea_df': df, 'archived_ess_idea_df': archived_df})
 
 
 @csrf_exempt
