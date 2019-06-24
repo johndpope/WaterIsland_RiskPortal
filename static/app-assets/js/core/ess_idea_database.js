@@ -627,21 +627,21 @@ $(document).ready(function () {
                     $('#premium_format').val(deal_object.premium_format);
 
                     //If adjustments are not null and contains Yes then check it
-                    if (pt_up_check != null && pt_up_check === 'Yes') {
+                    if (deal_object.pt_up_check != null && deal_object.pt_up_check === 'Yes') {
                         $('#pt_up_check').prop('checked', true);
                     }
                     else {
                         $('#pt_up_check').prop('checked', false);
                     }
 
-                    if (pt_down_check != null && pt_down_check === 'Yes') {
+                    if (deal_object.pt_down_check != null && deal_object.pt_down_check === 'Yes') {
                         $('#pt_down_check').prop('checked', true);
                     }
                     else {
                         $('#pt_down_check').prop('checked', false);
                     }
 
-                    if (pt_wic_check != null && pt_wic_check === 'Yes') {
+                    if (deal_object.pt_wic_check != null && deal_object.pt_wic_check === 'Yes') {
                         $('#pt_wic_check').prop('checked', true);
                     }
                     else {
