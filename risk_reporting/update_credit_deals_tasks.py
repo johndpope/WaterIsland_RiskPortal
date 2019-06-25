@@ -19,7 +19,7 @@ def update_credit_deals():
     df = pd.read_sql('Select DISTINCT TradeGroup, Ticker, DealValue, Price, Analyst, OriginationDate, RiskLimit, '\
                      'DealUpside, DealDownside, BloombergID from wic.daily_flat_file_db where flat_file_as_of=(select '\
                      'max(Flat_file_as_of) from wic.daily_flat_file_db) and Sleeve="Credit Opportunities" and '\
-                     'Amount <> 0 ORDER BY flat_file_as_of, TradeGroup', connection)
+                     'Amount <> 0 and SecType in ("B", "EQ", "CVB") ORDER BY flat_file_as_of, TradeGroup', connection)
     credit_deals_df = pd.DataFrame.from_records(CreditDealsUpsideDownside.objects.all().values())
     credit_deals_df = credit_deals_df[credit_deals_df['tradegroup'].isin(df['TradeGroup']) & credit_deals_df['ticker'].isin(df['Ticker'])]
     credit_deals_merge = pd.merge(credit_deals_df, df, how='outer', left_on=['tradegroup', 'ticker'],
