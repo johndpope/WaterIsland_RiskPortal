@@ -1,5 +1,12 @@
 let calculations_array_global = [];
 $(document).ready(function () {
+    var peer_valuation_summmary_table = $('#peer_valuation_summmary_table').DataTable({
+        paging: false,
+        searching: false,
+        ordering: false,
+        info: false,
+    });
+
     // Step by Step calculations
     try {
         let regression_calcs_latest = $.parseJSON($('#regression_calcs_latest').val());
