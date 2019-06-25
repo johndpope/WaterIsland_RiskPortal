@@ -8,7 +8,7 @@ from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.generic import FormView
-
+from django.urls import reverse
 from .models import *
 from portfolio_optimization.forms import EssDealTypeParametersForm
 
@@ -294,7 +294,7 @@ def get_implied_prob_df(imp_prob_tracker_df, date, deal_type, get_df=False):
             implied_drilldowwn['Date'] = implied_drilldowwn['Date'].astype(str)
 
         implied_drilldowwn['idea_link'] = implied_drilldowwn['ess_idea_id'].apply(
-            lambda x: "<td><a href='http://192.168.0.16:8000/risk/show_ess_idea?ess_idea_id=" + str(x) +
+            lambda x: "<td><a href='" + reverse('risk:show_ess_idea') + "?ess_idea_id=" + str(x) +
                       "' target='_blank'>Open IDEA</a></td>")
 
         if get_df:
