@@ -4,7 +4,7 @@ $(document).ready(function () {
         "pageLength": 100,
         "order":[[1, 'asc']],
         "columnDefs": [{
-            "targets": [1, 2, 3, 6, 7, 8, 9, 10, 11],
+            "targets": [2, 3, 4, 9, 10, 11, 13, 14, 15, 16, 17, 18],
             "render": $.fn.dataTable.render.number(',', '.', 2),
         }],
         initComplete: function () {

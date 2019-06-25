@@ -51,11 +51,14 @@ def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, anal
 def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, analyst_upside, analyst_downside,
              analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_bear=None,
              adjustments_df_bull=None, adjustments_df_pt=None, bear_flag=None, bull_flag=None,
-             pt_flag=None, f_period="1BF", progress_recorder=None):
+             pt_flag=None, f_period="1BF", progress_recorder=None, as_of_dt=None):
     
     cix_calculations_dict = OrderedDict()
     slicer = dfutils.df_slicer()
-    as_of_dt = datetime.datetime.today()
+    as_of_dt = datetime.datetime.today() if as_of_dt is None else as_of_dt
+
+    print('Running Final_df as of : ' + str(as_of_dt))
+
     unaff_dt = datetime.datetime.strptime(unaffectedDt, '%Y-%m-%d')
     tgt_dt = datetime.datetime.strptime(tgtDate, '%Y-%m-%d')
     exp_close_dt = datetime.datetime.strptime(expected_close, '%Y-%m-%d')

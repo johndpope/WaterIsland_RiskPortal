@@ -5,15 +5,17 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 import bbgclient
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 import django
+
 django.setup()
 from risk.models import ESS_Idea
 from celery import shared_task
 from sqlalchemy import create_engine
 from django.conf import settings
 from django_slack import slack_message
-from portfolio_optimization.models import  EssPotentialLongShorts, EssUniverseImpliedProbability, EssDealTypeParameters
+from portfolio_optimization.models import EssPotentialLongShorts, EssUniverseImpliedProbability, EssDealTypeParameters
 from slack_utils import get_channel_name
 
 
@@ -27,48 +29,49 @@ def refresh_ess_long_shorts_and_implied_probability():
 
     con = engine.connect()
     try:
-        EssUniverseImpliedProbability.objects.filter(Date=today).delete() # Delete todays records
-        ess_ideas_df = pd.read_sql_query("SELECT  A.id, A.alpha_ticker, A.price, A.pt_up, A.pt_wic, A.pt_down,"
-                                         " A.unaffected_date, A.expected_close, A.gross_percentage, A.ann_percentage, "
-                                         "A.hedged_volatility, A.implied_probability, A.category, A.catalyst,"
-                                         " A.deal_type, A.catalyst_tier, A.gics_sector, A.hedges, A.lead_analyst, "
-                                         "IF(model_up=0, A.pt_up, model_up) as model_up, "
-                                         "IF(model_down=0, A.pt_down, model_down) as model_down, "
-                                         "IF(model_wic=0, A.pt_wic, model_wic) as model_wic, A.is_archived FROM " +
-                                         settings.CURRENT_DATABASE +
-                                         ".risk_ess_idea AS A INNER JOIN "
-                                         "(SELECT deal_key, MAX(version_number) AS max_version FROM  "
-                                         + settings.CURRENT_DATABASE + ".risk_ess_idea GROUP BY deal_key) AS B "
-                                                                       "ON A.deal_key = B.deal_key AND "
-                                                                       "A.version_number = B.max_version AND "
-                                                                       "A.is_archived=0 "
-                                                                       "LEFT JOIN "
-                                                                       "(SELECT DISTINCT X.deal_key,"
-                                                                       "X.pt_up as model_up, "
-                                                                       "X.pt_down AS model_down, X.pt_wic AS model_wic "
-                                                                       "FROM "
-                                         + settings.CURRENT_DATABASE + ".risk_ess_idea_upside_downside_change_records  "
-                                                                       "AS X "
-                                                                       "INNER JOIN "
-                                                                       "(SELECT deal_key, MAX(date_updated) AS "
-                                                                       "MaxDate FROM " + settings.CURRENT_DATABASE +
-                                         ".risk_ess_idea_upside_downside_change_records GROUP BY deal_key) AS Y ON "
-                                         "X.deal_key = Y.deal_key WHERE X.date_updated = Y.MaxDate) AS ADJ ON "
-                                         "ADJ.deal_key = A.deal_key ", con=con)
+        EssUniverseImpliedProbability.objects.filter(Date=today).delete()  # Delete todays records
+        ess_ideas_df = pd.read_sql_query(
+            "SELECT  A.id as ess_idea_id, A.alpha_ticker, A.price, A.pt_up, A.pt_wic, A.pt_down,"
+            " A.unaffected_date, A.expected_close, A.gross_percentage, A.ann_percentage, "
+            "A.hedged_volatility, A.implied_probability, A.category, A.catalyst,"
+            " A.deal_type, A.catalyst_tier, A.gics_sector, A.hedges, A.lead_analyst, "
+            "IF(model_up=0, A.pt_up, model_up) as model_up, "
+            "IF(model_down=0, A.pt_down, model_down) as model_down, "
+            "IF(model_wic=0, A.pt_wic, model_wic) as model_wic, A.is_archived FROM " +
+            settings.CURRENT_DATABASE +
+            ".risk_ess_idea AS A INNER JOIN "
+            "(SELECT deal_key, MAX(version_number) AS max_version FROM  "
+            + settings.CURRENT_DATABASE + ".risk_ess_idea GROUP BY deal_key) AS B "
+                                          "ON A.deal_key = B.deal_key AND "
+                                          "A.version_number = B.max_version AND "
+                                          "A.is_archived=0 "
+                                          "LEFT JOIN "
+                                          "(SELECT DISTINCT X.deal_key,"
+                                          "X.pt_up as model_up, "
+                                          "X.pt_down AS model_down, X.pt_wic AS model_wic "
+                                          "FROM "
+            + settings.CURRENT_DATABASE + ".risk_ess_idea_upside_downside_change_records  "
+                                          "AS X "
+                                          "INNER JOIN "
+                                          "(SELECT deal_key, MAX(date_updated) AS "
+                                          "MaxDate FROM " + settings.CURRENT_DATABASE +
+            ".risk_ess_idea_upside_downside_change_records GROUP BY deal_key) AS Y ON "
+            "X.deal_key = Y.deal_key WHERE X.date_updated = Y.MaxDate) AS ADJ ON "
+            "ADJ.deal_key = A.deal_key ", con=con)
 
         # Take only Relevant Columnns
-        ess_ideas_df = ess_ideas_df[['alpha_ticker', 'price', 'pt_up', 'pt_wic', 'pt_down', 'unaffected_date',
-                                     'expected_close', 'category', 'catalyst',
-                                     'deal_type', 'catalyst_tier',
-                                     'gics_sector', 'hedges', 'lead_analyst', 'model_up', 'model_down', 'model_wic']]
+        ess_ideas_df = ess_ideas_df[['ess_idea_id', 'alpha_ticker', 'price', 'pt_up', 'pt_wic', 'pt_down',
+                                     'unaffected_date', 'expected_close', 'category', 'catalyst',
+                                     'deal_type', 'catalyst_tier', 'gics_sector', 'hedges', 'lead_analyst', 'model_up',
+                                     'model_down', 'model_wic']]
 
         ess_ideas_tickers = ess_ideas_df['alpha_ticker'].unique()
 
         ess_ideas_live_prices = pd.DataFrame.from_dict(bbgclient.bbgclient.get_secid2field(ess_ideas_tickers, 'tickers',
-                                                                                   ['PX_LAST'],
-                                                                                   req_type='refdata',
-                                                                                   api_host=api_host),
-                                               orient='index').reset_index()
+                                                                                           ['PX_LAST'],
+                                                                                           req_type='refdata',
+                                                                                           api_host=api_host),
+                                                       orient='index').reset_index()
         ess_ideas_live_prices.columns = ['alpha_ticker', 'Price']
         ess_ideas_live_prices['Price'] = ess_ideas_live_prices['Price'].apply(lambda px: float(px[0]) if px[0] else 0)
         ess_ideas_df = pd.merge(ess_ideas_df, ess_ideas_live_prices, how='left', on='alpha_ticker')
@@ -114,22 +117,23 @@ def refresh_ess_long_shorts_and_implied_probability():
                  name='portfolio_optimization_esspotentiallongshorts', index=False)
         time.sleep(2)
         x['count'] = x['implied_probability'].apply(lambda y: 1 if not pd.isna(y) else np.nan)
-        avg_imp_prob = x[['deal_type', 'count', 'implied_probability']].groupby('deal_type').agg({'implied_probability': 'mean',
-                          'count': 'sum'}).reset_index()
+        avg_imp_prob = x[['deal_type', 'count', 'implied_probability']].groupby('deal_type').agg(
+            {'implied_probability': 'mean',
+             'count': 'sum'}).reset_index()
         x.drop(columns=['count'], inplace=True)
         avg_imp_prob.loc[len(avg_imp_prob)] = ['Soft Universe Imp. Prob',
-                                               x[x['catalyst'] == 'Soft']['implied_probability'].mean(), len(x[x['catalyst'] == 'Soft'])]
+                                               x[x['catalyst'] == 'Soft']['implied_probability'].mean(),
+                                               len(x[x['catalyst'] == 'Soft'])]
 
         avg_imp_prob['Date'] = today
         # --------------- SECTION FOR Tracking Univese, TAQ, AED Long/Short Implied Probabilities ---------------------
-        query = "SELECT DISTINCT flat_file_as_of as `Date`, TradeGroup, Fund, Ticker, "\
-                "LongShort, SecType, DealUpside, DealDownside "\
-                "FROM wic.daily_flat_file_db  "\
-                "WHERE Flat_file_as_of = (SELECT MAX(flat_file_as_of) from wic.daily_flat_file_db) AND Fund  "\
-                "IN ('AED', 'TAQ') and AlphaHedge = 'Alpha' AND  "\
-                "LongShort IN ('Long', 'Short') AND SecType = 'EQ' "\
-                "AND Sleeve = 'Equity Special Situations' and amount<>0"\
-
+        query = "SELECT DISTINCT flat_file_as_of as `Date`, TradeGroup, Fund, Ticker, " \
+                "LongShort, SecType, DealUpside, DealDownside " \
+                "FROM wic.daily_flat_file_db  " \
+                "WHERE Flat_file_as_of = (SELECT MAX(flat_file_as_of) from wic.daily_flat_file_db) AND Fund  " \
+                "IN ('AED', 'TAQ') and AlphaHedge = 'Alpha' AND  " \
+                "LongShort IN ('Long', 'Short') AND SecType = 'EQ' " \
+                "AND Sleeve = 'Equity Special Situations' and amount<>0"
 
         imp_prob_tracker_df = pd.read_sql_query(query, con=con)
         imp_prob_tracker_df['Ticker'] = imp_prob_tracker_df['Ticker'] + ' EQUITY'
@@ -143,11 +147,15 @@ def refresh_ess_long_shorts_and_implied_probability():
         live_price_df.columns = ['Ticker', 'Price']
         live_price_df['Price'] = live_price_df['Price'].apply(lambda px: float(px[0]) if px[0] else 0)
         imp_prob_tracker_df = pd.merge(imp_prob_tracker_df, live_price_df, how='left', on='Ticker')
-        imp_prob_tracker_df['implied_probability'] = 1e2*(imp_prob_tracker_df['Price'] - imp_prob_tracker_df['DealDownside'])/(imp_prob_tracker_df['DealUpside'] - imp_prob_tracker_df['DealDownside'])
+        imp_prob_tracker_df['implied_probability'] = 1e2 * (
+                    imp_prob_tracker_df['Price'] - imp_prob_tracker_df['DealDownside']) / (
+                                                                 imp_prob_tracker_df['DealUpside'] -
+                                                                 imp_prob_tracker_df['DealDownside'])
 
-        imp_prob_tracker_df.replace([np.inf, -np.inf], np.nan, inplace=True)  #Replace Inf values
-        imp_prob_tracker_df['count'] = imp_prob_tracker_df['implied_probability'].apply(lambda x: 1 if not pd.isna(x) else np.nan)
-        grouped_funds_imp_prob = imp_prob_tracker_df[['Date', 'Fund', 'LongShort', 'implied_probability', 'count']].\
+        imp_prob_tracker_df.replace([np.inf, -np.inf], np.nan, inplace=True)  # Replace Inf values
+        imp_prob_tracker_df['count'] = imp_prob_tracker_df['implied_probability'].apply(
+            lambda x: 1 if not pd.isna(x) else np.nan)
+        grouped_funds_imp_prob = imp_prob_tracker_df[['Date', 'Fund', 'LongShort', 'implied_probability', 'count']]. \
             groupby(['Date', 'Fund', 'LongShort']).agg({'implied_probability': 'mean', 'count': 'sum'}).reset_index()
         imp_prob_tracker_df.drop(columns=['count'], inplace=True)
 
@@ -157,10 +165,22 @@ def refresh_ess_long_shorts_and_implied_probability():
         # --------------- POTENTIAL LONG SHORT LEVEL IMPLIED PROBABILITY TRACKING --------------------------------------
         ess_potential_ls_df = pd.read_sql_query("SELECT * FROM " + settings.CURRENT_DATABASE +
                                                 ".portfolio_optimization_esspotentiallongshorts where Date='" +
-                                                today.strftime("%Y-%m-%d") +"'", con=con)
-        
+                                                today.strftime("%Y-%m-%d") + "'", con=con)
+
+        catalyst_rating_dfs = ess_potential_ls_df[['alpha_ticker', 'catalyst', 'catalyst_tier', 'price',
+                                                   'implied_probability', 'potential_long', 'potential_short']]
+
         ess_potential_ls_df = ess_potential_ls_df[['alpha_ticker', 'price', 'implied_probability',
                                                    'potential_long', 'potential_short']]
+
+        # -------------- Section for Implied Probabilities Grouped by Catalyst and Tiers -------------------------------
+        catalyst_rating_dfs['deal_type'] = catalyst_rating_dfs.apply(lambda x: x['catalyst'] + "-" +
+                                                                               x['catalyst_tier'], axis=1)
+
+        catalyst_rating_dfs['count'] = catalyst_rating_dfs['implied_probability'].apply(lambda y: 1 if not pd.isna(y) else np.nan)
+
+        catalyst_implied_prob = catalyst_rating_dfs[['deal_type', 'implied_probability', 'count']].groupby('deal_type').agg({'implied_probability': 'mean','count': 'sum'}).reset_index()
+        catalyst_implied_prob['Date'] = today
 
         def classify_ess_longshorts(row):
             classification = 'Universe (Unclassified)'
@@ -183,12 +203,14 @@ def refresh_ess_long_shorts_and_implied_probability():
         # Section for only Long Short Tagging...
 
         ess_potential_ls_df['LongShort'] = ess_potential_ls_df.apply(classify_ess_longshorts, axis=1)
-        ess_potential_ls_df['count'] = ess_potential_ls_df['implied_probability'].apply(lambda x: 1 if not pd.isna(x) else np.nan)
+        ess_potential_ls_df['count'] = ess_potential_ls_df['implied_probability'].apply(
+            lambda x: 1 if not pd.isna(x) else np.nan)
         universe_long_short_implied_probabilities_df = ess_potential_ls_df[['LongShort', 'count',
-            'implied_probability']].groupby(['LongShort']).agg({'implied_probability': 'mean', 'count': 'sum'}).reset_index()
+                                                                            'implied_probability']].groupby(
+            ['LongShort']).agg({'implied_probability': 'mean', 'count': 'sum'}).reset_index()
 
         universe_long_short_implied_probabilities_df['Date'] = today
-        universe_long_short_implied_probabilities_df = universe_long_short_implied_probabilities_df.\
+        universe_long_short_implied_probabilities_df = universe_long_short_implied_probabilities_df. \
             rename(columns={'LongShort': 'deal_type'})
 
         universe_long_short_implied_probabilities_df = universe_long_short_implied_probabilities_df[
@@ -196,7 +218,7 @@ def refresh_ess_long_shorts_and_implied_probability():
 
         final_implied_probability_df = pd.concat([avg_imp_prob, all_ess_universe_implied_probability,
                                                   universe_long_short_implied_probabilities_df,
-                                                  grouped_funds_imp_prob])
+                                                  grouped_funds_imp_prob, catalyst_implied_prob])
         del final_implied_probability_df['Date']
 
         final_implied_probability_df['Date'] = today
@@ -216,7 +238,7 @@ def refresh_ess_long_shorts_and_implied_probability():
         final_implied_probability_df['implied_probability'] = final_implied_probability_df['implied_probability'].apply(
             lambda ip: str(np.round(ip, decimals=2)) + " %")
         final_implied_probability_df.columns = ['Deal Type', 'Implied Probability', 'Count']
-        
+
         slack_message('ESS_IDEA_DATABASE_ERRORS.slack',
                       {'message': message,
                        'table': tabulate(final_implied_probability_df, headers='keys', tablefmt='pssql',
@@ -229,3 +251,4 @@ def refresh_ess_long_shorts_and_implied_probability():
                       channel=get_channel_name('ess_idea_db_logs'))
     finally:
         con.close()
+

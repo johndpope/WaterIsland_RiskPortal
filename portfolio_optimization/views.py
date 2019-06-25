@@ -2,8 +2,8 @@ import datetime
 import json
 import numpy as np
 import pandas as pd
-
-import bbgclient
+import requests
+from urllib.parse import urlencode
 from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
@@ -81,7 +81,6 @@ def get_deal_type_details(request):
     return JsonResponse({'deal_type_details': deal_type_details})
 
 
-
 def delete_deal_type(request):
     response = None
     if request.method == 'POST':
@@ -148,13 +147,35 @@ def ess_implied_probabilites(request):
     implied_probabilities_df = pd.DataFrame().from_records(ess_implied_prb_universe.
                                                            values('Date', 'deal_type', 'implied_probability'))
 
+    # Get SPX Index Returnns
+    start_date = implied_probabilities_df['Date'].min().strftime('%Y%m%d')
+    end_date = implied_probabilities_df['Date'].max().strftime('%Y%m%d')
+
+    r = requests.get("http://192.168.0.15:8080/wic/api/v1.0/general_histdata",
+                     params={'idtype': "tickers", "fields": "PX_LAST",
+                             "tickers": "SPX INDEX",
+                             "override": "", "start_date": start_date, "end_date": end_date},
+                     timeout=15)  # Set a 15 secs Timeout
+    results = r.json()['results']
+    spx_prices = pd.DataFrame.from_dict(results[0]['SPX INDEX']['fields'])
+    spx_prices['PX_LAST'] = spx_prices['PX_LAST'].astype(float)
+    spx_prices['implied_probability'] = ((spx_prices['PX_LAST'] / spx_prices['PX_LAST'].shift(
+        1)) - 1.0) * 100  # daily change
+    spx_prices['implied_probability'] = spx_prices['implied_probability'].cumsum()
+    spx_prices['implied_probability'].fillna(0, inplace=True)
+    spx_prices['deal_type'] = "SPX INDEX Ret(%)"
+    del spx_prices['PX_LAST']
+    spx_prices.rename(columns={'date': 'Date'}, inplace=True)
+
+    implied_probabilities_df = pd.concat([implied_probabilities_df, spx_prices])
     if not implied_probabilities_df.empty:
         field_names = list(implied_probabilities_df['deal_type'].unique())
-        implied_probabilities_df['implied_probability'] = implied_probabilities_df['implied_probability'].\
+        implied_probabilities_df['implied_probability'] = implied_probabilities_df['implied_probability']. \
             apply(lambda x: np.round(x, decimals=2))
 
         implied_probabilities_df['Date'] = implied_probabilities_df['Date'].astype(str)
-        implied_probabilities_df = implied_probabilities_df.pivot_table(columns=['deal_type'], index='Date').reset_index()
+        implied_probabilities_df = implied_probabilities_df.pivot_table(columns=['deal_type'], index='Date'). \
+            reset_index()
 
         implied_probabilities_df.columns = ["".join(('', j)) for i, j in implied_probabilities_df.columns]
         implied_probabilities_df.columns.values[0] = 'Date'
@@ -172,15 +193,15 @@ def ess_implied_prob_drilldown(request):
         try:
             date = request.POST['date']
             deal_type = request.POST['deal_type']
+            date_adj = None
             if date == datetime.datetime.now().strftime('%Y-%m-%d'):
                 date_adj = '(SELECT MAX(flat_file_as_of) from wic.daily_flat_file_db)'
             else:
                 date_adj = "'" + date + "'"
             query = "SELECT DISTINCT flat_file_as_of as `Date`, TradeGroup, Fund, Ticker,Price, LongShort, SecType, " \
                     "DealUpside, DealDownside FROM wic.daily_flat_file_db WHERE Flat_file_as_of = " + date_adj + " AND " \
-                    "Fund IN ('AED', 'TAQ') and AlphaHedge = 'Alpha' AND LongShort IN ('Long', 'Short') " \
-                    "AND SecType = 'EQ' AND Sleeve = 'Equity Special Situations' and amount <> 0;"\
-
+                                                                                                                 "Fund IN ('AED', 'TAQ') and AlphaHedge = 'Alpha' AND LongShort IN ('Long', 'Short') " \
+                                                                                                                 "AND SecType = 'EQ' AND Sleeve = 'Equity Special Situations' and amount <> 0;"
             filtered_df = pd.read_sql_query(query, con=connection)
             return_data = get_implied_prob_df(filtered_df, date, deal_type)
 
@@ -200,52 +221,82 @@ def get_implied_prob_df(imp_prob_tracker_df, date, deal_type, get_df=False):
             imp_prob_tracker_df = imp_prob_tracker_df[imp_prob_tracker_df['LongShort'] == 'Short']
 
         # Slice for the Fund
-        imp_prob_tracker_df = imp_prob_tracker_df[imp_prob_tracker_df['Fund'] == deal_type.split(' ')[0]]
+        fund_code = deal_type.split(' ')[0]
+        imp_prob_tracker_df = imp_prob_tracker_df[imp_prob_tracker_df['Fund'] == fund_code]
 
-        imp_prob_tracker_df['implied_probability'] = 1e2*(imp_prob_tracker_df['Price'] - imp_prob_tracker_df['DealDownside'])/(imp_prob_tracker_df['DealUpside'] - imp_prob_tracker_df['DealDownside'])
+        imp_prob_tracker_df['implied_probability'] = 1e2 * (imp_prob_tracker_df['Price'] -
+                                                            imp_prob_tracker_df['DealDownside']) / \
+                                                     (imp_prob_tracker_df['DealUpside'] -
+                                                      imp_prob_tracker_df['DealDownside'])
 
         imp_prob_tracker_df.replace([np.inf, -np.inf], np.nan, inplace=True)  # Replace Inf values
 
         imp_prob_tracker_df['Date'] = imp_prob_tracker_df['Date'].astype(str)
 
-        imp_prob_tracker_df = imp_prob_tracker_df[['Date', 'Ticker', 'Price', 'TradeGroup', 'implied_probability']]
-        imp_prob_tracker_df.columns = ['Date', 'alpha_ticker', 'price', 'deal_type', 'implied_probability']
+        imp_prob_tracker_df = imp_prob_tracker_df[['Date', 'Ticker', 'Price', 'TradeGroup',
+                                                   'implied_probability']]
+
+        # For Funds, provide a link to the TradeGroup story
+        imp_prob_tracker_df['idea_link'] = imp_prob_tracker_df.apply(lambda x:
+                                                                     "<td><a href='../position_stats/"
+                                                                     "get_tradegroup_story?" +
+                                                                     urlencode({'TradeGroup': x['TradeGroup'],
+                                                                                'Fund': fund_code}) +
+                                                                     "' target='_blank'>Story</a></td>",
+                                                                     axis=1)
+        imp_prob_tracker_df.columns = ['Date', 'alpha_ticker', 'price', 'deal_type', 'implied_probability',
+                                       'idea_link']
         imp_prob_tracker_df['implied_probability'] = imp_prob_tracker_df['implied_probability'].round(2)
         if get_df:
             return imp_prob_tracker_df
         return imp_prob_tracker_df.to_json(orient='records')
-
     else:
-        implied_drilldown_df = pd.DataFrame()
         # Gather Data from Potential Long short timeseries..
-        qs = EssPotentialLongShorts.objects.filter(Date=date)
         if deal_type == 'ESS IDEA Universe':
-            implied_drilldown_df = pd.DataFrame.from_records(qs.values('Date', 'alpha_ticker', 'price', 'deal_type',
-                                                                       'implied_probability'))
+            implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(
+                Date=date).values('Date', 'alpha_ticker', 'price', 'deal_type', 'implied_probability',
+                                  'ess_idea_id'))
 
         elif deal_type == 'Universe (Long)':
-            implied_drilldown_df = pd.DataFrame.from_records(qs.filter(potential_long='Y').values('Date', \
-                'alpha_ticker', 'price', 'deal_type', 'implied_probability'))
+            implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(
+                Date=date, potential_long='Y').values('Date', 'alpha_ticker', 'price', 'deal_type',
+                                                      'implied_probability', 'ess_idea_id'))
 
         elif deal_type == 'Universe (Short)':
-            implied_drilldown_df = pd.DataFrame.from_records(qs.filter(potential_short='Y').values('Date', \
-                'alpha_ticker', 'price', 'deal_type', 'implied_probability'))
+            implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(
+                Date=date, potential_short='Y').values('Date', 'alpha_ticker', 'price', 'deal_type',
+                                                       'implied_probability', 'ess_idea_id'))
 
         elif deal_type == 'Universe (Unclassified)':
-            implied_drilldown_df = pd.DataFrame.from_records(qs.filter(potential_short='', potential_long='').values('Date', \
-                'alpha_ticker', 'price', 'deal_type', 'implied_probability'))
+            implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(
+                Date=date, potential_short='').values('Date', 'alpha_ticker', 'price', 'deal_type',
+                                                      'implied_probability', 'ess_idea_id'))
 
         elif deal_type == 'Soft Universe Imp. Prob':
-            implied_drilldown_df = pd.DataFrame.from_records(qs.filter(catalyst='Soft').values('Date', 'alpha_ticker', \
-                'price', 'deal_type', 'implied_probability'))
+            implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(
+                Date=date, catalyst='Soft').values('Date', 'alpha_ticker', 'price', 'deal_type',
+                                                   'implied_probability', 'ess_idea_id'))
+
+        elif deal_type in ['Hard-1', 'Hard-2', 'Hard-3', 'Soft-1', 'Soft-2', 'Soft-3']:
+            cat = deal_type.split('-')[0]
+            catalyst_tier = deal_type.split('-')[1]
+            implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(
+                Date=date, catalyst=cat, catalyst_tier=catalyst_tier).values('Date', 'alpha_ticker', 'price',
+                                                                             'deal_type', 'implied_probability',
+                                                                             'ess_idea_id'))
 
         else:
-            implied_drilldown_df = pd.DataFrame.from_records(qs.filter(deal_type=deal_type).values('Date', \
-                'alpha_ticker', 'price', 'deal_type', 'implied_probability'))
-        if not implied_drilldown_df.empty:
-            implied_drilldown_df['implied_probability'] = implied_drilldown_df['implied_probability'].round(2)
-            implied_drilldown_df['Date'] = implied_drilldown_df['Date'].astype(str)
+            implied_drilldowwn = pd.DataFrame.from_records(EssPotentialLongShorts.objects.all().filter(
+                Date=date, deal_type=deal_type).values('Date', 'alpha_ticker', 'price', 'deal_type',
+                                                       'implied_probability', 'ess_idea_id'))
+        if not implied_drilldowwn.empty:
+            implied_drilldowwn['implied_probability'] = implied_drilldowwn['implied_probability'].round(2)
+            implied_drilldowwn['Date'] = implied_drilldowwn['Date'].astype(str)
+
+        implied_drilldowwn['idea_link'] = implied_drilldowwn['ess_idea_id'].apply(
+            lambda x: "<td><a href='http://192.168.0.16:8000/risk/show_ess_idea?ess_idea_id=" + str(x) +
+                      "' target='_blank'>Open IDEA</a></td>")
 
         if get_df:
-            return implied_drilldown_df
-        return implied_drilldown_df.to_json(orient='records')
+            return implied_drilldowwn
+        return implied_drilldowwn.to_json(orient='records')

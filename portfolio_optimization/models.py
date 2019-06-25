@@ -31,6 +31,7 @@ class SoftCatalystNormalizedRiskSizing(models.Model):
 
 
 class EssPotentialLongShorts(models.Model):
+    ess_idea_id = models.IntegerField(null=False)
     Date = models.DateField(null=True)
     alpha_ticker = models.CharField(max_length=100)
     price = models.FloatField(null=True)

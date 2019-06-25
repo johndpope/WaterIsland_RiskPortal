@@ -6,11 +6,10 @@ $(document).ready(function () {
     let title = "Implied Probability Tracker";
     let fieldMappingsArray = ['AED Long', 'AED Short', 'N/A', 'Post Re-org Equity', 'Soft Universe Imp. Prob',
         'Spec M&A', 'Spin-Off', 'Stub Value', 'TAQ Long', 'TAQ Short', 'Transformational M&A', 'Turnaround',
-        'Universe (Long)', 'Universe (Short)', 'Universe (Unclassified)', 'ESS IDEA Universe'];
+        'Universe (Long)', 'Universe (Short)', 'Universe (Unclassified)', 'ESS IDEA Universe', 'Hard-3', 'Soft-1', 'Soft-2', 'Soft-3', 'Hard-1', 'Hard-2', 'SPX INDEX Ret(%)'];
 
     let datasets = createDataSets(implied_probability_chart, field_names, fieldMappingsArray, false, fieldMappingsArray);
 
-    console.log(datasets);
     let graphs = [];
     let counter = 1;
     let is_hidden = true;
@@ -152,6 +151,7 @@ $(document).ready(function () {
                 {"data": "price"},
                 {"data": "deal_type"},
                 {"data": "implied_probability"},
+                {"data": "idea_link"},
             ],
             "footerCallback": function (row, data, start, end, display) {
                 var api = this.api();

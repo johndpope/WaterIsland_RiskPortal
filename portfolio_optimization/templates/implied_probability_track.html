@@ -31,7 +31,7 @@
     <input type="hidden" id="field_names" value="{{ field_names }}">
 
 
-    <div class="modal animated fadeInDown text-left" id="ess_drilldown_modal" tabindex="-1"
+    <div class="modal animated lightSpeedIn text-left" id="ess_drilldown_modal" tabindex="-1"
          role="dialog" aria-labelledby="modal_label" aria-hidden="true">
         <div class="modal-xl modal-dialog" role="document">
             <div class="modal-content">
@@ -45,8 +45,8 @@
                 <div class="modal-body">
                     <h5 class="text-center">Click <a href="{% url 'risk:ess_idea_database' %}" target="_blank">here</a> for ESS Idea Database.</h5>
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover" id='ess_implied_probability_drilldown'
-                               style="font-size:12px;">
+                        <table class="table table-bordered" id='ess_implied_probability_drilldown'
+                              >
                             <thead>
                             <tr>
                                 <th>Date</th>
@@ -54,6 +54,7 @@
                                 <th>Price</th>
                                 <th>Deal Type</th>
                                 <th>Implied Probability</th>
+                                <th>Details</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -61,6 +62,7 @@
                             <tfoot>
                             <tr>
                                 <th colspan="4" style="text-align: right">(Note: Rows highlighted in Red are not inlcuded in average calculation) Avg (%):</th>
+                                <th></th>
                                 <th></th>
                             </tr>
                             </tfoot>
