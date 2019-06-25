@@ -10,6 +10,7 @@ from sqlalchemy import create_engine
 from .render import *
 import dbutils
 import dfutils
+import pydf
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "WicPortal_Django.settings")
 django.setup()
