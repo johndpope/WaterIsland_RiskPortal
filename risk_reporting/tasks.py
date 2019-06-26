@@ -1444,7 +1444,7 @@ def drop_arb_downsides_to_eze():
         success = '_(Risk Automation)_ *Successfully Uploaded SecurityInfo.csv to Eze Uploads (Eze/Upload Files/)*'
     except Exception as e:
         error = '_(Risk Automation)_ *Error in Uploading SecurityInfo.csv* -> ' + str(e)
-
+        success = "ERROR!"
     slack_message('eze_uploads.slack', {'success': success, 'error': error},
                                              channel=get_channel_name('portal_downsides'),
                                              token=settings.SLACK_TOKEN)
@@ -1470,13 +1470,15 @@ def post_alert_before_eze_upload():
     null_outlier_downsides = ', '.join(null_outlier_downsides)
 
     risk_limits_alert = '_(Risk Automation)_ Following have NULL/0 Risk Limits *' + null_risk_limits + "*" \
-        if null_risk_limits else ''
+        if null_risk_limits else "_(Risk Automation)_ All Risk Limits ready for Eze Upload (at 6pm)"
     base_case_alert = '_(Risk Automation)_ Following have NULL/0 Base Case *' + null_base_case_downsides + "*" \
-        if null_base_case_downsides else ''
+        if null_base_case_downsides else "_(Risk Automation)_ All base case downsides ready for Eze Upload (at 6pm)"
     outlier_alert = '_(Risk Automation)_ Following have NULL/0 Outlier *' + null_outlier_downsides + "*" \
-        if null_outlier_downsides else ''
-    slack_message('eze_uploads.slack', {'null_risk_limits': risk_limits_alert, 'null_base_case': base_case_alert,
-                                        'null_outlier': outlier_alert},
+        if null_outlier_downsides else "_(Risk Automation)_ All outlier downsides ready for Upload (at 6pm)"
+
+    slack_message('eze_uploads.slack', {'null_risk_limits': str(risk_limits_alert),
+                                        'null_base_case': str(base_case_alert),
+                                        'null_outlier': str(outlier_alert)},
                                          channel=get_channel_name('portal_downsides'),
                                          token=settings.SLACK_TOKEN
                   )
