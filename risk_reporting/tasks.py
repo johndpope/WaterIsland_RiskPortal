@@ -1427,9 +1427,10 @@ def drop_arb_downsides_to_eze():
         deal_info_df = get_deal_info_dataframe()
         deal_info_df.to_csv(path)
         success = '_(Risk Automation)_ *Successfully Uploaded DealInfo.csv to Eze Uploads (Eze/Upload Files/)*'
+        error = datetime.datetime.now().strftime("%Y-%m-%d")
     except Exception as e:
         error = '_(Risk Automation)_ *Error in Uploading DealInfo.csv* -> ' + str(e)
-
+        success = 'ERROR! Please upload files manually'
     slack_message('eze_uploads.slack', {'success': success, 'error': error},
                                              channel=get_channel_name('portal_downsides'),
                                              token=settings.SLACK_TOKEN)
@@ -1445,7 +1446,7 @@ def drop_arb_downsides_to_eze():
         error = datetime.datetime.now().strftime("%Y-%m-%d")
     except Exception as e:
         error = '_(Risk Automation)_ *Error in Uploading SecurityInfo.csv* -> ' + str(e)
-        success = "ERROR!"
+        success = "ERROR! Please upload files manually"
     slack_message('eze_uploads.slack', {'success': success, 'error': error},
                                              channel=get_channel_name('portal_downsides'),
                                              token=settings.SLACK_TOKEN)
