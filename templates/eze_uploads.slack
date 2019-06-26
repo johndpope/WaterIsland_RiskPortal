@@ -1,9 +1,6 @@
 {% extends django_slack %}
 
 {% block text %}
-    {{ success }}
-    {{ error }}
-
     {{ null_risk_limits }}
     {{ null_base_case }}
     {{ null_outlier }}
