@@ -1420,14 +1420,12 @@ def update_credit_deals_upside_downside_once_daily():
 @shared_task
 def drop_arb_downsides_to_eze():
     """ Runs at 6pm Mon-Fri """
-    success = ''
-    error = ''
     try:
         path = settings.DEAL_INFO_EZE_UPLOAD_PATH
         deal_info_df = get_deal_info_dataframe()
         deal_info_df.to_csv(path)
         success = '_(Risk Automation)_ *Successfully Uploaded DealInfo.csv to Eze Uploads (Eze/Upload Files/)*'
-        error = datetime.datetime.now().strftime("%Y-%m-%d")
+        error = "."
     except Exception as e:
         error = '_(Risk Automation)_ *Error in Uploading DealInfo.csv* -> ' + str(e)
         success = 'ERROR! Please upload files manually'
@@ -1436,14 +1434,12 @@ def drop_arb_downsides_to_eze():
                                              token=settings.SLACK_TOKEN)
 
     # Now process for SecurityInfo.csv
-    success = ''
-    error = ''
     try:
         path = settings.SECURITY_INFO_EZE_UPLOAD_PATH
         security_info_df = get_security_info_dataframe()
         security_info_df.to_csv(path)
         success = '_(Risk Automation)_ *Successfully Uploaded SecurityInfo.csv to Eze Uploads (Eze/Upload Files/)*'
-        error = datetime.datetime.now().strftime("%Y-%m-%d")
+        error = "."
     except Exception as e:
         error = '_(Risk Automation)_ *Error in Uploading SecurityInfo.csv* -> ' + str(e)
         success = "ERROR! Please upload files manually"
