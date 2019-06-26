@@ -3,7 +3,6 @@ import datetime
 import io
 import json
 from locale import atof
-from math import ceil
 import os
 import sys
 import time
@@ -22,6 +21,7 @@ from realtime_pnl_impacts import views
 from risk_reporting.update_credit_deals_tasks import update_credit_deals
 from risk_reporting.models import (CreditDealsUpsideDownside, DailyNAVImpacts, PositionLevelNAVImpacts,
     FormulaeBasedDownsides)
+from .views import get_security_info_dataframe, get_deal_info_dataframe
 from slack_utils import get_channel_name
 
 
@@ -990,14 +990,14 @@ def email_pl_target_loss_budgets():
 
             profit_row_perc_dict[fund] = float(ytd_sleeve_perc_target * 0.01)
         profit_sleeve_ytd_perc = profit_sleeve_ytd_perc.append(profit_row_perc_dict, ignore_index=True)
-    
+
     for sleeve in ytd_dollar_unique_sleeves:
         new_sleeve = SLEEVE_DICT.get(sleeve, sleeve)
         profit_row_dollar_dict = {'Sleeve': new_sleeve}
         loss_row_perc_dict = {'Sleeve': new_sleeve}
         loss_row_dollar_dict = {'Sleeve': new_sleeve}
         for fund in ytd_return_unique_funds:
-            profit_dollar_sleeve_index = profit_dollar_sleeve_df[(profit_dollar_sleeve_df['Fund'] == fund) & (profit_dollar_sleeve_df['Sleeve'] == new_sleeve)].index            
+            profit_dollar_sleeve_index = profit_dollar_sleeve_df[(profit_dollar_sleeve_df['Fund'] == fund) & (profit_dollar_sleeve_df['Sleeve'] == new_sleeve)].index
             if not profit_dollar_sleeve_index.empty:
                 profit_dollar_sleeve_index = profit_dollar_sleeve_index[0]
                 profit_dollar = profit_dollar_sleeve_df.at[profit_dollar_sleeve_index, 'Gross YTD Dollar']
@@ -1414,3 +1414,69 @@ def get_px_last_value(value):
 @shared_task
 def update_credit_deals_upside_downside_once_daily():
     update_credit_deals()
+
+
+# Automated File Dropping to EZE
+@shared_task
+def drop_arb_downsides_to_eze():
+    """ Runs at 6pm Mon-Fri """
+    success = ''
+    error = ''
+    try:
+        path = settings.DEAL_INFO_EZE_UPLOAD_PATH
+        deal_info_df = get_deal_info_dataframe()
+        deal_info_df.to_csv(path)
+        success = '_(Risk Automation)_ *Successfully Uploaded DealInfo.csv to Eze Uploads (Eze/Upload Files/)*'
+    except Exception as e:
+        error = '_(Risk Automation)_ *Error in Uploading DealInfo.csv* -> ' + str(e)
+
+    slack_message('eze_uploads.slack', {'success': success, 'error': error},
+                                             channel=get_channel_name('portal_downsides'),
+                                             token=settings.SLACK_TOKEN)
+
+    # Now process for SecurityInfo.csv
+    success = ''
+    error = ''
+    try:
+        path = settings.SECURITY_INFO_EZE_UPLOAD_PATH
+        security_info_df = get_security_info_dataframe()
+        security_info_df.to_csv(path)
+        success = '_(Risk Automation)_ *Successfully Uploaded SecurityInfo.csv to Eze Uploads (Eze/Upload Files/)*'
+    except Exception as e:
+        error = '_(Risk Automation)_ *Error in Uploading SecurityInfo.csv* -> ' + str(e)
+
+    slack_message('eze_uploads.slack', {'success': success, 'error': error},
+                                             channel=get_channel_name('portal_downsides'),
+                                             token=settings.SLACK_TOKEN)
+
+@shared_task
+def post_alert_before_eze_upload():
+    """ Task should run at 4pm Mon-Fri """
+
+    downsides_df = pd.DataFrame.from_records(FormulaeBasedDownsides.objects.all().filter(IsExcluded__exact='No').
+                                             values())
+
+    null_risk_limits = downsides_df[(downsides_df['RiskLimit'] == 0) | (pd.isna(downsides_df['RiskLimit']) |
+                                                                        (downsides_df['RiskLimit'].astype(str) == ''
+                                                                         ))]['TradeGroup'].unique()
+
+    null_base_case_downsides = downsides_df[(downsides_df['base_case'] == 0) | (pd.isna(downsides_df['base_case']))
+                                            | (downsides_df['base_case'] == '')]['TradeGroup'].unique()
+    null_outlier_downsides = downsides_df[(downsides_df['outlier'] == 0) | (pd.isna(downsides_df['outlier'])
+                                          | (downsides_df['outlier'] == ''))]['TradeGroup'].unique()
+
+    null_risk_limits = ', '.join(null_risk_limits)
+    null_base_case_downsides = ', '.join(null_base_case_downsides)
+    null_outlier_downsides = ', '.join(null_outlier_downsides)
+
+    risk_limits_alert = '_(Risk Automation)_ Following have NULL/0 Risk Limits *' + null_risk_limits + "*" \
+        if null_risk_limits else ''
+    base_case_alert = '_(Risk Automation)_ Following have NULL/0 Base Case *' + null_base_case_downsides + "*" \
+        if null_base_case_downsides else ''
+    outlier_alert = '_(Risk Automation)_ Following have NULL/0 Outlier *' + null_outlier_downsides + "*" \
+        if null_outlier_downsides else ''
+    slack_message('eze_uploads.slack', {'null_risk_limits': risk_limits_alert, 'null_base_case': base_case_alert,
+                                        'null_outlier': outlier_alert},
+                                         channel=get_channel_name('portal_downsides'),
+                                         token=settings.SLACK_TOKEN
+                  )

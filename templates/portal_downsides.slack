@@ -7,3 +7,5 @@
     Base Case: {{ base_case }}
     Outlier: {{ outlier }}
 {% endblock %}
+
+

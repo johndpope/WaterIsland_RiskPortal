@@ -67,8 +67,8 @@ def calculate_outlier_nav_impact(row):
     return (row['OUTLIER_PL'] / row['NAV']) * 100
 
 
-# Create your views here.
-def deal_info_download(request):
+
+def get_deal_info_dataframe():
     # DealInfo.csv @ the Deal Level
     deal_level = pd.DataFrame.from_records(FormulaeBasedDownsides.objects.filter(IsExcluded__contains='No',
                                                                                  RiskLimit__isnull=False)
@@ -113,15 +113,11 @@ def deal_info_download(request):
 
     # Add % sign to Risk Limit
     deal_level['Risk Limit'] = deal_level['Risk Limit'].apply(lambda x: str(x) + "%")
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename=DealInfo.csv'
-    deal_level.to_csv(path_or_buf=response, index=False)
-
-    return response
+    return deal_level
 
 
-def security_info_download(request):
-    # Get the Deal Level and Security Level files in the required format.
+def get_security_info_dataframe():
+    # Get the Security Level files in the required format.
     position_level = pd.DataFrame.from_records(
         FormulaeBasedDownsides.objects.filter(IsExcluded__contains='No', base_case__isnull=False,
                                               outlier__isnull=False).
@@ -144,6 +140,22 @@ def security_info_download(request):
     position_level = position_level[['Deal', 'Security', 'Alternate Ticker', 'Outliers', 'PM Base Case', 'Rebate Rate',
                                      'Price', 'Adj_CR_01', 'CR_01', 'DV01', 'Beta']]
     # This should be named SecurityInfo.csv
+    return position_level
+
+
+def deal_info_download(request):
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=DealInfo.csv'
+
+    deal_level = get_deal_info_dataframe()
+    deal_level.to_csv(path_or_buf=response, index=False)
+
+    return response
+
+
+def security_info_download(request):
+    position_level = get_security_info_dataframe()
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename=SecurityInfo.csv'
     position_level.to_csv(path_or_buf=response, index=False)

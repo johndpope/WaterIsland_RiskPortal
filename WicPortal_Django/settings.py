@@ -56,7 +56,6 @@ CELERYBEAT_SCHEDULE = {
         'schedule': crontab(hour=20, minute=00, day_of_week='mon-fri')
     # Execute every night to fetch EOD prices
     },
-
     'ESS_IDEA_FLAGGER': {
         'task': 'risk.tasks.premium_analysis_flagger',
         'schedule': crontab(hour=22, minute=00, day_of_week='mon-fri'),  # Execute after daily update
@@ -105,6 +104,14 @@ CELERYBEAT_SCHEDULE = {
     'UPDATE_CREDIT_DEALS_UPSIDE_DOWNSIDE': {
         'task': 'risk_reporting.tasks.update_credit_deals_upside_downside_once_daily',
         'schedule': crontab(minute='00', hour='21', day_of_week='mon-fri'),
+    },
+    'ALERT_BEFORE_EZE_UPLOAD': {
+        'task': 'risk_reporting.tasks.post_alert_before_eze_upload',
+        'schedule': crontab(minute='16', hour='00', day_of_week='mon-fri'),
+    },
+    'DROP_ARB_DOWNSIDES_TO_EZE': {
+        'task': 'risk_reporting.tasks.drop_arb_downsides_to_eze',
+        'schedule': crontab(minute='17', hour='59', day_of_week='mon-fri'),
     },
 }
 
@@ -320,9 +327,13 @@ MEDIA_URL = 'http://s3.amazonaws.com/{}/media/'.format(AWS_STORAGE_BUCKET_NAME)
 if DEBUG == 'on':
     DEBUG = True
     CURRENT_DATABASE = env('LOCAL_TEST_DB_NAME')
+    DEAL_INFO_EZE_UPLOAD_PATH = r'DealInfo.csv'
+    SECURITY_INFO_EZE_UPLOAD_PATH = r'SecurityInfo.csv'
 else:
     DEBUG = False
     CURRENT_DATABASE = env('WICFUNDS_DATABASE_NAME')
+    DEAL_INFO_EZE_UPLOAD_PATH = r'/mnt/shares/EzeData/Upload Files/DealInfo.csv'
+    SECURITY_INFO_EZE_UPLOAD_PATH = r'/mnt/shares/EzeData/Upload Files/SecurityInfo.csv'
 
 # DEBUG = False
 # STATICFILES_LOCATION = 'static'
