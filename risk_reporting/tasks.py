@@ -1442,6 +1442,7 @@ def drop_arb_downsides_to_eze():
         security_info_df = get_security_info_dataframe()
         security_info_df.to_csv(path)
         success = '_(Risk Automation)_ *Successfully Uploaded SecurityInfo.csv to Eze Uploads (Eze/Upload Files/)*'
+        error = datetime.datetime.now().strftime("%Y-%m-%d")
     except Exception as e:
         error = '_(Risk Automation)_ *Error in Uploading SecurityInfo.csv* -> ' + str(e)
         success = "ERROR!"
