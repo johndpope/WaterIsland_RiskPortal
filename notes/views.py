@@ -17,7 +17,16 @@ class ListNotes(ListView):
     """ Render a Page with Latest News Items as List """
     model = NotesMaster
     template_name = 'wic_notes_list.html'
-    queryset = NotesMaster.objects.all().order_by('-date')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        queryset = NotesMaster.objects.all().order_by('-date')
+        queryset_ess = queryset.filter(is_sleeve_ess=True)
+        queryset_mna = queryset.filter(is_sleeve_mna=True)
+        queryset_credit = queryset.filter(is_sleeve_credit=True)
+        context.update({'queryset_ess': queryset_ess, 'queryset_mna': queryset_mna,
+                        'queryset_credit': queryset_credit})
+        return context
 
 
 def autocompleteModel(request):
@@ -62,6 +71,9 @@ def get_note_details(request):
             note_details['title'] = note.title
             note_details['author'] = note.author
             note_details['tickers'] = note.tickers
+            note_details['is_sleeve_ess'] = 'true' if note.is_sleeve_ess else 'false'
+            note_details['is_sleeve_mna'] = 'true' if note.is_sleeve_mna else 'false'
+            note_details['is_sleeve_credit'] = 'true' if note.is_sleeve_credit else 'false'
         except NotesMaster.DoesNotExist:
             note_details = []
 
@@ -95,10 +107,14 @@ def create_note(request):
             article = request.POST['article']
             selected_tickers = request.POST['tickers']
             other_tickers = request.POST['other_tickers']
+            is_sleeve_ess = True if request.POST.get('option_ess') == 'true' else False
+            is_sleeve_mna = True if request.POST.get('option_mna') == 'true' else False
+            is_sleeve_credit = True if request.POST.get('option_credit') == 'true' else False
             tickers = get_cleaned_ticker_string(selected_tickers, other_tickers)
             file_urls = ""
             new_notes_item = NotesMaster.objects.create(author=author, date=date, title=title,
-                                                        article=article, tickers=tickers)
+                                                        article=article, tickers=tickers, is_sleeve_ess=is_sleeve_ess,
+                                                        is_sleeve_credit=is_sleeve_credit, is_sleeve_mna=is_sleeve_mna)
             notes_fiies = request.FILES.getlist('filesNotes[]')
 
             if notes_fiies:
@@ -137,7 +153,10 @@ def create_note(request):
                 if file_urls:
                     content += "<p><strong>Attachment URLs:</strong> {file_urls}</p>".format(file_urls=file_urls)
 
-                subject = '{tickers} : {title} :- Note Created {date}'.format(tickers=tickers, title=title, date=date)
+                if is_sleeve_mna:
+                    subject = '{title} :- Note Created {date}'.format(title=title, date=date)
+                else:
+                    subject = '{tickers} : {title} :- Note Created {date}'.format(tickers=tickers, title=title, date=date)
                 html = """ \
                         <html>
                             <head>
@@ -172,6 +191,9 @@ def update_note(request):
         tickers = request.POST['tickers']
         tickers = get_cleaned_ticker_string("", tickers)
         remove_file_ids = request.POST.get('remove_file_ids')
+        is_sleeve_ess = True if request.POST.get('option_ess') == 'true' else False
+        is_sleeve_mna = True if request.POST.get('option_mna') == 'true' else False
+        is_sleeve_credit = True if request.POST.get('option_credit') == 'true' else False
         try:
             if remove_file_ids:
                 remove_file_ids = remove_file_ids.split(",")
@@ -187,7 +209,8 @@ def update_note(request):
         except Exception as error:
             print('Error Deleting files. File IDs are: ', remove_file_ids, error)
         NotesMaster.objects.filter(id=id).update(author=author, date=date, title=title,
-                                                 article=article, tickers=tickers)
+                                                 article=article, tickers=tickers, is_sleeve_ess=is_sleeve_ess,
+                                                 is_sleeve_credit=is_sleeve_credit, is_sleeve_mna=is_sleeve_mna)
         print('Now saving, File Uploads...')
         notes_fiies = request.FILES.getlist('filesNotes[]')
         if notes_fiies:

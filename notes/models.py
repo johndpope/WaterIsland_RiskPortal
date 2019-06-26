@@ -12,6 +12,9 @@ class NotesMaster(models.Model):
     author = models.CharField(max_length=1000)
     article = models.TextField()
     tickers = models.CharField(max_length=1000)
+    is_sleeve_ess = models.BooleanField(default=True)
+    is_sleeve_mna = models.BooleanField(default=False)
+    is_sleeve_credit = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title+'_'+self.author

@@ -74,7 +74,7 @@ $(document).ready(function () {
     var remove_file_ids = [];
 
     //Create a Datatable out of retrieved Values
-    var wic_notes_table = $('#wic_notes_table').DataTable({
+    var wic_notes_table_ess = $('#wic_notes_table_ess').DataTable({
         columnDefs: [{
             targets: [0], render: function (data) {
                 return moment(data).format('YYYY-MM-DD');
@@ -83,6 +83,27 @@ $(document).ready(function () {
         "aaSorting": [[0,'desc']],
         "pageLength": 25,
     });
+
+    var wic_notes_table_mna = $('#wic_notes_table_mna').DataTable({
+        columnDefs: [{
+            targets: [0], render: function (data) {
+                return moment(data).format('YYYY-MM-DD');
+            }
+        }],
+        "aaSorting": [[0,'desc']],
+        "pageLength": 25,
+    });
+
+    var wic_notes_table_credit = $('#wic_notes_table_credit').DataTable({
+        columnDefs: [{
+            targets: [0], render: function (data) {
+                return moment(data).format('YYYY-MM-DD');
+            }
+        }],
+        "aaSorting": [[0,'desc']],
+        "pageLength": 25,
+    });
+
     $('#wic_note_article').summernote({'height': '450px'});
 
     $('#submit_wic_notes_form').on('submit', function (e) {
@@ -98,6 +119,14 @@ $(document).ready(function () {
                 e.preventDefault();
                 continue_form_submit = false;
             }
+        }
+        var option_ess = $('#wic_notes_option_ess').prop('checked');
+        var option_mna = $('#wic_notes_option_mna').prop('checked');
+        var option_credit = $('#wic_notes_option_credit').prop('checked');
+        if (!option_ess & !option_mna & !option_credit) {
+            swal('Error', 'Select sleeve checkbox', 'error');
+            e.preventDefault();
+            continue_form_submit = false;
         }
         if (continue_form_submit == true) {
             e.preventDefault(); //to Stop from Refreshing
@@ -148,6 +177,9 @@ $(document).ready(function () {
             data.append('tickers', tickers);
             data.append('other_tickers', other_tickers);
             data.append('emails', emails);
+            data.append('option_ess', option_ess);
+            data.append('option_mna', option_mna);
+            data.append('option_credit', option_credit);
 
             //POST The Data to be Inserted into the Database
 
@@ -177,26 +209,13 @@ $(document).ready(function () {
                         var year = date_split[0];
                         var month = date_split[1];
                         var day = date_split[2];
-                        var newRow = '<tr id="row_' + response.notes_id + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + all_tickers + '</td>' +
-                            '<td><div class="btn-group">' +
-                            '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
-                            '<i class="ft-settings"></i>' +
-                            '</button>' +
-                            '<ul class="dropdown-menu">' +
-                            '<li><a id="edit_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-edit-2"></i> Edit</a></li>' +
-                            '<li><a id="delete_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-trash-2"></i> Delete</a></li>' +
-                            '<li><a id="view_' + response.notes_id + '" data-value=' + response.notes_id + ' class=\'dropdown-item\' href="#"><i class="ft-plus-circle primary"></i> View</a></li>' +
-                            '</ul>' +
-                            '</div></td></tr>';
-
-                        //Re-initialize Datatable again
-                        wic_notes_table.row.add($(newRow)).draw();
                         if (response.email_sent == 'false') {
                             swal("Email not sent", "Your note has been saved but email has not been sent to the recipients.", "warning");
                         }
                         else {
                             swal("Good job! " + author, "Your note has been saved.", "success");
                         }
+                        location.reload();
                     }
 
 
@@ -212,7 +231,7 @@ $(document).ready(function () {
     /* Function to delete a Note Item */
     // Event Delegation for Dynamically added elements
 
-    $('.table-responsive').on("click", "#wic_notes_table tr td li a", function () {
+    $('.table-responsive').on("click", ".wic_notes_table tr td li a", function () {
 
         var current_note = this.id.toString();
         // Handle Selected Logic Here
@@ -254,6 +273,9 @@ $(document).ready(function () {
                     author = note_details.author;
                     article = note_details.article;
                     title = note_details.title;
+                    is_sleeve_ess = note_details.is_sleeve_ess == 'true';
+                    is_sleeve_mna = note_details.is_sleeve_mna == 'true';
+                    is_sleeve_credit = note_details.is_sleeve_credit == 'true';
                     $('#wic_notes_edit_id').val(notes_id_to_edit);
                     $('#wic_notes_edit_date').val(date.toString());
                     $('#wic_notes_edit_title').val(title);
@@ -261,6 +283,9 @@ $(document).ready(function () {
                     $('#wic_notes_edit_article').summernote({'height': "400px"});
                     $('#wic_notes_edit_article').summernote('code', article);
                     $('#wic_notes_edit_tickers').val(tickers);
+                    $('#wic_notes_edit_option_ess').prop('checked', is_sleeve_ess);
+                    $('#wic_notes_edit_option_mna').prop('checked', is_sleeve_mna);
+                    $('#wic_notes_edit_option_credit').prop('checked', is_sleeve_credit);
                 },
                 error: function (err) {
                     console.log(err);
@@ -296,9 +321,7 @@ $(document).ready(function () {
                             if (response === "wic_note_deleted") {
                                 //Delete Row from DataTable
                                 swal("Success! The Note has been deleted!", {icon: "success"});
-                                //ReDraw The Table by Removing the Row with ID equivalent to dealkey
-                                wic_notes_table.row($("#row_" + notes_id_to_edit)).remove().draw();
-
+                                location.reload();
                             }
                             else {
                                 //show a sweet alert
@@ -352,92 +375,79 @@ $(document).ready(function () {
     $('#submit_wic_notes_edit_form').on('submit', function (e) {
         e.preventDefault(); //to Stop from Refreshing
         //Get all the fields and make an Ajax call. Wait for Response, if positive, show toaster and append this new row to the existing table
-        swal({
-            title: "Saving",
-            text: "Hold on!",
-            buttons: false,
-            icon: "info",
-            closeOnClickOutside: false,
-        });
-        var id = $('#wic_notes_edit_id').val();
-        var article = $('#wic_notes_edit_article').summernote('code').toString();
-        var date = $('#wic_notes_edit_date').val();
-        var title = $('#wic_notes_edit_title').val();
-        var author = $('#wic_notes_edit_author').val();
-        var tickers = $('#wic_notes_edit_tickers').val();
-
-        //POST The Data to be Inserted into the Database
-        var data = new FormData();
-        var notes_files = $('#edit_notes_attachments_model')[0].files;
-        console.log(notes_files);
-        for (var i = 0; i < notes_files.length; i++) {
-            var file = notes_files[i];
-            data.append('filesNotes[]', file, file.name);
+        var option_ess = $('#wic_notes_edit_option_ess').prop('checked');
+        var option_mna = $('#wic_notes_edit_option_mna').prop('checked');
+        var option_credit = $('#wic_notes_edit_option_credit').prop('checked');
+        if (!option_ess & !option_mna & !option_credit) {
+            swal('Error', 'Select sleeve checkbox', 'error');
         }
-        data.append('remove_file_ids', remove_file_ids)
-        data.append('id', id);
-        data.append('article', article);
-        data.append('date', date);
-        data.append('title', title);
-        data.append('author', author);
-        data.append('tickers', tickers);
-        $.ajax({
-            type: 'POST',
-            url: '../notes/update_note/',
-            data: data,
-            processData: false,
-            contentType: false,
-            success: function (response) {
-                $('#wic_note_edit_modal').modal('hide');
-                $('body').removeClass('modal-open');
-                $('.modal-backdrop').remove();
-                // Reset the Note Submission Form
-
-
-                // Reset the SummerNote
-                $('#wic_notes_edit_article').summernote('code', '');
-
-                if (response === 'failed') {
-                    swal("Error!", "Updating Notes Item Failed!", "error");
-                }
-                else {
-                    swal("Good job! " + author, "Your note has been updated.", "success");
-                    var monthNames = ["Jan", "Feb", "March", "April", "May", "June",
-                        "July", "August", "Sept", "Oct", "Nov", "Dec"
-                    ];
-                    //Response was Success. Append this row to the Existing DataTable
-
-                    // First Remove the Existing Row
-                    wic_notes_table.row($('#row_' + id)).remove();
-
-                    var date_split = date.split('-');
-                    var year = date_split[0];
-                    var month = date_split[1];
-                    var day = date_split[2];
-
-                    var newRow = '<tr id="row_' + response + '"><td>' + monthNames[month - 1] + ' ' + day + ', ' + year + '</td>' + '<td>' + title + '</td>' + '<td>' + author + '</td>' + '<td>' + tickers + '</td>' +
-                        '<td><div class="btn-group">' +
-                        '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
-                        '<i class="ft-settings"></i>' +
-                        '</button>' +
-                        '<ul class="dropdown-menu">' +
-                        '<li><a id="edit_' + response + '" data-value=' + response + ' class=\'dropdown-item\' href="#"><i class="ft-edit-2"></i> Edit</a></li>' +
-                        '<li><a id="delete_' + response + '" data-value=' + response + ' class=\'dropdown-item\' href="#"><i class="ft-trash-2"></i> Delete</a></li>' +
-                        '<li><a id="view_' + response + '" data-value=' + response + ' class=\'dropdown-item\' href="#"><i class="ft-plus-circle primary"></i> View</a></li>' +
-                        '</ul>' +
-                        '</div></td></tr>';
-
-                    //Re-initialize Datatable again
-                    wic_notes_table.row.add($(newRow)).draw();
-                    remove_file_ids = [];
-                }
-
-
-            },
-            error: function (err_response) {
-                console.log(err_response + ' in wic_notes.js while trying to save new Notes Item');
+        else {
+            swal({
+                title: "Saving",
+                text: "Hold on!",
+                buttons: false,
+                icon: "info",
+                closeOnClickOutside: false,
+            });
+            var id = $('#wic_notes_edit_id').val();
+            var article = $('#wic_notes_edit_article').summernote('code').toString();
+            var date = $('#wic_notes_edit_date').val();
+            var title = $('#wic_notes_edit_title').val();
+            var author = $('#wic_notes_edit_author').val();
+            var tickers = $('#wic_notes_edit_tickers').val();
+            //POST The Data to be Inserted into the Database
+            var data = new FormData();
+            var notes_files = $('#edit_notes_attachments_model')[0].files;
+            console.log(notes_files);
+            for (var i = 0; i < notes_files.length; i++) {
+                var file = notes_files[i];
+                data.append('filesNotes[]', file, file.name);
             }
-        });
+            data.append('remove_file_ids', remove_file_ids)
+            data.append('id', id);
+            data.append('article', article);
+            data.append('date', date);
+            data.append('title', title);
+            data.append('author', author);
+            data.append('tickers', tickers);
+            data.append('option_ess', option_ess);
+            data.append('option_mna', option_mna);
+            data.append('option_credit', option_credit);
+            $.ajax({
+                type: 'POST',
+                url: '../notes/update_note/',
+                data: data,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    $('#wic_note_edit_modal').modal('hide');
+                    $('body').removeClass('modal-open');
+                    $('.modal-backdrop').remove();
+                    // Reset the Note Submission Form
+
+
+                    // Reset the SummerNote
+                    $('#wic_notes_edit_article').summernote('code', '');
+
+                    if (response === 'failed') {
+                        swal("Error!", "Updating Notes Item Failed!", "error");
+                    }
+                    else {
+                        swal("Good job! " + author, "Your note has been updated.", "success");
+                        var monthNames = ["Jan", "Feb", "March", "April", "May", "June",
+                            "July", "August", "Sept", "Oct", "Nov", "Dec"
+                        ];
+                        location.reload();
+                        remove_file_ids = [];
+                    }
+
+
+                },
+                error: function (err_response) {
+                    console.log(err_response + ' in wic_notes.js while trying to save new Notes Item');
+                }
+            });
+        }
     });
 
     function readURL(input, target) {
