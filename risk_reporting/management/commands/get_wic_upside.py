@@ -112,6 +112,7 @@ class Command(BaseCommand):
         wic_df = wic_df[~wic_df['price_target_date'].isnull() & ~pd.isna(wic_df['price_target_date'])]
         wic_df['alpha_wic'] = 0
         wic_df.drop(columns=['ess_deal_json'], inplace=True)
+        wic_df['source'] = 'WIC'
 
         ess_idea_df = pd.DataFrame.from_records(ESS_Idea.objects.all().values('id', 'alpha_ticker', 'unaffected_date',
                                                                               'expected_close', 'price_target_date',
@@ -130,13 +131,32 @@ class Command(BaseCommand):
         merged_ess_df.drop(columns=['ess_idea_id_id', 'id'], inplace=True)
         merged_ess_df.rename(columns={'multiples_dictionary': 'valuation_json', 'pt_up': 'alpha_upside',
                                       'pt_down': 'alpha_downside', 'pt_wic': 'alpha_wic'}, inplace=True)
+        merged_ess_df['source'] = 'PROD'
+
         big_df = wic_df.append(merged_ess_df)
         big_df = big_df.sort_values(by='created_on')
         big_df['created_on'] = big_df['created_on'].dt.date
-        big_df = big_df.drop_duplicates(subset=['created_on', 'alpha_ticker'], keep='last')
+        big_df.rename(columns={'version_number': 'old_version'}, inplace=True)
+
+        unique_tickers = big_df.alpha_ticker.unique().tolist()
+        new_df = pd.DataFrame()
+        for ticker in unique_tickers:
+            temp_df = big_df[big_df['alpha_ticker'] == ticker]
+            temp_df = temp_df.sort_values(['created_on', 'source'], ascending=[True, False])
+            temp_df = temp_df.drop_duplicates(subset=['created_on', 'alpha_ticker'], keep='last')
+            temp_df = temp_df.reset_index()
+            temp_df['new_version'] = temp_df.index
+            temp_df = temp_df.set_index('index')
+            del temp_df.index.name
+            new_df = new_df.append(temp_df)
+        new_df = new_df.reset_index(drop=True)
         if not dry_run:
-            big_df.to_excel('final_wic_upside.xlsx')
-            print("final_wic_upside.xlsx file created.")
-        print(str(len(big_df.alpha_ticker.unique())) + ' unique alpha tickers present.')
-        print(str(len(big_df)) + ' rows will be written to the excel file.')
+            columns = ['alpha_ticker', 'deal_type', 'alpha_upside', 'alpha_downside', 'alpha_wic', 'catalyst',
+                       'catalyst_tier', 'cix_index', 'unaffected_date', 'is_complete_checkbox', 'created_on',
+                       'expected_close', 'price_target_date', 'status', 'old_version', 'new_version', 'source',
+                       'peer_json', 'valuation_json']
+            new_df.to_excel('wic_prod_data.xlsx', sheet_name='wic_prod_data', columns=columns, index=False)
+            print("wic_prod_data.xlsx file created.")
+        print(str(len(new_df.alpha_ticker.unique())) + ' unique alpha tickers present.')
+        print(str(len(new_df)) + ' rows will be written to the excel file.')
         print("Successfully completed.")
