@@ -107,11 +107,11 @@ CELERYBEAT_SCHEDULE = {
     },
     'ALERT_BEFORE_EZE_UPLOAD': {
         'task': 'risk_reporting.tasks.post_alert_before_eze_upload',
-        'schedule': crontab(minute='16', hour='00', day_of_week='mon-fri'),
+        'schedule': crontab(minute='00', hour='16', day_of_week='mon-fri'),
     },
     'DROP_ARB_DOWNSIDES_TO_EZE': {
         'task': 'risk_reporting.tasks.drop_arb_downsides_to_eze',
-        'schedule': crontab(minute='17', hour='59', day_of_week='mon-fri'),
+        'schedule': crontab(minute='59', hour='17', day_of_week='mon-fri'),
     },
 }
 
