@@ -19,6 +19,14 @@ from portfolio_optimization.models import EssPotentialLongShorts, EssUniverseImp
 from slack_utils import get_channel_name
 
 
+def clean_model_up(row):
+    return row['pt_up'] if not row['model_up'] else row['model_up']
+
+
+def clean_model_down(row):
+    return row['pt_down'] if not row['model_down'] else row['model_down']
+
+
 @shared_task
 def refresh_ess_long_shorts_and_implied_probability():
     """ Shared Task executes at 8.15am and Post to Slack with an updated universe Table """
@@ -78,11 +86,13 @@ def refresh_ess_long_shorts_and_implied_probability():
         del ess_ideas_df['price']
         ess_ideas_df.rename(columns={'Price': 'price'}, inplace=True)
 
-        ess_ideas_df['Implied Probability'] = 1e2 * (ess_ideas_df['price'] - ess_ideas_df['pt_down']) / (
-                ess_ideas_df['pt_up'] - ess_ideas_df['pt_down'])
+        ess_ideas_df['model_up'] = ess_ideas_df.apply(clean_model_up, axis=1)
+        ess_ideas_df['model_down'] = ess_ideas_df.apply(clean_model_down, axis=1)
+        ess_ideas_df['Implied Probability'] = 1e2 * (ess_ideas_df['price'] - ess_ideas_df['model_down']) / (
+                ess_ideas_df['model_up'] - ess_ideas_df['model_down'])
         ess_ideas_df['Return/Risk'] = abs(
-            (ess_ideas_df['pt_up'] / ess_ideas_df['price'] - 1) / (ess_ideas_df['pt_down'] / ess_ideas_df['price'] - 1))
-        ess_ideas_df['Gross IRR'] = (ess_ideas_df['pt_up'] / ess_ideas_df['price'] - 1) * 1e2
+            (ess_ideas_df['model_up'] / ess_ideas_df['price'] - 1) / (ess_ideas_df['model_down'] / ess_ideas_df['price'] - 1))
+        ess_ideas_df['Gross IRR'] = (ess_ideas_df['model_up'] / ess_ideas_df['price'] - 1) * 1e2
 
         ess_ideas_df['Days to Close'] = (ess_ideas_df['expected_close'] - today).dt.days
         ess_ideas_df['Ann IRR'] = (ess_ideas_df['Gross IRR'] / ess_ideas_df['Days to Close']) * 365
