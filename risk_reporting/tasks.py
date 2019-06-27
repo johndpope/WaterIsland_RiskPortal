@@ -1423,7 +1423,7 @@ def drop_arb_downsides_to_eze():
     try:
         path = settings.DEAL_INFO_EZE_UPLOAD_PATH
         deal_info_df = get_deal_info_dataframe()
-        deal_info_df.to_csv(path)
+        deal_info_df.to_csv(path, index=False)
         success = '_(Risk Automation)_ *Successfully Uploaded DealInfo.csv to Eze Uploads (Eze/Upload Files/)*'
         error = "."
     except Exception as e:
@@ -1437,7 +1437,7 @@ def drop_arb_downsides_to_eze():
     try:
         path = settings.SECURITY_INFO_EZE_UPLOAD_PATH
         security_info_df = get_security_info_dataframe()
-        security_info_df.to_csv(path)
+        security_info_df.to_csv(path, index=False)
         success = '_(Risk Automation)_ *Successfully Uploaded SecurityInfo.csv to Eze Uploads (Eze/Upload Files/)*'
         error = "."
     except Exception as e:
