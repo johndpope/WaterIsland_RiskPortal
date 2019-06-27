@@ -470,7 +470,7 @@ Notes Repository
                     <tbody>
                       {% for notes_item in queryset_ess %}
                         <tr id="row_{{ notes_item.id }}" data-article="{{ notes_item.article }}">
-                          <td nowrap class="align-middle text-center">{{ notes_item.date }}</td>
+                          <td nowrap class="align-middle text-center">{{ notes_item.date|date:'Y-m-d' }}</td>
                           <td class="align-middle">{{ notes_item.title }}</td>
                           <td class="align-middle">{{ notes_item.author }}</td>
                           <td class="align-middle">{{ notes_item.tickers }}</td>
@@ -514,7 +514,7 @@ Notes Repository
                     <tbody>
                       {% for notes_item in queryset_mna %}
                         <tr id="row_{{ notes_item.id }}" data-article="{{ notes_item.article }}">
-                          <td nowrap class="align-middle text-center">{{ notes_item.date }}</td>
+                          <td nowrap class="align-middle text-center">{{ notes_item.date|date:'Y-m-d' }}</td>
                           <td class="align-middle">{{ notes_item.title }}</td>
                           <td class="align-middle">{{ notes_item.author }}</td>
                           <td class="align-middle">{{ notes_item.tickers }}</td>
@@ -558,7 +558,7 @@ Notes Repository
                     <tbody>
                       {% for notes_item in queryset_credit %}
                         <tr id="row_{{ notes_item.id }}" data-article="{{ notes_item.article }}">
-                          <td nowrap class="align-middle text-center">{{ notes_item.date }}</td>
+                          <td nowrap class="align-middle text-center">{{ notes_item.date|date:'Y-m-d' }}</td>
                           <td class="align-middle">{{ notes_item.title }}</td>
                           <td class="align-middle">{{ notes_item.author }}</td>
                           <td class="align-middle">{{ notes_item.tickers }}</td>

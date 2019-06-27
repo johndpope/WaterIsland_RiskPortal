@@ -75,32 +75,17 @@ $(document).ready(function () {
 
     //Create a Datatable out of retrieved Values
     var wic_notes_table_ess = $('#wic_notes_table_ess').DataTable({
-        columnDefs: [{
-            targets: [0], render: function (data) {
-                return moment(data).format('YYYY-MM-DD');
-            }
-        }],
-        "aaSorting": [[0,'desc']],
+        order: [],
         "pageLength": 25,
     });
 
     var wic_notes_table_mna = $('#wic_notes_table_mna').DataTable({
-        columnDefs: [{
-            targets: [0], render: function (data) {
-                return moment(data).format('YYYY-MM-DD');
-            }
-        }],
-        "aaSorting": [[0,'desc']],
+        order: [],
         "pageLength": 25,
     });
 
     var wic_notes_table_credit = $('#wic_notes_table_credit').DataTable({
-        columnDefs: [{
-            targets: [0], render: function (data) {
-                return moment(data).format('YYYY-MM-DD');
-            }
-        }],
-        "aaSorting": [[0,'desc']],
+        order: [],
         "pageLength": 25,
     });
 
