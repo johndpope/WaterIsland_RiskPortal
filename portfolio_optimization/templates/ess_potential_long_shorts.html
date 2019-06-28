@@ -6,6 +6,7 @@
 
 {% block css_styles %}
     {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/fixedcolumns/3.2.6/css/fixedColumns.bootstrap.min.css">
 {% endblock %}
 
 {% block datatables_bootstrap_css %}
@@ -32,39 +33,61 @@
                     </div>
                 </div>
                 <div class="col-lg-12">
+                    <p class="lead h6 text-center font-size-small">As of <mark>{{ as_of|date:"F d, Y" }}</mark>
+                    </p>
+                    <div class="row">
+                        <div class="col-lg-4"></div>
+                        <div class="col-lg-1 block-tag">
+                            <small class="badge badge-default badge-success">Select As of Date
+                            </small>
+                        </div>
+                        <div class="col-lg-2">
+                            <fieldset class="form-group">
+                                <input type="date" class="form-control" id="long_short_as_of" />
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-1">
+                            <fieldset class="form-group">
+                                <button type="button" class="btn btn-info" id="submit_long_short_as_of">Submit
+                                </button>
+                            </fieldset>
+                        </div>
+
+                        <div class="col-lg-4"></div>
+                    </div>
                     <div class="row">
                         <div class="col-lg-12">
                             <div class="table-responsive">
-                                <table class="table table-sm table-striped table-bordered" id='ess_ls'>
+                                <table class="table table-striped table-bordered" id='ess_ls'>
                                     <thead>
                                     <tr>
                                         <th class="center">As of</th>
-                                        <th>Alpha<br>Ticker</th>
-                                        <th>PX</th>
-                                        <th>Model<br>Up</th>
-                                        <th>Model<br>WIC</th>
-                                        <th>Model<br>Down</th>
-                                        <th>Catalyst</th>
-                                        <th>Rating</th>
-                                        <th>Deal Type</th>
-                                        <th>Hedges?</th>
-                                        <th>Implied Prob</th>
-                                        <th>Return/<br>Risk</th>
-                                        <th>Gross<br>IRR</th>
-                                        <th>Days to <br>Close</th>
-                                        <th>Ann. IRR</th>
-                                        <th>Adj. <br>Ann IRR</th>
-                                        <th>Long Prob</th>
-                                        <th>Long<br>IRR</th>
-                                        <th>Short<br>Prob</th>
-                                        <th>Short<br>IRR</th>
-                                        <th>Potential<br>Long</th>
-                                        <th>Potential<br>Short</th>
+                                        <th class="center">Alpha<br>Ticker</th>
+                                        <th class="center">PX</th>
+                                        <th class="center">Model<br>Up</th>
+                                        <th class="center">Model<br>WIC</th>
+                                        <th class="center">Model<br>Down</th>
+                                        <th class="center">Catalyst</th>
+                                        <th class="center">Rating</th>
+                                        <th class="center">Deal Type</th>
+                                        <th class="center">Hedges?</th>
+                                        <th class="center">Implied<br>Prob</th>
+                                        <th class="center">Return/<br>Risk</th>
+                                        <th class="center">Gross<br>IRR</th>
+                                        <th class="center">Days to <br>Close</th>
+                                        <th class="center">Ann.<br>IRR</th>
+                                        <th class="center">Adj. <br>Ann IRR</th>
+                                        <th class="center">Long Prob</th>
+                                        <th class="center">Long<br>IRR</th>
+                                        <th class="center">Short<br>Prob</th>
+                                        <th class="center">Short<br>IRR</th>
+                                        <th class="center">Potential<br>Long</th>
+                                        <th class="center">Potential<br>Short</th>
                                     </tr>
                                     </thead>
                                     <tbody>
 
-                                    {% for deal in all_deals %}
+                                    {% for deal in esspotentiallongshorts_list %}
 
                                         {% if deal.potential_long == 'Y' %}
                                          <tr class="table-success">

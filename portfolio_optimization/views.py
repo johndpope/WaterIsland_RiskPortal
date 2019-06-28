@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django.views.generic import FormView
+from django.views.generic import FormView, ListView
 from django.urls import reverse
 from .models import *
 from portfolio_optimization.forms import EssDealTypeParametersForm
@@ -134,9 +134,21 @@ def update_normlized_sizing_by_risk_adj_prob(request):
     return HttpResponse(response)
 
 
-def ess_potential_long_shorts(request):
-    all_deals = EssPotentialLongShorts.objects.all()
-    return render(request, 'ess_potential_long_shorts.html', {'all_deals': all_deals})
+class EssLongShortView(ListView):
+    template_name = 'ess_potential_long_shorts.html'
+    queryset = EssPotentialLongShorts.objects.all().order_by('-Date')
+    context_object_name = 'esspotentiallongshorts_list'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        as_of = self.request.GET.get('as_of')
+        if as_of:
+            as_of = datetime.datetime.strptime(as_of, '%Y-%m-%d')
+        else:
+            as_of = EssPotentialLongShorts.objects.latest('Date').Date
+        queryset = EssPotentialLongShorts.objects.filter(Date=as_of)
+        context.update({'esspotentiallongshorts_list': queryset, 'as_of': as_of})
+        return context
 
 
 def ess_implied_probabilites(request):
