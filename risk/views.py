@@ -88,6 +88,7 @@ def edit_mna_idea_action_id(request):
         deal_id = request.POST.get('deal_id')
         action_id = request.POST.get('action_id')
         if deal_id and action_id:
+            action_id = action_id.strip()
             try:
                 deal_object = MA_Deals.objects.get(id=deal_id)
                 current_action_id = deal_object.action_id

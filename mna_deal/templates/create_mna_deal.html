@@ -67,14 +67,15 @@ Create M & A Deals
                                 <div class="col-lg-1 col-md-1 col-sm-1"></div>
                                 <div class="col-lg-3 col-md-3 col-sm-3">
                                     <small class="badge badge-default badge-dark">Action ID</small>
+                                    <strong><sup class="red">*</sup></strong>
                                     <fieldset class="form-group position-relative">
                                         <input type="text" name="action_id" class="form-control input-lg"
                                             label_class="badge badge-default badge-dark" id="action_id"
-                                            placeholder="123456789" maxlength="20">
+                                            placeholder="123456789" maxlength="20" required>
                                     </select>
                                 </div>
                                 <div class="col-lg-3 col-md-3 col-sm-3 col-3 pt-2">
-                                    <button id='fetch_bloomberg_data' type="button" class="btn btn-primary">Fetch Bloomberg Data</button>
+                                    <span class="badge badge-pill badge-primary p-1">Enter Action ID to fetch Bloomberg Data</span>
                                 </div>
                                 <div class="col-lg-5 col-md-5 col-sm-5 col-5 text-right pt-2"></div>
                             </div>
@@ -84,6 +85,9 @@ Create M & A Deals
                                 {% for item in form %}
                                     <div class="col-lg-3 col-md-3 col-sm-3">
                                         <small class="{{ item.field.widget.attrs.label_class }}">{{ item.label }}</small>
+                                        {% if item.field.required %}
+                                            <strong><sup class="red">*</sup></strong>
+                                        {% endif %}
                                         <fieldset class="form-group position-relative">
                                             {{ item }}
                                         </select>

@@ -92,37 +92,58 @@ $(document).ready(function () {
         }
     });
 
-    $('#fetch_bloomberg_data').on('click', function () {
+    $('#action_id').focusout(function() {
         var action_id = $('#action_id').val();
-        $.ajax({
-            'type': 'POST',
-            'url': '../risk/fetch_bloomberg_data',
-            'data': {'action_id': action_id},
-            success: function (response) {
-                if (response.error == false) {
-                    var target_ticker = response.CA052[0];
-                    var acquirer_ticker = response.CA054[0];
-                    var deal_cash_terms = parseFloat(response.CA072[0]);
-                    var deal_share_terms = parseFloat(response.CA073[0]);
-                    var origination_date = response.CA057[0];
-                    var expected_close_date = response.CA835[0];
-                    if (!deal_cash_terms) { deal_cash_terms = 0.0; }
-                    if (!deal_share_terms) { deal_share_terms = 0.0; }
-                    $('#target_ticker').val(target_ticker);
-                    $('#acquirer_ticker').val(acquirer_ticker);
-                    $('#deal_cash_terms').val(deal_cash_terms);
-                    $('#deal_share_terms').val(deal_share_terms);
-                    $('#origination_date').val(origination_date);
-                    console.log("VAIBHAV", expected_close_date);
-                    $('#expected_close_date').val(expected_close_date);
+        if (action_id) {
+            $.ajax({
+                'type': 'POST',
+                'url': '../risk/fetch_bloomberg_data',
+                'data': {'action_id': action_id},
+                success: function (response) {
+                    if (response.error == false) {
+                        var target_ticker = response.CA052[0];
+                        var acquirer_ticker = response.CA054[0];
+                        var deal_cash_terms = parseFloat(response.CA072[0]);
+                        var deal_share_terms = parseFloat(response.CA073[0]);
+                        var origination_date = response.CA057[0];
+                        var expected_close_date = response.CA835[0];
+                        if (!deal_cash_terms) { deal_cash_terms = 0.0; }
+                        if (!deal_share_terms) { deal_share_terms = 0.0; }
+                        $('#target_ticker').val(target_ticker);
+                        $('#acquirer_ticker').val(acquirer_ticker);
+                        $('#deal_cash_terms').val(deal_cash_terms);
+                        $('#deal_share_terms').val(deal_share_terms);
+                        $('#origination_date').val(origination_date);
+                        $('#expected_close_date').val(expected_close_date);
+                        $('#target_ticker')[0].style.backgroundColor = 'yellow';
+                        $('#acquirer_ticker')[0].style.backgroundColor = 'yellow';
+                        $('#deal_cash_terms')[0].style.backgroundColor = 'yellow';
+                        $('#deal_share_terms')[0].style.backgroundColor = 'yellow';
+                        $('#origination_date')[0].style.backgroundColor = 'yellow';
+                        $('#expected_close_date')[0].style.backgroundColor = 'yellow';
+                    }
+                    else {
+                        console.log("Error in fetching data from bloomberg for given action id");
+                    }
+                },
+                error: function (err) {
+                    alert(err);
                 }
-                else {
-                    console.log("Error in fetching data from bloomberg for given action id");
-                }
-            },
-            error: function (err) {
-                alert(err);
-            }
-        })
+            })
+        }
+        else {
+            $('#target_ticker').val('');
+            $('#acquirer_ticker').val('');
+            $('#deal_cash_terms').val('');
+            $('#deal_share_terms').val('');
+            $('#origination_date').val('');
+            $('#expected_close_date').val('');
+            $('#target_ticker')[0].style.backgroundColor = '';
+            $('#acquirer_ticker')[0].style.backgroundColor = '';
+            $('#deal_cash_terms')[0].style.backgroundColor = '';
+            $('#deal_share_terms')[0].style.backgroundColor = '';
+            $('#origination_date')[0].style.backgroundColor = '';
+            $('#expected_close_date')[0].style.backgroundColor = '';
+        }
     });
 });
