@@ -612,12 +612,18 @@ def ess_idea_daily_update():
                 # ---------------------------------------------------------------------------------------------------
 
             hedged_volatility = np.std(percent_daily_change) / np.sqrt(252)
-            gross_percentage = float(pt_wic / price) - 1
-            difference_in_days = (expected_close - datetime.datetime.date(datetime.datetime.now())).days
 
+            difference_in_days = (expected_close - datetime.datetime.date(datetime.datetime.now())).days
+            adjustments_object = ESS_Idea_Upside_Downside_Change_Records.objects.all().filter(ess_idea_id_id=eachDealObject.id).order_by('-date_updated')[0]
+            adj_pt_up = adjustments_object.pt_up if adjustments_object.pt_up!=0 else pt_up
+            adj_pt_down = adjustments_object.pt_down if adjustments_object.pt_down!=0 else pt_down
+            adj_pt_wic = adjustments_object.pt_wic if adjustments_object.pt_wic!=0 else pt_wic
+
+            gross_percentage = float(adj_pt_wic / price) - 1
             ann_percentage = float(((gross_percentage / difference_in_days) * 365))
             theoretical_sharpe = ann_percentage / hedged_volatility
-            implied_probability = float((price - pt_down) / (pt_up - pt_down))
+
+            implied_probability = float((price - adj_pt_down) / (adj_pt_up - adj_pt_down))
             existing_implied_probability_chart = eval(existing_implied_probability_chart)
             existing_event_premium_chart = eval(existing_event_premium_chart)
             # Only Append the New Values for Implied Probability and Event Premium
