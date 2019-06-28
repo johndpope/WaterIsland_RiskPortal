@@ -14,8 +14,14 @@ def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, anal
     slicer = dfutils.df_slicer()
     start_date = slicer.prev_n_business_days(120, unaffectedDt)  # lookback is 120 days (6 months)
     metrics = {k: v for k, v in metric2weight.items() if v != 0}
-    peers_list = list(peers2weight.keys())
-    metric_list = list(metrics.keys())
+    try:
+        peers_list = list(peers2weight.keys())
+    except Exception:
+        peers_list = [*peers2weight]
+    try:
+        metric_list = list(metrics.keys())
+    except Exception:
+        metric_list = [*metrics]
 
     if progress_recorder is not None:
         progress_recorder.set_progress(65, 100)
