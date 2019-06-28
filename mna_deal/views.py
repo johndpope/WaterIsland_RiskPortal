@@ -3,6 +3,7 @@ import pandas as pd
 import re
 
 from django.conf import settings
+from django.db import IntegrityError
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.generic.edit import FormView
@@ -10,6 +11,7 @@ from django_slack import slack_message
 
 from bbgclient import bbgclient
 from mna_deal.forms import CreateMaDealsForm
+from risk.mna_deal_bloomberg_utils import get_data_from_bloombery_using_action_id, save_bloomberg_data_to_table
 from risk.models import MA_Deals
 from risk_reporting.models import FormulaeBasedDownsides
 from slack_utils import get_channel_name
@@ -75,6 +77,17 @@ class CreateMaDealsView(FormView):
                                    created=created, last_modified=DATE_TODAY, is_complete='No',
                                    loss_tolerance_percentage_of_limit=loss_tolerance_percentage_of_limit)
             deal_object.save()
+            try:
+                result = get_data_from_bloombery_using_action_id([action_id])
+                save_bloomberg_data_to_table(result, [deal_object])
+            except IntegrityError as e:
+                slack_message('generic.slack', {'message': 'Duplicate Action ID While creating M&A Deal. Action ID: ' + str(action_id)},
+                              channel=get_channel_name('new-mna-deals'), token=settings.SLACK_TOKEN,
+                              name='ESS_IDEA_DB_ERROR_INSPECTOR')
+            except Exception as e:
+                slack_message('generic.slack', {'message': 'Error: Action ID while creating M&A Deal. Action ID: ' + str(action_id)},
+                              channel=get_channel_name('new-mna-deals'), token=settings.SLACK_TOKEN,
+                              name='ESS_IDEA_DB_ERROR_INSPECTOR')
             slack_message('new_mna_deal_notify.slack',
                           {'message': 'New M & A Deal Added', 'deal_name': deal_name, 'action_id': action_id,
                            'analyst': analyst, 'target_ticker': target_ticker, 'acquirer_ticker': acquirer_ticker,
