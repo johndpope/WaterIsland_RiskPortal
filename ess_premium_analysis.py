@@ -603,9 +603,20 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
                             len(m_df[~pd.isnull(m_df[p.split(' ')[0]])]) > 0]  # remove peers with all nulls
         m_ols_df = m_df[[alpha_ticker.split(' ')[0]] + [t.split(' ')[0] for t in peer_ticker_list]]
         # regress a vs. p1,p2,...,pn
-        formula = alpha_ticker.split(' ')[0] + ' ~ ' + " + ".join([t.split(' ')[0] for t in peer_ticker_list])
+        cleaned_peer_ticker_list = []
+        for peer_ticker in peer_ticker_list:
+            peer_ticker = peer_ticker.split(' ')[0].strip()
+            if peer_ticker.isdigit():
+                peer_ticker = 'Q("' + peer_ticker + '")'
+            cleaned_peer_ticker_list.append(peer_ticker)
+        formula = alpha_ticker.split(' ')[0] + ' ~ ' + " + ".join([ticker for ticker in cleaned_peer_ticker_list ])
         ols_result = sm.ols(formula=formula, data=m_ols_df).fit()
-        peer2coeff = {p: ols_result.params[p.split(' ')[0]] for p in peer_ticker_list}
+        peer2coeff = {}
+        for ticker in peer_ticker_list:
+            params = ols_result.params
+            ticker = ticker.split(' ')[0]
+            value = params.get(ticker, params.get('Q("' + ticker + '")'))
+            peer2coeff[ticker] = value
         peer2coeff['Intercept'] = ols_result.params['Intercept']
         metric2peer2coeff[metric] = peer2coeff
         rows.append([metric, ols_result.params.to_dict()] + [peer2coeff[p] for p in peer_ticker_list] +

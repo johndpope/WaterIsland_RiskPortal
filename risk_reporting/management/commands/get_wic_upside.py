@@ -161,6 +161,7 @@ class Command(BaseCommand):
 
         unique_tickers = big_df.alpha_ticker.unique().tolist()
         unique_tickers.remove('CBOE US EQUITY')
+        unique_tickers.remove('ALR US EQUITY')
         new_df = pd.DataFrame()
         for ticker in unique_tickers:
             temp_df = big_df[big_df['alpha_ticker'] == ticker]
@@ -174,6 +175,7 @@ class Command(BaseCommand):
         new_df = new_df.reset_index(drop=True)
 
         df_2017 = new_df[new_df['created_on'] >= date(2017, 1, 1)]
+        df_2017 = df_2017[df_2017['unaffected_date'] >= date(2017, 1, 1)]
         unique_tickers = df_2017.alpha_ticker.unique().tolist()
         for ticker in unique_tickers:
             temp_df = df_2017[df_2017['alpha_ticker'] == ticker]
