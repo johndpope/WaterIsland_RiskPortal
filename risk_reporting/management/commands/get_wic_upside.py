@@ -11,6 +11,9 @@ from ess_function import final_df
 from risk.models import ESS_Idea, ESS_Peers
 
 
+WEEKEND_DAYS = [6,7]
+
+
 def extract_cix_value(row):
     ess_json = json.loads(row['ess_deal_json'])
     return ess_json.get('cix') if ess_json.get('cix') else np.nan
@@ -76,8 +79,6 @@ def custom_group_by(data):
     data['peer_json'] = json.dumps([result])
     return data
 
-
-from datetime import timedelta, date
 
 def daterange(start_date, end_date):
     for n in range(int ((end_date - start_date).days)):
@@ -173,17 +174,17 @@ class Command(BaseCommand):
 
         df_2017 = new_df[new_df['created_on'] >= date(2017, 1, 1)]
         unique_tickers = df_2017.alpha_ticker.unique().tolist()
-        outcome_df = pd.DataFrame()
         for ticker in unique_tickers:
             temp_df = df_2017[df_2017['alpha_ticker'] == ticker]
             api_host = bbgclient.bbgclient.get_next_available_host()
             for i, (index, row) in enumerate(temp_df.iterrows()):
-                file_name = "regression_" + ticker + "_" + str(row.new_version) +".xlsx"    
+                outcome_df = pd.DataFrame()
+                file_name = "regression_" +  ticker.replace(' ', '_') + "_" + str(row.new_version) +".xlsx"
                 if i == 0:
                     start_date = row['unaffected_date'] + timedelta(days=1)
                 else:
                     start_date = row.created_on
-                if (i + 1 == len(temp_df)):
+                if i + 1 == len(temp_df):
                     if row.is_complete_checkbox:
                         end_date = row.expected_close
                     else:
@@ -191,38 +192,39 @@ class Command(BaseCommand):
                 else:
                     next_row = temp_df.iloc[i + 1]
                     end_date = next_row['created_on'] - timedelta(days=1)
-                
+
                 for_range = daterange(start_date, end_date)
                 for as_of_date in for_range:
-                    as_of_date = datetime.combine(as_of_date, datetime.min.time())
-                    unaffected_date = row.unaffected_date.strftime('%Y-%m-%d')
-                    expected_close = row.expected_close
-                    price_target_date = row.price_target_date
-                    peer_json = json.loads(row.peer_json)
-                    if peer_json and len(peer_json) > 0:
-                        peer_json = peer_json[0]
-                    else:
-                        peer_json = {}
-                    val_json = json.loads(row.valuation_json)
-                    if val_json and len(val_json) > 0:
-                        val_json = val_json[0]
-                    else:
-                        val_json = {}
-                    try:
-                        final_df_result = final_df(alpha_ticker=ticker, cix_index=row.cix_index, unaffectedDt=unaffected_date,
-                                               expected_close=expected_close, tgtDate=price_target_date,
-                                               analyst_upside=row.alpha_upside, analyst_downside=row.alpha_downside,
-                                               analyst_pt_wic=row.alpha_wic, peers2weight=peer_json,
-                                               metric2weight=val_json, api_host=api_host,
-                                               as_of_dt=as_of_date)
-                        final_df_series = final_df_result['Final Results']
-                        if not final_df_series.empty:
-                            final_df_series = final_df_series.set_value('as_of_date', as_of_date.strftime('%Y-%m-%d'))
-                            outcome_df = outcome_df.append(final_df_series, ignore_index=True)
-                    except Exception as e:
-                        print(ticker, row.new_version)
-                        continue
-            outcome_df.to_csv(file_name)
+                    if as_of_date.isoweekday() not in WEEKEND_DAYS:
+                        as_of_date = datetime.combine(as_of_date, datetime.min.time())
+                        unaffected_date = row.unaffected_date.strftime('%Y-%m-%d')
+                        expected_close = row.expected_close
+                        price_target_date = row.price_target_date
+                        peer_json = json.loads(row.peer_json)
+                        if peer_json and len(peer_json) > 0:
+                            peer_json = peer_json[0]
+                        else:
+                            peer_json = {}
+                        val_json = json.loads(row.valuation_json)
+                        if val_json and len(val_json) > 0:
+                            val_json = val_json[0]
+                        else:
+                            val_json = {}
+                        try:
+                            final_df_result = final_df(alpha_ticker=ticker, cix_index=row.cix_index,
+                                                       unaffectedDt=unaffected_date, expected_close=expected_close,
+                                                       tgtDate=price_target_date, analyst_upside=row.alpha_upside,
+                                                       analyst_downside=row.alpha_downside,
+                                                       analyst_pt_wic=row.alpha_wic, peers2weight=peer_json,
+                                                       metric2weight=val_json, api_host=api_host, as_of_dt=as_of_date)
+                            final_df_series = final_df_result['Final Results']
+                            if not final_df_series.empty:
+                                final_df_series = final_df_series.set_value('as_of_date', as_of_date.strftime('%Y-%m-%d'))
+                                outcome_df = outcome_df.append(final_df_series, ignore_index=True)
+                        except Exception as e:
+                            print(ticker, row.new_version)
+                            continue
+                outcome_df.to_excel(file_name, sheet_name='outcome_df', index=False)
         import ipdb; ipdb.set_trace()
 
         if not dry_run:
