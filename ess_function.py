@@ -63,7 +63,7 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
     slicer = dfutils.df_slicer()
     as_of_dt = datetime.datetime.today() if as_of_dt is None else as_of_dt
 
-    print('Running Final_df as of : ' + str(as_of_dt))
+    print(alpha_ticker, 'Running Final_df as of : ' + str(as_of_dt))
 
     unaff_dt = datetime.datetime.strptime(unaffectedDt, '%Y-%m-%d')
     tgt_dt = datetime.datetime.strptime(tgtDate, '%Y-%m-%d')
