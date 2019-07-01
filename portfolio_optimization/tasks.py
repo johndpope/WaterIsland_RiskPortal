@@ -15,7 +15,9 @@ from celery import shared_task
 from sqlalchemy import create_engine
 from django.conf import settings
 from django_slack import slack_message
-from portfolio_optimization.models import EssPotentialLongShorts, EssUniverseImpliedProbability, EssDealTypeParameters
+from django.db import connection
+from portfolio_optimization.models import EssPotentialLongShorts, EssUniverseImpliedProbability, EssDealTypeParameters, \
+    ArbOptimizationUniverse
 from slack_utils import get_channel_name
 
 
@@ -262,3 +264,65 @@ def refresh_ess_long_shorts_and_implied_probability():
     finally:
         con.close()
 
+
+@shared_task
+def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts to Slack
+    """ For the ARB Optimized Sleeve & Other M&A Sleeve, calculate the Gross RoR, Ann. RoR
+    1. Gross RoR : (AllInSpread/PX_LAST) * 100
+    2. Ann. RoR: (Gross RoR/Days to Close) * 365
+    3. Risk (%): (NAV Impact)/(% of ARB AUM)     : % of Sleeve Current in positions database
+    4. Expected Volatility: (Sqrt(days_to_close) * Sqrt(Gross RoR) * Sqrt(ABS(Risk(%))) / 10
+    """
+    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD
+                               + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
+
+    con = engine.connect()
+    try:
+        query = "SELECT DISTINCT tradegroup, sleeve, bucket, " \
+                "CatalystTypeWIC as catalyst, CatalystRating as catalyst_rating," \
+                " ClosingDate as closing_date, Target_Ticker as target_ticker, LongShort as long_short, " \
+                "TargetLastPrice as target_last_price, DealUpside as deal_upside, AllInSpread as all_in_spread, " \
+                "DealDownside as deal_downside, datediff(ClosingDate, curdate()) " \
+                "AS days_to_close, PctOfSleeveCurrent as pct_of_sleeve_current FROM wic.daily_flat_file_db WHERE " \
+                "Flat_file_as_of = (SELECT MAX(Flat_file_as_of) FROM wic.daily_flat_file_db) AND " \
+                "AlphaHedge = 'Alpha' AND LongShort IN ('Long', 'Short') AND Bucket IN ('Optimized', 'Other M&A') " \
+                "AND amount<>0 AND SecType IN ('EQ') AND Fund = 'ARB'"
+
+        df = pd.read_sql_query(query, con=connection)
+        df['gross_ror'] = (df['all_in_spread']/df['target_last_price']) * 100
+        df['ann_ror'] = (df['gross_ror']/df['days_to_close'])*365
+
+        nav_impacts_query = "SELECT tradegroup, BASE_CASE_NAV_IMPACT_ARB FROM " + settings.CURRENT_DATABASE + \
+                                                                                    ".risk_reporting_dailynavimpacts"
+        nav_impacts_df = pd.read_sql_query(nav_impacts_query, con=connection)
+
+        df = pd.merge(df, nav_impacts_df, how='left', on='tradegroup')
+        df.rename(columns={'BASE_CASE_NAV_IMPACT_ARB': 'base_case_nav_impact'}, inplace=True)
+        df['base_case_nav_impact'] = df['base_case_nav_impact'].astype(float)
+        df['pct_of_sleeve_current'] = df['pct_of_sleeve_current'].astype(float)
+
+        df['risk_pct'] = 1e2 * (df['base_case_nav_impact']/df['pct_of_sleeve_current'])
+        df['expected_vol'] = (np.sqrt(df['days_to_close']) * np.sqrt(df['gross_ror']) * np.sqrt(abs(df['risk_pct'])))/10
+
+        # First Delete current entries (to avoid duplicates) & then push this dataframe to DB
+        today = datetime.datetime.now().date()
+        ArbOptimizationUniverse.objects.all().filter(date_updated=today).delete()
+        # Push to Database
+        df['date_updated'] = today
+        df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        df.to_sql(name='portfolio_optimization_arboptimizationuniverse', schema=settings.CURRENT_DATABASE,
+                  if_exists='append', index=False, con=con)
+        con.close()
+        slack_message('eze_uploads.slack', {'null_risk_limits':
+                                            str("Successfully calculated ARB RoRs. "
+                                                "Visit _192.168.0.16:8000/portfolio_optimization/merger_arb_rors_")},
+                                         channel=get_channel_name('portal_downsides'),
+                                         token=settings.SLACK_TOKEN)
+
+    except Exception as e:
+        print(e)
+    finally:
+        print('Closing connection to Relational Database Service...')
+        con.close()
+
+    return 'Arb RoRs calculated!'

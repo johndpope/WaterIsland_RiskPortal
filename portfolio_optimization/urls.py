@@ -16,4 +16,5 @@ urlpatterns = [
         name='ess_implied_prob_drilldown'),
     url('get_deal_type_details/', views.get_deal_type_details, name='get_deal_type_details'),
     url('delete_deal_type/', views.delete_deal_type, name='delete_deal_type'),
+    url('merer_arb_rors', views.MergerArbRorView.as_view(), name='merger_arb_rors'),
 ]

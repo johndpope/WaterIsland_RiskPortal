@@ -71,3 +71,34 @@ class EssUniverseImpliedProbability(models.Model):
     deal_type = models.CharField(max_length=100, null=True)
     implied_probability = models.FloatField(null=True)
     count = models.IntegerField(null=True)  # To count how many names in the avg. implied probability
+
+
+# --------------------------- Merger Arbitrage Optimization Models -------------------------------------------
+
+class ArbOptimizationUniverse(models.Model):
+    date_updated = models.DateField()
+    tradegroup = models.CharField(max_length=100)
+    sleeve = models.CharField(max_length=50)
+    bucket = models.CharField(max_length=50)
+    catalyst = models.CharField(max_length=50, null=True)
+    catalyst_rating = models.CharField(max_length=5, null=True)
+    closing_date = models.DateField(null=True)
+    target_ticker = models.CharField(max_length=100, null=True)
+    long_short = models.CharField(max_length=50, null=True)
+    target_last_price = models.FloatField(null=True)
+    deal_upside = models.FloatField(null=True)
+    all_in_spread = models.FloatField(null=True)
+    deal_downside = models.FloatField(null=True)
+    days_to_close = models.IntegerField(null=True)
+    pct_of_sleeve_current = models.FloatField(null=True)
+    gross_ror = models.FloatField(null=True)
+    ann_ror = models.FloatField(null=True)
+    base_case_nav_impact = models.FloatField(null=True)
+    risk_pct = models.FloatField(null=True)
+    expected_vol = models.FloatField(null=True)
+
+
+
+
+
+

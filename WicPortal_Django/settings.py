@@ -113,7 +113,12 @@ CELERYBEAT_SCHEDULE = {
         'task': 'risk_reporting.tasks.drop_arb_downsides_to_eze',
         'schedule': crontab(minute='59', hour='17', day_of_week='mon-fri'),
     },
+    'REFRESH_ARB_RATE_OF_RETURNS': {
+        'task': 'portfolio_optimization.tasks.get_arb_optimization_ranks',
+        'schedule': crontab(minute='20', hour='20', day_of_week='mon-fri'),
+    },
 }
+
 
 BROKER_POOL_LIMIT = 0
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'

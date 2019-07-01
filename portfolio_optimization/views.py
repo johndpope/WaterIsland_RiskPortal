@@ -312,3 +312,20 @@ def get_implied_prob_df(imp_prob_tracker_df, date, deal_type, get_df=False):
         if get_df:
             return implied_drilldowwn
         return implied_drilldowwn.to_json(orient='records')
+
+
+class MergerArbRorView(ListView):
+    template_name = 'merger_arb_ror.html'
+    queryset = ArbOptimizationUniverse.objects.all().order_by('-Date')
+    context_object_name = 'arboptimizationuniverse_list'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        as_of = self.request.GET.get('as_of')
+        if as_of:
+            as_of = datetime.datetime.strptime(as_of, '%Y-%m-%d')
+        else:
+            as_of = ArbOptimizationUniverse.objects.latest('date_updated').date_updated
+        queryset = ArbOptimizationUniverse.objects.filter(date_updated=as_of)
+        context.update({'arboptimizationuniverse_list': queryset, 'as_of': as_of})
+        return context
