@@ -614,8 +614,8 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
         peer2coeff = {}
         for ticker in peer_ticker_list:
             params = ols_result.params
-            ticker = ticker.split(' ')[0]
-            value = params.get(ticker, params.get('Q("' + ticker + '")'))
+            ticker_name = ticker.split(' ')[0]
+            value = params.get(ticker_name, params.get('Q("' + ticker_name + '")'))
             peer2coeff[ticker] = value
         peer2coeff['Intercept'] = ols_result.params['Intercept']
         metric2peer2coeff[metric] = peer2coeff
