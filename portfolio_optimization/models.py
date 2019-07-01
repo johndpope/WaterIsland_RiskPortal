@@ -86,7 +86,7 @@ class ArbOptimizationUniverse(models.Model):
     target_ticker = models.CharField(max_length=100, null=True)
     long_short = models.CharField(max_length=50, null=True)
     target_last_price = models.FloatField(null=True)
-    deal_upside = models.FloatField(null=True)
+    deal_value = models.FloatField(null=True)
     all_in_spread = models.FloatField(null=True)
     deal_downside = models.FloatField(null=True)
     days_to_close = models.IntegerField(null=True)

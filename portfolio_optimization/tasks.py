@@ -281,11 +281,11 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
         query = "SELECT DISTINCT tradegroup, sleeve, bucket, " \
                 "CatalystTypeWIC as catalyst, CatalystRating as catalyst_rating," \
                 " ClosingDate as closing_date, Target_Ticker as target_ticker, LongShort as long_short, " \
-                "TargetLastPrice as target_last_price, DealUpside as deal_upside, AllInSpread as all_in_spread, " \
+                "TargetLastPrice as target_last_price, DealValue as deal_value, AllInSpread as all_in_spread, " \
                 "DealDownside as deal_downside, datediff(ClosingDate, curdate()) " \
                 "AS days_to_close, PctOfSleeveCurrent as pct_of_sleeve_current FROM wic.daily_flat_file_db WHERE " \
                 "Flat_file_as_of = (SELECT MAX(Flat_file_as_of) FROM wic.daily_flat_file_db) AND " \
-                "AlphaHedge = 'Alpha' AND LongShort IN ('Long', 'Short') AND Bucket IN ('Optimized', 'Other M&A') " \
+                "AlphaHedge = 'Alpha' AND LongShort IN ('Long', 'Short') AND Bucket IN ('Optimized') " \
                 "AND amount<>0 AND SecType IN ('EQ') AND Fund = 'ARB'"
 
         df = pd.read_sql_query(query, con=connection)
