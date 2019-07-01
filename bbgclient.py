@@ -131,7 +131,7 @@ class bbgclient:
         secid2fields = bbgclient.get_secid2field([ticker], "tickers",[mnemonic,"date"], start_date_yyyymmdd, end_date_yyyymmdd, overrides_dict, "histdata", api_host)
 
         if len(secid2fields[ticker]["date"]) != len(secid2fields[ticker][mnemonic]):
-            print('WARNING: ' + ticker + ' for ' + mnemonic + ' between ' + start_date_yyyymmdd + ' and ' + end_date_yyyymmdd + ' return mismatch date-value')
+            # print('WARNING: ' + ticker + ' for ' + mnemonic + ' between ' + start_date_yyyymmdd + ' and ' + end_date_yyyymmdd + ' return mismatch date-value')
             return pd.Series(secid2fields[ticker][mnemonic],
                              index=secid2fields[ticker]["date"][:len(secid2fields[ticker][mnemonic])]).astype(float)
 

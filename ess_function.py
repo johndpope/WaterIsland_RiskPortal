@@ -271,6 +271,7 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
         regression_output = None
         calculations_dict = None
         print('failed running WIC and Regression models: ' + str(e.args))
+        print(alpha_ticker, as_of_dt)
 
 
     return {'Final Results': df[cols2show],
