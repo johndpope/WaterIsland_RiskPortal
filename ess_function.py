@@ -10,9 +10,9 @@ import dfutils
 def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, analyst_upside, analyst_downside,
                              analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_bear=None,
                              adjustments_df_bull=None, adjustments_df_pt=None, bear_flag=None, bull_flag=None,
-                             pt_flag=None, f_period='1BF', progress_recorder=None):
+                             pt_flag=None, f_period='1BF', progress_recorder=None, days=120):
     slicer = dfutils.df_slicer()
-    start_date = slicer.prev_n_business_days(120, unaffectedDt)  # lookback is 120 days (6 months)
+    start_date = slicer.prev_n_business_days(days, unaffectedDt)  # lookback is 120 days (6 months)
     metrics = {k: v for k, v in metric2weight.items() if v != 0}
     peers_list = list(peers2weight.keys())
     metric_list = list(metrics.keys())
@@ -26,14 +26,14 @@ def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, anal
     if progress_recorder is not None:
         progress_recorder.set_progress(75, 100)
 
-    OLS_results, calculations_dict = ess_premium_analysis.premium_analysis_df_OLS(alpha_ticker, peers_list, calib_data,
+    OLS_results, calculations_dict, rows = ess_premium_analysis.premium_analysis_df_OLS(alpha_ticker, peers_list, calib_data,
                                                                                   analyst_upside, analyst_downside,
                                                                                   analyst_pt_wic, as_of_dt, tgtDate,
                                                                                   metric_list, metric2weight, api_host,
                                                                                   adjustments_df_bear,
                                                                                   adjustments_df_bull,
                                                                                   adjustments_df_pt, bear_flag,
-                                                                                  bull_flag, pt_flag)
+                                                                                  bull_flag, pt_flag, days)
 
     if progress_recorder is not None:
         progress_recorder.set_progress(80, 100)
@@ -45,13 +45,13 @@ def run_ess_premium_analysis(alpha_ticker, unaffectedDt, tgtDate, as_of_dt, anal
                                                                         adjustments_df_bear, adjustments_df_bull,
                                                                         adjustments_df_pt, bear_flag, bull_flag,
                                                                         pt_flag)
-    return premium_analysis_results, OLS_results, calculations_dict
+    return premium_analysis_results, OLS_results, calculations_dict, rows
 
 
 def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, analyst_upside, analyst_downside,
              analyst_pt_wic, peers2weight, metric2weight, api_host, adjustments_df_bear=None,
              adjustments_df_bull=None, adjustments_df_pt=None, bear_flag=None, bull_flag=None,
-             pt_flag=None, f_period="1BF", progress_recorder=None, as_of_dt=None):
+             pt_flag=None, f_period="1BF", progress_recorder=None, as_of_dt=None, days=120):
     
     cix_calculations_dict = OrderedDict()
     slicer = dfutils.df_slicer()
@@ -134,12 +134,12 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
                                                + str(round(df['Up Price (CIX)'], 2)) + ' (Up Price (CIX))')
     
     try:
-        model1, model2, calculations_dict = run_ess_premium_analysis(alpha_ticker, unaff_dt, tgt_dt, as_of_dt,
+        model1, model2, calculations_dict, rows = run_ess_premium_analysis(alpha_ticker, unaff_dt, tgt_dt, as_of_dt,
                                                                      analyst_upside, analyst_downside, analyst_pt_wic,
                                                                      peers2weight, metric2weight, api_host,
                                                                      adjustments_df_bear, adjustments_df_bull,
                                                                      adjustments_df_pt, bear_flag, bull_flag, pt_flag,
-                                                                     f_period, progress_recorder)
+                                                                     f_period, progress_recorder, days)
         df["Down Price (WIC)"] = model1["Alpha Downside (Adj,weighted)"].sum()
         df["Down Price (Regression)"] = model2["Alpha Downside (Adj,weighted)"].sum()
         df["PT WIC Price (WIC)"] = model1["Alpha PT WIC (Adj,weighted)"].sum()
@@ -250,6 +250,7 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
         regression_output = model2[regression_model_display_columns]
         regression_output = regression_output.set_index('Metric').to_dict('index')
     except Exception as e:
+        print("HERE")
         cols2show = ['Alpha Ticker',
                      'Unaffected Date',
                      'Expected Close Date',
@@ -270,5 +271,6 @@ def final_df(alpha_ticker, cix_index, unaffectedDt, expected_close, tgtDate, ana
     return {'Final Results': df[cols2show],
             'Regression Results': regression_output,
             'Regression Calculations': calculations_dict,
-            'CIX Calculations': cix_calculations_dict
+            'CIX Calculations': cix_calculations_dict,
+            'rows': rows
            }

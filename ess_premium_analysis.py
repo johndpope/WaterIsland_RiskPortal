@@ -587,7 +587,7 @@ def metric2implied_px(alpha_ticker, peer_tickers, dt, metrics, api_host, metric2
 def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_upside, analyst_downside,
                             analyst_pt_wic, as_of_dt, price_tgt_dt, metrics, metric2weight, api_host,
                             adjustments_df_bear, adjustments_df_bull, adjustments_df_pt, bear_flag=None,
-                            bull_flag=None, pt_flag=None):
+                            bull_flag=None, pt_flag=None, days=120):
     alpha_historical_mult_df = calib_data['alpha_historical_mult_df']
     peer2historical_mult_df = calib_data['peer2historical_mult_df']
     ticker2short_ticker = {p: p.split(' ')[0] for p in peer_ticker_list + [alpha_ticker]}
@@ -605,6 +605,7 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
         # regress a vs. p1,p2,...,pn
         formula = alpha_ticker.split(' ')[0] + ' ~ ' + " + ".join([t.split(' ')[0] for t in peer_ticker_list])
         ols_result = sm.ols(formula=formula, data=m_ols_df).fit()
+        m_ols_df.to_excel('m_ols_df_' + metric.replace("/", "_") + '_' + str(days) + '.xlsx')
         peer2coeff = {p: ols_result.params[p.split(' ')[0]] for p in peer_ticker_list}
         peer2coeff['Intercept'] = ols_result.params['Intercept']
         metric2peer2coeff[metric] = peer2coeff
@@ -946,7 +947,7 @@ def premium_analysis_df_OLS(alpha_ticker, peer_ticker_list, calib_data, analyst_
     calculations_dict = calculations_summary(df, price_tgt_dt, metric2weight, analyst_upside, analyst_downside,
                                              analyst_pt_wic,
                                              bear_bs_dict, bull_bs_dict, pt_bs_dict)
-    return df, calculations_dict
+    return df, calculations_dict, rows
 
 
 def premium_analysis_df(alpha_ticker, peers, as_of_dt, last_price_target_dt, analyst_upside, analyst_downside,
