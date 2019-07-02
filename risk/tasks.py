@@ -103,26 +103,35 @@ def premium_analysis_flagger():
                                                   bear_flag=bear_flag, pt_flag=pt_flag,
                                                   f_period="1BF")
 
-                df = result_dictionary['Final Results']
-                regression_calculations = result_dictionary['Regression Calculations']
-                cix_calculations = result_dictionary['CIX Calculations']
-                cix_down_price = df['Down Price (CIX)']
-                cix_up_price = df['Up Price (CIX)']
-                regression_up_price = df['Up Price (Regression)']
-                regression_down_price = df['Down Price (Regression)']
-                pt_wic_price_cix = df['PT WIC Price (CIX)']
-                pt_wic_price_regression = df['PT WIC Price (Regression)']
+                cix_calculations = {}
+                regression_calculations = {}
+                if deal_object.how_to_adjust == 'cix':
+                    # Get CIX params only
+                    df = result_dictionary['Final Results']
+                    cix_calculations = result_dictionary['CIX Calculations']
+                    cix_down_price = df['Down Price (CIX)']
+                    cix_up_price = df['Up Price (CIX)']
+                    pt_wic_price_cix = df['PT WIC Price (CIX)']
+                else:
+                    # get both...
+                    df = result_dictionary['Final Results']
+                    regression_calculations = result_dictionary['Regression Calculations']
+                    cix_calculations = result_dictionary['CIX Calculations']
+                    cix_down_price = df['Down Price (CIX)']
+                    cix_up_price = df['Up Price (CIX)']
+                    regression_up_price = df['Up Price (Regression)']
+                    regression_down_price = df['Down Price (Regression)']
+                    pt_wic_price_cix = df['PT WIC Price (CIX)']
+                    pt_wic_price_regression = df['PT WIC Price (Regression)']
+                    percentage_change_reg_up = ((regression_up_price - deal_object.pt_up) / regression_up_price) * 100
+                    percentage_change_reg_down = ((regression_down_price - deal_object.pt_down) / regression_down_price) * 100
+                    percentage_change_pt_wic_reg = ((pt_wic_price_regression - deal_object.pt_wic) / pt_wic_price_regression) * 100
+
 
                 percentage_change_cix_up = ((cix_up_price - deal_object.pt_up) / cix_up_price) * 100
                 percentage_change_cix_down = ((cix_down_price - deal_object.pt_down) / cix_down_price) * 100
-
-                percentage_change_reg_up = ((regression_up_price - deal_object.pt_up) / regression_up_price) * 100
-                percentage_change_reg_down = ((
-                                                      regression_down_price - deal_object.pt_down) / regression_down_price) * 100
-
                 percentage_change_pt_wic_cix = ((pt_wic_price_cix - deal_object.pt_wic) / pt_wic_price_cix) * 100
-                percentage_change_pt_wic_reg = ((
-                                                        pt_wic_price_regression - deal_object.pt_wic) / pt_wic_price_regression) * 100
+
 
                 new_upside = 0
                 new_downside = 0
