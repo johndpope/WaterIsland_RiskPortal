@@ -28,8 +28,6 @@ from risk.tasks import add_new_idea, run_ess_premium_analysis_task
 from risk_reporting.models import FormulaeBasedDownsides
 from wic_news.models import NewsMaster
 
-api_host = bbgclient.bbgclient.get_next_available_host()
-
 
 # region Merger Arbitrage IDEA Database
 @csrf_exempt
@@ -44,6 +42,7 @@ def retrieve_cix_index(request):
             deal_object = MA_Deals.objects.get(id=deal_id)
             deal_object.cix_index = cix_index
             # Fetch Historical CIX Price Chart...
+            api_host = bbgclient.bbgclient.get_next_available_host()
             r_histdata = requests.get("http://" + api_host + "/wic/api/v1.0/general_histdata",
                                       params={'idtype': "tickers", "fields": "PX_LAST",
                                               "tickers": ','.join([cix_index]),
@@ -128,6 +127,7 @@ def retrieve_spread_index(request):
             deal_object = MA_Deals.objects.get(id=deal_id)
             deal_object.spread_index = spread_index
             # Fetch Historical CIX Price Chart...
+            api_host = bbgclient.bbgclient.get_next_available_host()
             r_histdata = requests.get("http://" + api_host + "/wic/api/v1.0/general_histdata",
                                       params={'idtype': "tickers", "fields": "PX_LAST",
                                               "tickers": ','.join([spread_index]),
@@ -164,6 +164,7 @@ def calculate_mna_idea_deal_value(request):
             short_rebate = float(request.POST['short_rebate']) if request.POST['short_rebate'] else 0.0
             stub_cvr_value = float(request.POST['stub_cvr_value']) if request.POST['stub_cvr_value'] else 0.0
             # Get latest acquirer price
+            api_host = bbgclient.bbgclient.get_next_available_host()
             px_last = float(bbgclient.bbgclient.get_secid2field([acquirer_ticker], 'tickers', ['CRNCY_ADJ_PX_LAST'],
                                                                 req_type='refdata', api_host=api_host)[acquirer_ticker]
                                                                 ['CRNCY_ADJ_PX_LAST'][0]) if deal_share_terms > 0 else 0
@@ -866,6 +867,7 @@ def show_mna_idea(request):
     created_date = deal_core.created.strftime('%Y%m%d')
     # Get PX_LAST, EQ_SH_OUT, EQY_FLOAT * 1000000
 
+    api_host = bbgclient.bbgclient.get_next_available_host()
     if api_host is None:
         return HttpResponse('No Bloomberg Hosts available!')
 
@@ -1675,6 +1677,7 @@ def get_gics_sector(request):
     if request.method == 'POST':
         ticker = request.POST['ticker']
         ticker = ticker.upper() + " EQUITY" if "equity" not in ticker.lower() else ticker.upper()
+        api_host = bbgclient.bbgclient.get_next_available_host()
         gics_sector = bbgclient.bbgclient.get_secid2field([ticker], 'ticker', ['GICS_SECTOR_NAME'], req_type='refdata',
                                                           api_host=api_host)
         gics_sector = gics_sector[ticker]['GICS_SECTOR_NAME'][0]
@@ -1826,9 +1829,9 @@ def ess_idea_view_balance_sheet(request):
 
         except EssBalanceSheets.DoesNotExist:
             print('Balance Sheets not Found..')
-        balance_sheet = multiple_underlying_df(deal_object.alpha_ticker,
-                                                                    datetime.datetime.now().strftime('%Y%m%d'),
-                                                                    api_host)
+        api_host = bbgclient.bbgclient.get_next_available_host()
+        balance_sheet = multiple_underlying_df(deal_object.alpha_ticker, datetime.datetime.now().strftime('%Y%m%d'),
+                                               api_host)
         if upside_balance_sheet_adjustments is not None:
             # Previous Adjustments are saved for this deal. Fetch and display those in Adjustments table.
             upside_balance_sheet_adjustments = pd.read_json(upside_balance_sheet_adjustments, convert_dates=False)

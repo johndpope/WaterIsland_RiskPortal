@@ -19,7 +19,6 @@ import json
 from django.conf import settings
 import ast
 from django_slack import slack_message
-api_host = bbgclient.bbgclient.get_next_available_host()
 import ess_function
 from django.core.exceptions import ObjectDoesNotExist
 from celery_progress.backend import ProgressRecorder
@@ -87,6 +86,7 @@ def premium_analysis_flagger():
                     wic_balance_sheet = None
                     downside_balance_sheet = None
 
+                api_host = bbgclient.bbgclient.get_next_available_host()
                 result_dictionary = ess_function.final_df(alpha_ticker=deal_ticker,
                                                   cix_index=deal_object.cix_index,
                                                   unaffectedDt=str(deal_object.unaffected_date),
@@ -998,6 +998,7 @@ def run_ess_premium_analysis_task(self, deal_id, latest_version):
             downside_balance_sheet = None
 
         progress_recorder.set_progress(43, 100)
+        api_host = bbgclient.bbgclient.get_next_available_host()
         result_dictionary = ess_function.final_df(alpha_ticker=deal_object.alpha_ticker,
                                                   cix_index=deal_object.cix_index,
                                                   unaffectedDt=str(deal_object.unaffected_date),

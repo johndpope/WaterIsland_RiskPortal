@@ -13,10 +13,7 @@ import bbgclient
 import json
 from django.conf import settings
 import ast
-api_host = bbgclient.bbgclient.get_next_available_host()
 import ess_function
-
-
 
 
 def backfill_ess_idea():
@@ -88,6 +85,7 @@ def backfill_ess_idea():
 
 
 
+                    api_host = bbgclient.bbgclient.get_next_available_host()
                     result_dictionary = ess_function.final_df(alpha_ticker=deal_ticker,
                                                       cix_index=deal_object.cix_index,
                                                       unaffectedDt=str(deal_object.unaffected_date),
