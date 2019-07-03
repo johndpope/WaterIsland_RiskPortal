@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block title_block %}
+Credit Deals Upside Downside
+{% endblock %}
+{% load staticfiles %}
+
+{% block css_styles %}
+{{ block.super }}
+
+{% endblock %}
+
+{% block datatables_bootstrap_css %}
+{{ block.super }}
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="app-content content">
+  <div class="content-wrapper">
+
+    <div class="modal animated fadeInDown text-left" id="create_new_idea_modal" tabindex="-1" role="dialog"
+      aria-labelledby="modal_label" aria-hidden="true">
+      <div class="modal-xl modal-dialog" role="document">
+        <form id="submit_idea_edit_form" method="POST">
+          {% csrf_token %}
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title" id="modal_label">CREATE A NEW IDEA</h4>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              {% for hidden in form.hidden_fields %}
+                {{ hidden }}
+              {% endfor %}
+              <input type="hidden" name="id" id="idea_id_to_edit" value="{{ id }}">
+              <div class="row">
+                {% for item in form.visible_fields  %}
+                  {% if forloop.counter == 12 %}
+                    </div>
+                    <div class="row">
+                  {% endif %}
+                  <div class="col-lg-3 col-md-3 col-sm-3">
+                    <small class="{{ item.field.widget.attrs.label_class }}">{{ item.label }}</small>
+                    <fieldset class="form-group position-relative">
+                      {{ item }}
+                    </fieldset>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button id='close_mna_idea_modal' type="button" class="btn btn-danger btn-outline-secondary"
+                data-dismiss="modal">Close
+              </button>
+              <button type="submit" class="btn btn-outline-primary">Save Changes</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal animated fadeInDown text-left in" id="view_idea_modal" tabindex="-1" role="dialog"
+      aria-labelledby="modal_label" aria-hidden="true">
+      <div class="modal-lg modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4 class="modal-title" id="modal_label">VIEW IDEA</h4>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="col-lg-12">
+                <div class="row">
+                  <small class="badge badge-default badge-success">My Idea</small>
+                </div>
+                <br>
+                <div class="row">
+                  <div class="container" id="credit_idea_view_idea"></div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-danger btn-outline-secondary"
+                data-dismiss="modal">Close
+              </button>
+            </div>
+          </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-header">
+          <h4 class="card-title center">Credit IDEA</h4>
+          <a class="heading-elements-toggle"><i class="ft-ellipsis-h font-medium-3"></i></a>
+          <div class="heading-elements">
+            <button id='credit_idea_add_new_idea' class="btn btn-primary btn-sm" data-toggle="modal"
+              data-target="#create_new_idea_modal">
+              <i class="ft-plus white"></i> Add New Credit Idea
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-bordered" id='credit_idea_table' style="font-size:12px;">
+            <thead>
+              <tr id="row_{{ account.id }}">
+                <th>Analyst</th>
+                <th>Deal Bucket</th>
+                <th>Deal Strategy Type</th>
+                <th>Catalyst</th>
+                <th>Catalyst Tier</th>
+                <th>Target Sec CUSIP</th>
+                <th>Coupon</th>
+                <th>Hedge Sec CUSIP</th>
+                <th>Est. Closing Date</th>
+                <th>Upside Price</th>
+                <th>Downside Price</th>
+                <th>Options</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in credit_idea_list %}
+              <tr id="row_{{ row.id }}">
+                <td id="analyst_{{ row.id }}">{{ row.analyst }}</td>
+                <td nowrap id="deal_bucket_{{ row.id }}">{{ row.deal_bucket }}</td>
+                <td nowrap id="deal_strategy_type_{{ row.id }}">{{ row.deal_strategy_type }}</td>
+                <td id="catalyst_{{ row.id }}">{{ row.catalyst }}</td>
+                <td id="catalyst_tier_{{ row.id }}">{{ row.catalyst_tier }}</td>
+                <td id="target_sec_cusip_{{ row.id }}">{{ row.target_sec_cusip }}</td>
+                <td id="coupon_{{ row.id }}">{{ row.coupon }}</td>
+                <td id="hedge_sec_cusip_{{ row.id }}"> {{ row.hedge_sec_cusip }}</td>
+                <td id="estimated_closing_date_{{ row.id }}"> {{ row.estimated_closing_date }}</td>
+                <td id="upside_price_{{ row.id }}"> {{ row.upside_price }}</td>
+                <td id="downside_price_{{ row.id }}"> {{ row.downside_price }}</td>
+                <td>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-primary dropdown-toggle"
+                            data-toggle="dropdown" aria-haspopup="true"
+                            aria-expanded="false">
+                      <i class="ft-settings"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li><a id="view_idea_{{ row.id }}"
+                        data-value="{{ row.id }}" class='dropdown-item'
+                        href="#"><i class="ft-trash-2"></i> View</a></li>
+                      <li><a id="edit_idea_{{ row.id }}"
+                          data-value="{{ row.id }}" class='dropdown-item'
+                          href="#"><i class="ft-edit-2" ></i> Edit</a></li>
+                      <li><a id="delete_idea_{{ row.id }}"
+                          data-value="{{ row.id }}" class='dropdown-item'
+                          href="#"><i class="ft-trash-2"></i> Delete</a></li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  </section>
+</div>
+</div>
+</div>
+
+<script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+<script src="{% static 'app-assets/js/core/credit_idea_db.js' %}" type="text/javascript"></script>
+
+
+{% endblock %}

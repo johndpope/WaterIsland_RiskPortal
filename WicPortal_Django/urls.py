@@ -49,6 +49,7 @@ urlpatterns = [
     url(r'^etf/', include('etf.urls')),
     url('position_rec/', include('position_rec.urls')),
     url('portfolio_optimization/', include('portfolio_optimization.urls')),
+    url('credit_idea/', include('credit_idea.urls')),
 ]
 
 

@@ -159,7 +159,8 @@ INSTALLED_APPS = [
     'mna_deal',
     'etf',
     'position_rec',
-    'portfolio_optimization'
+    'portfolio_optimization',
+    'credit_idea',
 ]
 
 MIDDLEWARE = [
