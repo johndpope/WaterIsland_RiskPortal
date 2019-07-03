@@ -1252,6 +1252,16 @@ def calculate_realtime_pnl_budgets():
                                       '.realtime_pnl_impacts_pnlmonitors where DATE(last_updated) = '\
                                       '(select DATE(max(last_updated)) from ' + settings.CURRENT_DATABASE + \
                                       '.realtime_pnl_impacts_pnlmonitors) and HOUR(last_updated) = 8;', con=con)
+    if gross_ytd_return_df.empty:
+        slack_message('generic.slack',
+                      {'message': 'ERROR: Realtime Loss Budgets (Dashboard) did NOT run at 8 am.'},
+                      channel=get_channel_name('realtimenavimpacts'),
+                      token=settings.SLACK_TOKEN,
+                      name='ESS_IDEA_DB_ERROR_INSPECTOR')
+        gross_ytd_return_df = pd.read_sql('select fund, gross_ytd_return from ' + settings.CURRENT_DATABASE + \
+                                          '.realtime_pnl_impacts_pnlmonitors where DATE(last_updated) = '\
+                                          '(select DATE(max(last_updated)) from ' + settings.CURRENT_DATABASE + \
+                                          '.realtime_pnl_impacts_pnlmonitors);', con=con)
     con.close()
 
     if 'id' in pnl_budgets.columns.values:
