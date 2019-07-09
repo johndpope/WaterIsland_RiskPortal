@@ -19,6 +19,8 @@ from django.db import connection
 from portfolio_optimization.models import EssPotentialLongShorts, EssUniverseImpliedProbability, EssDealTypeParameters, \
     ArbOptimizationUniverse
 from slack_utils import get_channel_name
+from portfolio_optimization.portfolio_optimization_utils import calculate_pl_sec_impact
+
 
 
 def clean_model_up(row):
@@ -278,46 +280,80 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
 
     con = engine.connect()
     try:
-        query = "SELECT DISTINCT tradegroup, sleeve, bucket, " \
-                "CatalystTypeWIC as catalyst, CatalystRating as catalyst_rating," \
-                " ClosingDate as closing_date, Target_Ticker as target_ticker, LongShort as long_short, " \
-                "TargetLastPrice as target_last_price, DealValue as deal_value, AllInSpread as all_in_spread, " \
-                "DealDownside as deal_downside, datediff(ClosingDate, curdate()) " \
-                "AS days_to_close, PctOfSleeveCurrent as pct_of_sleeve_current FROM wic.daily_flat_file_db WHERE " \
-                "Flat_file_as_of = (SELECT MAX(Flat_file_as_of) FROM wic.daily_flat_file_db) AND " \
-                "AlphaHedge = 'Alpha' AND LongShort IN ('Long', 'Short') AND Bucket IN ('Optimized') " \
-                "AND amount<>0 AND SecType IN ('EQ') AND Fund = 'ARB'"
+        query = "SELECT DISTINCT tradegroup,ticker,SecType,AlphaHedge,DealValue as deal_value, Sleeve as sleeve, " \
+                "Bucket as bucket, CatalystTypeWIC as catalyst, " \
+                "CatalystRating as catalyst_rating,CurrentMktVal,Strike as StrikePrice, PutCall, " \
+                "FXCurrentLocalToBase as FxFactor, " \
+                "amount*factor as QTY, ClosingDate, Target_Ticker as target_ticker, LongShort as long_short,"\
+                "TargetLastPrice as target_last_price, AllInSpread as all_in_spread, " \
+                "DealDownside as deal_downside, datediff(ClosingDate, curdate()) as days_to_close, "\
+                "PctOfSleeveCurrent, aum from wic.daily_flat_file_db where " \
+                "Flat_file_as_of = (Select max(Flat_file_as_of) "\
+                "from wic.daily_flat_file_db) and LongShort in ('Long', 'Short') "\
+                "and amount<>0 and SecType in ('EQ', 'EXCHOPT') and Fund = 'ARB'"
 
-        df = pd.read_sql_query(query, con=connection)
-        df['gross_ror'] = (df['all_in_spread']/df['target_last_price']) * 100
-        df['ann_ror'] = (df['gross_ror']/df['days_to_close'])*365
+        # Create two Dataframes (One for adjusting RoRs with Hedges and another @ Tradegroup level for merging later...)
+        df = pd.read_sql_query(query, con=con)
+        tradegroup_level_df = df.copy()
+        del tradegroup_level_df['ticker']
+        del tradegroup_level_df['target_ticker']
+        del tradegroup_level_df['SecType']
+        del tradegroup_level_df['AlphaHedge']
+        del tradegroup_level_df['CurrentMktVal']
+        del tradegroup_level_df['PutCall']
+        del tradegroup_level_df['StrikePrice']
+        del tradegroup_level_df['QTY']
+        del tradegroup_level_df['FxFactor']
+        del tradegroup_level_df['PctOfSleeveCurrent']
+        # Drop the duplicates
+        tradegroup_level_df = tradegroup_level_df.drop_duplicates(keep='first')
+        nav_impacts_df = pd.read_sql_query('SELECT TradeGroup as tradegroup, BASE_CASE_NAV_IMPACT_ARB FROM ' +
+                                           settings.CURRENT_DATABASE + '.risk_reporting_dailynavimpacts', con=con)
 
-        nav_impacts_query = "SELECT tradegroup, BASE_CASE_NAV_IMPACT_ARB FROM " + settings.CURRENT_DATABASE + \
-                                                                                    ".risk_reporting_dailynavimpacts"
-        nav_impacts_df = pd.read_sql_query(nav_impacts_query, con=connection)
+        df['PnL'] = df.apply(calculate_pl_sec_impact, axis=1)
+        df['pnl_impact'] = 1e2*(df['PnL']/df['aum'])
 
-        df = pd.merge(df, nav_impacts_df, how='left', on='tradegroup')
-        df.rename(columns={'BASE_CASE_NAV_IMPACT_ARB': 'base_case_nav_impact'}, inplace=True)
-        df['base_case_nav_impact'] = df['base_case_nav_impact'].astype(float)
-        df['pct_of_sleeve_current'] = df['pct_of_sleeve_current'].astype(float)
+        rors_df = df[['tradegroup', 'ticker', 'pnl_impact']].groupby(['tradegroup'])['pnl_impact'].sum().reset_index()
 
-        df['risk_pct'] = 1e2 * (df['base_case_nav_impact']/df['pct_of_sleeve_current'])
-        df['expected_vol'] = (np.sqrt(df['days_to_close']) * np.sqrt(df['gross_ror']) * np.sqrt(abs(df['risk_pct'])))/10
+        def get_pct_of_sleeve_alpha(row):
+            sleeve_pct_df = df[df['tradegroup'] == row]
+            try:
+                alpha_pct = sleeve_pct_df[sleeve_pct_df['AlphaHedge'] == 'Alpha']['PctOfSleeveCurrent'].iloc[0]
+            except IndexError:
+                alpha_pct = 0
+            # Returns the Alpha Current Sleeve %
+            return float(alpha_pct)
 
-        # First Delete current entries (to avoid duplicates) & then push this dataframe to DB
-        today = datetime.datetime.now().date()
-        ArbOptimizationUniverse.objects.all().filter(date_updated=today).delete()
-        # Push to Database
-        df['date_updated'] = today
-        df.replace([np.inf, -np.inf], np.nan, inplace=True)
-        df.to_sql(name='portfolio_optimization_arboptimizationuniverse', schema=settings.CURRENT_DATABASE,
-                  if_exists='append', index=False, con=con)
+        rors_df['pct_of_sleeve_current'] = rors_df['tradegroup'].apply(get_pct_of_sleeve_alpha)
+
+        # Calculate the RoR
+        rors_df['gross_ror'] = rors_df['pnl_impact']/rors_df['pct_of_sleeve_current']
+
+        rors_df = pd.merge(rors_df, tradegroup_level_df, how='left', on=['tradegroup'])  # Adds Tradegroup level cols.
+
+        rors_df['ann_ror'] = (rors_df['gross_ror']/rors_df['days_to_close'])*365
+        rors_df = pd.merge(rors_df, nav_impacts_df, how='left', on='tradegroup')
+        rors_df.rename(columns={'BASE_CASE_NAV_IMPACT_ARB': 'base_case_nav_impact'}, inplace=True)
+
+        rors_df['base_case_nav_impact'] = rors_df['base_case_nav_impact'].astype(float)
+        rors_df['pct_of_sleeve_current'] = rors_df['pct_of_sleeve_current'].astype(float)
+        rors_df['risk_pct'] = 1e2 * (rors_df['base_case_nav_impact']/rors_df['pct_of_sleeve_current'])
+        rors_df['expected_vol'] = (np.sqrt(rors_df['days_to_close']) * np.sqrt(rors_df['gross_ror']) *
+                                   np.sqrt(abs(rors_df['risk_pct'])))/10
+
+        rors_df['date_updated'] = datetime.datetime.now().date()
+
+        rors_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+        # Remove unwanted columns
+        del rors_df['ClosingDate']
+        del rors_df['aum']
+        rors_df.to_sql(name='portfolio_optimization_arboptimizationuniverse', schema=settings.CURRENT_DATABASE,
+                       if_exists='append', index=False, con=con)
         con.close()
         slack_message('eze_uploads.slack', {'null_risk_limits':
                                             str("Successfully calculated ARB RoRs. "
                                                 "Visit _192.168.0.16:8000/portfolio_optimization/merger_arb_rors_")},
-                                         channel=get_channel_name('portal_downsides'),
-                                         token=settings.SLACK_TOKEN)
+                      channel=get_channel_name('portal_downsides'), token=settings.SLACK_TOKEN)
 
     except Exception as e:
         print(e)
