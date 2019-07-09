@@ -68,7 +68,6 @@
                                         <th class="center">Catalyst</th>
                                         <th class="center">Catalyst<br>Rating</th>
                                         <th class="center">Closing</th>
-                                        <th class="center">Target</th>
                                         <th class="center">Long<br>Short</th>
                                         <th class="center">Tgt.<br>Last PX</th>
                                         <th class="center">Deal<br>Value</th>
@@ -93,8 +92,7 @@
                                             <td>{{ deal.bucket }}</td>
                                             <td>{{ deal.catalyst }}</td>
                                             <td>{{ deal.catalyst_rating }}</td>
-                                            <td>{{ deal.closing_date }}</td>
-                                            <td>{{ deal.target_ticker }}</td>
+                                            <td>{{ deal.closing_date|date:'Y-m-d' }}</td>
                                             <td>{{ deal.long_short }}</td>
                                             <td>{{ deal.target_last_price }}</td>
                                             <td>{{ deal.deal_value }}</td>

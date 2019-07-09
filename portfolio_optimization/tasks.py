@@ -279,12 +279,13 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
                                + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
 
     con = engine.connect()
+    today = datetime.datetime.now().date()
     try:
         query = "SELECT DISTINCT tradegroup,ticker,SecType,AlphaHedge,DealValue as deal_value, Sleeve as sleeve, " \
                 "Bucket as bucket, CatalystTypeWIC as catalyst, " \
                 "CatalystRating as catalyst_rating,CurrentMktVal,Strike as StrikePrice, PutCall, " \
                 "FXCurrentLocalToBase as FxFactor, " \
-                "amount*factor as QTY, ClosingDate, Target_Ticker as target_ticker, LongShort as long_short,"\
+                "amount*factor as QTY, ClosingDate as closing_date, Target_Ticker as target_ticker, LongShort as long_short,"\
                 "TargetLastPrice as target_last_price, AllInSpread as all_in_spread, " \
                 "DealDownside as deal_downside, datediff(ClosingDate, curdate()) as days_to_close, "\
                 "PctOfSleeveCurrent, aum from wic.daily_flat_file_db where " \
@@ -341,12 +342,16 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
         rors_df['expected_vol'] = (np.sqrt(rors_df['days_to_close']) * np.sqrt(rors_df['gross_ror']) *
                                    np.sqrt(abs(rors_df['risk_pct'])))/10
 
-        rors_df['date_updated'] = datetime.datetime.now().date()
+        rors_df['date_updated'] = today
 
         rors_df.replace([np.inf, -np.inf], np.nan, inplace=True)
         # Remove unwanted columns
-        del rors_df['ClosingDate']
         del rors_df['aum']
+
+        rors_df[['gross_ror', 'ann_ror', 'base_case_nav_impact', 'risk_pct', 'expected_vol']] = \
+            rors_df[['gross_ror', 'ann_ror', 'base_case_nav_impact', 'risk_pct', 'expected_vol']].fillna(value=0)
+
+        ArbOptimizationUniverse.objects.filter(date_updated=today).delete()
         rors_df.to_sql(name='portfolio_optimization_arboptimizationuniverse', schema=settings.CURRENT_DATABASE,
                        if_exists='append', index=False, con=con)
         con.close()

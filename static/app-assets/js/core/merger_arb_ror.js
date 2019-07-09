@@ -12,9 +12,9 @@ $(document).ready(function () {
 
     var table = $('#arb_rors').DataTable({
         "pageLength": 100,
-        "order":[[1, 'asc']],
+        "order":[[15, 'desc']],
         "columnDefs": [{
-            "targets": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+            "targets": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
             "render": $.fn.dataTable.render.number(',', '.', 2),
         }],
         scrollY: "50vh",
@@ -28,7 +28,7 @@ $(document).ready(function () {
         buttons: {
             buttons: [{
                 extend: 'csv',
-                text: '<i class="fa fa-print"></i> Import as CSV',
+                text: '<i class="fa fa-print"></i> Export to CSV',
                 className: 'btn btn-default btn-xs',
             }],
             dom: {
