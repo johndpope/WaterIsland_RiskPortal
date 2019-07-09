@@ -328,7 +328,7 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
         rors_df['pct_of_sleeve_current'] = rors_df['tradegroup'].apply(get_pct_of_sleeve_alpha)
 
         # Calculate the RoR
-        rors_df['gross_ror'] = rors_df['pnl_impact']/rors_df['pct_of_sleeve_current']
+        rors_df['gross_ror'] = 1e2*(rors_df['pnl_impact']/rors_df['pct_of_sleeve_current'])
 
         rors_df = pd.merge(rors_df, tradegroup_level_df, how='left', on=['tradegroup'])  # Adds Tradegroup level cols.
 
@@ -356,7 +356,7 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
                        if_exists='append', index=False, con=con)
         con.close()
         slack_message('eze_uploads.slack', {'null_risk_limits':
-                                            str("Successfully calculated ARB RoRs. "
+                                            str("_(Risk Automation)_ Successfully calculated ARB RoRs. "
                                                 "Visit _192.168.0.16:8000/portfolio_optimization/merger_arb_rors_")},
                       channel=get_channel_name('portal_downsides'), token=settings.SLACK_TOKEN)
 
