@@ -117,6 +117,11 @@ CELERYBEAT_SCHEDULE = {
         'task': 'portfolio_optimization.tasks.get_arb_optimization_ranks',
         'schedule': crontab(minute='20', hour='20', day_of_week='mon-fri'),
     },
+    'OPTIMIZE_HARD_CATALYST_FLOAT': {
+        'task': 'portfolio_optimization.tasks.arb_hard_float_optimization',
+        'schedule': crontab(minute='26', hour='20', day_of_week='mon-fri'),
+    },
+
 }
 
 

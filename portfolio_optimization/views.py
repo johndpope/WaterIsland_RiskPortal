@@ -9,6 +9,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.generic import FormView, ListView
 from django.urls import reverse
+from django.db.models import Max
 from .models import *
 from portfolio_optimization.forms import EssDealTypeParametersForm
 
@@ -329,3 +330,37 @@ class MergerArbRorView(ListView):
         queryset = ArbOptimizationUniverse.objects.filter(date_updated=as_of)
         context.update({'arboptimizationuniverse_list': queryset, 'as_of': as_of})
         return context
+
+
+class ArbHardOptimizationView(ListView):
+    template_name = 'arb_hard_optimization.html'
+    queryset = HardFloatOptimization.objects.filter(date_updated=Max('date_updated'))
+    context_object_name = 'hard_optimization_list'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        as_of = self.request.GET.get('as_of')
+        if as_of:
+            as_of = datetime.datetime.strptime(as_of, '%Y-%m-%d')
+        else:
+            as_of = HardFloatOptimization.objects.latest('date_updated').date_updated
+        queryset = HardFloatOptimization.objects.filter(date_updated=as_of)
+        context.update({'hard_optimization_list': queryset, 'as_of': as_of})
+        return context
+
+
+def save_hard_opt_comment(request):
+    response = 'Failed'
+    if request.method == 'POST':
+        try:
+            id = request.POST['id']
+            note = request.POST['note']
+            # get the Object
+            deal_object = HardFloatOptimization.objects.get(id=id)
+            deal_object.notes = note
+            deal_object.save()
+            response = 'Success'
+        except Exception as e:
+            print(e)
+
+    return HttpResponse(response)

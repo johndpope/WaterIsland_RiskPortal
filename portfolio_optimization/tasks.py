@@ -17,10 +17,10 @@ from django.conf import settings
 from django_slack import slack_message
 from django.db import connection
 from portfolio_optimization.models import EssPotentialLongShorts, EssUniverseImpliedProbability, EssDealTypeParameters, \
-    ArbOptimizationUniverse
+    ArbOptimizationUniverse, HardFloatOptimization
 from slack_utils import get_channel_name
 from portfolio_optimization.portfolio_optimization_utils import calculate_pl_sec_impact
-
+from .utils import parse_fld
 
 
 def clean_model_up(row):
@@ -244,7 +244,7 @@ def refresh_ess_long_shorts_and_implied_probability():
 
         message = '~ _(Risk Automation)_ *Potential Long/Shorts & Implied Probabilities Refereshed*  ' \
                   'Link for Potential Long/Short candidates: ' \
-                  '_192.168.0.16:8000/portfolio_optimization/ess_potential_long_shorts_'
+                  'http://192.168.0.16:8000/portfolio_optimization/ess_potential_long_shorts'
 
         # Post this Update to Slack
         # Format avg_imp_prob
@@ -357,7 +357,7 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
         con.close()
         slack_message('eze_uploads.slack', {'null_risk_limits':
                                             str("_(Risk Automation)_ Successfully calculated ARB RoRs. "
-                                                "Visit _192.168.0.16:8000/portfolio_optimization/merger_arb_rors_")},
+                                                "Visit http://192.168.0.16:8000/portfolio_optimization/merger_arb_rors")},
                       channel=get_channel_name('portal_downsides'), token=settings.SLACK_TOKEN)
 
     except Exception as e:
@@ -367,3 +367,186 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
         con.close()
 
     return 'Arb RoRs calculated!'
+
+
+@shared_task
+def arb_hard_float_optimization():
+    """ Purpose of this task is to take Hard M&A Deals in ARB and list scenarios to show Firm % of Float if Mstarts
+        get to 1x AUM of ARB and 2x AUM of ARB Fund. Run this task after ARB Rate of Returns task... """
+
+    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD
+                               + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
+    con = engine.connect()
+    try:
+        api_host = bbgclient.bbgclient.get_next_available_host()
+        max_date = "(SELECT MAX(date_updated) from "+settings.CURRENT_DATABASE+".portfolio_optimization_arboptimizationuniverse)"  # RoRs
+        comments_df_query = "SELECT tradegroup, notes FROM "+settings.CURRENT_DATABASE + \
+                            ".portfolio_optimization_hardfloatoptimization WHERE date_updated = " \
+                            "(SELECT MAX(date_updated) FROM " + settings.CURRENT_DATABASE + \
+                            ".portfolio_optimization_hardfloatoptimization)"
+
+        comments_df = pd.read_sql_query(comments_df_query, con=con)
+        arb_df = pd.read_sql_query("SELECT * FROM "+settings.CURRENT_DATABASE+".portfolio_optimization_arboptimizationuniverse WHERE "
+                                   "date_updated="+max_date, con=con)
+
+        cols_to_work_on = ['tradegroup', 'sleeve', 'catalyst', 'catalyst_rating', 'closing_date', 'target_last_price',
+                           'deal_value', 'all_in_spread', 'days_to_close', 'gross_ror', 'ann_ror', 'risk_pct',
+                           'expected_vol']
+
+        arb_df = arb_df[cols_to_work_on]
+        shares_query = "SELECT TradeGroup,Target_Ticker,TargetLastPrice, Fund, SUM(amount*factor) AS TotalQty, aum, "\
+                       "100*(amount*factor*TargetLastPrice)/aum AS Current_Pct_ofAUM FROM wic.daily_flat_file_db " \
+                       "WHERE " \
+                       "Flat_file_as_of = (SELECT MAX(flat_file_as_of) FROM wic.daily_flat_file_db) AND " \
+                       "CatalystTypeWIC = 'HARD' AND amount<>0 AND SecType IN ('EQ') AND AlphaHedge ='Alpha' AND " \
+                       "LongShort='Long' AND TradeGroup IS NOT NULL AND Fund IN " \
+                       "('ARB', 'MACO', 'MALT', 'CAM', 'LG', 'LEV', 'AED')  GROUP BY TradeGroup, Fund, aum;"
+
+        current_shares_df = pd.read_sql_query(shares_query, con=con)
+
+        current_shares_df['Target_Ticker'] = current_shares_df['Target_Ticker'].apply(lambda x: x+" EQUITY")
+
+        arb_shares_df = current_shares_df[current_shares_df['Fund'] == 'ARB']  # Slice shares for ARB
+        arb_shares_df.rename(columns={'Current_Pct_ofAUM':'ARB_Pct_of_AUM'}, inplace=True)
+
+        # Slice AED and LG separately
+        aed_shares_df = current_shares_df[current_shares_df['Fund'] == 'AED']
+        lg_shares_df = current_shares_df[current_shares_df['Fund'] == 'LG']
+        aed_aum = aed_shares_df['aum'].unique()[0]
+        lg_aum = lg_shares_df['aum'].unique()[0]
+
+        # Following Inline function returns Multistrat Ration w.r.t ARB
+        def get_mstrat_quantity(row, fund):
+            if fund == 'AED':
+                aum = aed_aum
+            else:
+                aum = lg_aum
+            quantity = (0.01*row['ARB_Pct_of_AUM']*aum)/row['TargetLastPrice']
+            return quantity
+
+        # Get the Quantity if MStarts asuume 1x AUM of ARB (in their respective Funds)
+        arb_shares_df['AED Qty 1x'] = arb_shares_df.apply(lambda x: get_mstrat_quantity(x, 'AED'), axis=1)
+        arb_shares_df['LG Qty 1x'] = arb_shares_df.apply(lambda x: get_mstrat_quantity(x, 'LG'), axis=1)
+
+        # Get 2x quantitity of Mstrats go to 2x
+        arb_shares_df['AED Qty 2x'] = arb_shares_df['AED Qty 1x'].apply(lambda x: x*2)
+        arb_shares_df['LG Qty 2x'] = arb_shares_df['LG Qty 1x'].apply(lambda x: x*2)
+
+        # Get Current Firmwide Quantity of Shares excluding Mstrats (LG and AED)
+        current_qty = current_shares_df[~(current_shares_df['Fund'].isin(['AED', 'LG']))][['TradeGroup', 'TotalQty']]
+
+        # Add 1x and 2x Quantity Columns
+        aed_1x_shares = arb_shares_df[['TradeGroup', 'AED Qty 1x']]
+        lg_1x_shares = arb_shares_df[['TradeGroup', 'LG Qty 1x']]
+        aed_2x_shares = arb_shares_df[['TradeGroup', 'AED Qty 2x']]
+        lg_2x_shares = arb_shares_df[['TradeGroup', 'LG Qty 2x']]
+
+        # Rename
+        aed_1x_shares.columns = ['TradeGroup', 'TotalQty']
+        lg_1x_shares.columns = ['TradeGroup', 'TotalQty']
+        aed_2x_shares.columns = ['TradeGroup', 'TotalQty']
+        lg_2x_shares.columns = ['TradeGroup', 'TotalQty']
+
+        shares_1x = pd.concat([current_qty, aed_1x_shares, lg_1x_shares])
+        shares_2x = pd.concat([current_qty, aed_2x_shares, lg_2x_shares])
+
+        # Get Firmwide Shares if Mstart go to 1x and 2x
+        firmwide_shares_1x = shares_1x.groupby('TradeGroup').sum().reset_index()
+        firmwide_shares_2x = shares_2x.groupby('TradeGroup').sum().reset_index()
+
+        firmwide_shares_1x.columns = ['TradeGroup', 'TotalQty_1x']
+        firmwide_shares_2x.columns = ['TradeGroup', 'TotalQty_2x']
+        firmwide_current_shares = current_shares_df[['TradeGroup', 'Target_Ticker', 'TotalQty']].\
+            groupby(['TradeGroup', 'Target_Ticker']).sum().reset_index()
+
+        all_shares = pd.merge(firmwide_current_shares, firmwide_shares_1x, on='TradeGroup')
+        all_shares = pd.merge(all_shares, firmwide_shares_2x, on='TradeGroup')
+
+        unique_target_tickers = list(all_shares['Target_Ticker'].unique())
+
+        # Get the Current Float for all tickers
+        current_floats = bbgclient.bbgclient.get_secid2field(unique_target_tickers,'tickers',
+                                                              ['EQY_FLOAT'], req_type='refdata', api_host=api_host)
+
+        all_shares['FLOAT'] = all_shares['Target_Ticker'].apply(lambda x:
+                                                                parse_fld(current_floats,'EQY_FLOAT', x)
+                                                                if not pd.isnull(x) else None)
+        all_shares['FLOAT'] = all_shares['FLOAT'] * 1000000
+
+        # Calculates the Current % of Float for current portfolio, 1x Mstart and 2x Mstrat
+        all_shares['Current % of Float'] = 1e2*(all_shares['TotalQty']/all_shares['FLOAT'])
+
+        all_shares['Firm % of Float if Mstart 1x'] = 1e2*(all_shares['TotalQty_1x']/all_shares['FLOAT'])
+        all_shares['Firm % of Float if Mstart 2x'] = 1e2*(all_shares['TotalQty_2x']/all_shares['FLOAT'])
+
+        lg_current_shares = current_shares_df[current_shares_df['Fund'].isin(['LG'])]
+        aed_current_shares = current_shares_df[current_shares_df['Fund'].isin(['AED'])]
+        arb_current_shares = current_shares_df[current_shares_df['Fund'].isin(['ARB'])]
+
+        # Below function to get the AUM Multiplier i.e times of ARBs AUM we currenly in AED and LG
+
+        def get_aum_multiplier(row, fund):
+            aum_multiplier = 0
+            df_arb = arb_current_shares[arb_current_shares['TradeGroup'] == row['TradeGroup']]
+            if len(df_arb) == 0:
+                return np.NAN
+
+            if fund == 'LG':
+                df_ = lg_current_shares[lg_current_shares['TradeGroup'] == row['TradeGroup']]
+                if len(df_) > 0:
+                    aum_multiplier = df_['Current_Pct_ofAUM'].iloc[0]/df_arb['Current_Pct_ofAUM'].iloc[0]
+            else:
+                df_ = aed_current_shares[aed_current_shares['TradeGroup'] == row['TradeGroup']]
+                if len(df_) > 0:
+                    aum_multiplier = df_['Current_Pct_ofAUM'].iloc[0]/df_arb['Current_Pct_ofAUM'].iloc[0]
+
+            return aum_multiplier
+
+        all_shares['AED AUM Mult'] = all_shares.apply(lambda x: get_aum_multiplier(x, 'AED'), axis=1)
+        all_shares['LG AUM Mult'] = all_shares.apply(lambda x: get_aum_multiplier(x, 'LG'), axis=1)
+        all_shares.columns = ['tradegroup', 'target_ticker', 'total_qty', 'total_qty_1x', 'total_qty_2x', 'eqy_float',
+                              'current_pct_of_float', 'firm_pct_float_mstrat_1x', 'firm_pct_float_mstrat_2x',
+                              'aed_aum_mult', 'lg_aum_mult']
+
+        # Merge ARB_DF (Rate of Returns with Float DF)
+        final_hard_opt_df = pd.merge(arb_df, all_shares, how='left', on='tradegroup')
+
+        final_hard_opt_df['date_updated'] = datetime.datetime.now().date()
+
+        # Delete unwanted columns
+        final_hard_opt_df = pd.merge(final_hard_opt_df, comments_df,how='left', on='tradegroup')
+
+        # Get the NAV Impacts for Risk Multiples
+        nav_impacts_query = "SELECT tradegroup, OUTLIER_NAV_IMPACT_ARB AS arb_outlier_risk, OUTLIER_NAV_IMPACT_AED AS " \
+                            "aed_outlier_risk, OUTLIER_NAV_IMPACT_LG AS lg_outlier_risk FROM "\
+                            + settings.CURRENT_DATABASE + ".risk_reporting_dailynavimpacts"
+
+        nav_impacts_df = pd.read_sql_query(nav_impacts_query, con=con)
+        numeric_cols = ['arb_outlier_risk', 'aed_outlier_risk', 'lg_outlier_risk']
+        nav_impacts_df[numeric_cols] = nav_impacts_df[numeric_cols].apply(pd.to_numeric)
+        final_hard_opt_df = pd.merge(final_hard_opt_df, nav_impacts_df, on='tradegroup', how='left')
+
+        final_hard_opt_df['aed_risk_mult'] = final_hard_opt_df['aed_outlier_risk'] / final_hard_opt_df['arb_outlier_risk']
+        final_hard_opt_df['lg_risk_mult'] = final_hard_opt_df['lg_outlier_risk'] / final_hard_opt_df['arb_outlier_risk']
+
+
+        HardFloatOptimization.objects.filter(date_updated=datetime.datetime.now().date()).delete()
+        final_hard_opt_df.to_sql(name='portfolio_optimization_hardfloatoptimization', schema=settings.CURRENT_DATABASE,
+                                 if_exists='append', index=False, con=con)
+        slack_message('eze_uploads.slack', {'null_risk_limits':
+                                            str("_(Risk Automation)_ ARB Hard Catalyst Optimization Completed... "
+                                                "Visit http://192.168.0.16:8000/portfolio_optimization/arb_hard_optimization"
+                                                )},
+                      channel=get_channel_name('portal_downsides'), token=settings.SLACK_TOKEN)
+
+    except Exception as e:
+        print(e)
+        slack_message('eze_uploads.slack', {'null_risk_limits':
+                                            str("_(Risk Automation)_ *ERROR in HardOpt!*... ") + str(e)
+                                            },
+                      channel=get_channel_name('portal_downsides'), token=settings.SLACK_TOKEN)
+
+    finally:
+        print('Closing Connection to Relational Database Service...')
+        con.close()
+

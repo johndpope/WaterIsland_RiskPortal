@@ -105,6 +105,15 @@
         <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.1/moment.js"></script>
     {% endblock %}
 
+    {% block jexcel_scripts %}
+        <script src="https://bossanova.uk/jexcel/v3/jexcel.js"></script>
+        <link rel="stylesheet" href="https://bossanova.uk/jexcel/v3/jexcel.css" type="text/css" />
+
+        <script src="https://bossanova.uk/jsuites/v2/jsuites.js"></script>
+        <link rel="stylesheet" href="https://bossanova.uk/jsuites/v2/jsuites.css" type="text/css" />
+    {% endblock %}
+
+
     <script type="text/javascript" src="{% static 'app-assets/js/core/celery_progress.js' %}"></script>
 </head>
 <script>
@@ -376,6 +385,8 @@
                          <li><a class="menu-item" href="{% url 'portfolio_optimization:ess_implied_probabilites' %}">ESS Implied Prob.</a>
                         </li>
                         <li><a class="menu-item" href="{% url 'portfolio_optimization:merger_arb_rors' %}">ARB RoRs</a>
+                        </li>
+                        <li><a class="menu-item" href="{% url 'portfolio_optimization:arb_hard_optimization' %}">Hard Optimization</a>
                         </li>
 
                     </ul>

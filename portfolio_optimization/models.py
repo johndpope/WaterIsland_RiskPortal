@@ -99,7 +99,34 @@ class ArbOptimizationUniverse(models.Model):
     expected_vol = models.FloatField(null=True)
 
 
-
-
-
-
+class HardFloatOptimization(models.Model):
+    date_updated = models.DateField()
+    tradegroup = models.CharField(max_length=100)
+    sleeve = models.CharField(max_length=50)
+    catalyst = models.CharField(max_length=50, null=True)
+    catalyst_rating = models.CharField(max_length=5, null=True)
+    closing_date = models.DateField(null=True)
+    target_ticker = models.CharField(max_length=100, null=True)
+    target_last_price = models.FloatField(null=True)
+    deal_value = models.FloatField(null=True)
+    days_to_close = models.IntegerField(null=True)
+    gross_ror = models.FloatField(null=True)
+    ann_ror = models.FloatField(null=True)
+    risk_pct = models.FloatField(null=True)
+    expected_vol = models.FloatField(null=True)
+    total_qty = models.FloatField(null=True)
+    total_qty_1x = models.FloatField(null=True)
+    total_qty_2x = models.FloatField(null=True)
+    eqy_float = models.FloatField(null=True)
+    current_pct_of_float = models.FloatField(null=True)
+    firm_pct_float_mstrat_1x = models.FloatField(null=True)
+    firm_pct_float_mstrat_2x = models.FloatField(null=True)
+    aed_aum_mult = models.FloatField(null=True)
+    lg_aum_mult = models.FloatField(null=True)
+    notes = models.TextField(null=True)
+    all_in_spread = models.FloatField(null=True)
+    aed_risk_mult = models.FloatField(null=True)
+    lg_risk_mult = models.FloatField(null=True)
+    arb_outlier_risk = models.FloatField(null=True)
+    aed_outlier_risk = models.FloatField(null=True)
+    lg_outlier_risk = models.FloatField(null=True)

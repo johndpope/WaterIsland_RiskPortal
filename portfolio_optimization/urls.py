@@ -17,4 +17,6 @@ urlpatterns = [
     url('get_deal_type_details/', views.get_deal_type_details, name='get_deal_type_details'),
     url('delete_deal_type/', views.delete_deal_type, name='delete_deal_type'),
     url('merer_arb_rors', views.MergerArbRorView.as_view(), name='merger_arb_rors'),
+    url('arb_hard_optimization$', views.ArbHardOptimizationView.as_view(), name='arb_hard_optimization'),
+    url('save_hard_opt_commment$', views.save_hard_opt_comment, name='save_hard_opt_comment'),
 ]
