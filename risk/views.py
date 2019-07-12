@@ -1148,8 +1148,12 @@ def show_ess_idea(request):
         'date_updated', 'pt_up', 'pt_wic', 'pt_down')
 
     upside_downside_records_df = read_frame(upside_downside_records)
+    alpha_chart_df = pd.DataFrame.from_dict(json.loads(alpha_chart))
+    alpha_chart_df.columns = ['date_updated', 'px_last']
     upside_downside_records_df['date_updated'] = upside_downside_records_df['date_updated'].\
         apply(lambda x: x.strftime('%Y-%m-%d'))
+
+    upside_downside_records_df = pd.merge(upside_downside_records_df, alpha_chart_df, how='left', on='date_updated')
 
     ev_ebitda_chart_ltm = []
     ev_ebitda_chart_1bf = []

@@ -599,6 +599,7 @@ $(document).ready(function () {
                 pt_up: parseFloat(upside_downside_records[i].pt_up).toFixed(2),
                 pt_down: parseFloat(upside_downside_records[i].pt_down).toFixed(2),
                 pt_wic: parseFloat(upside_downside_records[i].pt_wic).toFixed(2),
+                px_last: parseFloat(upside_downside_records[i].px_last).toFixed(2),
             })
         }
         return chartData;
@@ -661,6 +662,17 @@ $(document).ready(function () {
                 "valueField": "pt_wic",
                 "fillAlphas": 0.1,
                 "id": "g3"
+            },
+        {
+                "valueAxis": "v1",
+                "lineColor": "yellow",
+                "bullet": "round",
+                "bulletBorderThickness": 1,
+                "hideBulletsCount": 30,
+                "title": "Alpha (Price Chart)",
+                "valueField": "px_last",
+                "fillAlphas": 0.1,
+                "id": "g4"
             }],
 
         "chartScrollbar": {},
