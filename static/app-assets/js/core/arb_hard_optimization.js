@@ -1,6 +1,6 @@
 $(document).ready(function () {
     $('#submit_arb_ror_as_of').on('click', function () {
-        let as_of = $('#long_short_as_of').val();
+        let as_of = $('#arb_ror_as_of').val();
         if (as_of) {
             window.location.href = "../portfolio_optimization/arb_hard_optimization?as_of=" + as_of;
         }
@@ -10,10 +10,12 @@ $(document).ready(function () {
     });
 
     var table = $('#arb_hard_opt_table').DataTable({
-        "pageLength": 100,
         "order": [[9, 'desc']],
+        "lengthChange": false,
+        "paging":false,
+        autoWidth: false,
         "columnDefs": [{
-            "targets": [4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+            "targets": [4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,20,21,22],
             "render": $.fn.dataTable.render.number(',', '.', 2),
         }, {
             "targets": [13, 14],
@@ -27,11 +29,15 @@ $(document).ready(function () {
                     $(td).addClass('table-warning')
                 }
             }
-        },],
+        },{
+                targets: [5,6,7,8,9,10,11],
+                visible: false
+            }],
         scrollY: "50vh",
         scrollX: true,
         fixedColumns: {
-            leftColumns: 2
+            leftColumns: 2,
+            rightColumns:1,
         },
         dom: '<"row"<"col-sm-6"Bl><"col-sm-6"f>>' +
             '<"row"<"col-sm-12"<"table-responsive"tr>>>' +
@@ -52,6 +58,41 @@ $(document).ready(function () {
             }
         }
     });
+
+
+    $('a.toggle-vis').on( 'click', function (e) {
+        e.preventDefault();
+
+        // Get the column API object
+        var column = table.column( $(this).attr('data-column') );
+
+        // Toggle the visibility
+        column.visible( ! column.visible() );
+    } );
+
+
+    // Rebal Multiples
+    $('#arb_hard_opt_table tr .rebal_multiple input').on('focusout', function(){
+
+        let rebal_multiple = $(this).val();
+        let id = $(this).attr('id');
+        let row_id = id.split('_')[2];
+        let value_to_set = null;
+        if(rebal_multiple){
+           // Set value of Rebal Target = multiple * ARB_% of AUM
+            value_to_set = parseFloat($('#arb_pct_aum_'+row_id).html()) * parseFloat(rebal_multiple);
+            value_to_set = parseFloat(value_to_set.toFixed(2));
+        }
+        else{
+            // Its just AED % of AUM
+            value_to_set = $('#aed_pct_aum_'+row_id).html();
+        }
+        $('#rebal_target_'+row_id).val(value_to_set);
+    });
+
+
+
+
 
     $('#arb_hard_opt_table tr td button').on('click', function (e) {
         var save_button_id = $(this).attr('id');

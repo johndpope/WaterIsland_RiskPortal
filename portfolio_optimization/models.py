@@ -130,3 +130,7 @@ class HardFloatOptimization(models.Model):
     arb_outlier_risk = models.FloatField(null=True)
     aed_outlier_risk = models.FloatField(null=True)
     lg_outlier_risk = models.FloatField(null=True)
+    arb_pct_of_aum = models.FloatField(null=True)
+    aed_pct_of_aum = models.FloatField(null=True)
+    rebal_multiples = models.FloatField(null=True)
+    rebal_target = models.FloatField(null=True)

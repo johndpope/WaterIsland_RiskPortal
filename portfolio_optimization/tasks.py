@@ -380,12 +380,12 @@ def arb_hard_float_optimization():
     try:
         api_host = bbgclient.bbgclient.get_next_available_host()
         max_date = "(SELECT MAX(date_updated) from "+settings.CURRENT_DATABASE+".portfolio_optimization_arboptimizationuniverse)"  # RoRs
-        comments_df_query = "SELECT tradegroup, notes FROM "+settings.CURRENT_DATABASE + \
+        comments_df_query = "SELECT tradegroup, notes, rebal_multiples, rebal_target FROM "+settings.CURRENT_DATABASE + \
                             ".portfolio_optimization_hardfloatoptimization WHERE date_updated = " \
                             "(SELECT MAX(date_updated) FROM " + settings.CURRENT_DATABASE + \
                             ".portfolio_optimization_hardfloatoptimization)"
 
-        comments_df = pd.read_sql_query(comments_df_query, con=con)
+        comments_df = pd.read_sql_query(comments_df_query, con=con)   # Comments & Rebal Mult,Target
         arb_df = pd.read_sql_query("SELECT * FROM "+settings.CURRENT_DATABASE+".portfolio_optimization_arboptimizationuniverse WHERE "
                                    "date_updated="+max_date, con=con)
 
@@ -504,9 +504,26 @@ def arb_hard_float_optimization():
 
         all_shares['AED AUM Mult'] = all_shares.apply(lambda x: get_aum_multiplier(x, 'AED'), axis=1)
         all_shares['LG AUM Mult'] = all_shares.apply(lambda x: get_aum_multiplier(x, 'LG'), axis=1)
+
+        # Get % of AUMs
+        def get_aed_pct_of_aum(row, fund):
+            if fund == 'ARB':
+                aum_df_ = arb_current_shares
+            else:
+                aum_df_ = aed_shares_df
+
+            return_value = 0
+            aum_ = aum_df_[aum_df_['TradeGroup'] == row['TradeGroup']]
+            if len(aum_) > 0:
+                return aum_['Current_Pct_ofAUM'].iloc[0]
+            return return_value
+
+        all_shares['aed_pct_of_aum'] = arb_shares_df.apply(lambda x: get_aed_pct_of_aum(x, 'AED'), axis=1)
+        all_shares['arb_pct_of_aum'] = arb_shares_df.apply(lambda x: get_aed_pct_of_aum(x, 'ARB'), axis=1)
+
         all_shares.columns = ['tradegroup', 'target_ticker', 'total_qty', 'total_qty_1x', 'total_qty_2x', 'eqy_float',
                               'current_pct_of_float', 'firm_pct_float_mstrat_1x', 'firm_pct_float_mstrat_2x',
-                              'aed_aum_mult', 'lg_aum_mult']
+                              'aed_aum_mult', 'lg_aum_mult', 'aed_pct_of_aum', 'arb_pct_of_aum']
 
         # Merge ARB_DF (Rate of Returns with Float DF)
         final_hard_opt_df = pd.merge(arb_df, all_shares, how='left', on='tradegroup')
@@ -529,8 +546,15 @@ def arb_hard_float_optimization():
         final_hard_opt_df['aed_risk_mult'] = final_hard_opt_df['aed_outlier_risk'] / final_hard_opt_df['arb_outlier_risk']
         final_hard_opt_df['lg_risk_mult'] = final_hard_opt_df['lg_outlier_risk'] / final_hard_opt_df['arb_outlier_risk']
 
-
         HardFloatOptimization.objects.filter(date_updated=datetime.datetime.now().date()).delete()
+
+        # Adjust for the Rebal Targets
+        final_hard_opt_df['rebal_target'] = final_hard_opt_df.apply(lambda x:
+                                                                    np.round((x['rebal_multiples'] * x['arb_pct_of_aum']
+                                                                              ), decimals=2) if not
+                                                                    pd.isna(x['rebal_multiples'])
+                                                                    else x['aed_pct_of_aum'], axis=1)
+
         final_hard_opt_df.to_sql(name='portfolio_optimization_hardfloatoptimization', schema=settings.CURRENT_DATABASE,
                                  if_exists='append', index=False, con=con)
         slack_message('eze_uploads.slack', {'null_risk_limits':
