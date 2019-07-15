@@ -18,6 +18,7 @@ $(document).ready(function () {
             $('#submit_idea_edit_form').trigger('reset');
             $('#modal_label').html('EDIT IDEA');
             var analyst = '';
+            var arb_tradegroup = '';
             var deal_bucket = '';
             var deal_strategy_type = '';
             var catalyst = '';
@@ -36,6 +37,7 @@ $(document).ready(function () {
                 success: function (response) {
                     let credit_idea_details = response['credit_idea_details'];
                     analyst = credit_idea_details.analyst;
+                    arb_tradegroup = credit_idea_details.arb_tradegroup;
                     deal_bucket = credit_idea_details.deal_bucket;
                     deal_strategy_type = credit_idea_details.deal_strategy_type;
                     catalyst = credit_idea_details.catalyst;
@@ -48,6 +50,7 @@ $(document).ready(function () {
                     downside_price = credit_idea_details.downside_price;
                     comments = credit_idea_details.comments;
                     $('#analyst').val(analyst);
+                    $('#arb_tradegroup').val(arb_tradegroup);
                     $('#deal_bucket').val(deal_bucket);
                     $('#deal_strategy_type').val(deal_strategy_type);
                     $('#catalyst').val(catalyst);
@@ -106,25 +109,6 @@ $(document).ready(function () {
 
                 }
             });
-        }
-        else if (current_idea.search('view_idea_') != -1) {
-            idea_id_to_view = current_idea.split('_').pop();
-            $.ajax({
-                url: "../credit_idea/get_credit_idea_details/",
-                type: 'GET',
-                data: {'credit_idea_id': idea_id_to_view},
-                success: function (response) {
-                    let credit_idea_details = response['credit_idea_details'];
-                    comments = credit_idea_details.comments;
-                    $('#credit_idea_view_idea').summernote({'height': "400px"});
-                    $('#credit_idea_view_idea').summernote('code', comments);
-                    $('#idea_id_to_edit').val(idea_id_to_edit);
-                },
-                error: function (err) {
-                    console.log(err);
-                }
-            });
-            $('#view_idea_modal').modal('show');
         }
     });
 });

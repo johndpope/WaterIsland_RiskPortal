@@ -25,16 +25,9 @@ class bbgclient:
 
     @staticmethod
     def get_next_available_host():
-        #dbutils.wic.log('BLOOMBERG API','Looking up next available API server')
-        # host = 'esansone-nb'
-        # if bbgclient.try_ping_host(host):
-        #     return host
-        # dbutils.wic.log('BLOOMBERG API','esansone-nb seems to be down')
-
         host = '192.168.0.15:8080'
         if bbgclient.try_ping_host(host):
             return host
-
 
         return 'None'
 

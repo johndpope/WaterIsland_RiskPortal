@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title_block %}
+Credit IDEA
+{% endblock %}
+{% load staticfiles %}
+
+{% block css_styles %}
+{{ block.super }}
+
+{% endblock %}
+
+{% block datatables_bootstrap_css %}
+{{ block.super }}
+{% endblock %}
+
+{% block jexcel_scripts %}
+{{ block.super }}
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+
+<input type="hidden" value="{{ downsides_data }}" id="arb_downsides_data">
+<input type="hidden" value="{{ spread_data }}" id="spread_data">
+<input type="hidden" value="{{ rebate_data }}" id="rebate_data">
+<input type="hidden" value="{{ sizing_data }}" id="sizing_data">
+<input type="hidden" value="{{ scenario_data }}" id="scenario_data">
+<input type="hidden" value="{{ passive_data }}" id="passive_data">
+
+<div class="app-content content">
+  <div class="content-wrapper">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-header">
+          <h2 class="card-title center">Equity</h2>
+        </div>
+      </div>
+      <input type="hidden" id="scenario_analysis_csrf_token" value="{{ csrf_token }}">
+      <div class="card-body">
+        <div class="col-lg-12 col-md-12 col-sm-12">
+          <div class="row">
+            <div class="col-lg-4 col-md-6 col-sm-12">
+              <div class="row">
+                <div class="table-responsive">
+                  <table id="arb_downsides_table" class="table table-hover table-bordered table-sm table-sm table-condensed">
+                  </table>
+                </div>
+              </div>
+              <div class="row">
+                <div class="table-responsive">
+                  <table id="passive_table" class="table table-hover table-bordered table-sm table-sm table-condensed">
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="col-lg-4 col-md-6 col-sm-12">
+              <div class="table-responsive">
+                <table id="deal_terms_spread_table" class="table table-hover table-bordered table-sm table-sm table-condensed">
+                </table>
+              </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 col-sm-12">
+              <div class="row">
+                <div class="table-responsive">
+                  <table id="rebate_levels_table" class="table table-hover table-bordered table-sm table-sm table-condensed"></table>
+                </div>
+              </div>
+              <div class="row">
+                <div class="table-responsive">
+                  <table id="sizing_table" class="table table-hover table-bordered table-sm table-sm table-condensed"></table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="table-responsive">
+              <table id="scenario_table" class="table table-hover table-bordered table-sm table-condensed"></table>
+            </div>
+            <input id='addScenarioRow' type="submit" class="btn btn-primary glyphicon glyphicon-plus pl-15" value="Add row">
+          </div>
+
+          <br>
+          <div class="row">
+            <div class="container">
+              <div class="col-lg-12 col-md-12 col-sm-12 text-center">
+                  <input id='save_equity_button' type="submit" class="btn btn-outline-primary" value="Save Equity Changes">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    <br>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-header">
+          <h2 class="card-title center">Credit</h2>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="credit_scenario">
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
+<script src="{% static 'app-assets/js/core/view_credit_idea.js' %}" type="text/javascript"></script>
+
+
+{% endblock %}

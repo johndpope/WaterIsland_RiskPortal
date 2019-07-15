@@ -69,6 +69,14 @@
         <link rel="stylesheet" type="text/css" href="{% static 'app-assets/vendors/css/editors/summernote.css' %}">
     {% endblock %}
 
+
+    {% block jexcel_scripts %}
+        <script src="https://bossanova.uk/jexcel/v3/jexcel.js"></script>
+        <script src="https://bossanova.uk/jsuites/v2/jsuites.js"></script>
+        <link rel="stylesheet" href="https://bossanova.uk/jsuites/v2/jsuites.css" type="text/css"/>
+        <link rel="stylesheet" href="https://bossanova.uk/jexcel/v3/jexcel.css" type="text/css"/>
+    {% endblock %}
+
     {% block css_styles2 %}
     {% endblock %}
 
@@ -123,6 +131,8 @@
         alert("Internet Explorer Detected. Some functionalities will not work. Please switch to Chrome or Firefox");
     }
 </script>
+
+
 <body class="vertical-layout vertical-overlay-menu 1-column  menu-expanded fixed-navbar"
       data-open="click" data-menu="vertical-overlay-menu" data-col="1-column">
 
@@ -375,14 +385,17 @@
 
                 </li>
 
-                 <li class=" nav-item"><a href="#"><i class="icon-doc"></i><span class="menu-title"
+                <li class=" nav-item"><a href="#"><i class="icon-doc"></i><span class="menu-title"
                                                                                 data-i18n="nav.invoice.main">Portfolio Optimization</span></a>
                     <ul class="menu-content">
-                        <li><a class="menu-item" href="{% url 'portfolio_optimization:ess_target_configs' %}">ESS Optimization Parameters</a>
+                        <li><a class="menu-item" href="{% url 'portfolio_optimization:ess_target_configs' %}">ESS
+                            Optimization Parameters</a>
                         </li>
-                        <li><a class="menu-item" href="{% url 'portfolio_optimization:ess_potential_long_shorts' %}">ESS Long/Short</a>
+                        <li><a class="menu-item" href="{% url 'portfolio_optimization:ess_potential_long_shorts' %}">ESS
+                            Long/Short</a>
                         </li>
-                         <li><a class="menu-item" href="{% url 'portfolio_optimization:ess_implied_probabilites' %}">ESS Implied Prob.</a>
+                        <li><a class="menu-item" href="{% url 'portfolio_optimization:ess_implied_probabilites' %}">ESS
+                            Implied Prob.</a>
                         </li>
                         <li><a class="menu-item" href="{% url 'portfolio_optimization:merger_arb_rors' %}">ARB RoRs</a>
                         </li>
@@ -392,8 +405,6 @@
                     </ul>
 
                 </li>
-
-
 
 
                 <li class=" nav-item"><a href="#"><i class="icon-doc"></i><span class="menu-title"
@@ -437,9 +448,9 @@
                         <li><a class="menu-item" href="{% url 'risk:show_all_credit_deals' %}"
                                data-i18n="nav.project.project_summary">Credit Deals</a>
                         </li>
-                        <li><a class="menu-item" href="{% url 'credit_idea:credit_idea_db' %}"
-                            data-i18n="nav.project.project_summary">Credit IDEA</a>
-                     </li>
+                        <li><a class="menu-item" href="{% url 'credit_idea:credit_idea_view' %}"
+                               data-i18n="nav.project.project_summary">Credit IDEA</a>
+                        </li>
                     </ul>
                 </li>
                 <li class=" nav-item"><a href="{% url 'exposures:exposures_snapshot' %}"><i
@@ -501,7 +512,7 @@
                 <li class=" nav-item"><a href="#"><i class="icon-user"></i><span class="menu-title">Position Rec.</span></a>
                     <ul class="menu-content">
                         <li><a class="menu-item" href="{% url 'position_rec:upload_files' %}"
-                            data-i18n="nav.project.project_summary">Upload Files</a>
+                               data-i18n="nav.project.project_summary">Upload Files</a>
                         </li>
                         <li><a class="menu-item" href="{% url 'position_rec:view_accounts' %}"
                                data-i18n="nav.project.project_summary">Accounts</a>

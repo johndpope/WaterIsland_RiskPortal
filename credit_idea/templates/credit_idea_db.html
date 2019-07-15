@@ -37,7 +37,7 @@ Credit Deals Upside Downside
               <input type="hidden" name="id" id="idea_id_to_edit" value="{{ id }}">
               <div class="row">
                 {% for item in form.visible_fields  %}
-                  {% if forloop.counter == 12 %}
+                  {% if forloop.counter == 13 %}
                     </div>
                     <div class="row">
                   {% endif %}
@@ -109,6 +109,7 @@ Credit Deals Upside Downside
           <table class="table table-bordered" id='credit_idea_table' style="font-size:12px;">
             <thead>
               <tr id="row_{{ account.id }}">
+                <th>ARB Tradegroup</th>
                 <th>Analyst</th>
                 <th>Deal Bucket</th>
                 <th>Deal Strategy Type</th>
@@ -126,6 +127,7 @@ Credit Deals Upside Downside
             <tbody>
               {% for row in credit_idea_list %}
               <tr id="row_{{ row.id }}">
+                <td id="arb_tradegroup_{{ row.id }}">{{ row.arb_tradegroup }}</td>
                 <td id="analyst_{{ row.id }}">{{ row.analyst }}</td>
                 <td nowrap id="deal_bucket_{{ row.id }}">{{ row.deal_bucket }}</td>
                 <td nowrap id="deal_strategy_type_{{ row.id }}">{{ row.deal_strategy_type }}</td>
@@ -146,8 +148,8 @@ Credit Deals Upside Downside
                     </button>
                     <ul class="dropdown-menu">
                       <li><a id="view_idea_{{ row.id }}"
-                        data-value="{{ row.id }}" class='dropdown-item'
-                        href="#"><i class="ft-trash-2"></i> View</a></li>
+                        data-value="{{ row.id }}" class='dropdown-item' target="_blank"
+                        href="{% url 'credit_idea:credit_idea_details' %}?credit_idea_id={{ row.id }}"><i class="ft-trash-2"></i> View</a></li>
                       <li><a id="edit_idea_{{ row.id }}"
                           data-value="{{ row.id }}" class='dropdown-item'
                           href="#"><i class="ft-edit-2" ></i> Edit</a></li>
@@ -165,11 +167,7 @@ Credit Deals Upside Downside
       </div>
     </div>
   </div>
-  </section>
 </div>
-</div>
-</div>
-
 <script src="{% static 'app-assets/vendors/js/vendors.min.js' %}" type="text/javascript"></script>
 <script src="{% static 'app-assets/js/core/credit_idea_db.js' %}" type="text/javascript"></script>
 

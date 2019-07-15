@@ -16,10 +16,12 @@ class CreditIdeaForm(forms.ModelForm):
     """
     class Meta:
         model = CreditIdea
-        fields = ['analyst', 'deal_bucket', 'deal_strategy_type', 'catalyst', 'catalyst_tier', 'target_sec_cusip', 'coupon',
-                  'hedge_sec_cusip', 'estimated_closing_date', 'upside_price', 'downside_price', 'comments']
+        fields = ['analyst', 'arb_tradegroup', 'deal_bucket', 'deal_strategy_type', 'catalyst', 'catalyst_tier',
+                  'target_sec_cusip', 'coupon', 'hedge_sec_cusip', 'estimated_closing_date', 'upside_price',
+                  'downside_price', 'comments']
         labels = {
             "analyst": "Analyst",
+            "arb_tradegroup": "ARB TradeGroup",
             "deal_bucket": "Deal Bucket",
             "deal_strategy_type": "Deal Strategy Type",
             "catalyst": "Catalyst",
@@ -34,8 +36,10 @@ class CreditIdeaForm(forms.ModelForm):
         }
         widgets = {
             'id': forms.HiddenInput(),
-            "analyst": forms.TextInput(attrs={'class': FORM_CONTROL_CLASS, 'label_class': BADGE_SUCCESS_CLASS,
+            'analyst': forms.TextInput(attrs={'class': FORM_CONTROL_CLASS, 'label_class': BADGE_SUCCESS_CLASS,
                                               'id': 'analyst'}),
+            'arb_tradegroup': forms.TextInput(attrs={'class': FORM_CONTROL_CLASS, 'label_class': BADGE_SUCCESS_CLASS,
+                                                     'id': 'arb_tradegroup'}),
             'deal_bucket': forms.Select(attrs={'class': CUSTOM_SELECT_CLASS, 'label_class': BADGE_SUCCESS_CLASS,
                                                'id': 'deal_bucket'}),
             "deal_strategy_type": forms.Select(attrs={'class': CUSTOM_SELECT_CLASS, 'label_class': BADGE_SUCCESS_CLASS,

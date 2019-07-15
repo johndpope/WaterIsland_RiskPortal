@@ -199,3 +199,14 @@ select.form-control {
 #ess_implied_probability_drilldown {
   width: 100% !important
 }
+
+.input-label {
+  border: 0 !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  padding: 0.5rem !important;
+}
+
+table.table-condensed td {
+  padding: 0.6rem 1rem !important;
+}
