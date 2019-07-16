@@ -518,8 +518,8 @@ def arb_hard_float_optimization():
                 return aum_['Current_Pct_ofAUM'].iloc[0]
             return return_value
 
-        all_shares['aed_pct_of_aum'] = arb_shares_df.apply(lambda x: get_aed_pct_of_aum(x, 'AED'), axis=1)
-        all_shares['arb_pct_of_aum'] = arb_shares_df.apply(lambda x: get_aed_pct_of_aum(x, 'ARB'), axis=1)
+        all_shares['aed_pct_of_aum'] = all_shares.apply(lambda x: get_aed_pct_of_aum(x, 'AED'), axis=1)
+        all_shares['arb_pct_of_aum'] = all_shares.apply(lambda x: get_aed_pct_of_aum(x, 'ARB'), axis=1)
 
         all_shares.columns = ['tradegroup', 'target_ticker', 'total_qty', 'total_qty_1x', 'total_qty_2x', 'eqy_float',
                               'current_pct_of_float', 'firm_pct_float_mstrat_1x', 'firm_pct_float_mstrat_2x',
