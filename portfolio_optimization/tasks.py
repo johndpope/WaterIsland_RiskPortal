@@ -286,7 +286,7 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
                 "CatalystRating as catalyst_rating,CurrentMktVal,Strike as StrikePrice, PutCall, " \
                 "FXCurrentLocalToBase as FxFactor, " \
                 "amount*factor as QTY, ClosingDate as closing_date, Target_Ticker as target_ticker, LongShort as long_short,"\
-                "TargetLastPrice as target_last_price, AllInSpread as all_in_spread, " \
+                "TargetLastPrice/FXCurrentLocalToBase as target_last_price, AllInSpread as all_in_spread, " \
                 "DealDownside as deal_downside, datediff(ClosingDate, curdate()) as days_to_close, "\
                 "PctOfSleeveCurrent, aum from wic.daily_flat_file_db where " \
                 "Flat_file_as_of = (Select max(Flat_file_as_of) "\
@@ -394,9 +394,10 @@ def arb_hard_float_optimization():
                            'expected_vol']
 
         arb_df = arb_df[cols_to_work_on]
-        shares_query = "SELECT TradeGroup,Target_Ticker,TargetLastPrice, Fund, SUM(amount*factor) AS TotalQty, aum, "\
-                       "100*(amount*factor*TargetLastPrice)/aum AS Current_Pct_ofAUM FROM wic.daily_flat_file_db " \
-                       "WHERE " \
+        shares_query = "SELECT TradeGroup,Target_Ticker,TargetLastPrice/FXCurrentLocalToBase as TargetLastPrice, Fund, " \
+                       "SUM(amount*factor) AS TotalQty, aum, " \
+                       "100*(amount*factor*(TargetLastPrice/FXCurrentLocalToBase))/aum " \
+                       "AS Current_Pct_ofAUM FROM wic.daily_flat_file_db WHERE " \
                        "Flat_file_as_of = (SELECT MAX(flat_file_as_of) FROM wic.daily_flat_file_db) AND " \
                        "CatalystTypeWIC = 'HARD' AND amount<>0 AND SecType IN ('EQ') AND AlphaHedge ='Alpha' AND " \
                        "LongShort='Long' AND TradeGroup IS NOT NULL AND Fund IN " \
