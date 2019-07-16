@@ -717,7 +717,7 @@ def email_daily_formulae_linked_downsides():
 
         subject = '(Risk Automation) FormulaeLinkedDownsides & Credit Deals - ' + get_todays_date_yyyy_mm_dd()
         send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-                   recipients=['risk@wicfunds.com', 'rlogan@wicfunds.com'], subject=subject,
+                   recipients=['risk@wicfunds.com', 'rlogan@wicfunds.com', 'bmoore@wicfunds.com'], subject=subject,
                    from_email='dispatch@wicfunds.com', html=html, EXPORTERS=exporters,
                    dataframe=[downsides_df, credit_deals_up_down_df], multiple=True)
 
