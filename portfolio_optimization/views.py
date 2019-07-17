@@ -335,17 +335,19 @@ class MergerArbRorView(ListView):
 class ArbHardOptimizationView(ListView):
     template_name = 'arb_hard_optimization.html'
     queryset = HardFloatOptimization.objects.filter(date_updated=Max('date_updated'))
-    context_object_name = 'hard_optimization_list'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         as_of = self.request.GET.get('as_of')
         if as_of:
             as_of = datetime.datetime.strptime(as_of, '%Y-%m-%d')
+            as_of_summary = datetime.datetime.strptime(as_of, '%Y-%m-%d')
         else:
             as_of = HardFloatOptimization.objects.latest('date_updated').date_updated
+            as_of_summary = HardOptimizationSummary.objects.latest('date_updated').date_updated
         queryset = HardFloatOptimization.objects.filter(date_updated=as_of)
-        context.update({'hard_optimization_list': queryset, 'as_of': as_of})
+        summary_queryset = HardOptimizationSummary.objects.get(date_updated=as_of_summary)
+        context.update({'hard_optimization_list': queryset, 'as_of': as_of, 'summary_queryset': summary_queryset})
         return context
 
 

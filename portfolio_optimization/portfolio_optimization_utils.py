@@ -3,6 +3,10 @@ def calculate_pl_sec_impact(row):
     if row['SecType'] == 'EQ' and row['AlphaHedge'] == 'Hedge':
         return 0    # Assume 0 pnl impact on Equity Hedges. Cant say for sure where acquirer would trade
 
+    # Hedges on Options
+    if row['SecType'] == 'EXCHOPT' and row['AlphaHedge'] == 'Hedge':
+        return -row['CurrentMktVal'] + (row['SecurityPrice']*row['QTY'])
+
     if row['SecType'] != 'EXCHOPT':
         return (row['deal_value'] * row['QTY']) - (row['CurrentMktVal'] / row['FxFactor'])
 

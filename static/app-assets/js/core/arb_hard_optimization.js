@@ -15,7 +15,7 @@ $(document).ready(function () {
         "paging":false,
         autoWidth: false,
         "columnDefs": [{
-            "targets": [4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,20,21,22],
+            "targets": [4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,20,21,22, 25, 26, 27],
             "render": $.fn.dataTable.render.number(',', '.', 2),
         }, {
             "targets": [13, 14],

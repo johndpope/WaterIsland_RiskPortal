@@ -134,3 +134,22 @@ class HardFloatOptimization(models.Model):
     aed_pct_of_aum = models.FloatField(null=True)
     rebal_multiples = models.FloatField(null=True)
     rebal_target = models.FloatField(null=True)
+    is_excluded = models.BooleanField(default=False)
+    weighted_gross_nav_potential = models.FloatField(null=True)
+    weighted_nav_cumsum = models.FloatField(null=True)
+    non_excluded_pct_aum_cumsum = models.FloatField(null=True)
+    curr_rtn_wt_duration = models.FloatField(null=True)
+    curr_rwd_ror = models.FloatField(null=True)
+
+
+class HardOptimizationSummary(models.Model):
+    date_updated = models.DateField()
+    average_optimized_rors = models.FloatField(null=True)
+    weighted_arb_rors = models.FloatField(null=True)
+    weighted_aed_ror = models.FloatField(null=True)
+    arb_number_of_deals = models.IntegerField(null=True)
+    arb_pct_invested = models.FloatField(null=True)
+    aed_number_of_deals = models.IntegerField(null=True)
+    aed_hard_pct_invested = models.FloatField(null=True)
+    aed_fund_pct_invested = models.FloatField(null=True)
+    aed_currently_invested = models.FloatField(null=True)

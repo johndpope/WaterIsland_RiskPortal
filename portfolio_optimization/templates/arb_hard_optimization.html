@@ -38,7 +38,15 @@
                         <mark>{{ as_of|date:"F d, Y" }}</mark>
                     </p>
                     <div class="row">
-                        <div class="col-lg-4"></div>
+                        <div class="col-lg-4">
+                             <ul>
+                                <li><strong>Avg. Optimized RoR: </strong>{{ summary_queryset.average_optimized_rors|floatformat:2 }}</li>
+                                <li><strong>Weighted ARB RoR: </strong>{{ summary_queryset.weighted_arb_rors|floatformat:2 }}</li>
+                                <li><strong>Weighted AED RoR: </strong>{{ summary_queryset.weighted_aed_ror|floatformat:2 }}</li>
+                                <li><strong>ARB # of deals: </strong>{{ summary_queryset.arb_number_of_deals|floatformat:2 }}</li>
+                                <li><strong>ARB % Invested: </strong>{{ summary_queryset.arb_pct_invested|floatformat:2 }}</li>
+                             </ul>
+                        </div>
                         <div class="col-lg-1 block-tag">
                             <small class="badge badge-default badge-success">Select As of Date
                             </small>
@@ -55,7 +63,14 @@
                             </fieldset>
                         </div>
 
-                        <div class="col-lg-4"></div>
+                        <div class="col-lg-4">
+                            <ul>
+                                <li><strong>AED # of deals: </strong>{{ summary_queryset.aed_number_of_deals|floatformat:2 }}</li>
+                                <li><strong>AED % Invested: </strong>{{ summary_queryset.aed_currently_invested|floatformat:2 }}</li>
+                                <li><strong>AED HARD % Invested <em>(Rebalanced)</em>: </strong>{{ summary_queryset.aed_hard_pct_invested|floatformat:2 }}</li>
+                                <li><strong>AED Fund % Invested <em>(Rebalanced)</em>: </strong>{{ summary_queryset.aed_fund_pct_invested|floatformat:2 }}</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="form-inline">
                         <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="5">DealValue</a>
@@ -97,6 +112,9 @@
                                         <th class="center">ARB<br>NAV Risk</th>
                                         <th class="center">Rebal<br>Mult</th>
                                         <th class="center">Rebal<br>Target</th>
+                                        <th class="center">Wgt Gross<br>NAV Potential</th>
+                                        <th class="center">Curr Rt<br>Weight Duration</th>
+                                        <th class="center">RWD<br>RoR</th>
                                         <th class="center">Mstrat<br>Notes.</th>
                                     </tr>
                                     </thead>
@@ -129,6 +147,10 @@
                                             <td>{{ deal.arb_outlier_risk|default_if_none:0 }}</td>
                                             <td class="rebal_multiple"><input type="text" id="rebal_multiple_{{ deal.id }}" value="{{ deal.rebal_multiples|default_if_none:'' }}"></td>
                                             <td><input id="rebal_target_{{ deal.id }}" type="text" value="{{ deal.rebal_target }}"></td>
+
+                                            <td>{{ deal.weighted_gross_nav_potential }}</td>
+                                            <td>{{ deal.curr_rtn_wt_duration }}</td>
+                                            <td>{{ deal.curr_rwd_ror }}</td>
                                             <td>
                                                 <div class="row">
                                                     <textarea>{{ deal.notes|default_if_none:'' }}</textarea>

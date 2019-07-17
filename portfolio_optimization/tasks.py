@@ -17,7 +17,7 @@ from django.conf import settings
 from django_slack import slack_message
 from django.db import connection
 from portfolio_optimization.models import EssPotentialLongShorts, EssUniverseImpliedProbability, EssDealTypeParameters, \
-    ArbOptimizationUniverse, HardFloatOptimization
+    ArbOptimizationUniverse, HardFloatOptimization, HardOptimizationSummary
 from slack_utils import get_channel_name
 from portfolio_optimization.portfolio_optimization_utils import calculate_pl_sec_impact
 from .utils import parse_fld
@@ -236,7 +236,7 @@ def refresh_ess_long_shorts_and_implied_probability():
         del final_implied_probability_df['Date']
 
         final_implied_probability_df['Date'] = today
-
+        final_implied_probability_df.replace([np.inf, -np.inf], np.nan, inplace=True)  # Replace Inf values
         final_implied_probability_df.to_sql(index=False, name='portfolio_optimization_essuniverseimpliedprobability',
                                             schema=settings.CURRENT_DATABASE, con=con, if_exists='append')
 
@@ -286,7 +286,7 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
                 "CatalystRating as catalyst_rating,CurrentMktVal,Strike as StrikePrice, PutCall, " \
                 "FXCurrentLocalToBase as FxFactor, " \
                 "amount*factor as QTY, ClosingDate as closing_date, Target_Ticker as target_ticker, LongShort as long_short,"\
-                "TargetLastPrice/FXCurrentLocalToBase as target_last_price, AllInSpread as all_in_spread, " \
+                "TargetLastPrice/FXCurrentLocalToBase as target_last_price,Price as SecurityPrice, AllInSpread as all_in_spread, " \
                 "DealDownside as deal_downside, datediff(ClosingDate, curdate()) as days_to_close, "\
                 "PctOfSleeveCurrent, aum from wic.daily_flat_file_db where " \
                 "Flat_file_as_of = (Select max(Flat_file_as_of) "\
@@ -305,6 +305,7 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
         del tradegroup_level_df['StrikePrice']
         del tradegroup_level_df['QTY']
         del tradegroup_level_df['FxFactor']
+        del tradegroup_level_df['SecurityPrice']
         del tradegroup_level_df['PctOfSleeveCurrent']
         # Drop the duplicates
         tradegroup_level_df = tradegroup_level_df.drop_duplicates(keep='first')
@@ -312,6 +313,9 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
                                            settings.CURRENT_DATABASE + '.risk_reporting_dailynavimpacts', con=con)
 
         df['PnL'] = df.apply(calculate_pl_sec_impact, axis=1)
+        # Delete the Security Price column
+        del df['SecurityPrice']
+
         df['pnl_impact'] = 1e2*(df['PnL']/df['aum'])
 
         rors_df = df[['tradegroup', 'ticker', 'pnl_impact']].groupby(['tradegroup'])['pnl_impact'].sum().reset_index()
@@ -329,7 +333,6 @@ def get_arb_optimization_ranks():    # Task runs every morning at 7pm and Posts 
 
         # Calculate the RoR
         rors_df['gross_ror'] = 1e2*(rors_df['pnl_impact']/rors_df['pct_of_sleeve_current'])
-
         rors_df = pd.merge(rors_df, tradegroup_level_df, how='left', on=['tradegroup'])  # Adds Tradegroup level cols.
 
         rors_df['ann_ror'] = (rors_df['gross_ror']/rors_df['days_to_close'])*365
@@ -556,8 +559,47 @@ def arb_hard_float_optimization():
                                                                     pd.isna(x['rebal_multiples'])
                                                                     else x['aed_pct_of_aum'], axis=1)
 
+        # Section for Time Weighted Rate of Return Calculation...
+        def exclude_from_ror(row):
+            if ((row['days_to_close'] < 22) and (row['all_in_spread'] < 0.1)) or (row['days_to_close'] < 6):
+                return True
+            return False
+
+        final_hard_opt_df['is_excluded'] = final_hard_opt_df.apply(exclude_from_ror, axis=1)
+        final_hard_opt_df_excluded = final_hard_opt_df[final_hard_opt_df['is_excluded'] == True]
+        final_hard_opt_df = final_hard_opt_df[final_hard_opt_df['is_excluded'] == False]
+
+        final_hard_opt_df['weighted_gross_nav_potential'] = (final_hard_opt_df['gross_ror'] * final_hard_opt_df['aed_aum_mult'])/100
+        # Calculate the Cumulative Sum
+        final_hard_opt_df['weighted_nav_cumsum'] = final_hard_opt_df['weighted_gross_nav_potential'].cumsum()
+        # Get the Mstrat % of AUM
+        final_hard_opt_df['non_excluded_pct_aum_cumsum'] = final_hard_opt_df['rebal_target'].cumsum()
+
+        # Get the Current Rtn Weight Duration
+        final_hard_opt_df["curr_rtn_wt_duration"] = final_hard_opt_df['days_to_close'].\
+            mul(final_hard_opt_df['weighted_gross_nav_potential']).cumsum().\
+            div(final_hard_opt_df['weighted_gross_nav_potential'].cumsum())
+
+        # Get the RWD, ROR
+        final_hard_opt_df['curr_rwd_ror'] = final_hard_opt_df['weighted_nav_cumsum']/final_hard_opt_df['non_excluded_pct_aum_cumsum']/\
+                                    final_hard_opt_df['curr_rtn_wt_duration']*360
+        final_hard_opt_df['curr_rwd_ror'] = 1e2 * final_hard_opt_df['curr_rwd_ror']
+
+        #  Merge back Excluded deals after adding new columns
+        final_hard_opt_df_excluded['weighted_nav_cumsum'] = None
+        final_hard_opt_df_excluded['non_excluded_pct_aum_cumsum'] = None
+        final_hard_opt_df_excluded['curr_rtn_wt_duration'] = None
+        final_hard_opt_df_excluded['curr_rwd_ror'] = None
+
+        final_hard_opt_df = pd.concat([final_hard_opt_df, final_hard_opt_df_excluded])
+
+        # Replace Infinity values
+        final_hard_opt_df.replace([np.inf, -np.inf], np.nan, inplace=True)  # Replace Inf values
+
         final_hard_opt_df.to_sql(name='portfolio_optimization_hardfloatoptimization', schema=settings.CURRENT_DATABASE,
                                  if_exists='append', index=False, con=con)
+
+        hard_optimized_summary()
         slack_message('eze_uploads.slack', {'null_risk_limits':
                                             str("_(Risk Automation)_ ARB Hard Catalyst Optimization Completed... "
                                                 "Visit http://192.168.0.16:8000/portfolio_optimization/arb_hard_optimization"
@@ -575,3 +617,72 @@ def arb_hard_float_optimization():
         print('Closing Connection to Relational Database Service...')
         con.close()
 
+
+@shared_task
+def hard_optimized_summary():
+    """ Task runs after the above task is completed. Creates a Summary of the Hard-Optimized schedule """
+    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD
+                               + "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
+    con = engine.connect()
+    try:
+        #  Get current data
+        current_invested_query = "SELECT TradeGroup, Fund, CurrentMktVal_Pct FROM wic.daily_flat_file_db "\
+                                 "WHERE Flat_file_as_of = (SELECT MAX(flat_file_as_of) FROM wic.daily_flat_file_db) "\
+                                 "AND Fund IN ('ARB', 'AED') AND LongShort = 'Long' AND amount<>0 AND " \
+                                 "Ticker NOT LIKE '%%CASH%%' AND AlphaHedge LIKE 'Alpha' and Sleeve='Merger Arbitrage'"
+        current_invested = pd.read_sql_query(current_invested_query, con=con)
+        arb_no_of_deals = current_invested[current_invested['Fund'] == 'ARB']['TradeGroup'].nunique()
+        arb_pct_invested = current_invested[current_invested['Fund'] == 'ARB']['CurrentMktVal_Pct'].sum()
+
+        aed_no_of_deals = current_invested[current_invested['Fund'] == 'AED']['TradeGroup'].nunique()
+        aed_pct_invested = current_invested[current_invested['Fund'] == 'AED']['CurrentMktVal_Pct'].sum()
+
+        # Summary based on Hard Optimization and Rebalanced Targets
+        rebal_query = "SELECT * FROM "+ settings.CURRENT_DATABASE+".portfolio_optimization_hardfloatoptimization " \
+                      "WHERE date_updated = (SELECT MAX(date_updated) FROM " + settings.CURRENT_DATABASE + \
+                      ".portfolio_optimization_hardfloatoptimization)"
+
+        rebal_query_df = pd.read_sql_query(rebal_query, con=con)
+        # Remove Excluded ones
+        rebal_query_df = rebal_query_df[rebal_query_df['is_excluded'] == False]
+        # Get Hard-1 Optimized RoRs
+        hard_one_df = rebal_query_df[((rebal_query_df['catalyst'] == 'HARD') & (rebal_query_df['catalyst_rating'] == '1'))]
+        average_optimized_rors = hard_one_df['ann_ror'].mean()
+
+        weighted_arb_ror = (hard_one_df['ann_ror']*hard_one_df['arb_pct_of_aum']).sum() * 0.01
+        weighted_aed_ror = rebal_query_df['curr_rwd_ror'].min()
+
+        # Following metrics based on the Adjustable column
+        hard_aed = rebal_query_df[rebal_query_df['catalyst'] == 'HARD']
+        hard_aed_pct_invested = hard_aed['rebal_target'].sum()
+
+        # Get the whole AED Fund % invested based on the Rebalanced Targets
+        aed_df = current_invested[~current_invested['TradeGroup'].isin(rebal_query_df['tradegroup'].unique())]
+
+        rebalanced_aed_pct_invested = rebal_query_df[['tradegroup', 'rebal_target']]
+        rebalanced_aed_pct_invested['Fund'] = 'AED'
+        rebalanced_aed_pct_invested.rename(columns={'rebal_target': 'CurrentMktVal_Pct', 'tradegroup': 'TradeGroup'},
+                                           inplace=True)
+
+        # Concatenate the 2 dataframes
+        aed_rebalanced_df = pd.concat([rebalanced_aed_pct_invested, aed_df])
+
+        aed_fund_pct_invested_rebalanced = aed_rebalanced_df['CurrentMktVal_Pct'].sum()
+        now = datetime.datetime.now().date()
+        HardOptimizationSummary.objects.filter(date_updated=now).delete()
+
+        HardOptimizationSummary(date_updated=now, average_optimized_rors=average_optimized_rors,
+                                weighted_arb_rors=weighted_arb_ror, weighted_aed_ror=weighted_aed_ror,
+                                arb_number_of_deals=arb_no_of_deals, arb_pct_invested=arb_pct_invested,
+                                aed_number_of_deals=aed_no_of_deals, aed_currently_invested=aed_pct_invested,
+                                aed_hard_pct_invested=hard_aed_pct_invested, aed_fund_pct_invested=aed_fund_pct_invested_rebalanced).save()
+
+    except Exception as e:
+        print(e)
+        slack_message('eze_uploads.slack', {'null_risk_limits':
+                                            str("_(Risk Automation)_ *ERROR in HardOpt (Summary)!*... ") + str(e)
+                                            },
+                      channel=get_channel_name('portal_downsides'), token=settings.SLACK_TOKEN)
+    finally:
+        con.close()
+        print('Closing connection to Relational Database Service')
