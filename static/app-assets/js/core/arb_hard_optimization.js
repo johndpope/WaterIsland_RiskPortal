@@ -30,7 +30,7 @@ $(document).ready(function () {
                 }
             }
         },{
-                targets: [5,6,7,8,9,10,11],
+                targets: [4,5,6,3,7,12,13,14],
                 visible: false
             }],
         scrollY: "50vh",
@@ -64,10 +64,27 @@ $(document).ready(function () {
         e.preventDefault();
 
         // Get the column API object
-        var column = table.column( $(this).attr('data-column') );
+        var column = $(this).attr('data-column');
+        let columns = [];
+        if(column === 'Float'){
+            columns = [12,13,14]
+        }
+        else if(column === 'Duration'){
+            columns = [3, 7]
+        }
+        else if(column === 'Mstrat'){
+            columns = [15,16,17,18]
+        }
+        else if(column === 'Spread'){
+            columns = [4,5,6]
+        }
 
+        for(var col_toggle=0;col_toggle<columns.length;col_toggle++){
+            let col = table.column(columns[col_toggle]);
+            col.visible( ! col.visible() );
+        }
         // Toggle the visibility
-        column.visible( ! column.visible() );
+
     } );
 
 
@@ -80,7 +97,7 @@ $(document).ready(function () {
         let value_to_set = null;
         if(rebal_multiple){
            // Set value of Rebal Target = multiple * ARB_% of AUM
-            value_to_set = parseFloat($('#arb_pct_aum_'+row_id).html()) * parseFloat(rebal_multiple);
+            value_to_set = parseFloat($('#arb_pct_aum_'+row_id).html()) * parseFloat(rebal_multiple)/parseFloat($('#aed_risk_mult_'+row_id).html());
             value_to_set = parseFloat(value_to_set.toFixed(2));
         }
         else{
@@ -126,8 +143,43 @@ $(document).ready(function () {
                     alert(err);
                 }
             })
+        }
 
+        else if (save_button_id && save_button_id.includes("save_rebal_target_")) {
+            let id = save_button_id.split("_").pop();
+            if (!id) {
+                id = $(this).parent().parent().attr('id');
+            }
 
+            let rebal_multiple = $('#rebal_multiple_'+id).val();
+
+            console.log(rebal_multiple);
+            let rebal_target = $('#rebal_target_'+id).val();
+            console.log(rebal_target);
+
+            // Fire an Ajax query to save the rebal multiple  and the  comment
+            // $.ajax({
+            //     type: 'POST',
+            //     url: '../portfolio_optimization/save_hard_opt_commment',
+            //     data: {'id': id, 'note': note},
+            //     success: function (response) {
+            //         if (response === 'Success') {
+            //             toastr.success('Your Note was updated!', 'Changes saved!', {
+            //                 positionClass: 'toast-top-right',
+            //                 containerId: 'toast-top-right'
+            //             });
+            //         }
+            //         else {
+            //             toastr.error('Failed to store the changes!', 'Please copy your edit and store it to avoid data loss!', {
+            //                 positionClass: 'toast-top-right',
+            //                 containerId: 'toast-top-right'
+            //             });
+            //         }
+            //     },
+            //     error: function (err) {
+            //         alert(err);
+            //     }
+            // })
         }
 
 

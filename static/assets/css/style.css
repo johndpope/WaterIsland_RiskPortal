@@ -210,3 +210,7 @@ select.form-control {
 table.table-condensed td {
   padding: 0.6rem 1rem !important;
 }
+td.table-column-shade{
+    background-color: #868e96;
+    color: white;
+}

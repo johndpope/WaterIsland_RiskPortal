@@ -43,8 +43,7 @@
                                 <li><strong>Avg. Optimized RoR: </strong>{{ summary_queryset.average_optimized_rors|floatformat:2 }}</li>
                                 <li><strong>Weighted ARB RoR: </strong>{{ summary_queryset.weighted_arb_rors|floatformat:2 }}</li>
                                 <li><strong>Weighted AED RoR: </strong>{{ summary_queryset.weighted_aed_ror|floatformat:2 }}</li>
-                                <li><strong>ARB # of deals: </strong>{{ summary_queryset.arb_number_of_deals|floatformat:2 }}</li>
-                                <li><strong>ARB % Invested: </strong>{{ summary_queryset.arb_pct_invested|floatformat:2 }}</li>
+
                              </ul>
                         </div>
                         <div class="col-lg-1 block-tag">
@@ -63,23 +62,29 @@
                             </fieldset>
                         </div>
 
-                        <div class="col-lg-4">
+                        <div class="col-lg-2">
                             <ul>
-                                <li><strong>AED # of deals: </strong>{{ summary_queryset.aed_number_of_deals|floatformat:2 }}</li>
-                                <li><strong>AED % Invested: </strong>{{ summary_queryset.aed_currently_invested|floatformat:2 }}</li>
-                                <li><strong>AED HARD % Invested <em>(Rebalanced)</em>: </strong>{{ summary_queryset.aed_hard_pct_invested|floatformat:2 }}</li>
+                                <li><strong>ARB (M&A) % Invested: </strong>{{ summary_queryset.arb_pct_invested|floatformat:2 }}</li>
+                                <li><strong>AED (M&A) % Invested: </strong>{{ summary_queryset.aed_currently_invested|floatformat:2 }}</li>
+                                <li><strong>AED HARD-1 % Invested <em>(Rebalanced)</em>: </strong>{{ summary_queryset.aed_hard_pct_invested|floatformat:2 }}</li>
                                 <li><strong>AED Fund % Invested <em>(Rebalanced)</em>: </strong>{{ summary_queryset.aed_fund_pct_invested|floatformat:2 }}</li>
                             </ul>
                         </div>
+
+                        <div class="col-lg-2">
+                            <ul>
+                                <li><strong>Avg. Optimized RoR: </strong>{{ summary_queryset.average_optimized_rors|floatformat:2 }}</li>
+                                <li><strong>Weighted ARB RoR: </strong>{{ summary_queryset.weighted_arb_rors|floatformat:2 }}</li>
+                                <li><strong>Weighted AED RoR: </strong>{{ summary_queryset.weighted_aed_ror|floatformat:2 }}</li>
+                            </ul>
+                        </div>
+
                     </div>
                     <div class="form-inline">
-                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="5">DealValue</a>
-                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="6">Tgt PX</a>
-                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="7">DTC</a>
-                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="8">Gross RoR</a>
-                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="9">Ann RoR</a>
-                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="10">Risk(%)</a>
-                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="11">Exp Vol</a>
+                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="Spread">Spread Details</a>
+                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="Duration">Duration Details</a>
+                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="Float">Float Details</a>
+                        <a style="text-decoration: underline" class="btn btn-default toggle-vis" data-column="Mstrat">Mstrat Multiples</a>
                     </div>
                     <div class="row">
                         <div class="col-lg-12">
@@ -106,12 +111,13 @@
                                         <th class="center">LG AUM<br>Mult.</th>
                                         <th class="center">AED Risk<br>Mult.</th>
                                         <th class="center">LG Risk<br>Mult.</th>
-                                        <th class="center">AED<br>% AUM</th>
-                                        <th class="center">AED<br>NAV Risk</th>
-                                        <th class="center">ARB<br>% AUM</th>
-                                        <th class="center">ARB<br>NAV Risk</th>
-                                        <th class="center">Rebal<br>Mult</th>
-                                        <th class="center">Rebal<br>Target</th>
+                                        <th class="center table-column-shade">AED<br>% AUM</th>
+                                        <th class="center table-column-shade">AED<br>NAV Risk</th>
+                                        <th class="center table-column-shade">ARB<br>% AUM</th>
+                                        <th class="center table-column-shade">ARB<br>NAV Risk</th>
+                                        <th class="center">Rebal<br>Risk Mult</th>
+                                        <th class="center">Rebal<br>AUM Target</th>
+
                                         <th class="center">Wgt Gross<br>NAV Potential</th>
                                         <th class="center">Curr Rt<br>Weight Duration</th>
                                         <th class="center">RWD<br>RoR</th>
@@ -139,14 +145,19 @@
                                             <td>{{ deal.firm_pct_float_mstrat_2x }}</td>
                                             <td>{{ deal.aed_aum_mult }}</td>
                                             <td>{{ deal.lg_aum_mult }}</td>
-                                            <td>{{ deal.aed_risk_mult }}</td>
+                                            <td id="aed_risk_mult_{{ deal.id }}">{{ deal.aed_risk_mult }}</td>
                                             <td>{{ deal.lg_risk_mult }}</td>
-                                            <td id="aed_pct_aum_{{ deal.id }}">{{ deal.aed_pct_of_aum|default_if_none:0 }}</td>
-                                            <td>{{ deal.aed_outlier_risk|default_if_none:0 }}</td>
-                                            <td id="arb_pct_aum_{{ deal.id }}">{{ deal.arb_pct_of_aum|default_if_none:0 }}</td>
-                                            <td>{{ deal.arb_outlier_risk|default_if_none:0 }}</td>
+                                            <td class="table-column-shade" id="aed_pct_aum_{{ deal.id }}">{{ deal.aed_pct_of_aum|default_if_none:0 }}</td>
+                                            <td class="table-column-shade">{{ deal.aed_outlier_risk|default_if_none:0 }}</td>
+                                            <td class="table-column-shade" id="arb_pct_aum_{{ deal.id }}">{{ deal.arb_pct_of_aum|default_if_none:0 }}</td>
+                                            <td class="table-column-shade">{{ deal.arb_outlier_risk|default_if_none:0 }}</td>
                                             <td class="rebal_multiple"><input type="text" id="rebal_multiple_{{ deal.id }}" value="{{ deal.rebal_multiples|default_if_none:'' }}"></td>
-                                            <td><input id="rebal_target_{{ deal.id }}" type="text" value="{{ deal.rebal_target }}"></td>
+                                            <td><input id="rebal_target_{{ deal.id }}" type="text" value="{{ deal.rebal_target }}">
+                                                <button class="btn btn-sm btn-secondary" id='save_rebal_target_{{ deal.id }}'>
+                                                        Save Target
+                                                    </button>
+                                            </td>
+
 
                                             <td>{{ deal.weighted_gross_nav_potential }}</td>
                                             <td>{{ deal.curr_rtn_wt_duration }}</td>
@@ -155,7 +166,7 @@
                                                 <div class="row">
                                                     <textarea>{{ deal.notes|default_if_none:'' }}</textarea>
                                                     <button class="btn btn-sm btn-success" id='save_note_{{ deal.id }}'>
-                                                        Save
+                                                        Save Note
                                                     </button>
                                                 </div>
 

@@ -6,7 +6,7 @@ from locale import atof
 import os
 import sys
 import time
-
+import bbgclient
 from celery import shared_task
 import django
 from django.conf import settings
@@ -1095,6 +1095,9 @@ def email_pl_target_loss_budgets():
                dataframe=[final_live_df, [profit_sleeve_ytd_perc, loss_sleeve_ytd_perc],
                           [profit_sleeve_ytd, loss_sleeve_ytd], df1])
 
+    # Send MStrat Drawdowns
+    ess_multistrat_drawdown_monitor()
+
 
 def push_data_to_table(df):
     df = df.rename(columns={'Fund': 'fund', 'YTD Active Deal Losses': 'ytd_active_deal_losses',
@@ -1488,3 +1491,206 @@ def post_alert_before_eze_upload():
                                          channel=get_channel_name('portal_downsides'),
                                          token=settings.SLACK_TOKEN
                   )
+
+
+
+
+@shared_task
+def ess_multistrat_drawdown_monitor():
+    engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD +
+                           "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
+    con = engine.connect()
+
+    try:
+        api_host = bbgclient.bbgclient.get_next_available_host()
+        ess_drawdown_query = "SELECT TradeGroup, Ticker, AlphaHedge, RiskLimit, CurrentMktVal_Pct, DealDownside, SecType, "\
+                             "LongShort, (amount*factor) as QTY, CurrentMktVal, FXCurrentLocalToBase as FxFactor, aum, "\
+                             "PutCall, Strike as StrikePrice, DealUpside FROM "\
+                             "wic.daily_flat_file_db WHERE Flat_file_as_of = "\
+                             "(SELECT MAX(Flat_file_as_of) FROM wic.daily_flat_file_db) "\
+                             "AND AlphaHedge IN ('Alpha', 'Alpha Hedge') AND amount<>0 AND Fund LIKE 'AED' "\
+                             "AND Sleeve = 'Equity Special Situations'"
+
+        today = datetime.datetime.now().date().strftime('%Y-%m-%d')
+        ess_tg_performance_query = "SELECT TradeGroup, ROMC_YTD_bps, YTD_Dollar, 5D_bps,5D_Dollar, 1D_bps, 1D_Dollar "\
+                                   "FROM wic.tradegroup_performance_over_own_capital WHERE Sleeve = 'ESS' "\
+                                   "AND Fund LIKE 'AED' AND `Date` = '"+today+"'AND `Status` = 'ACTIVE'"
+        ess_drawdown_df = pd.read_sql_query(ess_drawdown_query, con=con)
+        ess_tg_perf_df = pd.read_sql_query(ess_tg_performance_query, con=con)
+        # Exclude tradgroups (manually)
+        ess_drawdown_df = ess_drawdown_df[~(ess_drawdown_df['TradeGroup'] == 'AVYA R/R')]
+        ess_drawdown_df[['RiskLimit', 'CurrentMktVal_Pct', 'DealDownside', 'QTY', 'aum', 'StrikePrice', 'DealUpside']].astype(float)
+        # if Risk Limit is 0 or NULL assume 30 basis point Risk limit
+        ess_drawdown_df.loc[ess_drawdown_df.RiskLimit == 0, "RiskLimit" ] = 0.30
+        ess_drawdown_df['RiskLimit'] = ess_drawdown_df['RiskLimit'].apply(lambda x: -x if x > 0 else x)
+        ess_drawdown_df.rename(columns={'CurrentMktVal_Pct': 'aed_aum_pct'}, inplace=True)
+
+        def calculate_break_pl(row):
+            if row['AlphaHedge'] == 'Alpha':
+                if row['SecType'] == 'EQ' and row['LongShort'] == 'Short':
+                    return (row['DealUpside'] * row['QTY']) - (row['CurrentMktVal'] / row['FxFactor'])
+
+                return (row['DealDownside'] * row['QTY']) - (row['CurrentMktVal'] / row['FxFactor'])
+            #Todo Add logic for Options where LongShort = Short
+
+            if row['PutCall'] == 'CALL':
+                if row['StrikePrice'] <= row['DealDownside']:
+                    x = (row['DealDownside'] - row['StrikePrice']) * (row['QTY'])
+                else:
+                    x = 0
+            elif row['PutCall'] == 'PUT':
+                if row['StrikePrice'] >= row['DealDownside']:
+                    x = (row['StrikePrice'] - row['DealDownside']) * (row['QTY'])
+                else:
+                    x = 0
+            return -row['CurrentMktVal'] + x
+
+        ess_drawdown_df['Break PL'] = ess_drawdown_df.apply(calculate_break_pl, axis=1)
+        ess_drawdown_df['NAV Risk'] = 1e2*ess_drawdown_df['Break PL']/ess_drawdown_df['aum']
+
+        nav_risk_df = ess_drawdown_df[['TradeGroup','NAV Risk']].groupby(['TradeGroup']).sum().reset_index()
+        ess_drawdown_df_equity = ess_drawdown_df[ess_drawdown_df['SecType'] == 'EQ']
+
+        ess_drawdown_df_equity = ess_drawdown_df_equity[['TradeGroup', 'Ticker', 'AlphaHedge', 'RiskLimit',
+                                                         'aed_aum_pct', 'DealDownside', 'SecType', 'LongShort',
+                                                         'QTY', 'CurrentMktVal', 'aum']]
+        ess_df_nav_risk = pd.merge(ess_drawdown_df_equity, nav_risk_df, on='TradeGroup')
+        ess_df_nav_risk['pct_of_limit'] = 1e2*ess_df_nav_risk['NAV Risk']/ess_df_nav_risk['RiskLimit']
+        ess_df_nav_risk['pct_aum_at_max_risk'] = 1e2*ess_df_nav_risk['aed_aum_pct']/ess_df_nav_risk['pct_of_limit']
+
+        ess_df_nav_risk['Ticker'] = ess_df_nav_risk['Ticker'].apply(lambda x: x+" EQUITY" if 'equity' not in x.lower() else x)
+        vol_series = ['VOLATILITY_260D','VOLATILITY_180D','VOLATILITY_90D','VOLATILITY_60D','VOLATILITY_30D','VOLATILITY_10D']
+        tradegroup_volatility_dictionary = bbgclient.bbgclient.get_secid2field(list(ess_df_nav_risk['Ticker'].unique()),'tickers',vol_series,req_type='refdata',api_host=api_host)
+
+        def volatility_cascade_logic(ticker):
+            assumed_vol = 0.30  # 30% volatility (Assumed if nothing found in Bloomberg)
+            for vol in vol_series:
+                current_vol = tradegroup_volatility_dictionary[ticker][vol][0]
+                if current_vol is not None:
+                    return float(current_vol)
+
+            return assumed_vol
+
+        ess_df_nav_risk['Ann Vol'] = ess_df_nav_risk['Ticker'].apply(volatility_cascade_logic)
+        ess_df_nav_risk['Ann Vol'] = ess_df_nav_risk['Ann Vol'].astype(float)
+
+        ess_df_nav_risk['33% of Vol'] = ess_df_nav_risk['Ann Vol']*0.33
+        ess_df_nav_risk['50% of Vol'] = ess_df_nav_risk['Ann Vol']*0.50
+        final_df = pd.merge(ess_df_nav_risk, ess_tg_perf_df, how='left', on='TradeGroup')
+        # Year-to-Date
+        final_df['YTD ROMC'] = final_df['ROMC_YTD_bps']/100
+        final_df['YTD NAV Cont'] = 1e2*final_df['YTD_Dollar']/final_df['aum']
+        final_df['% of NAV Loss Limit'] = final_df.apply(lambda x: 0 if x['YTD NAV Cont'] > 0 else 1e2*x['YTD NAV Cont']/x['RiskLimit'], axis=1)
+
+        # 5 Day
+        final_df['5D ROC'] = final_df['5D_bps']/100
+        final_df['5D NAV Cont'] = 1e2*final_df['5D_Dollar']/final_df['aum']
+
+        # 1 Day
+        final_df['1D ROC'] = final_df['1D_bps']/100
+        final_df['1D NAV Cont'] = 1e2*final_df['1D_Dollar']/final_df['aum']
+
+
+        final_df = final_df[['TradeGroup', 'Ticker', 'AlphaHedge', 'RiskLimit', 'aed_aum_pct', 'NAV Risk', 'pct_of_limit',
+                    'pct_aum_at_max_risk', 'Ann Vol', '33% of Vol', '50% of Vol', 'YTD ROMC', 'YTD NAV Cont',
+                    '% of NAV Loss Limit', '5D ROC', '5D NAV Cont', '1D ROC', '1D NAV Cont']]
+
+        final_df.columns = ['TradeGroup', 'Alpha', 'AlphaHedge', 'RiskLimit', '% AUM (AED)', 'NAV Risk', '% of Limit',
+                   '% AUM @ Max Risk', 'Ann Vol', '33% of Vol', '50% of Vol', 'YTD ROMC', 'YTD NAV Cont',
+                   '% of NAV Loss Limit', '5D ROC', '5D NAV Cont', '1D ROC', '1D NAV Cont']
+
+        def define_color(row, column):
+            color = 'black'
+            ytd_romc = abs(row['YTD ROMC'])
+            risk_limit = abs(row['RiskLimit'])
+            vol_tt_pct = abs(row['33% of Vol'])
+            vol_fifty_pct = abs(row['50% of Vol'])
+            ytd_nav_cont = abs(row['YTD NAV Cont'])
+
+            if column == 'ROMC':
+                if (ytd_romc > vol_tt_pct) and (ytd_romc < vol_fifty_pct):
+                    color = 'orange'
+                if ytd_romc >= vol_fifty_pct:
+                    color = 'red'
+            else:
+                if (ytd_nav_cont > 0.50*risk_limit) and (ytd_nav_cont < 0.90*risk_limit):
+                    color = 'orange'
+                if ytd_nav_cont >= 0.90*risk_limit:
+                    color = 'red'
+
+            # No colors for Positive PnL names...
+            if row['YTD ROMC'] > 0:
+                color = 'black'
+            if row['YTD NAV Cont'] > 0:
+                color = 'black'
+
+            return color
+
+        final_df['YTD ROMC Color'] = final_df.apply(lambda x: define_color(x, 'ROMC'), axis=1)
+        final_df['NAV Cont Color'] = final_df.apply(lambda x: define_color(x, 'NAV'), axis=1)
+
+        colors_df = final_df[['TradeGroup', 'YTD ROMC Color', 'NAV Cont Color']].copy()
+        del final_df['YTD ROMC Color']
+        del final_df['NAV Cont Color']
+
+        # Round to 2 decimals
+        cols_precision = ['% AUM (AED)', 'NAV Risk', '% of Limit', '% AUM @ Max Risk', 'Ann Vol', '33% of Vol',
+                          '50% of Vol', 'YTD ROMC', 'YTD NAV Cont', '% of NAV Loss Limit', '5D ROC', '5D NAV Cont',
+                          '1D ROC','1D NAV Cont']
+        final_df[cols_precision] = final_df[cols_precision].round(decimals=2)
+
+        def highlight_breaches(row):
+            tradegroup = row['TradeGroup']
+            romc_color = colors_df[colors_df['TradeGroup'] == tradegroup]['YTD ROMC Color'].iloc[0]
+            nav_color = colors_df[colors_df['TradeGroup'] == tradegroup]['NAV Cont Color'].iloc[0]
+
+            ret = ["color:black" for _ in row.index]
+            # Color Risk Limit and TradeGroup
+            ytd_romc_color = romc_color if not romc_color == 'black' else romc_color
+            nav_cont_color = nav_color if not nav_color == 'black' else nav_color
+
+            ret[row.index.get_loc("YTD ROMC")] = "color:white;background-color:"+ytd_romc_color if not ytd_romc_color == 'black' else "color:black"
+            ret[row.index.get_loc("YTD NAV Cont")] = "color:white;background-color:"+nav_cont_color if not nav_cont_color == 'black' else "color:black"
+            ret[row.index.get_loc("TradeGroup")] = "color:white;background-color:"+ytd_romc_color if not ytd_romc_color == 'black' else "color:black"
+
+            return ret
+
+        df = final_df.style.apply(highlight_breaches,axis=1).set_table_styles([
+                    {'selector': 'tr:hover td', 'props': [('background-color', 'beige')]},
+                    {'selector': 'th, td', 'props': [('border', '1px solid black'),
+                                                     ('padding', '4px'),
+                                                     ('text-align', 'center')]},
+                    {'selector': 'th', 'props': [('font-weight', 'bold')]},
+                    {'selector': '', 'props': [('border-collapse', 'collapse'),
+                                               ('border', '1px solid black')]}
+                ])
+
+        html = """ \
+                <html>
+                  <head>
+                  </head>
+                  <body>
+                
+                    ESS Multi-Strat Drawdown Monitor{1}<br><br>
+                    {2}
+                  </body>
+                </html>
+        """.format(today, "", df.hide_index().render(index=False))
+
+        subject = '(Risk Automation) ESS Multi-strat Drawdown Monitor - ' + get_todays_date_yyyy_mm_dd()
+        send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
+                   recipients=['kgorde@wicfunds.com', 'cplunkett@wicfunds.com', 'vaggarwal@wicfunds.com'],
+                   subject=subject, from_email='dispatch@wicfunds.com', html=html,
+                   EXPORTERS=[], dataframe=final_df
+                   )
+
+    except Exception as e:
+        print(e)
+        slack_message('generic.slack',
+                      {'message': 'ERROR: ' + str(e)},
+                      channel=get_channel_name('realtimenavimpacts'),
+                      token=settings.SLACK_TOKEN,
+                      name='ESS_IDEA_DB_ERROR_INSPECTOR')
+    finally:
+        print('Closing Connection to Relational Database Service....')
+        con.close()
