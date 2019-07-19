@@ -155,7 +155,7 @@
                                             <td><input id="rebal_target_{{ deal.id }}" type="text" value="{{ deal.rebal_target }}">
                                                 <button class="btn btn-sm btn-secondary" id='save_rebal_target_{{ deal.id }}'>
                                                         Save Target
-                                                    </button>
+                                                </button>
                                             </td>
 
 
@@ -163,12 +163,12 @@
                                             <td>{{ deal.curr_rtn_wt_duration }}</td>
                                             <td>{{ deal.curr_rwd_ror }}</td>
                                             <td>
-                                                <div class="row">
+
                                                     <textarea>{{ deal.notes|default_if_none:'' }}</textarea>
                                                     <button class="btn btn-sm btn-success" id='save_note_{{ deal.id }}'>
                                                         Save Note
                                                     </button>
-                                                </div>
+
 
                                             </td>
                                         </tr>

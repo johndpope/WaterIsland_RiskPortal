@@ -19,4 +19,7 @@ urlpatterns = [
     url('merer_arb_rors', views.MergerArbRorView.as_view(), name='merger_arb_rors'),
     url('arb_hard_optimization$', views.ArbHardOptimizationView.as_view(), name='arb_hard_optimization'),
     url('save_hard_opt_commment$', views.save_hard_opt_comment, name='save_hard_opt_comment'),
+    url('save_rebal_paramaters$', views.save_rebal_paramaters, name='save_rebal_paramaters'),
+
+
 ]

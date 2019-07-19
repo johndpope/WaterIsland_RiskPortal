@@ -111,8 +111,9 @@ $(document).ready(function () {
 
 
 
-    $('#arb_hard_opt_table tr td button').on('click', function (e) {
+    $('button').on('click', function (e) {
         var save_button_id = $(this).attr('id');
+        console.log(save_button_id);
         if (save_button_id && save_button_id.includes("save_note_")) {
             let id = save_button_id.split("_").pop();
             if (!id) {
@@ -152,34 +153,35 @@ $(document).ready(function () {
             }
 
             let rebal_multiple = $('#rebal_multiple_'+id).val();
-
-            console.log(rebal_multiple);
             let rebal_target = $('#rebal_target_'+id).val();
-            console.log(rebal_target);
 
-            // Fire an Ajax query to save the rebal multiple  and the  comment
-            // $.ajax({
-            //     type: 'POST',
-            //     url: '../portfolio_optimization/save_hard_opt_commment',
-            //     data: {'id': id, 'note': note},
-            //     success: function (response) {
-            //         if (response === 'Success') {
-            //             toastr.success('Your Note was updated!', 'Changes saved!', {
-            //                 positionClass: 'toast-top-right',
-            //                 containerId: 'toast-top-right'
-            //             });
-            //         }
-            //         else {
-            //             toastr.error('Failed to store the changes!', 'Please copy your edit and store it to avoid data loss!', {
-            //                 positionClass: 'toast-top-right',
-            //                 containerId: 'toast-top-right'
-            //             });
-            //         }
-            //     },
-            //     error: function (err) {
-            //         alert(err);
-            //     }
-            // })
+            if(!rebal_multiple){
+                rebal_multiple = null;
+            }
+
+            // Fire an Ajax query to save the rebal multiple and the Rebal Target
+            $.ajax({
+                type: 'POST',
+                url: '../portfolio_optimization/save_rebal_paramaters',
+                data: {'id': id, 'rebal_multiple': rebal_multiple, 'rebal_target': rebal_target},
+                success: function (response) {
+                    if (response === 'Success') {
+                        toastr.success('Multiple & Targets Updated', 'Changes saved!', {
+                            positionClass: 'toast-top-right',
+                            containerId: 'toast-top-right'
+                        });
+                    }
+                    else {
+                        toastr.error('Failed to store the changes!', 'Error!', {
+                            positionClass: 'toast-top-right',
+                            containerId: 'toast-top-right'
+                        });
+                    }
+                },
+                error: function (err) {
+                    alert(err);
+                }
+            })
         }
 
 

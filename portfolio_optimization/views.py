@@ -366,3 +366,22 @@ def save_hard_opt_comment(request):
             print(e)
 
     return HttpResponse(response)
+
+
+def save_rebal_paramaters(request):
+    response = 'Failed'
+    if request.method == 'POST':
+        try:
+            id = request.POST['id']
+            rebal_multiple = request.POST['rebal_multiple']
+            rebal_target = request.POST['rebal_target']
+            # get the Object
+            deal_object = HardFloatOptimization.objects.get(id=id)
+            deal_object.rebal_multiples = rebal_multiple if rebal_multiple else None
+            deal_object.rebal_target = rebal_target if rebal_target else deal_object.aed_aum_mult
+            deal_object.save()
+            response = 'Success'
+        except Exception as e:
+            print(e)
+
+    return HttpResponse(response)
