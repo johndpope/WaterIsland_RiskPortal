@@ -883,25 +883,6 @@ def email_pl_target_loss_budgets():
     df1.drop(columns=['TAQ'], inplace=True)
     styled_html = (df1.style.apply(style_funds).set_table_styles(styles).set_caption("PL Targets & Loss Budgets (" + get_todays_date_yyyy_mm_dd() + ")"))
 
-    html = """ \
-                <html>
-                  <head>
-                  </head>
-                  <body>
-                    <p>PL Targets & Loss Budgets ({date})</p>
-                    <a href="http://192.168.0.16:8000">Click to visit Realtime PL Targets & Loss Budgets Page</a>
-                    <br>
-                    <a href="http://192.168.0.16:8000/realtime_pnl_impacts/live_tradegroup_pnl">
-                        Click to visit Realtime TradeGroup PL Page
-                    </a>
-                    <br><br>
-                    {table}
-                    <br>
-                    <p>* Above data has been calculated using Average YTD Investable Assets</p>
-                  </body>
-                </html>
-        """.format(table=styled_html.render(), date=get_todays_date_yyyy_mm_dd())
-
     def export_excel(df_list):
         with io.BytesIO() as buffer:
             writer = pd.ExcelWriter(buffer)
@@ -1088,15 +1069,38 @@ def email_pl_target_loss_budgets():
 
     exporters = {'PL Targets & Loss Budgets (' + get_todays_date_yyyy_mm_dd() + ').xlsx': export_excel}
     subject = 'PL Targets & Loss Budgets - ' + get_todays_date_yyyy_mm_dd()
+
+    # Send MStrat Drawdowns
+    styled_ess_mstrat_df, original_ess_mstrat_df = ess_multistrat_drawdown_monitor()
+    html = """ \
+                <html>
+                  <head>
+                  </head>
+                  <body>
+                    <p>PL Targets & Loss Budgets ({date})</p>
+                    <a href="http://192.168.0.16:8000">Click to visit Realtime PL Targets & Loss Budgets Page</a>
+                    <br>
+                    <a href="http://192.168.0.16:8000/realtime_pnl_impacts/live_tradegroup_pnl">
+                        Click to visit Realtime TradeGroup PL Page
+                    </a>
+                    <br><br>
+                    {table}
+                    <br>
+                    <p>* Above data has been calculated using Average YTD Investable Assets</p>
+                    <br><br>
+                    <p>ESS Multistrat Drawdown Monitor</p>
+                    {essmstratdrawdown}
+                  </body>
+                </html>
+        """.format(table=styled_html.render(), date=get_todays_date_yyyy_mm_dd(),
+                   essmstratdrawdown=styled_ess_mstrat_df.hide_index().render(index=False))
+
     send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
                recipients=['iteam@wicfunds.com'],
                subject=subject, from_email='dispatch@wicfunds.com', html=html,
                EXPORTERS=exporters,
                dataframe=[final_live_df, [profit_sleeve_ytd_perc, loss_sleeve_ytd_perc],
                           [profit_sleeve_ytd, loss_sleeve_ytd], df1])
-
-    # Send MStrat Drawdowns
-    ess_multistrat_drawdown_monitor()
 
 
 def push_data_to_table(df):
@@ -1493,14 +1497,13 @@ def post_alert_before_eze_upload():
                   )
 
 
-
-
 @shared_task
 def ess_multistrat_drawdown_monitor():
     engine = create_engine("mysql://" + settings.WICFUNDS_DATABASE_USER + ":" + settings.WICFUNDS_DATABASE_PASSWORD +
                            "@" + settings.WICFUNDS_DATABASE_HOST + "/" + settings.WICFUNDS_DATABASE_NAME)
     con = engine.connect()
-
+    print('Now Processing: ESS Multi-Strat Drawdown Monitor')
+    df, final_df = None, None
     try:
         api_host = bbgclient.bbgclient.get_next_available_host()
         ess_drawdown_query = "SELECT TradeGroup, Ticker, AlphaHedge, RiskLimit, CurrentMktVal_Pct, DealDownside, SecType, "\
@@ -1590,22 +1593,23 @@ def ess_multistrat_drawdown_monitor():
         final_df['1D ROC'] = final_df['1D_bps']/100
         final_df['1D NAV Cont'] = 1e2*final_df['1D_Dollar']/final_df['aum']
 
+        final_df = final_df[['TradeGroup', 'Ticker', 'AlphaHedge', 'RiskLimit', 'aed_aum_pct', 'NAV Risk',
+                             'pct_of_limit', 'pct_aum_at_max_risk', 'Ann Vol', '33% of Vol', '50% of Vol',
+                             'YTD ROMC', 'YTD NAV Cont', '% of NAV Loss Limit', '5D ROC', '5D NAV Cont',
+                             '1D ROC', '1D NAV Cont']]
 
-        final_df = final_df[['TradeGroup', 'Ticker', 'AlphaHedge', 'RiskLimit', 'aed_aum_pct', 'NAV Risk', 'pct_of_limit',
-                    'pct_aum_at_max_risk', 'Ann Vol', '33% of Vol', '50% of Vol', 'YTD ROMC', 'YTD NAV Cont',
-                    '% of NAV Loss Limit', '5D ROC', '5D NAV Cont', '1D ROC', '1D NAV Cont']]
-
-        final_df.columns = ['TradeGroup', 'Alpha', 'AlphaHedge', 'RiskLimit', '% AUM (AED)', 'NAV Risk', '% of Limit',
-                   '% AUM @ Max Risk', 'Ann Vol', '33% of Vol', '50% of Vol', 'YTD ROMC', 'YTD NAV Cont',
-                   '% of NAV Loss Limit', '5D ROC', '5D NAV Cont', '1D ROC', '1D NAV Cont']
+        final_df.columns = ['TradeGroup', 'Alpha', 'AlphaHedge', 'RiskLimit', '% AUM (AED)', 'NAV Risk (%)', '% of Limit',
+                            '% AUM @ Max Risk', 'Ann Vol (%)', '33% of Vol (%)', '50% of Vol (%)', 'YTD ROMC (%)',
+                            'YTD NAV Cont (%)', '% of NAV Loss Limit', '5D ROC (%)', '5D NAV Cont (%)',
+                            '1D ROC (%)', '1D NAV Cont (%)']
 
         def define_color(row, column):
             color = 'black'
-            ytd_romc = abs(row['YTD ROMC'])
+            ytd_romc = abs(row['YTD ROMC (%)'])
             risk_limit = abs(row['RiskLimit'])
-            vol_tt_pct = abs(row['33% of Vol'])
-            vol_fifty_pct = abs(row['50% of Vol'])
-            ytd_nav_cont = abs(row['YTD NAV Cont'])
+            vol_tt_pct = abs(row['33% of Vol (%)'])
+            vol_fifty_pct = abs(row['50% of Vol (%)'])
+            ytd_nav_cont = abs(row['YTD NAV Cont (%)'])
 
             if column == 'ROMC':
                 if (ytd_romc > vol_tt_pct) and (ytd_romc < vol_fifty_pct):
@@ -1619,9 +1623,9 @@ def ess_multistrat_drawdown_monitor():
                     color = 'red'
 
             # No colors for Positive PnL names...
-            if row['YTD ROMC'] > 0:
+            if row['YTD ROMC (%)'] > 0:
                 color = 'black'
-            if row['YTD NAV Cont'] > 0:
+            if row['YTD NAV Cont (%)'] > 0:
                 color = 'black'
 
             return color
@@ -1634,9 +1638,9 @@ def ess_multistrat_drawdown_monitor():
         del final_df['NAV Cont Color']
 
         # Round to 2 decimals
-        cols_precision = ['% AUM (AED)', 'NAV Risk', '% of Limit', '% AUM @ Max Risk', 'Ann Vol', '33% of Vol',
-                          '50% of Vol', 'YTD ROMC', 'YTD NAV Cont', '% of NAV Loss Limit', '5D ROC', '5D NAV Cont',
-                          '1D ROC','1D NAV Cont']
+        cols_precision = ['% AUM (AED)', 'NAV Risk (%)', '% of Limit', '% AUM @ Max Risk', 'Ann Vol (%)', '33% of Vol (%)',
+                          '50% of Vol (%)', 'YTD ROMC (%)', 'YTD NAV Cont (%)', '% of NAV Loss Limit', '5D ROC (%)',
+                          '5D NAV Cont (%)', '1D ROC (%)','1D NAV Cont (%)']
         final_df[cols_precision] = final_df[cols_precision].round(decimals=2)
 
         def highlight_breaches(row):
@@ -1649,11 +1653,13 @@ def ess_multistrat_drawdown_monitor():
             ytd_romc_color = romc_color if not romc_color == 'black' else romc_color
             nav_cont_color = nav_color if not nav_color == 'black' else nav_color
 
-            ret[row.index.get_loc("YTD ROMC")] = "color:white;background-color:"+ytd_romc_color if not ytd_romc_color == 'black' else "color:black"
-            ret[row.index.get_loc("YTD NAV Cont")] = "color:white;background-color:"+nav_cont_color if not nav_cont_color == 'black' else "color:black"
+            ret[row.index.get_loc("YTD ROMC (%)")] = "color:white;background-color:"+ytd_romc_color if not ytd_romc_color == 'black' else "color:black"
+            ret[row.index.get_loc("YTD NAV Cont (%)")] = "color:white;background-color:"+nav_cont_color if not nav_cont_color == 'black' else "color:black"
             ret[row.index.get_loc("TradeGroup")] = "color:white;background-color:"+ytd_romc_color if not ytd_romc_color == 'black' else "color:black"
 
             return ret
+
+        del final_df['% AUM @ Max Risk']   # Temporarily hiding this column
 
         df = final_df.style.apply(highlight_breaches,axis=1).set_table_styles([
                     {'selector': 'tr:hover td', 'props': [('background-color', 'beige')]},
@@ -1665,32 +1671,16 @@ def ess_multistrat_drawdown_monitor():
                                                ('border', '1px solid black')]}
                 ])
 
-        html = """ \
-                <html>
-                  <head>
-                  </head>
-                  <body>
-                
-                    ESS Multi-Strat Drawdown Monitor{1}<br><br>
-                    {2}
-                  </body>
-                </html>
-        """.format(today, "", df.hide_index().render(index=False))
-
-        subject = '(Risk Automation) ESS Multi-strat Drawdown Monitor - ' + get_todays_date_yyyy_mm_dd()
-        send_email(from_addr=settings.EMAIL_HOST_USER, pswd=settings.EMAIL_HOST_PASSWORD,
-                   recipients=['kgorde@wicfunds.com', 'cplunkett@wicfunds.com', 'vaggarwal@wicfunds.com'],
-                   subject=subject, from_email='dispatch@wicfunds.com', html=html,
-                   EXPORTERS=[], dataframe=final_df
-                   )
-
     except Exception as e:
         print(e)
         slack_message('generic.slack',
-                      {'message': 'ERROR: ' + str(e)},
+                      {'message': 'ESS Multi-Strat DrawDown Monitor -- > ERROR: ' + str(e)},
                       channel=get_channel_name('realtimenavimpacts'),
                       token=settings.SLACK_TOKEN,
                       name='ESS_IDEA_DB_ERROR_INSPECTOR')
     finally:
         print('Closing Connection to Relational Database Service....')
         con.close()
+
+    return df, final_df
+
