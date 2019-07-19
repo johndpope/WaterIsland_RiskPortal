@@ -229,7 +229,7 @@ class CreditIdeaDetailsView(TemplateView):
                         estimated_closing_date = estimated_closing_date.strftime('%m/%d/%Y')
                     base_rebate = convert_to_float_else_zero(base_scenario.rebate)
                     base_spread = convert_to_float_else_zero(base_scenario.spread)
-                    base_days_to_close = base_scenario.days_to_close or 0
+                    base_days_to_close = calculate_number_of_days(base_scenario.estimated_closing_date)
                 else:
                     estimated_closing_date = ''
                     base_rebate = 0.00
@@ -373,7 +373,7 @@ class CreditIdeaDetailsView(TemplateView):
                     bbg_ask_price = 0.00
                     bbg_last_price = 0.00
 
-                equity_claw = convert_to_float_else_zero(100 + bbg_interest_rate * 100)
+                equity_claw = convert_to_float_else_zero(100 + bbg_interest_rate)
                 if make_whole_price == 0:
                     blend = 0.00
                 else:
@@ -430,8 +430,8 @@ class CreditIdeaDetailsView(TemplateView):
                     {'id': 'hedge', 'key': 'Hedge in $', 'value': convert_to_str_decimal(hedge_in_dollars, 0)},
                     {'id': 'target_short', 'key': 'Shares of Target Short', 'value': convert_to_str_decimal(shares_target_shorts, 0)},
                     {'id': 'arb_spread', 'key': 'Arb Spread', 'value': convert_to_str_decimal(base_spread)},
-                    {'id': 'less_rebate', 'key': 'Less:  Rebate', 'value': convert_to_str_decimal(base_rebate * -1)},
-                    {'id': 'less_short_rebate', 'key': 'Less:  Short Rebate', 'value': convert_to_str_decimal(less_short_rebate)},
+                    {'id': 'less_rebate', 'key': 'Less: Rebate', 'value': convert_to_str_decimal(base_rebate * -1)},
+                    {'id': 'less_short_rebate', 'key': 'Less: Short Rebate', 'value': convert_to_str_decimal(less_short_rebate)},
                     {'id': 'short_spread', 'key': 'Short Spread', 'value': convert_to_str_decimal(short_spread)},
                 ]
 
@@ -628,7 +628,7 @@ def save_credit_idea_data(master_data, credit_idea_id):
                 credit_details_obj = CreditIdeaCreditDetails.objects.get(credit_idea_id=credit_idea_id)
                 credit_details = master_data.get('credit_details')
                 credit_details_obj.bond_ticker = credit_details.get('bond_information_bond_ticker')
-                credit_details_obj.face_value_of_bonds = credit_details.get('bond_information_face_value_of_bonds')
+                credit_details_obj.face_value_of_bonds = credit_details.get('passive_phase_arb_face_value_of_bonds')
                 credit_details_obj.bbg_security_name = credit_details.get('bond_information_bbg_security_name')
                 credit_details_obj.bbg_interest_rate = credit_details.get('bond_information_bbg_interest_rate')
                 credit_details_obj.bbg_issue_size = credit_details.get('bond_information_bbg_issue_size')

@@ -7,28 +7,6 @@ $(document).ready(function () {
   let scenario_data = $.parseJSON($('#scenario_data').val());
   let passive_data = $.parseJSON($('#passive_data').val());
 
-  window.onload = function() {
-    var non_decimal_fields = ['sizing_val_fund_assets', 'passive_value_size_shares', 'passive_value_spend',
-                              'sizing_val_float_so', 'sizing_val_five_cap', 'hedging_hedge', 'hedging_target_short',
-                              'estimated_liquidity_bbg_est_daily_vol', 'estimated_liquidity_credit_team_view']
-    var all_input_fields = document.getElementsByTagName("input");
-    for (var i = 0; i < all_input_fields.length; i++) {
-      var input_field = all_input_fields[i];
-      if (input_field.id && input_field.value && input_field.type != 'hidden') {
-        var decimal = 2;
-        if (input_field.id.includes('deal_terms_value_share')) {
-          decimal = 4;
-        }
-        else if (non_decimal_fields.includes(input_field.id)) {
-          decimal = 0;
-        }
-        else if (input_field.id.includes('days_to_close_') || input_field.id.includes('dollars_to_make_') || input_field.id.includes('dollars_to_lose_')) {
-          decimal = 0;
-        }
-        $('#' + input_field.id).val(convert_to_decimal(input_field.value, decimal));
-      }
-    }
-  }
   // Downsides Data Table
   var downsides_table = $('#arb_downsides_table').DataTable({
     data: downsides_data,
@@ -39,7 +17,7 @@ $(document).ready(function () {
       {
         orderable: false,
         render: function (data, type, row) {
-          return '<input id="upside_value_' + row.id + '" onchange="onChange(id)" onfocusout="focusOut(id)" class="form-control form-control-sm" type="text" maxlength="10" value="' + row.value + '">';
+          return '<input id="upside_value_' + row.id + '" onchange="onChange(id)" onfocusout="focusOut(id)" class="form-control form-control-sm" type="text" maxlength="10" value="' + convert_to_decimal(row.value, 2) + '">';
         }
       },
     ],
@@ -302,7 +280,7 @@ $(document).ready(function () {
 
   // Add new row to Scenario table
   $('#addScenarioRow').on('click', function () {
-    scenario_row_count = scenario_table.rows().count();
+    let scenario_row_count = scenario_table.rows().count();
     let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + scenario_row_count.toString()).data()[0].database_id;
     let random_id = Math.random().toString().replace(".", "");
     let last_price = $('#last_price_' + db_id.toString()).val();
@@ -349,7 +327,6 @@ $(document).ready(function () {
       success: function (response) {
           if (response === "success") {
               swal("Success! The Credit Idea Equity has been saved!", {icon: "success"});
-              window.location.reload();
           }
           else {
               //show a sweet alert
@@ -384,7 +361,7 @@ $(document).ready(function () {
                        'returns_estimated_closing_date', 'returns_days_to_close', 'profits_principal', 'profits_carry',
                        'profits_rebate', 'profits_hedge', 'profits_total', 'profits_day_of_break']
 
-      credit_idea_details_keys = ['bond_information_bond_ticker', 'bond_information_face_value_of_bonds',
+      credit_idea_details_keys = ['bond_information_bond_ticker', 'passive_phase_arb_face_value_of_bonds',
         'bond_information_bbg_security_name', 'bond_information_bbg_interest_rate', 'bond_information_bbg_issue_size',
         'bond_price_est_purchase_price', 'bond_price_bbg_bid_price', 'bond_price_bbg_ask_price', 'bond_price_bbg_last_price',
         'potential_outcomes_value_base_break_price', 'potential_outcomes_value_conservative_break_price',
@@ -407,7 +384,7 @@ $(document).ready(function () {
         row_prefix = 'scenario_w_hedge_';
         cell_prefix = 'scenario_w_hedge_';
       }
-      scenario_row_count = $('#' + table_id).DataTable().rows().count();
+      let scenario_row_count = document.getElementById(table_id + "_tbody").rows.length;
       for (var i = 1; i <= scenario_row_count; i++) {
         scenario_temp_dict = {};
         let db_id = $('#' + table_id).DataTable().rows('#' + row_prefix + 'row_' + i.toString()).data()[0].database_id;
@@ -438,8 +415,8 @@ $(document).ready(function () {
   }
 
   // Call onchange method on exp_close for all rows in Equity Scenario Table to update all other dependent fields.
-  let scenario_row_count = scenario_table.rows().count();
-  for (var i = 1; i <= scenario_row_count; i++) {
+  let scenario_table_row_count = scenario_table.rows().count();
+  for (var i = 1; i <= scenario_table_row_count; i++) {
     let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
     $('#exp_close_' + db_id.toString()).trigger('onchange');
   }
@@ -447,16 +424,76 @@ $(document).ready(function () {
 });
 
 function onChange(id) {
-  if (id.includes('exp_close_')) {
+  console.log(id);
+  if (id.startsWith('exp_close_')) {
     let row_id = id.split("_").pop()
     update_days_to_close(row_id);
     onChange('days_to_close_' + row_id);
     update_rebate_adjusted_spread_date();
+    let scenario_row_count = document.getElementById("scenario_with_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_with_hedge_table').DataTable().rows('#scenario_w_hedge_row_' + i.toString()).data()[0].database_id;
+      update_scenario_w_hedge_returns_estimated_closing_date(db_id);
+      onChange('scenario_w_hedge_returns_estimated_closing_date_' + db_id.toString());
+    }
+
+    scenario_row_count = document.getElementById("scenario_without_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_without_hedge_table').DataTable().rows('#scenario_wo_hedge_row_' + i.toString()).data()[0].database_id;
+      update_scenario_wo_hedge_returns_estimated_closing_date(db_id);
+      onChange('scenario_wo_hedge_returns_estimated_closing_date_' + db_id.toString());
+    }
   }
-  else if (id.includes('days_to_close_') & (id.match(/\d+$/) != undefined )) {
+  else if (id.startsWith('scenario_w_hedge_returns_estimated_closing_date_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_returns_days_to_close(row_id);
+    onChange('scenario_w_hedge_returns_days_to_close_' + row_id);
+  }
+  else if (id.startsWith('scenario_wo_hedge_returns_estimated_closing_date_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_wo_hedge_returns_days_to_close(row_id);
+    onChange('scenario_wo_hedge_returns_days_to_close_' + row_id);
+  }
+  else if (id.startsWith('days_to_close_') & (id.match(/\d+$/) != undefined )) {
     let row_id = id.split("_").pop();
     update_rebate(row_id);
     onChange('rebate_' + row_id);
+    if ($('#scenario_' + row_id.toString()).val().toString().toLowerCase().includes('base')) {
+      update_hedging_less_short_rebate(row_id);
+      onChange('hedging_less_short_rebate');
+    }
+  }
+  else if (id.startsWith('scenario_w_hedge_returns_days_to_close_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_returns_annual_pct(row_id);
+  }
+  else if (id.startsWith('scenario_wo_hedge_returns_days_to_close_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_wo_hedge_returns_annual_pct(row_id);
+    update_scenario_wo_hedge_bond_carry_earned(row_id);
+    onChange('scenario_wo_hedge_bond_carry_earned_' + row_id);
+    update_scenario_w_hedge_bond_carry_earned(row_id);
+    onChange('scenario_w_hedge_bond_carry_earned_' + row_id);
+  }
+  else if (id.startsWith('scenario_wo_hedge_bond_carry_earned_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_wo_hedge_bond_deal_value(row_id);
+    onChange('scenario_wo_hedge_bond_deal_value_' + row_id);
+    update_scenario_wo_hedge_profits_carry(row_id);
+    onChange('scenario_wo_hedge_profits_carry_' + row_id);
+  }
+  else if (id.startsWith('scenario_wo_hedge_profits_carry_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_wo_hedge_profits_total(row_id);
+  }
+  else if (id.startsWith('scenario_w_hedge_profits_carry_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_profits_total(row_id);
+  }
+  else if (id.startsWith('scenario_w_hedge_bond_carry_earned_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_bond_deal_value(row_id);
+    onChange('scenario_w_hedge_bond_deal_value_' + row_id);
   }
   else if (id.includes('passive_value_nav_impact')) {
     update_passive_value_size_shares();
@@ -472,7 +509,7 @@ function onChange(id) {
     update_passive_value_spend();
     onChange('passive_value_spend');
 
-    scenario_row_count = $('#scenario_table').DataTable().rows().count();
+    let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
     for (var i = 1; i <= scenario_row_count; i++) {
       let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
       update_dollars_to_make(db_id);
@@ -486,15 +523,15 @@ function onChange(id) {
     update_sizing_val_five_cap();
     onChange('sizing_val_five_cap');
   }
-  else if (id.includes('last_price_') & (id.match(/\d+$/) != undefined )) {
+  else if (id.startsWith('last_price_') & (id.match(/\d+$/) != undefined )) {
     let row_id = id.split("_").pop();
     onChange('deal_value_' + row_id);
   }
-  else if (id.includes('dividends_') & (id.match(/\d+$/) != undefined )) {
+  else if (id.startsWith('dividends_') & (id.match(/\d+$/) != undefined )) {
     let row_id = id.split("_").pop();
     onChange('rebate_' + row_id);
   }
-  else if (id.includes('hedge_') & (id.match(/\d+$/) != undefined )) {
+  else if (id.startsWith('hedge_') & (id.match(/\d+$/) != undefined )) {
     let row_id = id.split("_").pop();
     onChange('rebate_' + row_id);
   }
@@ -505,7 +542,7 @@ function onChange(id) {
     update_upside_value_topping_spread();
     onChange('upside_value_topping_spread');
 
-    scenario_row_count = $('#scenario_table').DataTable().rows().count();
+    let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
     for (var i = 1; i <= scenario_row_count; i++) {
       let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
       update_rebate(db_id);
@@ -521,7 +558,7 @@ function onChange(id) {
   else if (id.includes('deal_terms_value_deal_value')) {
     update_deal_terms_value_gross_spread();
     onChange('deal_terms_value_gross_spread');
-    scenario_row_count = $('#scenario_table').DataTable().rows().count();
+    let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
     for (var i = 1; i <= scenario_row_count; i++) {
       let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
       update_deal_Value(db_id);
@@ -535,30 +572,38 @@ function onChange(id) {
     update_passive_value_size_shares();
     onChange('passive_value_size_shares');
 
-    scenario_row_count = $('#scenario_table').DataTable().rows().count();
+    let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
     for (var i = 1; i <= scenario_row_count; i++) {
       let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
       update_dollars_to_lose(db_id);
       update_implied_prob(db_id);
     }
   }
-  else if (id.includes('rebate_') & (id.match(/\d+$/) != undefined )) {
+  else if (id.startsWith('rebate_') & (id.match(/\d+$/) != undefined )) {
     let row_id = id.split("_").pop();
     update_deal_Value(row_id);
     onChange('deal_value_' + row_id);
+    if ($('#scenario_' + row_id.toString()).val().toString().toLowerCase().includes('base')) {
+      update_hedging_less_rebate(row_id);
+      onChange('hedging_less_rebate');
+    }
   }
-  else if (id.includes('deal_value_') & (id.match(/\d+$/) != undefined )) {
+  else if (id.startsWith('deal_value_') & (id.match(/\d+$/) != undefined )) {
     let row_id = id.split("_").pop();
     update_spread(row_id);
     onChange('spread_' + row_id);
   }
-  else if (id.includes('spread_') & (id.match(/\d+$/) != undefined )) {
+  else if (id.startsWith('spread_') & (id.match(/\d+$/) != undefined )) {
     let row_id = id.split("_").pop();
     update_gross_pct(row_id);
     onChange('gross_pct_' + row_id);
     update_dollars_to_make(row_id);
+    if ($('#scenario_' + row_id.toString()).val().toString().toLowerCase().includes('base')) {
+      update_hedging_arb_spread(row_id);
+      onChange('hedging_arb_spread');
+    }
   }
-  else if (id.includes('gross_pct_') & (id.match(/\d+$/) != undefined )) {
+  else if (id.startsWith('gross_pct_') & (id.match(/\d+$/) != undefined )) {
     let row_id = id.split("_").pop();
     update_annual_pct(row_id);
   }
@@ -572,7 +617,11 @@ function onChange(id) {
   }
   else if (id.includes('rebate_target_val_pb_rate')) {
     update_rebate_target_val_rebate_pct();
-    // onChange('rebate_target_val_rebate_pct');
+    onChange('rebate_target_val_rebate_pct');
+  }
+  else if (id == 'rebate_target_val_rebate_pct') {
+    update_hedging_less_short_rebate();
+    onChange('hedging_less_short_rebate');
   }
   else if (id.includes('rebate_acq_val_rebate_pct')) {
     onChange('deal_terms_value_share');
@@ -589,12 +638,16 @@ function onChange(id) {
     update_upside_value_normal_spread();
     update_passive_value_spend();
     onChange('passive_value_spend');
-    scenario_row_count = $('#scenario_table').DataTable().rows().count();
+    let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
     for (var i = 1; i <= scenario_row_count; i++) {
       let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
       update_last_price(db_id);
       onChange('last_price_' + db_id.toString());
     }
+    update_hedging_target_short();
+    onChange('hedging_target_short');
+    update_hedging_less_short_rebate();
+    onChange('hedging_less_short_rebate');
   }
   else if (id.includes('deal_terms_value_curr_price')) {
     update_deal_terms_value_gross_spread();
@@ -603,7 +656,7 @@ function onChange(id) {
   else if (id.includes('deal_terms_value_acq_ticker')) {
     update_deal_terms_value_deal_value();
     onChange('deal_terms_value_deal_value');
-    scenario_row_count = $('#scenario_table').DataTable().rows().count();
+    let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
     for (var i = 1; i <= scenario_row_count; i++) {
       let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
       update_rebate(db_id);
@@ -620,7 +673,7 @@ function onChange(id) {
     update_passive_value_size_shares();
     onChange('passive_value_size_shares');
 
-    scenario_row_count = $('#scenario_table').DataTable().rows().count();
+    let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
     for (var i = 1; i <= scenario_row_count; i++) {
       let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
       update_dollars_to_lose(db_id);
@@ -634,10 +687,476 @@ function onChange(id) {
     update_deal_terms_value_deal_value();
     onChange('deal_terms_value_deal_value');
   }
+  else if (id == 'passive_phase_arb_face_value_of_bonds') {
+    update_passive_phase_arb_arb_spend();
+    onChange('passive_phase_arb_arb_spend');
+
+    let scenario_row_count = document.getElementById("scenario_with_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_with_hedge_table').DataTable().rows('#scenario_w_hedge_row_' + i.toString()).data()[0].database_id;
+      update_scenario_w_hedge_bond_rebate(db_id);
+      onChange('scenario_w_hedge_bond_rebate_' + db_id);
+      update_scenario_w_hedge_profits_principal(row_id);
+      onChange('scenario_w_hedge_profits_principal_' + row_id);
+      update_scenario_w_hedge_profits_carry(row_id);
+      onChange('scenario_w_hedge_profits_carry_' + row_id);
+      update_scenario_w_hedge_profits_rebate(row_id);
+      onChange('scenario_w_hedge_profits_rebate_' + row_id);
+    }
+
+    scenario_row_count = document.getElementById("scenario_without_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_without_hedge_table').DataTable().rows('#scenario_wo_hedge_row_' + i.toString()).data()[0].database_id;
+      update_scenario_wo_hedge_profits_principal(row_id);
+      onChange('scenario_wo_hedge_profits_principal_' + row_id);
+      update_scenario_wo_hedge_profits_carry(row_id);
+      onChange('scenario_wo_hedge_profits_carry_' + row_id);
+    }
+  }
+  else if (id == 'passive_phase_arb_arb_spend') {
+    update_hedging_hedge();
+    onChange('hedging_hedge');
+  }
+  else if (id == 'hedging_hedge') {
+    update_hedging_target_short();
+    onChange('hedging_target_short');
+  }
+  else if (id == 'hedging_target_short') {
+    let scenario_row_count = document.getElementById("scenario_with_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_with_hedge_table').DataTable().rows('#scenario_w_hedge_row_' + i.toString()).data()[0].database_id;
+      update_scenario_w_hedge_bond_rebate(db_id);
+      onChange('scenario_w_hedge_bond_rebate_' + db_id.toString());
+      // update_scenario_w_hedge_bond_hedge(db_id); TO-DO
+      // onChange('scenario_w_hedge_bond_hedge_' + db_id.toString()); TO-DO
+    }
+  }
+  else if (id == 'hedging_proposed_ratio') {
+    update_hedging_hedge();
+    onChange('hedging_hedge');
+  }
+  else if (id == 'hedging_arb_spread') {
+    update_hedging_short_spread();
+  }
+  else if (id == 'hedging_less_rebate') {
+    update_hedging_short_spread();
+  }
+  else if (id == 'hedging_less_short_rebate') {
+    update_hedging_short_spread();
+
+    let scenario_row_count = document.getElementById("scenario_with_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_with_hedge_table').DataTable().rows('#scenario_w_hedge_row_' + i.toString()).data()[0].database_id;
+      update_scenario_w_hedge_bond_rebate(db_id);
+      onChange('scenario_w_hedge_bond_rebate_' + db_id);
+    }
+  }
+  else if (id.startsWith('scenario_w_hedge_bond_rebate_')  & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_bond_deal_value(row_id);
+    onChange('scenario_w_hedge_bond_deal_value_' + row_id);
+    update_scenario_w_hedge_profits_rebate(row_id);
+    onChange('scenario_w_hedge_profits_rebate_' + row_id);
+
+  }
+  else if (id.startsWith('scenario_w_hedge_bond_deal_value_')  & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_bond_spread(row_id);
+    onChange('scenario_w_hedge_bond_spread_' + row_id);
+  }
+  else if (id.startsWith('scenario_w_hedge_bond_spread_')  & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_returns_gross_pct(row_id);
+    onChange('scenario_w_hedge_returns_gross_pct_' + row_id);
+  }
+  else if (id.startsWith('scenario_w_hedge_returns_gross_pct_')  & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_returns_annual_pct(row_id);
+  }
+  else if (id.startsWith('scenario_wo_hedge_bond_deal_value_')  & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_wo_hedge_bond_spread(row_id);
+    onChange('scenario_wo_hedge_bond_spread_' + row_id);
+  }
+  else if (id.startsWith('scenario_wo_hedge_bond_spread_')  & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_wo_hedge_returns_gross_pct(row_id);
+    onChange('scenario_wo_hedge_returns_gross_pct_' + row_id);
+  }
+  else if (id.startsWith('scenario_wo_hedge_returns_gross_pct_')  & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_wo_hedge_returns_annual_pct(row_id);
+  }
+  else if (id.startsWith('scenario_w_hedge_profits_rebate_')  & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_profits_total(row_id);
+  }
+  else if (id == 'bond_price_est_purchase_price') {
+    update_passive_phase_arb_arb_spend();
+    onChange('passive_phase_arb_arb_spend');
+
+    let scenario_hedge_row_count = document.getElementById("scenario_with_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_hedge_row_count; i++) {
+      let db_id = $('#scenario_with_hedge_table').DataTable().rows('#scenario_w_hedge_row_' + i.toString()).data()[0].database_id;
+      update_scenario_w_hedge_bond_last_price(db_id);
+      onChange('scenario_w_hedge_bond_last_price_' + db_id.toString());
+    }
+
+    let scenario_wo_hedge_row_count = document.getElementById("scenario_without_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_wo_hedge_row_count; i++) {
+      let db_id = $('#scenario_without_hedge_table').DataTable().rows('#scenario_wo_hedge_row_' + i.toString()).data()[0].database_id;
+      update_scenario_wo_hedge_bond_last_price(db_id);
+      onChange('scenario_wo_hedge_bond_last_price_' + db_id.toString());
+    }
+  }
+  else if (id.startsWith('scenario_w_hedge_bond_last_price_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_bond_spread(row_id);
+    onChange('scenario_w_hedge_bond_spread_' + row_id);
+    update_scenario_w_hedge_profits_principal(row_id);
+    onChange('scenario_w_hedge_profits_principal_' + row_id);
+  }
+  else if (id.startsWith('scenario_w_hedge_profits_principal_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_profits_total(row_id);
+  }
+  else if (id.startsWith('scenario_wo_hedge_bond_last_price_') & (id.match(/\d+$/) != undefined )) {
+    console.log('LAST PRICE CHANGE WO', id);
+  }
+  else if (id == 'potential_outcomes_value_base_break_price') {
+    let row_id = '3';
+    let scenario_row_count = document.getElementById("scenario_without_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_without_hedge_table').DataTable().rows('#scenario_wo_hedge_row_' + i.toString()).data()[0].database_id;
+      if ($('#scenario_wo_hedge_scenario_' + db_id.toString()).val().toString().toLowerCase().includes('no deal (base case)')) {
+        row_id = db_id;
+      }
+    }
+    update_scenario_wo_hedge_bond_redemption(row_id, 'potential_outcomes_value_base_break_price');
+    onChange('scenario_wo_hedge_bond_redemption_' + row_id);
+  }
+  else if (id.startsWith('scenario_wo_hedge_bond_redemption_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_wo_hedge_bond_deal_value(row_id);
+    onChange('scenario_wo_hedge_bond_deal_value_' + row_id);
+    update_scenario_wo_hedge_profits_principal(row_id);
+    onChange('scenario_wo_hedge_profits_principal_' + row_id);
+    let redemption_row_id = '3';
+    let scenario_row_count = document.getElementById("scenario_with_hedge_table_tbody").rows.length;
+    let matching_scenario = $('#scenario_wo_hedge_scenario_' + row_id).val();
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_with_hedge_table').DataTable().rows('#scenario_w_hedge_row_' + i.toString()).data()[0].database_id;
+      if ($('#scenario_w_hedge_scenario_' + db_id.toString()).val().toString().toLowerCase().includes(matching_scenario.toLowerCase())) {
+        redemption_row_id = db_id;
+      }
+    }
+    update_scenario_w_hedge_bond_redemption(redemption_row_id, id);
+    onChange('scenario_w_hedge_bond_redemption_' + row_id);
+  }
+  else if (id.startsWith('scenario_w_hedge_bond_redemption_') & (id.match(/\d+$/) != undefined )) {
+    let row_id = id.split("_").pop();
+    update_scenario_w_hedge_bond_deal_value(row_id);
+    onChange('scenario_w_hedge_bond_deal_value_' + row_id);
+    update_scenario_w_hedge_profits_principal(row_id);
+    onChange('scenario_w_hedge_profits_principal_' + row_id);
+  }
+  else if (id == 'potential_outcomes_value_conservative_break_price') {
+    let row_id = '3';
+    let scenario_row_count = document.getElementById("scenario_without_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_without_hedge_table').DataTable().rows('#scenario_wo_hedge_row_' + i.toString()).data()[0].database_id;
+      if ($('#scenario_wo_hedge_scenario_' + db_id.toString()).val().toString().toLowerCase().includes('no deal (conservative case)')) {
+        row_id = db_id;
+      }
+    }
+    update_scenario_wo_hedge_bond_redemption(row_id, 'potential_outcomes_value_conservative_break_price');
+    onChange('scenario_wo_hedge_bond_redemption_' + row_id);
+  }
+  else if (id == 'potential_outcomes_value_call_price') {
+    let row_id = '3';
+    let scenario_row_count = document.getElementById("scenario_without_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_without_hedge_table').DataTable().rows('#scenario_wo_hedge_row_' + i.toString()).data()[0].database_id;
+      if ($('#scenario_wo_hedge_scenario_' + db_id.toString()).val().toString().toLowerCase().includes('bonds called (redemption)')) {
+        row_id = db_id;
+      }
+    }
+    update_scenario_wo_hedge_bond_redemption(row_id, 'potential_outcomes_value_call_price');
+    onChange('scenario_wo_hedge_bond_redemption_' + row_id);
+  }
+  else if (id == 'potential_outcomes_value_make_whole_price') {
+    update_potential_outcomes_value_blend();
+  }
+  else if (id == 'potential_outcomes_equity_claw_value') {
+    update_potential_outcomes_value_blend();
+  }
+  else if (id == 'potential_outcomes_value_equity_claw_value') {
+    update_potential_outcomes_value_blend();
+  }
+  else if (id == 'potential_outcomes_value_change_of_control') {
+    let row_id = '3';
+    let scenario_row_count = document.getElementById("scenario_without_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_row_count; i++) {
+      let db_id = $('#scenario_without_hedge_table').DataTable().rows('#scenario_wo_hedge_row_' + i.toString()).data()[0].database_id;
+      if ($('#scenario_wo_hedge_scenario_' + db_id.toString()).val().toString().toLowerCase().includes('change of control (coc)')) {
+        row_id = db_id;
+      }
+    }
+    update_scenario_wo_hedge_bond_redemption(row_id, 'potential_outcomes_value_change_of_control');
+    onChange('scenario_wo_hedge_bond_redemption_' + row_id);
+  }
+  else if (id == 'bond_information_bbg_interest_rate') {
+    update_potential_outcomes_value_equity_claw_value();
+    onChange('potential_outcomes_value_equity_claw_value');
+
+    let scenario_hedge_row_count = document.getElementById("scenario_with_hedge_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_hedge_row_count; i++) {
+      let db_id = $('#scenario_with_hedge_table').DataTable().rows('#scenario_w_hedge_row_' + i.toString()).data()[0].database_id;
+      update_scenario_w_hedge_bond_carry_earned(db_id);
+      onChange('scenario_w_hedge_bond_carry_earned_' + db_id);
+      update_scenario_wo_hedge_bond_carry_earned(db_id);
+      onChange('scenario_wo_hedge_bond_carry_earned_' + db_id);
+    }
+  }
+
 }
 
 function focusOut(id) {
   $('#' + id).val($('#' + id).val().replace(/,/g, ''));
+}
+
+function update_potential_outcomes_value_equity_claw_value() {
+  let equity_claw_value = 100 + parseFloat($('#bond_information_bbg_interest_rate').val());
+  $('#potential_outcomes_value_equity_claw_value').val(convert_to_decimal(equity_claw_value, 3));
+}
+
+function update_potential_outcomes_value_blend() {
+  let potential_blend = 0;
+  let potential_make_whole_price = parseFloat($('#potential_outcomes_value_make_whole_price').val());
+  if (potential_make_whole_price == 0 || potential_make_whole_price == '' || isNaN(potential_make_whole_price)) {
+    potential_blend = 0;
+  }
+  else {
+    potential_blend = parseFloat($('#potential_outcomes_value_equity_claw_value').val()) *
+                      parseFloat($('#potential_outcomes_equity_claw_value').val()) * 0.01 +
+                      (1 - parseFloat($('#potential_outcomes_equity_claw_value').val()) * 0.01) * potential_make_whole_price;
+  }
+  $('#potential_outcomes_value_blend').val(convert_to_decimal(potential_blend, 3));
+}
+
+function update_scenario_wo_hedge_bond_redemption(row_id, source_id) {
+  let value = parseFloat($('#' + source_id).val());
+  $('#scenario_wo_hedge_bond_redemption_' + row_id.toString()).val(convert_to_decimal(value, 3));
+}
+
+function update_scenario_w_hedge_bond_redemption(row_id, source_id) {
+  let value = parseFloat($('#' + source_id).val());
+  $('#scenario_w_hedge_bond_redemption_' + row_id.toString()).val(convert_to_decimal(value, 3));
+}
+
+function update_scenario_w_hedge_returns_estimated_closing_date(row_id) {
+  let base_exp_close = '';
+  let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
+  for (var i = 1; i <= scenario_row_count; i++) {
+    let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
+    if ($('#scenario_' + db_id.toString()).val().toString().toLowerCase().includes('base')) {
+      base_exp_close = $('#exp_close_' + db_id.toString()).val();
+    }
+  }
+  $('#scenario_w_hedge_returns_estimated_closing_date_' + row_id).val(base_exp_close);
+}
+
+function update_scenario_wo_hedge_profits_carry(row_id) {
+  let profits_carry = parseFloat($('#scenario_wo_hedge_bond_carry_earned_' + row_id).val()) *
+                      parseFloat($('#passive_phase_arb_face_value_of_bonds').val()) * 0.01;
+  $('#scenario_wo_hedge_profits_carry_' + row_id).val(convert_to_decimal(profits_carry, 0));
+}
+
+function update_scenario_w_hedge_profits_carry(row_id) {
+  let profits_carry = parseFloat($('#scenario_w_hedge_bond_carry_earned_' + row_id).val()) *
+                      parseFloat($('#passive_phase_arb_face_value_of_bonds').val()) * 0.01;
+  $('#scenario_w_hedge_profits_carry_' + row_id).val(convert_to_decimal(profits_carry, 0));
+}
+
+function update_scenario_wo_hedge_returns_estimated_closing_date(row_id) {
+  let base_exp_close = '';
+  let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
+  for (var i = 1; i <= scenario_row_count; i++) {
+    let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
+    if ($('#scenario_' + db_id.toString()).val().toString().toLowerCase().includes('base')) {
+      base_exp_close = $('#exp_close_' + db_id.toString()).val();
+    }
+  }
+  $('#scenario_wo_hedge_returns_estimated_closing_date_' + row_id).val(base_exp_close);
+}
+
+function update_passive_phase_arb_arb_spend() {
+  let passive_arb_spend = parseFloat($('#passive_phase_arb_face_value_of_bonds').val()) * parseFloat($('#bond_price_est_purchase_price').val()) * 0.01;
+  $('#passive_phase_arb_arb_spend').val(convert_to_decimal(passive_arb_spend, 0));
+}
+
+function update_hedging_hedge() {
+  let hedging_hedge = parseFloat($('#passive_phase_arb_arb_spend').val()) * parseFloat($('#hedging_proposed_ratio').val()) * 0.01;
+  $('#hedging_hedge').val(convert_to_decimal(hedging_hedge, 0));
+}
+
+function update_hedging_target_short() {
+  let target_short = 0;
+  if (parseFloat($('#deal_terms_value_target_ticker').val()) != 0) {
+    target_short = parseFloat($('#hedging_hedge').val()) / parseFloat($('#deal_terms_value_target_ticker').val());
+  }
+  parseFloat($('#hedging_target_short').val(convert_to_decimal(target_short, 0)));
+}
+
+function update_hedging_arb_spread(spread_id) {
+  let base_spread = parseFloat($('#spread_' + spread_id.toString()).val());
+  $('#hedging_arb_spread').val(convert_to_decimal(base_spread, 2));
+}
+
+function update_hedging_short_spread() {
+  let hedging_short_spread = parseFloat($('#hedging_arb_spread').val()) +
+                             parseFloat($('#hedging_less_rebate').val()) +
+                             parseFloat($('#hedging_less_short_rebate').val());
+  $('#hedging_short_spread').val(convert_to_decimal(hedging_short_spread, 2));
+}
+
+function update_hedging_less_rebate(rebate_id) {
+  let base_rebate = parseFloat($('#rebate_' + rebate_id.toString()).val()) * -1;
+  $('#hedging_less_rebate').val(convert_to_decimal(base_rebate, 2));
+}
+
+function update_hedging_less_short_rebate() {
+  let base_days_to_close = 0;
+  let scenario_table_row_count = document.getElementById("scenario_table_tbody").rows.length;
+    for (var i = 1; i <= scenario_table_row_count; i++) {
+      let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
+      if ($('#scenario_' + db_id.toString()).val().toString().toLowerCase().includes('base')) {
+        base_days_to_close = parseFloat($('#days_to_close_' + db_id.toString()).val());
+      }
+  }
+  let less_short_rebate = parseFloat($('#deal_terms_value_target_ticker').val()) * -1 *
+                          parseFloat($('#rebate_target_val_rebate_pct').val()) * 0.01 *
+                          base_days_to_close / 365;
+  $('#hedging_less_short_rebate').val(convert_to_decimal(less_short_rebate, 2));
+}
+
+function update_scenario_w_hedge_bond_rebate(row_id) {
+  let bond_rebate = 0;
+  if (parseFloat($('#passive_phase_arb_face_value_of_bonds').val()) != 0) {
+    bond_rebate = parseFloat($('#hedging_target_short').val()) * parseFloat($('#hedging_less_short_rebate').val()) /
+                      parseFloat($('#passive_phase_arb_face_value_of_bonds').val()) * 100 * -1;
+  }
+  $('#scenario_w_hedge_bond_rebate_' + row_id).val(convert_to_decimal(bond_rebate, 3));
+}
+
+function update_scenario_w_hedge_bond_deal_value(row_id) {
+  let bond_deal_value = parseFloat($('#scenario_w_hedge_bond_redemption_' + row_id).val()) +
+                        parseFloat($('#scenario_w_hedge_bond_carry_earned_' + row_id).val()) +
+                        parseFloat($('#scenario_w_hedge_bond_rebate_' + row_id).val()) +
+                        parseFloat($('#scenario_w_hedge_bond_hedge_' + row_id).val());
+  $('#scenario_w_hedge_bond_deal_value_' + row_id).val(convert_to_decimal(bond_deal_value, 3));
+}
+
+function update_scenario_wo_hedge_bond_deal_value(row_id) {
+  let bond_deal_value = parseFloat($('#scenario_wo_hedge_bond_redemption_' + row_id).val()) +
+                        parseFloat($('#scenario_wo_hedge_bond_carry_earned_' + row_id).val());
+  $('#scenario_wo_hedge_bond_deal_value_' + row_id).val(convert_to_decimal(bond_deal_value, 3));
+}
+
+function update_scenario_w_hedge_profits_rebate(row_id) {
+  let profits_rebate = parseFloat($('#scenario_w_hedge_bond_rebate_' + row_id).val()) *
+                       parseFloat($('#passive_phase_arb_face_value_of_bonds').val()) * 0.01;
+  $('#scenario_w_hedge_profits_rebate_' + row_id).val(convert_to_decimal(profits_rebate, 0));
+}
+
+function update_scenario_w_hedge_bond_spread(row_id) {
+  let bond_spread = parseFloat($('#scenario_w_hedge_bond_deal_value_' + row_id).val()) -
+                    parseFloat($('#scenario_w_hedge_bond_last_price_' + row_id).val());
+  $('#scenario_w_hedge_bond_spread_' + row_id).val(convert_to_decimal(bond_spread, 3));
+}
+
+function update_scenario_wo_hedge_bond_spread(row_id) {
+  let bond_spread = parseFloat($('#scenario_wo_hedge_bond_deal_value_' + row_id).val()) -
+                    parseFloat($('#scenario_wo_hedge_bond_last_price_' + row_id).val());
+  $('#scenario_wo_hedge_bond_spread_' + row_id).val(convert_to_decimal(bond_spread, 3));
+}
+
+function update_scenario_w_hedge_bond_last_price(row_id) {
+  $('#scenario_w_hedge_bond_last_price_' + row_id).val(convert_to_decimal(parseFloat($('#bond_price_est_purchase_price').val()), 3));
+}
+
+function update_scenario_wo_hedge_bond_last_price(row_id) {
+  $('#scenario_wo_hedge_bond_last_price_' + row_id).val(convert_to_decimal(parseFloat($('#bond_price_est_purchase_price').val()), 3));
+}
+
+function update_scenario_w_hedge_returns_gross_pct(row_id) {
+  let returns_gross_pct = 0;
+  if (parseFloat($('#scenario_w_hedge_bond_last_price_' + row_id).val()) != 0) {
+    returns_gross_pct = parseFloat($('#scenario_w_hedge_bond_spread_' + row_id).val()) /
+                        parseFloat($('#scenario_w_hedge_bond_last_price_' + row_id).val()) * 100;
+  }
+  $('#scenario_w_hedge_returns_gross_pct_' + row_id).val(convert_to_decimal(returns_gross_pct, 2));
+}
+
+function update_scenario_wo_hedge_returns_gross_pct(row_id) {
+  let returns_gross_pct = 0;
+  if (parseFloat($('#scenario_wo_hedge_bond_last_price_' + row_id).val()) != 0) {
+    returns_gross_pct = parseFloat($('#scenario_wo_hedge_bond_spread_' + row_id).val()) /
+                        parseFloat($('#scenario_wo_hedge_bond_last_price_' + row_id).val()) * 100;
+  }
+  $('#scenario_wo_hedge_returns_gross_pct_' + row_id).val(convert_to_decimal(returns_gross_pct, 2));
+}
+
+function update_scenario_w_hedge_returns_annual_pct(row_id) {
+  let returns_annual_pct = 365 / parseFloat($('#scenario_w_hedge_returns_days_to_close_' + row_id).val()) *
+                           parseFloat($('#scenario_w_hedge_returns_gross_pct_' + row_id).val());
+  $('#scenario_w_hedge_returns_annual_pct_' + row_id).val(convert_to_decimal(returns_annual_pct, 2));
+}
+
+function update_scenario_wo_hedge_returns_annual_pct(row_id) {
+  let returns_annual_pct = 365 / parseFloat($('#scenario_wo_hedge_returns_days_to_close_' + row_id).val()) *
+                           parseFloat($('#scenario_wo_hedge_returns_gross_pct_' + row_id).val());
+  $('#scenario_wo_hedge_returns_annual_pct_' + row_id).val(convert_to_decimal(returns_annual_pct, 2));
+}
+
+function update_scenario_wo_hedge_bond_carry_earned(row_id) {
+  let bond_carry_earned = 100 * parseFloat($('#bond_information_bbg_interest_rate').val()) *
+                          parseFloat($('#scenario_wo_hedge_returns_days_to_close_' + row_id).val()) / 365 * 0.01;
+  $('#scenario_wo_hedge_bond_carry_earned_' + row_id).val(convert_to_decimal(bond_carry_earned, 3));
+}
+
+function update_scenario_w_hedge_bond_carry_earned(row_id) {
+  let bond_carry_earned = 100 * parseFloat($('#bond_information_bbg_interest_rate').val()) *
+                          parseFloat($('#scenario_w_hedge_returns_days_to_close_' + row_id).val()) / 365 * 0.01;
+  $('#scenario_w_hedge_bond_carry_earned_' + row_id).val(convert_to_decimal(bond_carry_earned, 3));
+}
+
+function update_scenario_w_hedge_profits_total(row_id) {
+  let profits_total = parseFloat($('#scenario_w_hedge_profits_principal_' + row_id).val()) +
+                      parseFloat($('#scenario_w_hedge_profits_carry_' + row_id).val()) +
+                      parseFloat($('#scenario_w_hedge_profits_rebate_' + row_id).val()) +
+                      parseFloat($('#scenario_w_hedge_profits_hedge_' + row_id).val());
+  $('#scenario_w_hedge_profits_total_' + row_id).val(convert_to_decimal(profits_total, 0));
+}
+
+function update_scenario_wo_hedge_profits_total(row_id) {
+  let profits_total = parseFloat($('#scenario_wo_hedge_profits_principal_' + row_id).val()) +
+                      parseFloat($('#scenario_wo_hedge_profits_carry_' + row_id).val());
+  $('#scenario_wo_hedge_profits_total_' + row_id).val(convert_to_decimal(profits_total, 0));
+}
+
+function update_scenario_w_hedge_profits_principal(row_id) {
+  let profits_principal = (parseFloat($('#scenario_w_hedge_bond_redemption_' + row_id).val()) -
+                          parseFloat($('#scenario_w_hedge_bond_last_price_' + row_id).val())) *
+                          parseFloat($('#passive_phase_arb_face_value_of_bonds').val()) * 0.01;
+  $('#scenario_w_hedge_profits_principal_' + row_id).val(convert_to_decimal(profits_principal, 0));
+}
+
+function update_scenario_wo_hedge_profits_principal(row_id) {
+  let profits_principal = (parseFloat($('#scenario_wo_hedge_bond_redemption_' + row_id).val()) -
+                          parseFloat($('#scenario_wo_hedge_bond_last_price_' + row_id).val())) *
+                          parseFloat($('#passive_phase_arb_face_value_of_bonds').val()) * 0.01;
+  $('#scenario_wo_hedge_profits_principal_' + row_id).val(convert_to_decimal(profits_principal, 0));
 }
 
 function update_sizing_val_capacity() {
@@ -719,6 +1238,16 @@ function update_days_to_close(row_id) {
   $('#days_to_close_' + row_id).val(days_to_close);
 }
 
+function update_scenario_w_hedge_returns_days_to_close(row_id) {
+  let days_to_close = Math.ceil(Math.abs(new Date($('#scenario_w_hedge_returns_estimated_closing_date_' + row_id).val()) - new Date()) / (1000 * 60 * 60 * 24));
+  $('#scenario_w_hedge_returns_days_to_close_' + row_id).val(days_to_close);
+}
+
+function update_scenario_wo_hedge_returns_days_to_close(row_id) {
+  let days_to_close = Math.ceil(Math.abs(new Date($('#scenario_wo_hedge_returns_estimated_closing_date_' + row_id).val()) - new Date()) / (1000 * 60 * 60 * 24));
+  $('#scenario_wo_hedge_returns_days_to_close_' + row_id).val(days_to_close);
+}
+
 function update_passive_value_size_shares() {
   if ((parseFloat($('#upside_value_topping_spread').val()) - parseFloat($('#deal_terms_value_gross_spread').val())) != 0) {
     let size_in_shares = (parseFloat($('#passive_value_nav_impact').val()) * 0.01 * parseFloat($('#sizing_val_fund_assets').val())) /
@@ -771,7 +1300,7 @@ function update_implied_prob(row_id) {
 
 function update_deal_terms_value_rebate_adjusted_spread() {
   let base_rebate_value = 0;
-  scenario_row_count = $('#scenario_table').DataTable().rows().count();
+  let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
     for (var i = 1; i <= scenario_row_count; i++) {
       let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
       if ($('#scenario_' + db_id.toString()).val().toString().toLowerCase().includes('base')) {
@@ -790,7 +1319,7 @@ function update_deal_terms_value_dvd_adjusted_spread() {
 
 function update_rebate_adjusted_spread_date() {
   let base_exp_close = '';
-  scenario_row_count = $('#scenario_table').DataTable().rows().count();
+  let scenario_row_count = document.getElementById("scenario_table_tbody").rows.length;
     for (var i = 1; i <= scenario_row_count; i++) {
       let db_id = $('#scenario_table').DataTable().rows('#scenario_row_' + i.toString()).data()[0].database_id;
       if ($('#scenario_' + db_id.toString()).val().toString().toLowerCase().includes('base')) {
@@ -803,10 +1332,7 @@ function update_rebate_adjusted_spread_date() {
 
 function get_style(data_value) {
   let style = "font-weight: bold; ";
-  if (parseFloat(data_value) == 0) {
-    style = "";
-  }
-  else if (parseFloat(data_value) < 0) {
+  if (parseFloat(data_value) < 0) {
     style += "color: red; background-color: #f7073645 !important;";
   }
   else {

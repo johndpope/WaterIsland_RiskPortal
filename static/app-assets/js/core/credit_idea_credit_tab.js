@@ -18,7 +18,7 @@ $(document).ready(function () {
       {
         orderable: false,
         render: function (data, type, row) {
-          return '<input id="bond_information_' + row.id + '" onchange="onChange(id)" onfocusout="focusOut(id)" class="form-control form-control-sm" type="text" maxlength="10" value="' + row.value + '">';
+          return '<input id="passive_phase_arb_' + row.id + '" onchange="onChange(id)" onfocusout="focusOut(id)" class="form-control form-control-sm" type="text" maxlength="10" value="' + row.value + '">';
         }
       },
     ],
@@ -341,3 +341,29 @@ function get_columns_for_databale(prefix) {
   ]
   return output;
 }
+
+$(window).bind("load", function() {
+  var non_decimal_fields = ['sizing_val_fund_assets', 'passive_value_size_shares', 'passive_value_spend',
+                            'sizing_val_float_so', 'sizing_val_five_cap', 'hedging_hedge', 'hedging_target_short',
+                            'estimated_liquidity_bbg_est_daily_vol', 'estimated_liquidity_credit_team_view']
+  var all_input_fields = document.getElementsByTagName("input");
+  for (var i = 0; i < all_input_fields.length; i++) {
+    var input_field = all_input_fields[i];
+    if (input_field.id && input_field.value && input_field.type != 'hidden') {
+      var decimal = 2;
+      if (input_field.id.includes('deal_terms_value_share')) {
+        decimal = 4;
+      }
+      else if (non_decimal_fields.includes(input_field.id)) {
+        decimal = 0;
+      }
+      else if (input_field.id.includes('days_to_close_') || input_field.id.includes('dollars_to_make_') || input_field.id.includes('dollars_to_lose_')) {
+        decimal = 0;
+      }
+      else if (input_field.id.startsWith('scenario_w_hedge_') || input_field.id.startsWith('scenario_wo_hedge_')) {
+        decimal = 3;
+      }
+      $('#' + input_field.id).val(convert_to_decimal(input_field.value, decimal));
+    }
+  }
+});
