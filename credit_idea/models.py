@@ -148,5 +148,8 @@ class CreditIdeaCreditScenario(models.Model):
     profits_hedge = models.FloatField(null=True, blank=True, default=0)
     profits_total = models.FloatField(null=True, blank=True, default=0)
     profits_day_of_break = models.FloatField(null=True, blank=True, default=0)
+    is_deal_closed = models.TextField(null=True, blank=True, default='No')
+    is_upside = models.BooleanField(null=False, blank=False, default=False)
+    is_downside = models.BooleanField(null=False, blank=False, default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -356,7 +356,7 @@ $(document).ready(function () {
       scenario_data_key = 'equity_scenario_data';
     }
     else if (section == 'credit') {
-      scenario_keys = ['scenario', 'bond_last_price', 'bond_redemption', 'bond_carry_earned', 'bond_rebate',
+      scenario_keys = ['scenario', 'is_deal_closed', 'bond_last_price', 'bond_redemption', 'bond_carry_earned', 'bond_rebate',
                        'bond_hedge', 'bond_deal_value', 'bond_spread', 'returns_gross_pct', 'returns_annual_pct',
                        'returns_estimated_closing_date', 'returns_days_to_close', 'profits_principal', 'profits_carry',
                        'profits_rebate', 'profits_hedge', 'profits_total', 'profits_day_of_break']

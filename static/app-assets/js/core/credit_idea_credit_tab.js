@@ -231,6 +231,16 @@ function get_columns_for_databale(prefix) {
     {
       orderable: false,
       render: function (data, type, row) {
+      return '<input id="' + prefix + 'is_deal_closed_' + row.id + '" onclick="dealOptionsClick(id)" onchange="onChange(id)" type="text" list="deal_options" value="' + row.is_deal_closed + '"/>' +
+        '<datalist id="deal_options">' +
+          '<option>Yes</option>' +
+          '<option>No</option>' +
+        '</datalist>';
+      }
+    },
+    {
+      orderable: false,
+      render: function (data, type, row) {
         return '<input id="' + prefix + 'bond_last_price_' + row.id + '" disabled onchange="onChange(id)" class="form-control form-control-sm input-label" type="text" maxlength="10" value="' + row.bond_last_price + '">';
       }
     },
@@ -367,3 +377,7 @@ $(window).bind("load", function() {
     }
   }
 });
+
+function dealOptionsClick(id) {
+  $('#' + id).val('');
+}

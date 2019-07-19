@@ -524,11 +524,11 @@ class CreditIdeaDetailsView(TemplateView):
 
                 scenario_wo_hedge_data = []
                 scenario_w_hedge_data = []
-                keys = ['id', 'credit_idea_id', 'scenario', 'bond_last_price', 'bond_redemption', 'bond_carry_earned',
-                        'bond_rebate', 'bond_hedge', 'bond_deal_value', 'bond_spread', 'returns_gross_pct',
-                        'returns_annual_pct', 'returns_estimated_closing_date', 'returns_days_to_close',
-                        'profits_principal', 'profits_carry', 'profits_rebate', 'profits_hedge', 'profits_total',
-                        'profits_day_of_break']
+                keys = ['id', 'credit_idea_id', 'scenario', 'is_deal_closed', 'bond_last_price', 'bond_redemption',
+                        'bond_carry_earned', 'bond_rebate', 'bond_hedge', 'bond_deal_value', 'bond_spread',
+                        'returns_gross_pct', 'returns_annual_pct', 'returns_estimated_closing_date',
+                        'returns_days_to_close', 'profits_principal', 'profits_carry', 'profits_rebate',
+                        'profits_hedge', 'profits_total', 'profits_day_of_break']
                 scenario_count = 1
                 for scenario in scenario_without_hedge:
                     temp_dict = {key: getattr(scenario, key) for key in keys}
@@ -663,6 +663,7 @@ def save_credit_idea_data(master_data, credit_idea_id):
                 except CreditIdeaCreditScenario.DoesNotExist:
                     credit_idea_scenario = CreditIdeaCreditScenario(credit_idea_id=credit_idea_id)
                 credit_idea_scenario.scenario = data.get('scenario')
+                credit_idea_scenario.is_deal_closed = data.get('is_deal_closed')
                 credit_idea_scenario.is_hedge = data.get('is_hedge')
                 credit_idea_scenario.bond_last_price = data.get('bond_last_price') or 0.00
                 credit_idea_scenario.bond_redemption = data.get('bond_redemption') or 0.00
