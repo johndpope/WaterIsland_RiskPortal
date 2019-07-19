@@ -137,8 +137,7 @@ Credit IDEA
                 <tbody id="scenario_table_tbody"></tbody>
               </table>
             </div>
-            <input id='addScenarioRow' type="submit" class="btn btn-primary glyphicon glyphicon-plus pl-15"
-              value="Add row">
+            <input id='addScenarioRow' type="submit" class="btn btn-primary" value="Add row">
           </div>
 
           <div class="row">
@@ -251,12 +250,14 @@ Credit IDEA
                   class="table table-hover table-bordered  compact">
                   <thead>
                     <tr class="thead-light">
-                      <th></th>
+                      <th colspan="3"></th>
                       <th colspan="8" class="center">BOND SPREAD LISTED IN BOND POINTS</th>
                       <th colspan="4" class="center">RETURNS</th>
                       <th colspan="6" class="center">PROFITS</th>
                     </tr>
                     <tr>
+                      <th class="center scenario_without_hedge_upside_downside">Up</td>
+                      <th class="center scenario_without_hedge_upside_downside">Down</td>
                       <th class="center">Scenarios w/o HEDGE</th>
                       <th class="center">Is Deal<br>Closed</th>
                       <th class="center">Last<br>Price</th>
@@ -282,8 +283,6 @@ Credit IDEA
                   </tbody>
                 </table>
               </div>
-              <input id='addScenarioWoHedgeRow' type="submit" class="btn btn-primary glyphicon glyphicon-plus pl-15"
-                value="Add row">
             </div>
 
             <div class="row">
@@ -291,12 +290,14 @@ Credit IDEA
                 <table id="scenario_with_hedge_table" class="table table-hover table-bordered compact">
                   <thead>
                     <tr class="thead-light">
-                      <th></th>
+                      <th colspan="3"></th>
                       <th colspan="8" class="center">BOND SPREAD LISTED IN BOND POINTS</th>
                       <th colspan="4" class="center">RETURNS</th>
                       <th colspan="6" class="center">PROFITS</th>
                     </tr>
                     <tr>
+                      <th class="center scenario_with_hedge_upside_downside">Up</td>
+                      <th class="center scenario_with_hedge_upside_downside">Down</td>
                       <th class="center">Scenarios w/ HEDGE</th>
                       <th class="center">Is Deal<br>Closed</th>
                       <th class="center">Last<br>Price</th>
@@ -322,8 +323,7 @@ Credit IDEA
                   </tbody>
                 </table>
               </div>
-              <input id='addScenarioWHedgeRow' type="submit" class="btn btn-primary glyphicon glyphicon-plus pl-15"
-                value="Add row">
+              <input id='addScenarioRowInBothTables' type="submit" class="btn btn-primary" value="Add row">
             </div>
 
             <div class="row">

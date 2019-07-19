@@ -187,11 +187,8 @@ $(document).ready(function () {
       info: false,
     });
 
-  $('#addScenarioWoHedgeRow').on('click', function () {
+  $('#addScenarioRowInBothTables').on('click', function () {
     add_row('scenario_without_hedge_table', 'scenario_wo_hedge_')
-  });
-
-  $('#addScenarioWHedgeRow').on('click', function () {
     add_row('scenario_with_hedge_table', 'scenario_w_hedge_')
   });
 
@@ -203,20 +200,21 @@ $(document).ready(function () {
     bond_carry_earned = $('#' + prefix + 'bond_carry_earned_' + db_id.toString()).val();
     bond_rebate = $('#' + prefix + 'bond_rebate_' + db_id.toString()).val();
     returns_estimated_closing_date = $('#' + prefix + 'returns_estimated_closing_date_' + db_id.toString()).val();
+    returns_days_to_close = $('#' + prefix + 'returns_days_to_close_' + db_id.toString()).val();
     count += 1;
     let credit_idea_id = parseFloat(new URLSearchParams(window.location.search).get('credit_idea_id'));
     $('#' + table_id).DataTable().row.add(
       {
-        'id': random_id, 'credit_idea_id': credit_idea_id, 'scenario': '', 'bond_last_price': bond_last_price,
-        'bond_redemption': '', 'bond_carry_earned': bond_carry_earned, 'bond_rebate': bond_rebate, 'bond_hedge': 0.00,
-        'bond_deal_value': '', 'bond_spread': '', 'returns_gross_pct': '', 'returns_annual_pct': '',
-        'returns_estimated_closing_date': returns_estimated_closing_date, 'returns_days_to_close': '',
-        'profits_principal': '', 'profits_carry': '', 'profits_rebate': '', 'profits_hedge': '', 'profits_total': '',
-        'profits_day_of_break': '', 'database_id': random_id
+        'id': random_id, 'credit_idea_id': credit_idea_id, 'scenario': '', 'is_deal_closed': 'No',
+        'bond_last_price': bond_last_price, 'bond_redemption': '', 'bond_carry_earned': bond_carry_earned,
+        'bond_rebate': bond_rebate, 'bond_hedge': 0.00, 'bond_deal_value': '', 'bond_spread': '',
+        'returns_gross_pct': '', 'returns_annual_pct': '', 'returns_estimated_closing_date': returns_estimated_closing_date,
+        'returns_days_to_close': returns_days_to_close, 'profits_principal': '', 'profits_carry': '', 'profits_rebate': '',
+        'profits_hedge': '', 'profits_total': '', 'profits_day_of_break': '', 'database_id': random_id
       }
     ).node().id = prefix + 'row_' + count.toString();
     $('#' + table_id).DataTable().draw(false);
-    onChange('exp_close_' + random_id.toString());
+    // onChange('exp_close_' + random_id.toString());
   };
 });
 
@@ -224,8 +222,30 @@ function get_columns_for_databale(prefix) {
   var output = [
     {
       orderable: false,
+      className: 'pt-1',
       render: function (data, type, row) {
-        return '<input id="' + prefix + 'scenario_' + row.id + '" class="form-control form-control-sm" type="text" maxlength="30" value="' + row.scenario + '">';
+        let checked = "";
+        if (row.is_upside == true) {
+          checked = "checked";
+        }
+        return '<input id="' + prefix + 'upside_radio_' + row.id + '" name="' + prefix + 'upside" ' + checked +' onchange="onChange(id)" class="form-control form-control-sm" type="radio" value="' + row.id + '">';
+      }
+    },
+    {
+      orderable: false,
+      className: 'pt-1',
+      render: function (data, type, row) {
+        let checked = "";
+        if (row.is_downside == true) {
+          checked = "checked";
+        }
+        return '<input id="' + prefix + 'downside_radio_' + row.id + '" name="' + prefix + 'downside" ' + checked +' onchange="onChange(id)" class="form-control form-control-sm" type="radio" value="' + row.id + '">';
+      }
+    },
+    {
+      orderable: false,
+      render: function (data, type, row) {
+        return '<input id="' + prefix + 'scenario_' + row.id + '" onchange="onChange(id)" class="form-control form-control-sm" type="text" maxlength="30" value="' + row.scenario + '">';
       }
     },
     {

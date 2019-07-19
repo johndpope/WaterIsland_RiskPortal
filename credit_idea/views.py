@@ -1,5 +1,6 @@
 import bbgclient
 from datetime import date, datetime, timedelta
+from dateutil.parser import parse
 import json
 import pandas as pd
 
@@ -513,6 +514,7 @@ class CreditIdeaDetailsView(TemplateView):
                     temp_dict = {key: getattr(scenario, key) for key in keys}
                     temp_dict['estimated_closing_date'] = temp_dict['estimated_closing_date'].strftime('%Y-%m-%d') if \
                         temp_dict['estimated_closing_date'] else temp_dict['estimated_closing_date']
+                    temp_dict['days_to_close'] = calculate_number_of_days(temp_dict['estimated_closing_date'])
                     temp_dict['database_id'] = temp_dict.get('id')
                     temp_dict['last_price'] = round(target_live_price, 2)
                     temp_dict['dividends'] = target_dividends
@@ -524,16 +526,17 @@ class CreditIdeaDetailsView(TemplateView):
 
                 scenario_wo_hedge_data = []
                 scenario_w_hedge_data = []
-                keys = ['id', 'credit_idea_id', 'scenario', 'is_deal_closed', 'bond_last_price', 'bond_redemption',
-                        'bond_carry_earned', 'bond_rebate', 'bond_hedge', 'bond_deal_value', 'bond_spread',
-                        'returns_gross_pct', 'returns_annual_pct', 'returns_estimated_closing_date',
-                        'returns_days_to_close', 'profits_principal', 'profits_carry', 'profits_rebate',
-                        'profits_hedge', 'profits_total', 'profits_day_of_break']
+                keys = ['id', 'credit_idea_id', 'is_upside', 'is_downside', 'scenario', 'is_deal_closed',
+                        'bond_last_price', 'bond_redemption', 'bond_carry_earned', 'bond_rebate', 'bond_hedge',
+                        'bond_deal_value', 'bond_spread', 'returns_gross_pct', 'returns_annual_pct',
+                        'returns_estimated_closing_date', 'returns_days_to_close', 'profits_principal', 'profits_carry',
+                        'profits_rebate', 'profits_hedge', 'profits_total', 'profits_day_of_break']
                 scenario_count = 1
                 for scenario in scenario_without_hedge:
                     temp_dict = {key: getattr(scenario, key) for key in keys}
                     temp_dict['returns_estimated_closing_date'] = temp_dict['returns_estimated_closing_date'].strftime('%Y-%m-%d') if \
                         temp_dict['returns_estimated_closing_date'] else temp_dict['returns_estimated_closing_date']
+                    temp_dict['returns_days_to_close'] = calculate_number_of_days(temp_dict['returns_estimated_closing_date'])
                     temp_dict['database_id'] = temp_dict.get('id')
                     temp_dict['DT_RowId'] = 'scenario_wo_hedge_row_' + str(scenario_count)
                     scenario_wo_hedge_data.append(temp_dict)
@@ -544,6 +547,7 @@ class CreditIdeaDetailsView(TemplateView):
                     temp_dict = {key: getattr(scenario, key) for key in keys}
                     temp_dict['returns_estimated_closing_date'] = temp_dict['returns_estimated_closing_date'].strftime('%Y-%m-%d') if \
                         temp_dict['returns_estimated_closing_date'] else temp_dict['returns_estimated_closing_date']
+                    temp_dict['returns_days_to_close'] = calculate_number_of_days(temp_dict['returns_estimated_closing_date'])
                     temp_dict['database_id'] = temp_dict.get('id')
                     temp_dict['DT_RowId'] = 'scenario_w_hedge_row_' + str(scenario_count)
                     scenario_w_hedge_data.append(temp_dict)
@@ -594,11 +598,11 @@ def save_credit_idea_data(master_data, credit_idea_id):
                 credit_idea_scenario.spread = data.get('spread') or 0.00
                 credit_idea_scenario.gross_pct = data.get('gross_pct') or 0.00
                 credit_idea_scenario.annual_pct = data.get('annual_pct') or 0.00
-                credit_idea_scenario.days_to_close = data.get('days_to_close') or 0.00
                 credit_idea_scenario.dollars_to_make = data.get('dollars_to_make') or 0.00
                 credit_idea_scenario.dollars_to_lose = data.get('dollars_to_lose') or 0.00
                 credit_idea_scenario.implied_prob = data.get('implied_prob') or 0.00
                 credit_idea_scenario.estimated_closing_date = data.get('exp_close')
+                credit_idea_scenario.days_to_close = calculate_number_of_days(data.get('exp_close'))
                 credit_idea_scenario.save()
         elif 'equity_details' in key.lower():
             try:
@@ -662,6 +666,8 @@ def save_credit_idea_data(master_data, credit_idea_id):
                     credit_idea_scenario = scenario_obj.get(id=data.get('database_id'), credit_idea_id=credit_idea_id)
                 except CreditIdeaCreditScenario.DoesNotExist:
                     credit_idea_scenario = CreditIdeaCreditScenario(credit_idea_id=credit_idea_id)
+                credit_idea_scenario.is_upside = data.get('is_upside')
+                credit_idea_scenario.is_downside = data.get('is_downside')
                 credit_idea_scenario.scenario = data.get('scenario')
                 credit_idea_scenario.is_deal_closed = data.get('is_deal_closed')
                 credit_idea_scenario.is_hedge = data.get('is_hedge')
@@ -675,7 +681,7 @@ def save_credit_idea_data(master_data, credit_idea_id):
                 credit_idea_scenario.returns_gross_pct = data.get('returns_gross_pct') or 0.00
                 credit_idea_scenario.returns_annual_pct = data.get('returns_annual_pct') or 0.00
                 credit_idea_scenario.returns_estimated_closing_date = data.get('returns_estimated_closing_date')
-                credit_idea_scenario.returns_days_to_close = data.get('returns_days_to_close') or 0
+                credit_idea_scenario.returns_days_to_close = calculate_number_of_days(data.get('returns_estimated_closing_date'))
                 credit_idea_scenario.profits_principal = data.get('profits_principal') or 0.00
                 credit_idea_scenario.profits_carry = data.get('profits_carry') or 0.00
                 credit_idea_scenario.profits_rebate = data.get('profits_rebate') or 0.00
@@ -692,8 +698,10 @@ def calculate_number_of_days(target_date):
     Returns number of days from the given date till today
     """
     if target_date:
+        if isinstance(target_date, (str)):
+            target_date = parse(target_date, fuzzy=False)
         if isinstance(target_date, (datetime)):
-            return (target_date - datetime.now()).days
+            return (target_date.date() - date.today()).days
         elif isinstance(target_date, (date)):
             return (target_date - date.today()).days
     return 0
