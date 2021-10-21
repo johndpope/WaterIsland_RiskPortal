@@ -9,7 +9,7 @@ astroid==2.1.0
 astropy==2.0.3
 atomicwrites==1.2.1
 attrs==17.4.0
-Babel==2.5.3
+Babel==2.9.1
 beautifulsoup4==4.6.0
 billiard==3.3.0.23
 bitarray==0.8.1
